@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+wheels/
+*.egg-info/
+
+# Environnements virtuels
+.venv/
+env/
+venv/
+ENV/
+
+# Fichiers temporaires de rendu
+temp_*.png
+temp_*.py
+preview.png
+temp_render.png
+
+# Modèles IA lourds (à stocker hors git)
+*.gguf
+*.safetensors
+*.pth
+*.ckpt
+*.bin
+models/
+upscalers/
+loras/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

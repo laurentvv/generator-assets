@@ -1,0 +1,31 @@
+{
+  "name": "Pack d'Armurerie Dark Fantasy",
+  "description": "Collection d'armes et protections enchantées en obsidienne et runes violettes",
+  "assets": [
+    {
+      "prompt": "épée longue ancestrale ornée de runes violettes",
+      "type": "item",
+      "output": "epee_longue_ancestrale"
+    },
+    {
+      "prompt": "bouclier pavois en obsidienne avec gravures de protection",
+      "type": "item",
+      "output": "bouclier_obsidienne"
+    },
+    {
+      "prompt": "arc courbe runique en bois pétrifié et corde d'énergie",
+      "type": "item",
+      "output": "arc_runique"
+    },
+    {
+      "prompt": "dague d'assassin enchantée par le vide abyssal",
+      "type": "item",
+      "output": "dague_abyssale"
+    },
+    {
+      "prompt": "fiole de potion d'élixir de mana violet luminescent",
+      "type": "item",
+      "output": "potion_mana"
+    }
+  ]
+}

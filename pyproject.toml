@@ -1,0 +1,10 @@
+[project]
+name = "generator-assets"
+version = "0.2.0"
+description = "Pipeline IA d'Assets 2D & 3D pour Godot Engine (Flux.1 Vulkan, LoRAs, PBR Materials 3D, Skyboxes 360, Upscale ESRGAN, Blender Mesh GLB)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pillow>=10.0.0",
+    "numpy>=1.26.0",
+]

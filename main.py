@@ -1,0 +1,479 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Generator Assets - Pipeline & Workflows Modulaires d'Assets 2D & 3D pour Godot Engine.
+Combine Flux.1 Dev (Vulkan), LoRAs, Upscalers IA (ESRGAN), LLM local (llama.cpp),
+Matériaux PBR 3D, Skyboxes 360, Fiches de modélisation et Génération de Mesh .glb via Blender.
+100% Ligne de Commande Locale (CLI) • Zéro Gradio • Léger et Rapide.
+"""
+
+import argparse
+import os
+import sys
+from pathlib import Path
+
+# Console Windows : force l'UTF-8 pour les emojis/accents
+for flux in (sys.stdout, sys.stderr):
+    if hasattr(flux, "reconfigure"):
+        flux.reconfigure(encoding="utf-8", errors="replace")
+
+from core.config import (
+    DEFAULT_BACKEND,
+    DEFAULT_CLIP_L,
+    DEFAULT_ESRGAN_MODEL,
+    DEFAULT_LLAMA_CLI,
+    DEFAULT_LLM_MODEL,
+    DEFAULT_LORA_DIRS,
+    DEFAULT_OUTPUT_DIR,
+    DEFAULT_SD_CLI,
+    DEFAULT_SD_MODEL,
+    DEFAULT_STYLE_ANCHOR,
+    DEFAULT_T5XXL,
+    DEFAULT_THREADS,
+    DEFAULT_UPSCALER_DIRS,
+    DEFAULT_VAE,
+    lister_loras,
+    lister_upscalers,
+    resoudre_upscaler,
+    slugifier_texte,
+    verifier_prerequis
+)
+from workflows import (
+    BaseWorkflow,
+    WorkflowRegistry,
+    GenerateWorkflow,
+    UpscaleWorkflow,
+    SpriteSheetWorkflow,
+    VariationsWorkflow,
+    TileableWorkflow,
+    PixelArtWorkflow,
+    BatchWorkflow,
+    Material3DWorkflow,
+    SkyboxWorkflow,
+    Turnaround3DWorkflow,
+    Mesh3DWorkflow
+)
+
+
+# ==============================================================================
+# Mode Interactif
+# ==============================================================================
+def lancer_mode_interactif(config: dict):
+    """Interface interactive en console permettant d'exécuter n'importe quel workflow."""
+    print("\n" + "=" * 65)
+    print(" ⚔️  Generator Assets - Console de Workflows 2D & 3D Godot ⚔️ ")
+    print("=" * 65)
+    
+    verifier_prerequis(config)
+
+    menu_workflows = {
+        "1": ("generate", "🎨 Génération d'Asset 2D (Item, Monstre, Décor)"),
+        "2": ("mesh3d", "🎲 Modèle 3D Maillé .GLB (Cube, Dalle, Pilier, Sphère, Card)"),
+        "3": ("material3d", "🧱 Pack Matériau 3D PBR (Albedo, Normal, Roughness, ORM, .tres)"),
+        "4": ("skybox", "🌌 Skybox / Panorama 360° Équirectangulaire (.tres Environment)"),
+        "5": ("turnaround3d", "📐 Fiche de Modélisation 3D (Vues orthogonales pour Blender)"),
+        "6": ("upscale", "🔍 Upscale IA (ESRGAN Vulkan / Lanczos 2x, 4x, 4K)"),
+        "7": ("spritesheet", "📊 Planche de Sprites multi-angles (Face, Profils, Dos + JSON)"),
+        "8": ("variations", "🌈 Variantes Thématiques (Feu, Glace, Poison, etc.)"),
+        "9": ("tileable", "🔲 Texture Raccordable Seamless (Tuile TileMap)"),
+        "10": ("pixelart", "👾 Conversion Rétro Pixel Art (Pico-8, Endesga-32)"),
+        "11": ("batch", "📦 Génération par Lot (Pack depuis fichier JSON)")
+    }
+
+    while True:
+        try:
+            print("\n--- Choisissez un Workflow ['q' pour quitter] ---")
+            for k, (_, desc) in menu_workflows.items():
+                print(f"  [{k.rjust(2)}] {desc}")
+
+            choix = input("\n👉 Choix (1-11) [défaut: 1] : ").strip()
+            if choix.lower() == 'q':
+                print("👋 Au revoir !")
+                break
+
+            wf_name, _ = menu_workflows.get(choix, ("generate", ""))
+            wf_cls = WorkflowRegistry.get(wf_name)
+            wf_instance = wf_cls(config)
+
+            params = {"output_dir": config.get("output_dir", DEFAULT_OUTPUT_DIR)}
+
+            # Détection des LoRAs disponibles
+            loras_dispos = lister_loras()
+            if loras_dispos and wf_name in ["generate", "mesh3d", "material3d", "skybox", "turnaround3d", "spritesheet", "variations"]:
+                print("\n🧩 LoRAs détectés :")
+                for idx, l in enumerate(loras_dispos, 1):
+                    print(f"   [{idx}] {l['name']} ({l['size_mb']} Mo)")
+                choix_l = input("Appliquer des LoRAs ? (ex: '1:0.8, 2:1.0' ou laisser vide) : ").strip()
+                if choix_l:
+                    loras_choisis = []
+                    for part in choix_l.split(","):
+                        part = part.strip()
+                        if ":" in part:
+                            num, poids = part.split(":", 1)
+                        else:
+                            num, poids = part, "1.0"
+                        if num.isdigit() and 1 <= int(num) <= len(loras_dispos):
+                            nom_l = loras_dispos[int(num) - 1]["name"]
+                            loras_choisis.append(f"{nom_l}:{poids.strip()}")
+                    if loras_choisis:
+                        params["loras"] = loras_choisis
+                        print(f"   ➔ LoRAs activés : {', '.join(loras_choisis)}")
+
+            if wf_name == "generate":
+                concept = input("💡 Concept de l'asset : ").strip()
+                if not concept:
+                    continue
+                type_a = input("📂 Type [1: Item, 2: Personnage, 3: Prop] (défaut: 1) : ").strip()
+                type_map = {"1": "item", "2": "character", "3": "prop"}
+                params["prompt"] = concept
+                params["type"] = type_map.get(type_a, "item")
+                params["output"] = input(f"💾 Nom du fichier [défaut: {slugifier_texte(concept)}] : ").strip()
+
+            elif wf_name == "mesh3d":
+                chemin = input("🖼️  Texture ou asset 2D existant (ou laisser vide pour générer) : ").strip()
+                if chemin and os.path.exists(chemin):
+                    params["input"] = chemin
+                else:
+                    params["prompt"] = input("💡 Description de l'objet ou matériau 3D : ").strip()
+                print("📐 Forme 3D : [1] Dalle/Sol (tile)  [2] Cube/Coffre (cube)  [3] Pilier (pillar)  [4] Sphère (sphere)  [5] 3D Sprite Card (card)")
+                choix_s = input("Choix (1-5) [défaut: 1] : ").strip()
+                s_map = {"1": "tile", "2": "cube", "3": "pillar", "4": "sphere", "5": "card"}
+                params["shape"] = s_map.get(choix_s, "tile")
+
+            elif wf_name == "material3d":
+                chemin = input("🖼️  Texture existante (ou laisser vide pour générer à partir d'un prompt) : ").strip()
+                if chemin and os.path.exists(chemin):
+                    params["input"] = chemin
+                else:
+                    params["prompt"] = input("🧱 Description du matériau 3D (ex: pavés médiévaux avec mousse) : ").strip()
+                params["size"] = int(input("📐 Résolution du matériau [512, 1024, 2048] (défaut: 1024) : ").strip() or 1024)
+
+            elif wf_name == "skybox":
+                params["prompt"] = input("🌌 Description du ciel 360° (ex: ciel d'orage dark fantasy avec nébuleuse violette) : ").strip()
+                if not params["prompt"]:
+                    continue
+
+            elif wf_name == "turnaround3d":
+                params["prompt"] = input("📐 Concept du personnage / monstre pour modélisation 3D : ").strip()
+                if not params["prompt"]:
+                    continue
+
+            elif wf_name == "upscale":
+                chemin = input("🖼️  Chemin de l'image source (ex: godot_assets/casque.png) : ").strip()
+                if not os.path.exists(chemin):
+                    print(f"❌ Fichier introuvable : {chemin}")
+                    continue
+                
+                upscalers = lister_upscalers()
+                if upscalers:
+                    print("\n🚀 Modèles Upscalers IA disponibles :")
+                    for idx, u in enumerate(upscalers, 1):
+                        print(f"   [{idx}] {u['name']} ({u['size_mb']} Mo)")
+                    choix_u = input("Choisir un modèle IA (numéro ou laisser vide pour par défaut) : ").strip()
+                    if choix_u.isdigit() and 1 <= int(choix_u) <= len(upscalers):
+                        params["upscale_model"] = upscalers[int(choix_u) - 1]["path"]
+
+                facteur = input("🔍 Facteur d'agrandissement [2, 4] (défaut: 2) : ").strip() or "2"
+                params["input"] = chemin
+                params["factor"] = float(facteur)
+
+            elif wf_name == "spritesheet":
+                concept = input("💡 Concept du personnage/entité : ").strip()
+                if not concept:
+                    continue
+                params["prompt"] = concept
+                params["size"] = int(input("📐 Taille d'une cellule [défaut: 256] : ").strip() or 256)
+
+            elif wf_name == "variations":
+                chemin = input("🖼️  Image de base (ou laisser vide pour partir d'un texte) : ").strip()
+                if chemin and os.path.exists(chemin):
+                    params["input"] = chemin
+                else:
+                    params["prompt"] = input("💡 Concept de base : ").strip()
+                themes = input("🎨 Thèmes séparés par des virgules (ex: feu,glace,foudre) : ").strip()
+                if themes:
+                    params["themes"] = themes
+
+            elif wf_name == "tileable":
+                concept = input("🧱 Type de sol / texture raccordable : ").strip()
+                if not concept:
+                    continue
+                params["prompt"] = concept
+
+            elif wf_name == "pixelart":
+                chemin = input("🖼️  Image source à pixeliser (ou laisser vide pour générer) : ").strip()
+                if chemin and os.path.exists(chemin):
+                    params["input"] = chemin
+                else:
+                    params["prompt"] = input("💡 Concept à générer en pixel art : ").strip()
+                pal = input("🎨 Palette [pico8, gameboy, endesga32] (défaut: pico8) : ").strip() or "pico8"
+                params["palette"] = pal
+                params["grid_size"] = int(input("🔲 Résolution de la grille pixel [32, 64] (défaut: 64) : ").strip() or 64)
+
+            elif wf_name == "batch":
+                fichier = input("📄 Chemin vers le fichier JSON de recette (ex: recipes/dark_fantasy_armory.json) : ").strip()
+                if not os.path.exists(fichier):
+                    print(f"❌ Fichier introuvable : {fichier}")
+                    continue
+                params["file"] = fichier
+
+            wf_instance.run(params)
+
+        except KeyboardInterrupt:
+            print("\n👋 Arrêt demandé.")
+            break
+        except Exception as e:
+            print(f"❌ Une erreur est survenue : {e}")
+
+
+# ==============================================================================
+# Point d'Entrée CLI
+# ==============================================================================
+def main():
+    parser = argparse.ArgumentParser(
+        prog="generator-assets",
+        description="⚔️ Système de Workflows IA pour Assets 2D & 3D Godot (Flux.1 Vulkan + LoRAs + PBR Materials + Blender Mesh GLB + Upscale ESRGAN).",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Exemples de Workflows 3D & 2D :
+  # 1. Modèle 3D Maillé PBR via Blender (Cube, Dalle, Pilier, Sphère, Card)
+  python main.py -w mesh3d "coffre ancien orné de runes en acier sombre" --shape cube
+  python main.py -w mesh3d -i godot_assets/casque.png --shape card -o casque_3d
+
+  # 2. Pack Matériau 3D PBR complet (Albedo, Normal, Roughness, ORM, Height + .tres Godot)
+  python main.py -w material3d "dalles de pierre sombre avec runes violettes et mousse" -s 1024
+
+  # 3. Skybox 360° Équirectangulaire pour éclairage 3D & Ciel
+  python main.py -w skybox "ciel nocturne dark fantasy avec nébuleuse violette et lunes"
+
+  # 4. Planche de modélisation 3D pour Blender (Face + Profil calibrés)
+  python main.py -w turnaround3d "chevalier de l'ombre en armure complète"
+
+  # 5. Upscaling IA d'une texture en 4K avec modèle ESRGAN
+  python main.py -w upscale -i godot_assets/casque.png --upscale-model anime --factor 4
+
+  # Diagnostics
+  python main.py --list-workflows
+  python main.py --list-upscalers
+  python main.py --list-loras
+  python main.py --check
+  python main.py --interactive
+        """
+    )
+
+    # Paramètres principaux
+    parser.add_argument(
+        "prompt",
+        nargs="?",
+        default=None,
+        help="Concept ou description textuelle de l'asset."
+    )
+    parser.add_argument(
+        "-w", "--workflow",
+        default="generate",
+        help="Nom du workflow : generate, mesh3d, material3d, skybox, turnaround3d, upscale, spritesheet, variations, tileable, pixelart, batch."
+    )
+    parser.add_argument(
+        "-p", "--prompt",
+        dest="prompt_flag",
+        help="Description alternative via flag."
+    )
+    parser.add_argument(
+        "-i", "--input",
+        dest="input_file",
+        help="Chemin de l'image source pour mesh3d, upscale, material3d, pixelart ou variations."
+    )
+    parser.add_argument(
+        "-t", "--type",
+        choices=["item", "character", "prop", "tile", "1", "2", "3"],
+        default="item",
+        help="Type d'asset : item (défaut), character, prop, tile."
+    )
+    parser.add_argument(
+        "--shape",
+        choices=["tile", "cube", "pillar", "cylinder", "sphere", "card", "cutout"],
+        default="tile",
+        help="Forme géométrique 3D pour le workflow mesh3d (défaut: 'tile')."
+    )
+    parser.add_argument(
+        "-o", "--output",
+        help="Nom du fichier de sortie sans extension."
+    )
+    parser.add_argument(
+        "-d", "--output-dir",
+        default=DEFAULT_OUTPUT_DIR,
+        help=f"Dossier de destination pour les assets Godot (défaut: '{DEFAULT_OUTPUT_DIR}')."
+    )
+    parser.add_argument(
+        "-s", "--size",
+        type=int,
+        default=None,
+        help="Résolution carrée finale en pixels."
+    )
+
+    # Gestion des LoRAs et Upscalers
+    groupe_ia_ext = parser.add_argument_group("LoRAs & Upscalers")
+    groupe_ia_ext.add_argument(
+        "-l", "--lora",
+        action="append",
+        dest="loras",
+        help="Applique un LoRA sous la forme 'nom:poids' (ex: -l 'pixel_art:0.8'). Répétable."
+    )
+    groupe_ia_ext.add_argument(
+        "--lora-dir",
+        help="Dossier contenant les fichiers de LoRAs (.safetensors)."
+    )
+    groupe_ia_ext.add_argument(
+        "--upscale-model",
+        help="Nom ou chemin du modèle d'upscaling ESRGAN (ex: 'anime', 'RealESRGAN_x4plus_anime_6B.pth')."
+    )
+
+    # Paramètres spécifiques aux workflows
+    groupe_wf = parser.add_argument_group("Options des Workflows Avancés")
+    groupe_wf.add_argument("--factor", type=float, default=2.0, help="Facteur d'agrandissement pour l'upscale (ex: 2.0, 4.0).")
+    groupe_wf.add_argument("--normal-strength", type=float, default=3.5, help="Intensité du relief pour la Normal Map PBR (défaut: 3.5).")
+    groupe_wf.add_argument("--palette", default="pico8", choices=["pico8", "gameboy", "endesga32"], help="Palette pour le workflow pixelart.")
+    groupe_wf.add_argument("--grid-size", type=int, default=64, help="Taille de grille pour le pixel art (ex: 32, 64).")
+    groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
+    groupe_wf.add_argument("--file", "--recipe", dest="recipe_file", help="Fichier JSON ou liste texte pour le workflow batch.")
+    groupe_wf.add_argument("--columns", type=int, default=4, help="Nombre de colonnes pour la planche de sprites.")
+    groupe_wf.add_argument("--no-preview", action="store_true", help="Désactive l'aperçu 3x3 pour le workflow tileable.")
+
+    # Paramètres généraux de rendu
+    groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
+    groupe_ia.add_argument("--no-llm", action="store_true", help="Désactive l'enrichissement par LLM.")
+    groupe_ia.add_argument("--steps", type=int, default=25, help="Nombre d'étapes de diffusion Flux (défaut: 25).")
+    groupe_ia.add_argument("--guidance", type=float, default=3.5, help="Guidance Flux (défaut: 3.5).")
+    groupe_ia.add_argument("--cfg-scale", type=float, default=1.0, help="CFG scale (défaut: 1.0).")
+    groupe_ia.add_argument("--seed", type=int, default=-1, help="Graine aléatoire (-1 pour aléatoire).")
+    groupe_ia.add_argument("--tolerance", type=int, default=60, help="Tolérance de détourage flood-fill (défaut: 60).")
+    groupe_ia.add_argument("--style", default=DEFAULT_STYLE_ANCHOR, help="Charte visuelle personnalisée.")
+
+    # Modes utilitaires
+    parser.add_argument("--interactive", action="store_true", help="Lance la session interactive.")
+    parser.add_argument("--check", action="store_true", help="Vérifie la présence des exécutables et des modèles.")
+    parser.add_argument("--list-workflows", action="store_true", help="Affiche la liste des workflows disponibles.")
+    parser.add_argument("--list-loras", action="store_true", help="Affiche la liste des LoRAs installés.")
+    parser.add_argument("--list-upscalers", action="store_true", help="Affiche la liste des modèles d'upscaling installés.")
+
+    # Chemins
+    groupe_chemins = parser.add_argument_group("Chemins & Exécutables")
+    groupe_chemins.add_argument("--llama-cli", default=DEFAULT_LLAMA_CLI, help="Chemin vers llama-cli.exe")
+    groupe_chemins.add_argument("--llm-model", default=DEFAULT_LLM_MODEL, help="Chemin vers le modèle LLM GGUF")
+    groupe_chemins.add_argument("--sd-cli", default=DEFAULT_SD_CLI, help="Chemin vers sd-cli.exe")
+    groupe_chemins.add_argument("--sd-model", default=DEFAULT_SD_MODEL, help="Chemin vers flux1-dev GGUF")
+    groupe_chemins.add_argument("--clip-l", default=DEFAULT_CLIP_L, help="Chemin vers clip_l.safetensors")
+    groupe_chemins.add_argument("--t5xxl", default=DEFAULT_T5XXL, help="Chemin vers t5xxl_fp16.safetensors")
+    groupe_chemins.add_argument("--vae", default=DEFAULT_VAE, help="Chemin vers ae.safetensors")
+    groupe_chemins.add_argument("--backend", default=DEFAULT_BACKEND, help="Backend sd-cli")
+    groupe_chemins.add_argument("--threads", type=int, default=DEFAULT_THREADS, help="Threads CPU pour encoders")
+
+    args = parser.parse_args()
+
+    config = {
+        "llama_cli": args.llama_cli,
+        "llm_model": args.llm_model,
+        "sd_cli": args.sd_cli,
+        "sd_model": args.sd_model,
+        "clip_l": args.clip_l,
+        "t5xxl": args.t5xxl,
+        "vae": args.vae,
+        "esrgan_model": args.upscale_model or DEFAULT_ESRGAN_MODEL,
+        "lora_dir": args.lora_dir or DEFAULT_LORA_DIRS[0],
+        "backend": args.backend,
+        "threads": args.threads,
+        "style_anchor": args.style,
+        "output_dir": args.output_dir
+    }
+
+    if args.list_workflows:
+        print("\n📋 Workflows Disponibles (2D & 3D) dans Generator Assets :")
+        for nom, desc in WorkflowRegistry.list_all().items():
+            print(f"  • {nom.ljust(16)} : {desc}")
+        print()
+        sys.exit(0)
+
+    if args.list_loras:
+        loras = lister_loras()
+        print("\n🧩 LoRAs Installés :")
+        if not loras:
+            print(f"  (Aucun LoRA détecté dans {[d for d in DEFAULT_LORA_DIRS if os.path.exists(d)]})")
+            print("  💡 Placez vos fichiers .safetensors dans 'C:\\Modeles_LLM\\loras' ou le dossier 'loras/'")
+        else:
+            for l in loras:
+                print(f"  • {l['name'].ljust(30)} ({l['size_mb']} Mo) -> {l['path']}")
+        print()
+        sys.exit(0)
+
+    if args.list_upscalers:
+        upscalers = lister_upscalers()
+        print("\n🚀 Modèles d'Upscaling (ESRGAN / Super-Résolution) Installés :")
+        if not upscalers:
+            print("  (Aucun modèle d'upscale détecté)")
+            print("  💡 Placez vos fichiers .pth dans 'C:\\Modeles_LLM\\upscalers' ou le dossier 'upscalers/'")
+        else:
+            for u in upscalers:
+                print(f"  • {u['name'].ljust(35)} ({u['size_mb']} Mo) -> {u['path']}")
+        print()
+        sys.exit(0)
+
+    if args.check:
+        print("🔍 Vérification des prérequis et des chemins...")
+        valide = verifier_prerequis(config)
+        if valide:
+            print("✅ Tous les exécutables et fichiers modèles sont prêts !")
+        sys.exit(0 if valide else 1)
+
+    prompt_texte = args.prompt_flag or args.prompt
+
+    # Lancement du mode interactif si demandé explicitement ou si aucun paramètre fourni
+    if args.interactive or (not prompt_texte and not args.input_file and not args.recipe_file):
+        lancer_mode_interactif(config)
+        return
+
+    type_normalise = {"1": "item", "2": "character", "3": "prop"}.get(args.type, args.type)
+
+    # Préparation des paramètres du workflow
+    params = {
+        "prompt": prompt_texte,
+        "input": args.input_file,
+        "type": type_normalise,
+        "shape": args.shape,
+        "output": args.output,
+        "output_dir": args.output_dir,
+        "size": args.size,
+        "factor": args.factor,
+        "normal_strength": args.normal_strength,
+        "palette": args.palette,
+        "grid_size": args.grid_size,
+        "themes": args.themes,
+        "file": args.recipe_file,
+        "columns": args.columns,
+        "preview": not args.no_preview,
+        "no_llm": args.no_llm,
+        "steps": args.steps,
+        "guidance": args.guidance,
+        "cfg_scale": args.cfg_scale,
+        "seed": args.seed,
+        "tolerance": args.tolerance,
+        "loras": args.loras,
+        "lora_dir": args.lora_dir,
+        "upscale_model": args.upscale_model
+    }
+
+    # Détection automatique du workflow si l'argument -w n'est pas spécifié
+    wf_cible = args.workflow.lower()
+    if wf_cible == "generate" and args.recipe_file:
+        wf_cible = "batch"
+
+    try:
+        workflow_cls = WorkflowRegistry.get(wf_cible)
+        workflow_instance = workflow_cls(config)
+        workflow_instance.run(params)
+    except Exception as e:
+        print(f"❌ Erreur lors de l'exécution du workflow '{wf_cible}' : {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
