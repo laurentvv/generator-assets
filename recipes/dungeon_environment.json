@@ -1,0 +1,28 @@
+{
+  "name": "Pack Environnement de Donjon",
+  "description": "Tuiles de sol seamless et accessoires de décor",
+  "assets": [
+    {
+      "workflow": "tileable",
+      "prompt": "dalles de pierre médiévales sombres et fissurées avec mousse et gravures runiques",
+      "output": "sol_dalles_donjon"
+    },
+    {
+      "workflow": "tileable",
+      "prompt": "sol de caverne en roche volcanique noire avec veines d'améthyste luisantes",
+      "output": "sol_roche_volcanique"
+    },
+    {
+      "workflow": "generate",
+      "prompt": "coffre au trésor ancien renforcé d'acier sombre avec cadenas magique",
+      "type": "prop",
+      "output": "coffre_tresor_ancien"
+    },
+    {
+      "workflow": "generate",
+      "prompt": "statue de gargouille de pierre sombre veillant sur le donjon",
+      "type": "prop",
+      "output": "gargouille_pierre"
+    }
+  ]
+}
