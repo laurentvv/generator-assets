@@ -34,6 +34,7 @@ from core.config import (
     DEFAULT_VAE,
     lister_loras,
     lister_upscalers,
+    resoudre_sd_model,
     resoudre_upscaler,
     slugifier_texte,
     verifier_prerequis
@@ -132,6 +133,13 @@ def lancer_mode_interactif(config: dict):
                             loras_choisis.append(f"{nom_l}:{poids.strip()}")
                     if loras_choisis:
                         params["loras"] = loras_choisis
+                        # Si des LoRAs sont sélectionnés, basculer sur JuggernautXL (SDXL)
+                        modele_jugg = resoudre_sd_model("juggernaut")
+                        if modele_jugg and os.path.exists(modele_jugg):
+                            self_sd = config.get("sd_model", "")
+                            if "flux" in self_sd.lower():
+                                config["sd_model"] = modele_jugg
+                                print("   🚀 Bascule automatique sur SDXL Juggernaut pour la compatibilité avec vos LoRAs.")
                         print(f"   ➔ LoRAs activés : {', '.join(loras_choisis)}")
 
             if wf_name == "generate":
@@ -143,6 +151,10 @@ def lancer_mode_interactif(config: dict):
                 params["prompt"] = concept
                 params["type"] = type_map.get(type_a, "item")
                 params["output"] = input(f"💾 Nom du fichier [défaut: {slugifier_texte(concept)}] : ").strip()
+                up = input("🔍 Activer l'upscaling IA 4K automatique (1024 -> 4096 px) ? (o/N) [défaut: N] : ").strip().lower()
+                if up in ("o", "oui", "y", "yes"):
+                    params["upscale"] = True
+                    params["factor"] = 4.0
 
             elif wf_name == "mesh3d":
                 chemin = input("🖼️  Texture ou asset 2D existant (ou laisser vide pour générer) : ").strip()
@@ -373,7 +385,12 @@ Exemples de Workflows 3D & 2D :
     )
     groupe_ia_ext.add_argument(
         "--upscale-model",
-        help="Nom ou chemin du modèle d'upscaling ESRGAN (ex: 'anime', 'RealESRGAN_x4plus_anime_6B.pth')."
+        help="Nom ou chemin du modèle d'upscaling ESRGAN (ex: 'anime', 'ultrasharp', '4x-UltraSharp.pth')."
+    )
+    groupe_ia_ext.add_argument(
+        "--upscale",
+        action="store_true",
+        help="Active l'upscaling IA automatique (ESRGAN 4x ou Lanczos) après la génération."
     )
 
     # Paramètres spécifiques aux workflows
@@ -407,12 +424,15 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--fps", type=float, default=12.0, help="Cadence FPS pour anim_loop (défaut: 12.0).")
     groupe_wf.add_argument("--items", help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet').")
     groupe_wf.add_argument("--ambience-type", choices=["dungeon", "forest", "storm", "space", "campfire", "tavern"], help="Type d'ambiance pour audio_ambience.")
-    groupe_wf.add_argument("--parts", default="torso,pants,shoes", help="Pièces de vêtement à générer pour makehuman_clothes (ex: 'torso,pants,shoes').")
+    groupe_wf.add_argument("--character", default="marc_novice", help="Nom du personnage cible pour le workflow outfit (ex: marc_novice).")
+    groupe_wf.add_argument("--top", default="rustic medieval beige burlap tunic fabric", help="Description du tissu/matière pour le haut/tunique (workflow outfit).")
+    groupe_wf.add_argument("--shoes", default="worn dark brown medieval leather shoes texture", help="Description de la matière pour les chaussures/bottes (workflow outfit).")
     groupe_wf.add_argument("--mpfb-dir", help="Répertoire personnalisé des assets MakeHuman / MPFB.")
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
     groupe_ia.add_argument("--no-llm", action="store_true", help="Désactive l'enrichissement par LLM.")
+    groupe_ia.add_argument("--strength", type=float, default=0.55, help="Force de débruitage Img2Img (défaut: 0.55).")
     groupe_ia.add_argument("--steps", type=int, default=25, help="Nombre d'étapes de diffusion Flux (défaut: 25).")
     groupe_ia.add_argument("--guidance", type=float, default=3.5, help="Guidance Flux (défaut: 3.5).")
     groupe_ia.add_argument("--cfg-scale", type=float, default=1.0, help="CFG scale (défaut: 1.0).")
@@ -445,7 +465,7 @@ Exemples de Workflows 3D & 2D :
         "llama_cli": args.llama_cli,
         "llm_model": args.llm_model,
         "sd_cli": args.sd_cli,
-        "sd_model": args.sd_model,
+        "sd_model": resoudre_sd_model(args.sd_model),
         "clip_l": args.clip_l,
         "t5xxl": args.t5xxl,
         "vae": args.vae,
@@ -523,6 +543,7 @@ Exemples de Workflows 3D & 2D :
         "columns": args.columns,
         "preview": not args.no_preview,
         "no_llm": args.no_llm,
+        "strength": args.strength,
         "steps": args.steps,
         "guidance": args.guidance,
         "cfg_scale": args.cfg_scale,
@@ -530,6 +551,7 @@ Exemples de Workflows 3D & 2D :
         "tolerance": args.tolerance,
         "loras": args.loras,
         "lora_dir": args.lora_dir,
+        "upscale": args.upscale,
         "upscale_model": args.upscale_model,
         "segmenter": args.segmenter,
         "pbr_engine": args.pbr_engine,
@@ -552,7 +574,9 @@ Exemples de Workflows 3D & 2D :
         "fps": args.fps,
         "items": args.items,
         "ambience_type": args.ambience_type,
-        "parts": args.parts,
+        "character": args.character,
+        "top": args.top,
+        "shoes": args.shoes,
         "mpfb_dir": args.mpfb_dir
     }
 

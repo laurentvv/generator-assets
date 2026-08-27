@@ -123,6 +123,8 @@ def generer_image_vulkan(
             "-H", str(height),
             "-o", output_path,
             "-t", str(threads),
+            "--vae-tiling",
+            "--backend", backend,
             "-v"
         ]
 
