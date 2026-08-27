@@ -19,7 +19,9 @@ for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
         stream.reconfigure(encoding="utf-8", errors="replace")
 
-DEFAULT_MPFB_DATA_DIR = os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.config import DEFAULT_MPFB_DATA_DIR
+
 DEFAULT_CATALOG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "clothes_catalog.json")
 
 STOP_WORDS = {

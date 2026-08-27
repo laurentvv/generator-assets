@@ -18,10 +18,8 @@ from typing import Any, Dict, List, Optional
 from PIL import Image
 
 from core.blender_ops import trouver_blender
+from core.config import DEFAULT_MPFB_DATA_DIR
 
-DEFAULT_MPFB_DATA_DIR = os.path.expandvars(
-    r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data"
-)
 DEFAULT_MPFB_CLOTHES_DIR = os.path.join(DEFAULT_MPFB_DATA_DIR, "clothes")
 
 

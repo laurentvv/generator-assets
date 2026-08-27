@@ -14,12 +14,10 @@ import os
 import sys
 import subprocess
 
-for stream in (sys.stdout, sys.stderr):
-    if hasattr(stream, "reconfigure"):
-        stream.reconfigure(encoding="utf-8", errors="replace")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.config import DEFAULT_MPFB_DATA_DIR
 
 BLENDER_EXE = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
-DEFAULT_MPFB_DATA_DIR = os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data")
 
 def main():
     parser = argparse.ArgumentParser(description="Compiler un maillage 3D en vêtement MakeHuman (.mhclo)")
