@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="AudioStream" path="res://test_ambience_foret.ogg" id="1_ogg"]
+
+[node name="test_ambience_foret_AmbiencePlayer" type="AudioStreamPlayer"]
+stream = ExtResource("1_ogg")
+autoplay = true
+bus = &"Ambience"

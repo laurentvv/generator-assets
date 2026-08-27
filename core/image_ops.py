@@ -92,10 +92,24 @@ def post_process_asset(
     image: Image.Image,
     tolerance: int = 60,
     redimensionner: int = 512,
-    marge_ratio: float = 0.06
+    marge_ratio: float = 0.06,
+    segmenter: str = "auto"
 ) -> Image.Image:
-    """Combine le détourage flood-fill, le recadrage centré et le redimensionnement."""
-    detouree = detourer_fond_blanc(image, tolerance=tolerance)
+    """
+    Combine le détourage (IA RMBG/BiRefNet ou Flood-fill), le recadrage centré et le redimensionnement.
+    """
+    if segmenter == "none":
+        detouree = image.convert("RGBA")
+    elif segmenter in ("floodfill", "classic"):
+        detouree = detourer_fond_blanc(image, tolerance=tolerance)
+    else:  # "auto", "birefnet", "rmbg", "ia"
+        try:
+            from core.segmentation import detourer_ia
+            detouree = detourer_ia(image)
+        except Exception as e:
+            print(f"⚠️ [ImageOps] Fallback sur détourage floodfill : {e}")
+            detouree = detourer_fond_blanc(image, tolerance=tolerance)
+
     return centrer_et_recadrer(detouree, redimensionner=redimensionner, marge_ratio=marge_ratio)
 
 

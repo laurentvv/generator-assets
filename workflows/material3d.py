@@ -94,17 +94,33 @@ class Material3DWorkflow(BaseWorkflow):
         if taille and img_albedo.size != (taille, taille):
             img_albedo = img_albedo.resize((taille, taille), Image.Resampling.LANCZOS)
 
-        # 1. Calcul des différentes maps PBR
-        self.log("Calcul de la Normal Map (OpenGL Tangent Space)...")
-        img_normal = generer_normal_map(img_albedo, strength=strength_normal)
+        # 1. Calcul des différentes maps PBR (Deep Learning ou Sobel)
+        pbr_engine = params.get("pbr_engine", "auto")
+        maps_pbr = None
 
-        self.log("Calcul de la Roughness Map & Height Map...")
-        img_roughness = generer_roughness_map(img_albedo)
-        img_height = generer_height_map(img_albedo)
+        if pbr_engine != "sobel":
+            try:
+                from core.pbr_deep import estimer_pbr_complet
+                self.log(f"Estimation PBR par Deep Learning (DeepBump ONNX)...")
+                maps_pbr = estimer_pbr_complet(img_albedo, strength=strength_normal)
+                img_normal = maps_pbr["normal"]
+                img_roughness = maps_pbr["roughness"]
+                img_height = maps_pbr["height"]
+                img_ao = maps_pbr["ao"]
+                img_orm = maps_pbr["orm"]
+            except Exception as e:
+                self.log(f"⚠️ Erreur DeepPBR ({e}), bascule sur filtres Sobel standard...")
+                maps_pbr = None
 
-        self.log("Calcul de l'Ambient Occlusion & Pack ORM Godot...")
-        img_ao = generer_ao_map(img_albedo)
-        img_orm = generer_orm_pack(img_ao, img_roughness)
+        if maps_pbr is None:
+            self.log("Calcul de la Normal Map (Gradients Sobel OpenGL)...")
+            img_normal = generer_normal_map(img_albedo, strength=strength_normal)
+            self.log("Calcul de la Roughness Map & Height Map...")
+            img_roughness = generer_roughness_map(img_albedo)
+            img_height = generer_height_map(img_albedo)
+            self.log("Calcul de l'Ambient Occlusion & Pack ORM Godot...")
+            img_ao = generer_ao_map(img_albedo)
+            img_orm = generer_orm_pack(img_ao, img_roughness)
 
         # 2. Sauvegarde des fichiers
         chemin_albedo = os.path.join(output_dir, f"{nom_base}_albedo.png")

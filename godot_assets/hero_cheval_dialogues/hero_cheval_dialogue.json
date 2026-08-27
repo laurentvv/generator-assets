@@ -1,0 +1,9 @@
+{
+  "character_id": "hero_cheval",
+  "seed": 811163,
+  "portraits": {
+    "neutral": "res://godot_assets/hero_cheval_dialogues/hero_cheval_neutral.png",
+    "happy": "res://godot_assets/hero_cheval_dialogues/hero_cheval_happy.png",
+    "angry": "res://godot_assets/hero_cheval_dialogues/hero_cheval_angry.png"
+  }
+}

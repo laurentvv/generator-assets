@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://test_cheval_pose.png" id="1_tex"]
+
+[node name="test_cheval_pose" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_tex")
+
+[node name="RightHandMarker" type="Marker2D" parent="."]
+position = Vector2(-153.6, -179.2)
+
+[node name="LeftHandMarker" type="Marker2D" parent="."]
+position = Vector2(128.0, -25.6)
+
+[node name="HeadMarker" type="Marker2D" parent="."]
+position = Vector2(10.2, -143.4)
+
+[node name="ChestMarker" type="Marker2D" parent="."]
+position = Vector2(0.0, -112.6)
+
+[node name="RightFootMarker" type="Marker2D" parent="."]
+position = Vector2(-92.2, 194.6)
+
+[node name="LeftFootMarker" type="Marker2D" parent="."]
+position = Vector2(122.9, 199.7)
+

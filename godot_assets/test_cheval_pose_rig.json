@@ -1,0 +1,30 @@
+{
+  "character": "test_cheval_pose",
+  "pose": "slash_attack",
+  "markers": {
+    "RightHandMarker": {
+      "x": -153.6,
+      "y": -179.2
+    },
+    "LeftHandMarker": {
+      "x": 128.0,
+      "y": -25.6
+    },
+    "HeadMarker": {
+      "x": 10.2,
+      "y": -143.4
+    },
+    "ChestMarker": {
+      "x": 0.0,
+      "y": -112.6
+    },
+    "RightFootMarker": {
+      "x": -92.2,
+      "y": 194.6
+    },
+    "LeftFootMarker": {
+      "x": 122.9,
+      "y": 199.7
+    }
+  }
+}

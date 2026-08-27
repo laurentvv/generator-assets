@@ -1,0 +1,24 @@
+[gd_resource type="AudioBusLayout" load_steps=3 format=3]
+
+[sub_resource type="AudioEffectReverb" id="AudioEffectReverb_1"]
+resource_name = "CaveReverb"
+room_size = 0.6
+damping = 0.5
+spread = 0.8
+wet = 0.35
+
+[sub_resource type="AudioEffectLowPassFilter" id="AudioEffectLowPassFilter_1"]
+resource_name = "AtmosphereFilter"
+cutoff_hz = 3500.0
+
+[resource]
+bus/1/name = &"Ambience"
+bus/1/solo = false
+bus/1/mute = false
+bus/1/bypass_fx = false
+bus/1/volume_db = -2.0
+bus/1/send = &"Master"
+bus/1/effect/0/effect = SubResource("AudioEffectReverb_1")
+bus/1/effect/0/enabled = true
+bus/1/effect/1/effect = SubResource("AudioEffectLowPassFilter_1")
+bus/1/effect/1/enabled = true

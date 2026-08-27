@@ -19,6 +19,7 @@ temp_*.png
 temp_*.py
 preview.png
 temp_render.png
+*.blend1
 
 # Modèles IA lourds (à stocker hors git)
 *.gguf

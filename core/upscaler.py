@@ -44,7 +44,7 @@ def upscale_esrgan(
     rgb_in.save(temp_in, "PNG")
 
     nom_modele = Path(esrgan_model_path).name
-    print(f"🚀 [ESRGAN Vulkan] Upscaling IA avec '{nom_modele}'...")
+    print(f"[ESRGAN Vulkan] Upscaling IA avec '{nom_modele}'...")
 
     commande = [
         sd_cli,
