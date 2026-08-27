@@ -93,16 +93,17 @@ Le système gère dynamiquement les architectures de modèles sans conflit mémo
 
 | Modèle | Fichier | Rôle & Points Forts |
 | :--- | :--- | :--- |
-| **FLUX.1 [dev]** | `flux1-dev-Q6_K.gguf` | **Moteur 3D & Photoréalisme** : Compréhension textuelle chirurgicale via T5-XXL. Idéal pour les textures PBR, les détails fins et les rendus épiques. |
-| **SDXL Juggernaut** | `juggernautXL_ragnarok.safetensors` | **Moteur de Styles & LoRAs** : Génération ultra-rapide (~3s/it sur RX 6950 XT). Compatible avec tous les LoRAs SDXL de CivitAI. |
-| **LFM2.5 8B** | `LFM2.5-8B-A1B-Q6_K.gguf` | **Directeur Artistique** : Enrichit les prompts simples en descriptions professionnelles adaptées à la diffusion. |
-| **ESRGAN** | `RealESRGAN_x4plus_anime_6B.pth` | **Super-Résolution IA** : Upscaling 2x, 4x, 4K avec préservation exacte de la transparence Alpha. |
+| **FLUX.1 [dev]** | `flux1-dev-Q6_K.gguf` | **Moteur par Défaut (3D & Photoréalisme)** : Compréhension textuelle chirurgicale via T5-XXL. Idéal pour les textures PBR, les détails fins et les rendus 1024×1024 épiques. |
+| **SDXL Juggernaut** | `juggernautXL_ragnarok.safetensors` | **Moteur de Styles & LoRAs SDXL** : Génération ultra-rapide (~3s/it). Requis pour tous les LoRAs de styles (Diablo, Donjon, 360° Redmond). |
+| **LFM2.5 8B** | `LFM2.5-8B-A1B-Q6_K.gguf` | **Directeur Artistique (LLM)** : Enrichit les prompts simples en descriptions professionnelles adaptées à la diffusion. |
+| **4x-UltraSharp (ESRGAN)** | `4x-UltraSharp.pth` | **Super-Résolution 4K (Défaut)** : Upscaling IA 4x (1024 ➔ 4096 px) ultra-net avec préservation intégrale du canal Alpha Godot. |
+| **RealESRGAN Anime** | `RealESRGAN_x4plus_anime_6B.pth` | **Super-Résolution Stylisée** : Idéal pour les contours nets, cel-shading, cartoon et anime. |
 
 ---
 
 ### 2. Bibliothèque des LoRAs Installés (`C:\Modeles_LLM\loras\`)
 
-Vous pouvez appliquer un ou plusieurs LoRAs sur n'importe quel workflow via le flag `-l "nom:poids"` :
+Vous pouvez appliquer un ou plusieurs LoRAs sur n'importe quel workflow via le flag `-l "nom:poids"` (bascule automatiquement sur `JuggernautXL`) :
 
 | Nom du LoRA | Poids | Usage recommandé |
 | :--- | :---: | :--- |
@@ -146,6 +147,7 @@ Le projet intègre **25 workflows spécialisés** sélectionnables via le param�
   • tts_dialogue : Synthèse vocale émotionnelle (TTS / Kokoro) synchronisée avec portraits RPG et lip-sync Godot
   • audio_ambience: Ambiances sonores immersives & paysages procéduraux en boucle sans couture (.wav / .ogg / .tres)
   • material3d   : Pack Matériau 3D PBR complet (Albedo, DeepBump Normal, Roughness, Height, AO, ORM + .tres Godot)
+  • character3d  : Personnage 3D Humanoïde MakeHuman/MPFB2 (.blend + .glb) avec textures PBR et traits signature
   • mesh3d       : Modèle 3D Maillé .GLB complet avec textures PBR pour Godot (Blender Headless)
   • voxel3d      : Modèle 3D Voxel (.GLB) optimisé avec Vertex Colors pour GridMap Godot 4
   • autotile_pack: Planche d'Autotiles 47 tuiles (Wang / Minimal 3x3) + Ressource TileSet.tres
@@ -165,6 +167,49 @@ Le projet intègre **25 workflows spécialisés** sélectionnables via le param�
   • tileable     : Textures seamless / tuiles de terrain infinies pour TileMaps Godot
   • pixelart     : Conversion & quantification rétro (Pico-8, Endesga-32, GameBoy)
   • batch        : Génération par lots depuis un fichier JSON de recette
+```
+
+---
+
+### 0. 👤 Workflow `character3d` : Pipeline Canonique Personnage Humanoïde (MakeHuman / MPFB2)
+Génère un personnage 3D complet prêt pour Godot 4 et Blender en 3 étapes automatisées :
+1. **Génération de la peau PBR & Décalques Signature** : Peau MakeHuman photoréaliste propre avec application organique des cicatrices, cernes de fatigue et détails de personnage (sans découpe ni artefact 2D).
+2. **Construction 3D Canonique MakeHuman** : Résolution barycentrique des vêtements (`.mhclo`), yeux, cheveux et morphing d'âge/morphologie.
+3. **Export GLB + Scène .blend + Rendu Studio de Validation Cycles**.
+
+```bash
+# Exécution du pipeline complet avec portrait de référence et recette MPFB2 :
+uv run python scripts/character_pipeline.py --portrait "assets/portraits/marc_portrait.png" --recipe-script "poc_3d/create_marc_mpfb2.py" --name marc_novice
+```
+
+---
+
+### 👗 Gestion & Aiguillage IA des Vêtements 3D MakeHuman
+
+#### 1. Catalogue & Aiguilleur Sémantique Bilingue (177 Modèles 3D) (`core/clothes_catalog.py`)
+- Base de données JSON [`data/clothes_catalog.json`](file:///C:/GIT/generator-assets/data/clothes_catalog.json) indexant **177 modèles 3D MakeHuman** (robes de moine, capes, armures, salopettes, bottes, barbes, coiffures, chemises, chapeaux).
+- Aiguillage automatique bilingue (FR / EN) depuis n'importe quelle description textuelle :
+```bash
+# Reconstruire le catalogue d'assets :
+uv run python core/clothes_catalog.py
+```
+
+#### 2. Retexturation IA sur Patrons UV Existants (`scripts/retexture_uv_garment.py`)
+- Part des vrais patrons UV MakeHuman pour préserver 100% de la géométrie, des boutons, poches et coutures, et transforme la matière (denim -> toile de jute médiévale, cuir vieilli) avec sa Normal Map PBR :
+```bash
+uv run python scripts/retexture_uv_garment.py
+```
+
+#### 3. Compilation MakeClothes depuis un Maillage 3D / IA 3D (`makeclothes_from_mesh.py`)
+- Transforme n'importe quel modèle 3D (`.obj`, `.glb`, `.fbx`) issu d'une IA 3D ou modélisé en Quads en vêtement MakeHuman officiel (`.mhclo`) avec liaison barycentrique automatique :
+```bash
+uv run python scripts/makeclothes_from_mesh.py --mesh "assets/models/cape.obj" --name "cape_voyageur" --category "clothes"
+```
+
+#### 4. Import Automatique de Packs d'Assets MakeHuman (`install_asset_packs.py`)
+- Extrait et installe des packs ZIP MakeHuman Community dans le répertoire MPFB et met à jour le catalogue :
+```bash
+uv run python scripts/install_asset_packs.py
 ```
 
 ---
@@ -342,9 +387,13 @@ Génère une garde-robe complète 100% compatible MakeHuman et MPFB2 (Torso/Haut
 - **Géométries Officielles & Découpe Quad** : Exploite les géométries d'aide MakeHuman (`helper-tights` et `helper-skirt`) pour des volumes 3D réalistes (évasements naturels, manches dégageant les mains, bottes montantes intégrales) et compile les fichiers morphologiques `.mhclo`, `.obj`, `.mhmat` et vignettes `.thumb` dans la bibliothèque `AppData/Roaming/Blender Foundation/Blender/5.2/mpfb/data/data/clothes/`.
 - **Assemblage 3D & Rendu Multi-Angles** : Crée une scène Blender (`.blend`) avec un *New Human* MPFB habillé des pièces, éclairage studio 3 points et rendu `.png` ultra haute résolution (4096x4096).
 
-```bash
-uv run python main.py -w makehuman_clothes -p "armure en cuir medieval aventurier" -o aventurier_cuir
-```
+### 20. 🗺️ Workflows Skins MakeHuman / MPFB2 & Calibrage de Teint
+Génère et installe des packs de skins complets pour MakeHuman et Blender MPFB2 :
+- **Pack Complet MPFB** : Crée la texture Diffuse 2048x2048 (`diffuse.png`), la Normal Map PBR (`normal.png`), le fichier de matériau MakeHuman (`.mhmat`) avec paramètres de Subsurface Scattering (SSS) calibrés et la vignette d'interface (`.thumb`).
+- **Scripts Dédiés dans `scripts/`** :
+  - `scripts/build_clean_marc_skin.py` : Assemble et restaure une texture de peau MakeHuman propre et homogène sans couture avec colorimétrie dédiée (ex: teint d'hiver froid pour Marc de *Vent-Gris*).
+  - `scripts/align_marc_portrait_to_uv.py` : Calibre et projette les traits anatomiques 2D sur le patron UV standard MakeHuman hm08.
+- **Déploiement Automatique** : Installe les assets directement dans `AppData/Roaming/Blender Foundation/Blender/5.2/mpfb/data/skins/<nom_skin>/` et synchronise les dossiers de projet Godot.
 
 ---
 
@@ -356,7 +405,7 @@ Usage: python main.py [prompt] [options]
 Paramètres Principaux :
   prompt                    Description ou concept de l'asset.
   -w, --workflow            Nom du workflow (défaut: 'generate').
-  -i, --input               Chemin de l'image source.
+  -i, --input               Chemin de l'image source (pour variations, pixelart, upscale ou Img2Img guidé).
   -t, --type                Type d'asset 2D : item, character, prop, tile.
   --shape                   Forme 3D pour mesh3d : tile, cube, pillar, cylinder, sphere, card, cutout.
   -o, --output              Nom du fichier de sortie (sans extension).
@@ -364,10 +413,13 @@ Paramètres Principaux :
   -s, --size                Résolution carrée finale en pixels.
 
 Modèles & Moteurs IA :
+  --sd-model                Modèle de diffusion : 'flux', 'juggernaut', 'sdxl' ou chemin absolu .safetensors/.gguf.
+  --strength                Force de débruitage Img2Img / guidage d'image (défaut: 0.55).
   --segmenter               Moteur de détourage : 'auto', 'birefnet', 'rmbg', 'floodfill', 'none'.
   --pbr-engine              Moteur d'estimation PBR : 'auto', 'deep' (DeepBump ONNX), 'sobel'.
   -l, --lora                Applique un LoRA 'nom:poids' (ex: -l 'game_icon_diablo_style:0.8').
-  --upscale-model           Modèle d'upscale ESRGAN ('anime', 'ultrasharp', 'RealESRGAN_x4plus.pth').
+  --upscale                 Active l'upscaling IA automatique (ESRGAN 4x ou Lanczos) après la génération.
+  --upscale-model           Modèle d'upscale ESRGAN ('ultrasharp', 'anime', 'RealESRGAN_x4plus.pth', 'auto').
 
 Options Spécifiques aux Workflows :
   --pose                    Pose OpenPose pour pose_control (idle, slash_attack, cast_spell, shield_block, jump, walk).
@@ -394,6 +446,25 @@ Commandes Utilitaires :
   --list-workflows          Affiche la liste complète des 25 workflows.
   --list-loras              Affiche la liste des LoRAs installés.
   --list-upscalers          Affiche la liste des modèles ESRGAN installés.
+```
+
+### 💡 Exemples Pratiques (Génération, LoRAs & Upscale 4K) :
+
+```bash
+# 1. Génération d'asset 2D en 1024x1024 avec Auto-Upscale IA 4K (4096x4096)
+uv run python main.py -w generate -p "un bouclier royal en or avec un lion grave" --upscale
+
+# 2. Asset avec style LoRA Diablo (Bascule auto sur SDXL Juggernaut) + Upscale 4K
+uv run python main.py -w generate -p "potion de mana sombre" -l game_icon_diablo_style:0.9 --upscale
+
+# 3. Génération guidée par image source (Img2Img avec force de débruitage ajustée)
+uv run python main.py -w generate -i assets/croquis_base.png -p "bouclier magique de cristal runique" --strength 0.60 --upscale
+
+# 4. Skybox 360° avec LoRA Redmond
+uv run python main.py -w skybox -p "dark fantasy dungeon hall with torches" -l 360RedmondResized:1.0
+
+# 5. Upscaling direct d'une image existante avec le modèle 4x-UltraSharp
+uv run python main.py -w upscale -i godot_assets/mon_asset.png --factor 4 --upscale-model ultrasharp
 ```
 
 ---

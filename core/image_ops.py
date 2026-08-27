@@ -99,7 +99,9 @@ def post_process_asset(
     Combine le détourage (IA RMBG/BiRefNet ou Flood-fill), le recadrage centré et le redimensionnement.
     """
     if segmenter == "none":
-        detouree = image.convert("RGBA")
+        if redimensionner and redimensionner > 0 and image.size != (redimensionner, redimensionner):
+            return image.resize((redimensionner, redimensionner), Image.Resampling.LANCZOS)
+        return image
     elif segmenter in ("floodfill", "classic"):
         detouree = detourer_fond_blanc(image, tolerance=tolerance)
     else:  # "auto", "birefnet", "rmbg", "ia"

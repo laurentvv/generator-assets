@@ -28,7 +28,7 @@ from workflows.anim_loop import AnimLoopWorkflow
 from workflows.pose_control import PoseControlWorkflow
 from workflows.tts_dialogue import TTSDialogueWorkflow
 from workflows.audio_ambience import AudioAmbienceWorkflow
-from workflows.makehuman_clothes import MakeHumanClothesWorkflow
+from workflows.outfit import OutfitWorkflow
 
 __all__ = [
     "BaseWorkflow",
@@ -58,6 +58,6 @@ __all__ = [
     "PoseControlWorkflow",
     "TTSDialogueWorkflow",
     "AudioAmbienceWorkflow",
-    "MakeHumanClothesWorkflow"
+    "OutfitWorkflow"
 ]
 

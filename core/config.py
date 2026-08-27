@@ -149,25 +149,37 @@ def lister_upscalers(dirs: Optional[List[str]] = None) -> List[Dict[str, str]]:
     return fichiers_upscalers
 
 
-def resoudre_upscaler(nom_ou_chemin: Optional[str]) -> Optional[str]:
-    """Résout le chemin absolu d'un modèle d'upscale à partir de son nom partiel ou chemin complet."""
-    if not nom_ou_chemin:
+def resoudre_upscaler(nom_ou_chemin: Optional[str] = None) -> Optional[str]:
+    """Résout le chemin absolu d'un modèle d'upscale à partir de son nom partiel, alias ou auto-détection."""
+    dispos = lister_upscalers()
+    if not dispos:
         return DEFAULT_ESRGAN_MODEL if os.path.exists(DEFAULT_ESRGAN_MODEL) else None
 
-    # Si c'est déjà un chemin valide
+    # Si aucun modèle n'est spécifié ou mode 'auto'
+    if not nom_ou_chemin or nom_ou_chemin.lower() in ("auto", "default"):
+        # Priorité de qualité : 4x-UltraSharp > RealESRGAN_x4plus > RealESRGAN_x4plus_anime_6B
+        priorites = ["4x-ultrasharp", "realesrgan_x4plus", "realesrgan_x4plus_anime_6b"]
+        for pref in priorites:
+            for up in dispos:
+                if pref in up["name"].lower() or pref in up["filename"].lower():
+                    return up["path"]
+        return dispos[0]["path"]
+
+    # Si c'est déjà un chemin absolu ou relatif existant
     if os.path.exists(nom_ou_chemin):
         return os.path.abspath(nom_ou_chemin)
 
-    # Recherche par correspondance de nom dans la liste des modèles installés
-    dispos = lister_upscalers()
     cle = nom_ou_chemin.lower()
     
-    # Raccourcis courants
+    # Raccourcis / Alias courants
     alias = {
         "anime": "realesrgan_x4plus_anime_6b",
         "photo": "realesrgan_x4plus",
         "general": "realesrgan_x4plus",
-        "ultrasharp": "4x-ultrasharp"
+        "ultrasharp": "4x-ultrasharp",
+        "sharp": "4x-ultrasharp",
+        "4k": "4x-ultrasharp",
+        "esrgan": "realesrgan_x4plus"
     }
     terme_recherche = alias.get(cle, cle).lower()
 
@@ -175,7 +187,29 @@ def resoudre_upscaler(nom_ou_chemin: Optional[str]) -> Optional[str]:
         if terme_recherche in up["name"].lower() or terme_recherche in up["filename"].lower():
             return up["path"]
 
-    return None
+    return dispos[0]["path"]
+
+
+def resoudre_sd_model(nom_ou_chemin: Optional[str] = None) -> str:
+    """Résout le chemin absolu d'un modèle de diffusion (Flux.1 ou SDXL Juggernaut)."""
+    if not nom_ou_chemin or nom_ou_chemin.lower() in ("default", "flux", "flux.1"):
+        return DEFAULT_SD_MODEL
+
+    if os.path.exists(nom_ou_chemin):
+        return os.path.abspath(nom_ou_chemin)
+
+    cle = nom_ou_chemin.lower()
+    if os.path.exists(DEFAULT_MODEL_DIR):
+        for f in os.listdir(DEFAULT_MODEL_DIR):
+            f_lower = f.lower()
+            if not f_lower.endswith((".safetensors", ".gguf", ".ckpt", ".bin")):
+                continue
+            if cle in f_lower:
+                return os.path.join(DEFAULT_MODEL_DIR, f)
+            if cle in ("juggernaut", "juggernautxl", "sdxl", "ragnarok") and "juggernaut" in f_lower:
+                return os.path.join(DEFAULT_MODEL_DIR, f)
+
+    return nom_ou_chemin
 
 
 def lister_modeles_onnx(dirs: Optional[List[str]] = None) -> List[Dict[str, str]]:
