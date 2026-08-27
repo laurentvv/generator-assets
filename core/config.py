@@ -68,6 +68,10 @@ DEFAULT_RIFE_MODEL = os.getenv(
 DEFAULT_BACKEND = os.getenv("SD_BACKEND", "diffusion=vulkan0,te=cpu")
 DEFAULT_THREADS = int(os.getenv("SD_THREADS", "16"))
 DEFAULT_OUTPUT_DIR = os.getenv("OUTPUT_DIR", "godot_assets")
+DEFAULT_MPFB_DATA_DIR = os.getenv(
+    "MPFB_DATA_DIR",
+    os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data")
+)
 TEMP_IMAGE = "temp_render.png"
 
 # Charte Visuelle par Défaut (Style Anchor)
