@@ -69,7 +69,7 @@ def lancer_mode_interactif(config: dict):
     menu_workflows = {
         "1": ("generate", "🎨 Génération d'Asset 2D (Item, Monstre, Décor)"),
         "2": ("mesh3d", "🎲 Modèle 3D Maillé .GLB (Cube, Dalle, Pilier, Sphère, Card)"),
-        "3": ("material3d", "🧱 Pack Matériau 3D PBR (Albedo, Normal, Roughness, ORM, .tres)"),
+        "3": ("material3d", "🧱 Pack Matériau 3D PBR (Albedo, DeepBump Normal, Roughness, ORM, .tres)"),
         "4": ("skybox", "🌌 Skybox / Panorama 360° Équirectangulaire (.tres Environment)"),
         "5": ("turnaround3d", "📐 Fiche de Modélisation 3D (Vues orthogonales pour Blender)"),
         "6": ("upscale", "🔍 Upscale IA (ESRGAN Vulkan / Lanczos 2x, 4x, 4K)"),
@@ -77,7 +77,22 @@ def lancer_mode_interactif(config: dict):
         "8": ("variations", "🌈 Variantes Thématiques (Feu, Glace, Poison, etc.)"),
         "9": ("tileable", "🔲 Texture Raccordable Seamless (Tuile TileMap)"),
         "10": ("pixelart", "👾 Conversion Rétro Pixel Art (Pico-8, Endesga-32)"),
-        "11": ("batch", "📦 Génération par Lot (Pack depuis fichier JSON)")
+        "11": ("batch", "📦 Génération par Lot (Pack depuis fichier JSON)"),
+        "12": ("rembg", "✂️ Détourage IA Haute Précision (RMBG-1.4 / BiRefNet)"),
+        "13": ("flowmap", "🌊 Cartes de Flux Vectoriels & Shaders Godot (Eau / Lave)"),
+        "14": ("ui_9slice", "🖼️ Cadres & Boutons 9-Patch Extensibles (.tres / .tscn)"),
+        "15": ("voxel3d", "🧊 Modèle 3D Voxel (.GLB) pour GridMap Godot 4"),
+        "16": ("autotile_pack", "🗺️ Planche Autotile 47 Tuiles Wang Minimal 3x3 (.tres)"),
+        "17": ("rife_interp", "⚡ Super-Fluidité d'Animation 60 FPS (RIFE v4 ONNX)"),
+        "18": ("vfx_flipbook", "💥 Planche de Particules VFX Flipbook 4x4 + GPUParticles"),
+        "19": ("rpg_portrait", "🎭 Galerie de Dialogues RPG Multi-Émotions + JSON"),
+        "20": ("sfx", "🔊 Synthèse d'Effets Sonores & Bruitages (.wav / .ogg)"),
+        "21": ("ip_adapter", "🎨 Cohérence de Style & Charte Graphique (IP-Adapter)"),
+        "22": ("anim_loop", "🔄 Boucles de Textures & Shaders Animés (Loop Engine)"),
+        "23": ("pose_control", "🕺 Contrôle d'Armatures & Poses (ControlNet OpenPose)"),
+        "24": ("tts_dialogue", "🎙️ Synthèse Vocale Émotionnelle & Lip-Sync Godot"),
+        "25": ("audio_ambience", "🌌 Ambiances Sonores Immersives & Paysages Bouclables"),
+        "26": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend")
     }
 
     while True:
@@ -86,7 +101,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-11) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-25) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
@@ -217,6 +232,39 @@ def lancer_mode_interactif(config: dict):
                     continue
                 params["file"] = fichier
 
+            elif wf_name == "ip_adapter":
+                chemin = input("🖼️  Image de référence (ou laisser vide pour générer depuis un prompt) : ").strip()
+                if chemin and os.path.exists(chemin):
+                    params["input"] = chemin
+                else:
+                    params["prompt"] = input("💡 Concept de référence : ").strip()
+                items = input("📦 Items cohérents séparés par des virgules (ex: sword,shield,potion,helmet) : ").strip()
+                if items:
+                    params["themes"] = items
+
+            elif wf_name == "anim_loop":
+                params["prompt"] = input("💡 Type de boucle VFX (ex: portal vortex, magic fire, waterfall) : ").strip() or "portal"
+                print("🌀 Type d'effet : [1] Portail (portal)  [2] Flammes (fire)  [3] Cascade (waterfall)  [4] Nébuleuse (nebula)")
+                choix_v = input("Choix (1-4) [défaut: 1] : ").strip()
+                v_map = {"1": "portal", "2": "fire", "3": "waterfall", "4": "nebula"}
+                params["vfx_type"] = v_map.get(choix_v, "portal")
+                params["frames"] = int(input("🎞️  Nombre de trames [8, 16, 24] (défaut: 16) : ").strip() or 16)
+
+            elif wf_name == "pose_control":
+                params["prompt"] = input("💡 Concept du personnage : ").strip()
+                print("🕺 Pose : [1] Stance (idle)  [2] Attaque (slash_attack)  [3] Sort (cast_spell)  [4] Bouclier (shield_block)  [5] Saut (jump)  [6] Course (walk)")
+                choix_p = input("Choix (1-6) [défaut: 1] : ").strip()
+                p_map = {"1": "idle", "2": "slash_attack", "3": "cast_spell", "4": "shield_block", "5": "jump", "6": "walk"}
+                params["pose"] = p_map.get(choix_p, "idle")
+
+            elif wf_name == "tts_dialogue":
+                params["prompt"] = input("🎙️  Nom du personnage / Identifiant : ").strip() or "guerriere_sanctuaire"
+                params["emotions"] = input("🎭 Émotions séparées par virgules (défaut: neutral,happy,angry,sad,hurt) : ").strip() or "neutral,happy,angry,sad,hurt"
+
+            elif wf_name == "audio_ambience":
+                params["prompt"] = input("🌌 Type d'ambiance (dungeon, forest, storm, space, campfire) : ").strip() or "dungeon"
+                params["duration"] = float(input("⏱️  Durée en secondes (défaut: 8.0) : ").strip() or 8.0)
+
             wf_instance.run(params)
 
         except KeyboardInterrupt:
@@ -330,14 +378,37 @@ Exemples de Workflows 3D & 2D :
 
     # Paramètres spécifiques aux workflows
     groupe_wf = parser.add_argument_group("Options des Workflows Avancés")
-    groupe_wf.add_argument("--factor", type=float, default=2.0, help="Facteur d'agrandissement pour l'upscale (ex: 2.0, 4.0).")
+    groupe_wf.add_argument("--factor", type=float, default=2.0, help="Facteur d'agrandissement pour l'upscale ou l'interpolation (ex: 2.0, 4.0).")
     groupe_wf.add_argument("--normal-strength", type=float, default=3.5, help="Intensité du relief pour la Normal Map PBR (défaut: 3.5).")
+    groupe_wf.add_argument("--pbr-engine", default="auto", choices=["auto", "deep", "sobel"], help="Moteur d'estimation PBR (deep = DeepBump ONNX, sobel = filtres 2D).")
+    groupe_wf.add_argument("--segmenter", default="auto", choices=["auto", "birefnet", "rmbg", "floodfill", "none"], help="Moteur de détourage 2D.")
     groupe_wf.add_argument("--palette", default="pico8", choices=["pico8", "gameboy", "endesga32"], help="Palette pour le workflow pixelart.")
     groupe_wf.add_argument("--grid-size", type=int, default=64, help="Taille de grille pour le pixel art (ex: 32, 64).")
     groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
     groupe_wf.add_argument("--file", "--recipe", dest="recipe_file", help="Fichier JSON ou liste texte pour le workflow batch.")
     groupe_wf.add_argument("--columns", type=int, default=4, help="Nombre de colonnes pour la planche de sprites.")
     groupe_wf.add_argument("--no-preview", action="store_true", help="Désactive l'aperçu 3x3 pour le workflow tileable.")
+    groupe_wf.add_argument("--angle", type=float, default=90.0, help="Angle de direction en degrés pour le workflow flowmap (défaut: 90 = bas).")
+    groupe_wf.add_argument("--flow-type", default="river", choices=["river", "vortex", "radial", "optical"], help="Type de flux pour le workflow flowmap.")
+    groupe_wf.add_argument("--turbulence", type=float, default=0.35, help="Intensité des tourbillons/méandres pour flowmap (défaut: 0.35).")
+    groupe_wf.add_argument("--margin", type=int, default=32, help="Taille de marge fixe en pixels pour le workflow ui_9slice.")
+    groupe_wf.add_argument("--auto-margin", action="store_true", help="Détection automatique des marges de tranches pour ui_9slice.")
+    groupe_wf.add_argument("--voxel-depth", type=int, default=4, help="Épaisseur en voxels pour l'extrusion 3D (workflow voxel3d).")
+    groupe_wf.add_argument("--voxel-scale", type=float, default=0.05, help="Taille d'un voxel en unités Godot (workflow voxel3d).")
+    groupe_wf.add_argument("--biome-a", help="Description ou image du premier biome pour autotile_pack.")
+    groupe_wf.add_argument("--biome-b", help="Description ou image du second biome pour autotile_pack.")
+    groupe_wf.add_argument("--frames", type=int, default=16, help="Nombre de trames d'animation (vfx_flipbook, rife_interp).")
+    groupe_wf.add_argument("--vfx-type", default="explosion", choices=["explosion", "fire", "lightning", "portal", "slash", "aura"], help="Type d'effet pour vfx_flipbook.")
+    groupe_wf.add_argument("--emotions", default="neutral,happy,angry,sad,hurt", help="Liste des émotions séparées par des virgules pour rpg_portrait et tts_dialogue.")
+    groupe_wf.add_argument("--duration", type=float, default=2.0, help="Durée en secondes pour sfx ou audio_ambience.")
+    groupe_wf.add_argument("--mode-2d", action="store_true", help="Génère un shader ou setup orienté Godot 2D au lieu de 3D.")
+    groupe_wf.add_argument("--pose", choices=["idle", "slash_attack", "cast_spell", "shield_block", "jump", "walk"], default="idle", help="Pose OpenPose pour pose_control.")
+    groupe_wf.add_argument("--pitch", type=float, default=160.0, help="Pitch vocal fondamental pour tts_dialogue (défaut: 160Hz).")
+    groupe_wf.add_argument("--fps", type=float, default=12.0, help="Cadence FPS pour anim_loop (défaut: 12.0).")
+    groupe_wf.add_argument("--items", help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet').")
+    groupe_wf.add_argument("--ambience-type", choices=["dungeon", "forest", "storm", "space", "campfire", "tavern"], help="Type d'ambiance pour audio_ambience.")
+    groupe_wf.add_argument("--parts", default="torso,pants,shoes", help="Pièces de vêtement à générer pour makehuman_clothes (ex: 'torso,pants,shoes').")
+    groupe_wf.add_argument("--mpfb-dir", help="Répertoire personnalisé des assets MakeHuman / MPFB.")
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
@@ -427,7 +498,8 @@ Exemples de Workflows 3D & 2D :
     prompt_texte = args.prompt_flag or args.prompt
 
     # Lancement du mode interactif si demandé explicitement ou si aucun paramètre fourni
-    if args.interactive or (not prompt_texte and not args.input_file and not args.recipe_file):
+    a_des_entrees = bool(prompt_texte or args.input_file or args.recipe_file or args.biome_a)
+    if args.interactive or (not a_des_entrees and args.workflow == "generate"):
         lancer_mode_interactif(config)
         return
 
@@ -458,7 +530,30 @@ Exemples de Workflows 3D & 2D :
         "tolerance": args.tolerance,
         "loras": args.loras,
         "lora_dir": args.lora_dir,
-        "upscale_model": args.upscale_model
+        "upscale_model": args.upscale_model,
+        "segmenter": args.segmenter,
+        "pbr_engine": args.pbr_engine,
+        "angle": args.angle,
+        "flow_type": args.flow_type,
+        "turbulence": args.turbulence,
+        "margin": args.margin,
+        "auto_margin": args.auto_margin,
+        "voxel_depth": args.voxel_depth,
+        "voxel_scale": args.voxel_scale,
+        "biome_a": args.biome_a,
+        "biome_b": args.biome_b,
+        "frames": args.frames,
+        "vfx_type": args.vfx_type,
+        "emotions": args.emotions,
+        "duration": args.duration,
+        "mode_2d": args.mode_2d,
+        "pose": args.pose,
+        "pitch": args.pitch,
+        "fps": args.fps,
+        "items": args.items,
+        "ambience_type": args.ambience_type,
+        "parts": args.parts,
+        "mpfb_dir": args.mpfb_dir
     }
 
     # Détection automatique du workflow si l'argument -w n'est pas spécifié

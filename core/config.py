@@ -39,6 +39,31 @@ DEFAULT_ESRGAN_MODEL = os.getenv(
     os.path.join(DEFAULT_MODEL_DIR, "upscalers", "RealESRGAN_x4plus_anime_6B.pth")
 )
 
+# Modèles ONNX spécialisés (Segmentation, PBR, Animation)
+DEFAULT_ONNX_DIRS = [
+    os.getenv("ONNX_DIR", os.path.join(DEFAULT_MODEL_DIR, "onnx")),
+    os.path.abspath("models"),
+    os.path.join(DEFAULT_MODEL_DIR, "segmentation"),
+    os.path.join(DEFAULT_MODEL_DIR, "pbr"),
+    os.path.join(DEFAULT_MODEL_DIR, "animation"),
+    DEFAULT_MODEL_DIR
+]
+
+DEFAULT_RMBG_MODEL = os.getenv(
+    "RMBG_MODEL_PATH",
+    os.path.join(DEFAULT_MODEL_DIR, "onnx", "rmbg-1.4.onnx")
+)
+
+DEFAULT_DEEPBUMP_MODEL = os.getenv(
+    "DEEPBUMP_MODEL_PATH",
+    os.path.join(DEFAULT_MODEL_DIR, "onnx", "deepbump256.onnx")
+)
+
+DEFAULT_RIFE_MODEL = os.getenv(
+    "RIFE_MODEL_PATH",
+    os.path.join(DEFAULT_MODEL_DIR, "onnx", "rife_fp32.onnx")
+)
+
 # Paramètres de rendu
 DEFAULT_BACKEND = os.getenv("SD_BACKEND", "diffusion=vulkan0,te=cpu")
 DEFAULT_THREADS = int(os.getenv("SD_THREADS", "16"))
@@ -151,6 +176,46 @@ def resoudre_upscaler(nom_ou_chemin: Optional[str]) -> Optional[str]:
             return up["path"]
 
     return None
+
+
+def lister_modeles_onnx(dirs: Optional[List[str]] = None) -> List[Dict[str, str]]:
+    """Scanne les répertoires pour trouver les modèles ONNX."""
+    dossiers = dirs or DEFAULT_ONNX_DIRS
+    fichiers_onnx = []
+    vus = set()
+
+    for dossier in dossiers:
+        if os.path.exists(dossier):
+            for racine, _, fichiers in os.walk(dossier):
+                for f in fichiers:
+                    if f.lower().endswith(".onnx") and f not in vus:
+                        vus.add(f)
+                        chemin = os.path.join(racine, f)
+                        taille_mo = os.path.getsize(chemin) / (1024 * 1024)
+                        fichiers_onnx.append({
+                            "name": Path(f).stem,
+                            "filename": f,
+                            "path": chemin,
+                            "size_mb": round(taille_mo, 1)
+                        })
+    return fichiers_onnx
+
+
+def resoudre_modele_onnx(cle_ou_chemin: Optional[str], defaut_path: Optional[str] = None) -> Optional[str]:
+    """Résout le chemin d'un modèle ONNX par son nom partiel ou chemin direct."""
+    if not cle_ou_chemin:
+        return defaut_path if defaut_path and os.path.exists(defaut_path) else None
+
+    if os.path.exists(cle_ou_chemin):
+        return os.path.abspath(cle_ou_chemin)
+
+    dispos = lister_modeles_onnx()
+    cle = cle_ou_chemin.lower()
+    for m in dispos:
+        if cle in m["name"].lower() or cle in m["filename"].lower():
+            return m["path"]
+
+    return defaut_path if defaut_path and os.path.exists(defaut_path) else None
 
 
 def verifier_prerequis(config: dict) -> bool:

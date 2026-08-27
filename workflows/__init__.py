@@ -14,6 +14,21 @@ from workflows.material3d import Material3DWorkflow
 from workflows.skybox import SkyboxWorkflow
 from workflows.turnaround3d import Turnaround3DWorkflow
 from workflows.mesh3d import Mesh3DWorkflow
+from workflows.rembg import RembgWorkflow
+from workflows.flowmap import FlowmapWorkflow
+from workflows.ui_9slice import UI9SliceWorkflow
+from workflows.voxel3d import Voxel3DWorkflow
+from workflows.autotile_pack import AutotilePackWorkflow
+from workflows.rife_interp import RifeInterpWorkflow
+from workflows.vfx_flipbook import VFXFlipbookWorkflow
+from workflows.rpg_portrait import RPGPortraitWorkflow
+from workflows.sfx import SFXWorkflow
+from workflows.ip_adapter import IPAdapterWorkflow
+from workflows.anim_loop import AnimLoopWorkflow
+from workflows.pose_control import PoseControlWorkflow
+from workflows.tts_dialogue import TTSDialogueWorkflow
+from workflows.audio_ambience import AudioAmbienceWorkflow
+from workflows.makehuman_clothes import MakeHumanClothesWorkflow
 
 __all__ = [
     "BaseWorkflow",
@@ -28,5 +43,21 @@ __all__ = [
     "Material3DWorkflow",
     "SkyboxWorkflow",
     "Turnaround3DWorkflow",
-    "Mesh3DWorkflow"
+    "Mesh3DWorkflow",
+    "RembgWorkflow",
+    "FlowmapWorkflow",
+    "UI9SliceWorkflow",
+    "Voxel3DWorkflow",
+    "AutotilePackWorkflow",
+    "RifeInterpWorkflow",
+    "VFXFlipbookWorkflow",
+    "RPGPortraitWorkflow",
+    "SFXWorkflow",
+    "IPAdapterWorkflow",
+    "AnimLoopWorkflow",
+    "PoseControlWorkflow",
+    "TTSDialogueWorkflow",
+    "AudioAmbienceWorkflow",
+    "MakeHumanClothesWorkflow"
 ]
+

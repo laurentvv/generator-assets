@@ -88,7 +88,7 @@ def generer_image_vulkan(
         mode_str += f" + {len(loras)} LoRA(s)"
 
     cfg_effectif = cfg_scale if cfg_scale != 1.0 or is_flux else 7.0
-    print(f"🎨 [{moteur_nom} - {mode_str}] Lancement de sd-cli ({width}x{height}, steps={steps}, cfg={cfg_effectif})...")
+    print(f"[{moteur_nom} - {mode_str}] Lancement de sd-cli ({width}x{height}, steps={steps}, cfg={cfg_effectif})...")
 
     if is_flux:
         commande = [

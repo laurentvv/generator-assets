@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script de téléchargement automatique des modèles d'Upscaling (ESRGAN) et LoRAs recommandés.
+Script de téléchargement automatique des modèles d'Upscaling (ESRGAN), ONNX (RMBG, DeepBump, RIFE) et LoRAs.
 """
 
+import argparse
 import os
 import sys
 import urllib.request
@@ -19,7 +20,14 @@ UPSCALERS_URLS = {
     "4x-UltraSharp.pth": "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x-UltraSharp.pth"
 }
 
+ONNX_URLS = {
+    "rmbg-1.4.onnx": "https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/model.onnx",
+    "deepbump256.onnx": "https://huggingface.co/shiertier/deepbump/resolve/main/deepbump256.onnx",
+    "rife_fp32.onnx": "https://huggingface.co/FuryTMP/RIFE_fp32/resolve/main/RIFE_fp32.onnx"
+}
+
 DOSSIER_UPSCALERS = r"C:\Modeles_LLM\upscalers"
+DOSSIER_ONNX = r"C:\Modeles_LLM\onnx"
 DOSSIER_LORAS = r"C:\Modeles_LLM\loras"
 
 
@@ -41,26 +49,36 @@ def telecharger_avec_progression(url: str, destination: str):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Gestionnaire de téléchargement des modèles IA pour generator-assets.")
+    parser.add_argument("--pack", choices=["all", "onnx", "upscalers"], default="all", help="Pack de modèles à télécharger.")
+    args = parser.parse_args()
+
     os.makedirs(DOSSIER_UPSCALERS, exist_ok=True)
+    os.makedirs(DOSSIER_ONNX, exist_ok=True)
     os.makedirs(DOSSIER_LORAS, exist_ok=True)
 
     print("=" * 60)
-    print(" 🚀 Gestionnaire de Modèles d'Upscaling & LoRAs")
+    print(" 🚀 Gestionnaire de Modèles IA (ONNX, Upscalers & LoRAs)")
     print("=" * 60)
 
-    print("\n--- 1. Téléchargement des Modèles d'Upscaling ESRGAN ---")
-    for nom, url in UPSCALERS_URLS.items():
-        dest = os.path.join(DOSSIER_UPSCALERS, nom)
-        telecharger_avec_progression(url, dest)
+    if args.pack in ("all", "onnx"):
+        print("\n--- 1. Modèles Neuronaux Légers ONNX (Détourage, PBR, Fluidité) ---")
+        for nom, url in ONNX_URLS.items():
+            dest = os.path.join(DOSSIER_ONNX, nom)
+            telecharger_avec_progression(url, dest)
 
-    print("--- 2. Guide pour l'ajout de LoRAs Flux.1 ---")
-    print(f"Dossier cible pour vos LoRAs Flux.1 (.safetensors) :")
+    if args.pack in ("all", "upscalers"):
+        print("\n--- 2. Modèles d'Upscaling ESRGAN ---")
+        for nom, url in UPSCALERS_URLS.items():
+            dest = os.path.join(DOSSIER_UPSCALERS, nom)
+            telecharger_avec_progression(url, dest)
+
+    print("\n--- 3. Guide pour l'ajout de LoRAs SDXL / Flux.1 ---")
+    print(f"Dossier cible pour vos LoRAs (.safetensors) :")
     print(f"👉 {DOSSIER_LORAS}")
     print("\nSources recommandées pour télécharger des LoRAs de styles 2D / Pixel Art / Icons :")
-    print("• CivitAI (Filtrer par Modèle: Flux.1 D) : https://civitai.com/models?baseModel=Flux.1%20D")
-    print("• HuggingFace Flux LoRAs : https://huggingface.co/models?other=flux&other=lora")
-    print("\nExemple d'utilisation une fois le fichier placé dans le dossier :")
-    print("  python main.py \"épée de givre\" -l \"mon_lora_style:0.8\"\n")
+    print("• CivitAI : https://civitai.com/models")
+    print("• HuggingFace : https://huggingface.co/models\n")
 
 
 if __name__ == "__main__":
