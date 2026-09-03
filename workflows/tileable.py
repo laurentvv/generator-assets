@@ -46,7 +46,8 @@ class TileableWorkflow(BaseWorkflow):
             llama_cli=self.config.get("llama_cli"),
             llm_model=self.config.get("llm_model"),
             style_anchor=style_tuile,
-            custom_cadrage="seamless repeatable tile texture"
+            custom_cadrage="seamless repeatable tile texture",
+            sans_llm=params.get("sans_llm", params.get("no_llm", True))
         )
 
         # Rendu avec le flag circular pour forcer le bouclage des bords

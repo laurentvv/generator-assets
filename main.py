@@ -431,7 +431,8 @@ Exemples de Workflows 3D & 2D :
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
-    groupe_ia.add_argument("--no-llm", action="store_true", help="Désactive l'enrichissement par LLM.")
+    groupe_ia.add_argument("--use-llm", action="store_true", default=False, help="Active l'enrichissement par LLM local (désactivé par défaut).")
+    groupe_ia.add_argument("--no-llm", action="store_true", default=False, help="Désactive l'enrichissement par LLM (comportement par défaut).")
     groupe_ia.add_argument("--strength", type=float, default=0.55, help="Force de débruitage Img2Img (défaut: 0.55).")
     groupe_ia.add_argument("--steps", type=int, default=25, help="Nombre d'étapes de diffusion Flux (défaut: 25).")
     groupe_ia.add_argument("--guidance", type=float, default=3.5, help="Guidance Flux (défaut: 3.5).")
@@ -542,7 +543,9 @@ Exemples de Workflows 3D & 2D :
         "file": args.recipe_file,
         "columns": args.columns,
         "preview": not args.no_preview,
-        "no_llm": args.no_llm,
+        "no_llm": True if args.no_llm else not args.use_llm,
+        "use_llm": args.use_llm and not args.no_llm,
+        "sans_llm": True if args.no_llm else not args.use_llm,
         "strength": args.strength,
         "steps": args.steps,
         "guidance": args.guidance,

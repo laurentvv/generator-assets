@@ -46,7 +46,8 @@ class AutotilePackWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor="2D game top-down tileable texture, seamless pattern",
-                custom_cadrage="seamless repeatable tileable texture"
+                custom_cadrage="seamless repeatable tileable texture",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
             img_a = generer_image_vulkan(
                 prompt=prompt_a,
@@ -73,7 +74,8 @@ class AutotilePackWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor="2D game top-down tileable texture, seamless pattern",
-                custom_cadrage="seamless repeatable tileable texture"
+                custom_cadrage="seamless repeatable tileable texture",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
             img_b = generer_image_vulkan(
                 prompt=prompt_b,

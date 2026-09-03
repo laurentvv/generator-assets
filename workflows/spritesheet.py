@@ -57,7 +57,8 @@ class SpriteSheetWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor=self.config.get("style_anchor"),
-                custom_cadrage=description_angle
+                custom_cadrage=description_angle,
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             # Rendu Flux.1 (avec même graine de base pour assurer la cohérence)

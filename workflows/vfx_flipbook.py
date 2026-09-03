@@ -154,7 +154,8 @@ class VFXFlipbookWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor=style_vfx,
-                custom_cadrage="4x4 grid sprite sheet sequence"
+                custom_cadrage="4x4 grid sprite sheet sequence",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             img_brute = generer_image_vulkan(

@@ -66,7 +66,8 @@ class IPAdapterWorkflow(BaseWorkflow):
                 type_asset="item",
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
-                style_anchor=self.config.get("style_anchor")
+                style_anchor=self.config.get("style_anchor"),
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
             img_brute = generer_image_vulkan(
                 prompt=prompt_ref,
@@ -112,7 +113,8 @@ class IPAdapterWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor=self.config.get("style_anchor"),
-                custom_cadrage="isolated single game icon, clean transparent background"
+                custom_cadrage="isolated single game icon, clean transparent background",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             img_item_brute = generer_image_vulkan(

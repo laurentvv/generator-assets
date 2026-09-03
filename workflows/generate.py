@@ -35,7 +35,7 @@ class GenerateWorkflow(BaseWorkflow):
         upscale_actif = params.get("upscale", False)
         facteur_upscale = float(params.get("factor", 4.0 if upscale_actif else 2.0))
         modele_upscale = params.get("upscale_model") or self.config.get("esrgan_model")
-        sans_llm = params.get("no_llm", False)
+        sans_llm = params.get("sans_llm", params.get("no_llm", True))
         tolerance = params.get("tolerance", 60)
         steps = params.get("steps", 25)
         guidance = params.get("guidance", 3.5)
