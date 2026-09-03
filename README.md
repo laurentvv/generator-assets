@@ -1,556 +1,442 @@
 <div align="center">
 
+<img src="docs/banner.png" alt="Generator Assets - AI Game Asset Engine" width="100%" />
+
 # ⚔️ Generator Assets
 
-### Moteur de Workflows IA (Headless & Modulaire) pour Assets 2D & 3D Godot Engine
-**Flux.1 Dev & SDXL (Vulkan) • Matériaux PBR 3D • Modèles .GLB Blender • Skyboxes 360° • LoRAs • Upscalers ESRGAN**
+### Modular, Headless AI Asset Pipeline for Godot Engine & Blender
+**Flux.1 Dev & SDXL (Vulkan) • 3D PBR Materials • Headless Blender .GLB Meshes • 360° Skyboxes • MakeHuman / MPFB2 Characters • Procedural Audio & SFX • ESRGAN 4K**
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Godot 4.x Ready](https://img.shields.io/badge/Godot-4.x%202D%20%26%203D%20Ready-478CBF.svg?logo=godotengine&logoColor=white)](https://godotengine.org/)
+[![Godot 4.x Ready](https://img.shields.io/badge/Godot-4.x%20Ready-478CBF.svg?logo=godotengine&logoColor=white)](https://godotengine.org/)
+[![Blender 5.x](https://img.shields.io/badge/Blender-5.x%20Headless%20GLB-e87d0d.svg?logo=blender&logoColor=white)](https://www.blender.org/)
 [![Vulkan](https://img.shields.io/badge/Vulkan-Hardware%20Accelerated-red.svg?logo=vulkan&logoColor=white)](https://www.vulkan.org/)
 [![Flux.1 & SDXL](https://img.shields.io/badge/Models-Flux.1%20Dev%20%26%20SDXL-black.svg)](https://blackforestlabs.ai/)
-[![PBR 3D Materials](https://img.shields.io/badge/3D-PBR%20Materials%20%26%20ORM-orange.svg)](#-workflows-3d--pbr-godot--blender)
-[![LoRA Support](https://img.shields.io/badge/LoRA-Multi--LoRAs%20SDXL-ff69b4.svg)](#-modèles-ia--bibliothèque-de-loras)
-[![Blender 5.x](https://img.shields.io/badge/Blender-5.x%20Headless%20GLB-e87d0d.svg?logo=blender&logoColor=white)](https://www.blender.org/)
+[![PBR 3D Materials](https://img.shields.io/badge/3D-PBR%20Materials%20%26%20ORM-orange.svg)](#-3d-materials--geometry)
+[![LoRA Support](https://img.shields.io/badge/LoRA-Multi--LoRA%20SDXL-ff69b4.svg)](#-ai-models--lora-library)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/votre-compte/generator-assets/pulls)
 
 <p align="center">
-  <a href="#-architecture-du-pipeline-du-prompt-au-3d-godot">Architecture</a> •
-  <a href="#-modèles-ia--bibliothèque-de-loras">Modèles & LoRAs</a> •
-  <a href="#-catalogue-complet-des-workflows">Catalogue des Workflows</a> •
-  <a href="#-galerie-dassets-générés">Galerie Visuelle</a> •
-  <a href="#-référence-complète-de-la-cli">Référence CLI</a> •
-  <a href="#-guide-dintégration-godot-4">Intégration Godot 4</a> •
-  <a href="#-guide-pour-les-agents-ia-de-codage-blender-mcp--godot-mcp">Guide Agents IA (MCP)</a> •
-  <a href="#-installation--démarrage-rapide">Installation</a>
+  <a href="#about">About</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#capabilities">Capabilities</a> •
+  <a href="#showcase">Showcase</a> •
+  <a href="#models">Models & LoRAs</a> •
+  <a href="#workflows">Workflows</a> •
+  <a href="#cli">CLI Reference</a> •
+  <a href="#godot">Godot 4 Guide</a> •
+  <a href="#agents">AI Agents (MCP)</a> •
+  <a href="#installation">Installation</a>
 </p>
 
 </div>
 
 ---
 
-## 🏛️ Architecture du Pipeline (Du Prompt au 3D Godot)
+<span id="about"></span>
+## 📌 About & Quick Overview
 
-`generator-assets` est un orchestrateur en ligne de commande (CLI) conçu pour transformer une simple idée textuelle en **véritables assets 2D et 3D prêts pour Godot 4** avec zéro interface web et une efficacité maximale sur GPU :
+> **Repository Description (for GitHub "About"):**  
+> *Headless, modular AI pipeline orchestrator generating production-ready 2D & 3D assets, PBR materials, .GLB models, and 360° skyboxes for Godot 4 & Blender via Flux.1, SDXL, and ESRGAN.*
+
+### 🏷️ Recommended GitHub Topics / Keywords
+```text
+ai-game-assets, godot, godot-4, blender, blender-python, flux-dev, sdxl, pbr-textures,
+game-development, deepbump, vulkan, esrgan, makehuman, mpfb2, procedural-generation,
+headless-pipeline, 3d-mesh, audio-generation, pixel-art, controlnet, gguf, lora
+```
+
+`generator-assets` is a lightweight, local, and fully headless CLI pipeline orchestrator designed to transform natural language descriptions into **engine-ready 2D and 3D assets for Godot 4 and Blender**. 
+
+Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with **zero Electron or web server overhead**, executes tasks sequentially with **strict VRAM management** (auto-unloading LLMs before launching diffusion models), and directly exports native engine formats: `.tres` materials, `.glb` models with embedded PBR textures, `.gdshader` files, 360° environment skies, and `.wav`/`.ogg` audio streams.
+
+---
+
+## ⚡ Core Value Highlights
+
+| Feature | Description |
+| :--- | :--- |
+| 🎮 **Godot 4 Native First** | Generates `.tres` (`StandardMaterial3D`, `Environment`, `TileSet`, `StyleBoxTexture`), `.tscn` scenes, and `.gdshader` files out-of-the-box. |
+| 🧱 **Complete PBR Map Generation** | Generates full PBR packs: Albedo, OpenGL Normal Maps (via DeepBump ONNX or Sobel), Roughness, Height, AO, and packed **ORM textures** (Red = AO, Green = Roughness, Blue = Metallic). |
+| 🔨 **Headless Blender 3D Meshing** | Automatically builds 3D meshes (`.glb`) with embedded PBR textures via headless Blender CLI (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`). |
+| 👗 **MakeHuman / MPFB2 Character Suite** | Canonical humanoid 3D pipeline: seamless facial UV projections, barycentric garment retargeting (`.mhclo`), and studio Cycles validation renders. |
+| 🌌 **Equirectangular 360° Skyboxes** | 2:1 panoramic skies with automated Godot 4 `WorldEnvironment` and Image-Based Lighting (IBL) configuration. |
+| ⚡ **Zero VRAM Spikes** | Sequential sub-process execution: local LLM prompt enricher terminates and frees all VRAM before diffusion launches on Vulkan/GPU. |
+
+---
+
+<span id="architecture"></span>
+## 🏛️ Pipeline Architecture
 
 ```mermaid
 flowchart TD
-    UserPrompt["💡 Prompt Utilisateur<br><i>ex: 'dalles de sol de donjon runique'</i>"] --> LLM["🧠 Directeur Artistique LLM<br><i>(LFM2.5-8B via llama-cli)</i><br>Enrichit le style, la lumière & la composition"]
+    UserPrompt["💡 User Prompt<br><i>e.g. 'runic gothic dungeon stone floor'</i>"] --> LLM["🧠 Local LLM Art Director<br><i>(LFM2.5-8B via llama-cli)</i><br>Enriches visual descriptors, lighting & palette"]
     
-    LLM --> VRAM_Free["⚡ Libération Totale VRAM<br><i>(Processus LLM terminé)</i>"]
+    LLM --> VRAM_Free["⚡ Full VRAM Release<br><i>(LLM process terminates)</i>"]
     
-    VRAM_Free --> EngineSelect{Choix du Moteur}
+    VRAM_Free --> EngineSelect{Engine Selection}
     
-    EngineSelect -->|Qualité Maximale / PBR| Flux["🎨 Flux.1 Dev GGUF (Vulkan)<br><i>(sd-cli.exe)</i>"]
-    EngineSelect -->|Rapide / LoRAs Thématiques| SDXL["🚀 SDXL Juggernaut + LoRAs<br><i>(Diablo, Donjon, Skybox 360)</i>"]
+    EngineSelect -->|Max Fidelity & PBR| Flux["🎨 Flux.1 Dev GGUF (Vulkan)<br><i>(sd-cli.exe)</i>"]
+    EngineSelect -->|Fast & Thematic LoRAs| SDXL["🚀 SDXL Juggernaut + LoRAs<br><i>(Diablo, Dungeon, 360 Redmond)</i>"]
     
-    Flux --> ImgOut["🖼️ Image Brute 1024x1024"]
+    Flux --> ImgOut["🖼️ Raw Image (1024×1024)"]
     SDXL --> ImgOut
     
-    ImgOut --> ImageOps["⚙️ Image Ops & Post-Processing (Python)"]
+    ImgOut --> ImageOps["⚙️ Image Operations & Post-Processing (Python)"]
     
-    ImageOps --> Mode2D["✂️ Détourage Flood-Fill 4 coins<br>+ Auto-Crop & Centrage Godot"]
-    ImageOps --> ModePBR["🧱 Génération PBR (Sobel Gradients)<br>• Normal Map OpenGL<br>• Roughness Map<br>• Height Map & AO<br>• Pack ORM Godot (R=AO, G=Rough, B=Metal)"]
-    ImageOps --> ModePixel["👾 Quantification Rétro<br>(Pico-8, Endesga-32, GameBoy)"]
+    ImageOps --> Mode2D["✂️ AI Background Removal (RMBG / BiRefNet)<br>+ Auto-Crop & Godot Anchor Centering"]
+    ImageOps --> ModePBR["🧱 PBR Texture Generation<br>• OpenGL Normal Map (DeepBump ONNX)<br>• Roughness & Height Maps<br>• Godot ORM Channel Pack (R=AO, G=Rough, B=Metal)"]
+    ImageOps --> ModePixel["👾 Retro Color Quantization<br>(Pico-8, Endesga-32, GameBoy palettes)"]
     
-    Mode2D --> Godot2D["📦 Assets 2D (.PNG transparents)"]
-    ModePBR --> GodotTres["💎 Ressource StandardMaterial3D (.tres)"]
-    ModePBR --> Blender["🔨 Blender 5.2 Headless (CLI)<br>Construit le maillage & exporte le modèle 3D"]
+    Mode2D --> Godot2D["📦 2D Transparent Sprites (.PNG)"]
+    ModePBR --> GodotTres["💎 Godot Material Resource (.tres)"]
+    ModePBR --> Blender["🔨 Blender 5.x Headless (CLI)<br>Builds quad geometry & embeds PBR materials"]
     
-    Blender --> GodotGLB["🎮 Modèles 3D Maillés (.GLB)<br>avec textures PBR intégrées"]
+    Blender --> GodotGLB["🎮 Production 3D Models (.GLB)<br>with baked PBR textures"]
 ```
 
 ---
 
-## ⚖️ Ce qui Fonctionne à 100% en Automatique vs Limitations Réelles de l'IA
+<span id="capabilities"></span>
+## ⚖️ Capabilities & Realistic AI Boundaries
 
-Pour vous éviter toute déception, voici un état des lieux transparent de ce que le pipeline génère automatiquement en un clic, et des cas particuliers nécessitant une approche différente :
+To ensure maximum productivity and avoid false expectations, here is a transparent overview of what the pipeline achieves 100% autonomously versus tasks requiring template meshes or multi-view sheets:
 
-### ✅ 1. 100% Automatique & Immédiatement Prêt pour Godot 4
-- **🧱 Sols, Murs & Matériaux PBR (`material3d`)** : Dalles de donjon, pavés médiévaux, roches, métaux, bois avec Normal Maps, Roughness et fichier `.tres` prêt à l'emploi.
-- **🌌 Skyboxes & Panoramas 360° (`skybox`)** : Ciels d'orage, galaxies, nuages 360° et ressource `Environment.tres` pour le `WorldEnvironment` de Godot.
-- **🎲 Éléments de Décors 3D (`mesh3d`)** : Dalles de sol (`--shape tile`), caisses et coffres (`--shape cube`), piliers de donjon (`--shape pillar`), orbes (`--shape sphere`).
-- **🔍 Upscaling IA ESRGAN (`upscale`)** : Agrandissement 2x, 4x, 4K avec conservation parfaite de la transparence.
-- **🎨 Assets 2D, Spritesheets & Pixel Art (`generate`, `spritesheet`, `pixelart`)**.
-
----
-
-### ⚠️ 2. Ce qui NE fonctionne PAS directement en "1-clic magique" (Cas des Casques & Personnages)
-- **Le Cas d'un Casque d'Équipement 3D (ex: `casque.png`)** :
-  - **Pourquoi ?** Une image 2D vue de face ne contient ni l'intérieur de la tête, ni le dos, ni les côtés à 360°.
-  - **Résultat de l'extraction automatique 3D** : Génère un **bas-relief 2.5D bombé par l'avant** (comme une médaille ou une sculpture murale). Ce n'est **pas** un casque creux dans lequel un personnage 3D peut glisser sa tête.
-- **Comment créer un vrai casque creux ou un personnage 3D pour Godot ?** :
-  1. **Option A (Fiche de référence)** : Utilisez le workflow `turnaround3d` qui génère la **planche orthogonale Face + Profil parfaitement alignée** pour servir de gabarit dans Blender.
-  2. **Option B (Mesh de base + Texture PBR)** : Téléchargez un mesh de casque générique basse définition (sur Kenney.nl ou Godot Asset Library) et appliquez-lui les textures PBR générées par notre pipeline (`material3d`).
+### ✅ 1. 100% Automated & Engine-Ready (One-Click)
+- **🧱 Floors, Walls & PBR Materials (`material3d`)** : Seamless dungeon flagstones, cobblestone, mossy rock, bark, fabrics, metals with Normal, Roughness, ORM maps, and Godot `.tres`.
+- **🌌 360° Skyboxes & Panoramas (`skybox`)** : Seamless equirectangular skies, space nebulae, apocalyptic clouds, and complete `WorldEnvironment.tres` setup.
+- **🎲 3D Level Props (`mesh3d`)** : Floor tiles (`--shape tile`), crates/chests (`--shape cube`), pillars/columns (`--shape pillar`), orbs (`--shape sphere`), 2.5D standees (`--shape card`).
+- **🔍 AI Super-Resolution (`upscale`)** : 2x, 4x, and 4K ESRGAN Vulkan upscaling with 100% Alpha channel transparency preservation.
+- **✂️ Clean Cutouts & Sprites (`generate`, `rembg`)** : Clean edges with RMBG-1.4 / BiRefNet ONNX (no white halo artifacts).
+- **🔊 Procedural Sound & Music (`sfx`, `audio_ambience`)** : Combat swings, magic potions, seamless background loops in `.wav` and `.ogg` formats.
 
 ---
 
-## 🤖 Modèles IA & Bibliothèque de LoRAs
+### ⚠️ 2. What Requires Structured Approaches (Helmets, Armor & Characters)
+- **The Case of a 3D Equipment Helmet (e.g. `casque.png`)** :
+  - **Why ?** A single 2D front-facing image contains neither the interior hollow cavity, nor the rear geometry, nor 360° cheek guards.
+  - **Direct 2.5D Extrusion Result** : Yields an embossed bas-relief or coin-like sculpture. It is **not** a hollow 3D helmet into which a character's head fits.
+- **The Production-Grade Solutions Included in this Pipeline** :
+  1. **Option A (Orthographic Modeling Sheet)** : Use the `turnaround3d` workflow to generate perfectly calibrated **Front + Profile orthographic views** as reference planes for Blender.
+  2. **Option B (Base Mesh + PBR Retexturing)** : Download a clean base quad helmet from Kenney.nl or Godot Asset Library, then generate and project custom PBR materials using `material3d` or `outfit`.
+  3. **Option C (MakeHuman / MPFB2 Canonical System)** : For human characters, use `character3d` and `makehuman_clothes` which leverage official quad helper geometries (`helper-tights`, `helper-skirt`) and barycentric binding (`.mhclo`).
 
-Le système gère dynamiquement les architectures de modèles sans conflit mémoire :
+---
 
-### 1. Modèles de Base Supportés
+<span id="showcase"></span>
+## 🎨 Visual Showcase
 
-| Modèle | Fichier | Rôle & Points Forts |
+### 1. PBR 3D Texture Pipeline (`material3d` & `mesh3d`)
+| Runic Floor Albedo | OpenGL Normal Map | Godot ORM Channel Pack | Seamless 3x3 Tile Preview |
+| :---: | :---: | :---: | :---: |
+| <img src="godot_assets/sol_runique_albedo.png" width="160" alt="Runic Albedo" /> | <img src="godot_assets/sol_runique_normal.png" width="160" alt="Normal Map" /> | <img src="godot_assets/sol_runique_orm.png" width="160" alt="ORM Pack" /> | <img src="godot_assets/parchemin_ancien_preview3x3.png" width="160" alt="Seamless Tiling" /> |
+| *1024×1024 Base Color* | *DeepBump ONNX Relief* | *R=AO, G=Roughness, B=Metal* | *Zero-seam repeating tile* |
+
+---
+
+### 2. Thematic 2D Assets, Pixel Art & 4K AI Upscaling
+| SDXL Diablo LoRA (`generate`) | 4K ESRGAN Super-Resolution (`upscale`) | Retro Pico-8 Pixel Art (`pixelart`) | Ancient Wood PBR (`material3d`) |
+| :---: | :---: | :---: | :---: |
+| <img src="godot_assets/potion_diablo.png" width="160" alt="Diablo Potion" /> | <img src="godot_assets/casque_esrgan_4x.png" width="160" alt="ESRGAN 4x" /> | <img src="godot_assets/casque_pico8.png" width="160" alt="Pico-8 Palette" /> | <img src="godot_assets/old_cracked_wood_planks_albedo.png" width="160" alt="Wood Planks" /> |
+| *Dark fantasy item icon* | *Sharp 4096px with Alpha channel* | *16-color authentic palette* | *Weathered plank texture* |
+
+---
+
+### 3. Canonical 3D Character Suite (MakeHuman & MPFB2)
+| Canonical Face Portrait | 3D Studio Cycles Render (`marc_novice`) | Runic Pillar 3D Mesh (`mesh3d`) | 360° Skybox Panorama (`skybox`) |
+| :---: | :---: | :---: | :---: |
+| <img src="godot_assets/marc_novice_face_closeup.png" width="160" alt="Face Closeup" /> | <img src="godot_assets/marc_novice_beauty_render.png" width="160" alt="3D Render" /> | <img src="godot_assets/pilier_runique_3d_albedo.png" width="160" alt="Runic Pillar" /> | <img src="godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.png" width="160" alt="Skybox" /> |
+| *Seamless UV projection* | *Cycles 3-point studio check* | *Textured 3D .GLB mesh* | *Equirectangular 2:1 IBL sky* |
+
+---
+
+<span id="models"></span>
+## 🤖 AI Models & LoRA Library
+
+The architecture manages model execution dynamically without memory fragmentation:
+
+### 1. Base Model Suite
+
+| Model | Checkpoint File | Core Role & Strengths |
 | :--- | :--- | :--- |
-| **FLUX.1 [dev]** | `flux1-dev-Q6_K.gguf` | **Moteur par Défaut (3D & Photoréalisme)** : Compréhension textuelle chirurgicale via T5-XXL. Idéal pour les textures PBR, les détails fins et les rendus 1024×1024 épiques. |
-| **SDXL Juggernaut** | `juggernautXL_ragnarok.safetensors` | **Moteur de Styles & LoRAs SDXL** : Génération ultra-rapide (~3s/it). Requis pour tous les LoRAs de styles (Diablo, Donjon, 360° Redmond). |
-| **LFM2.5 8B** | `LFM2.5-8B-A1B-Q6_K.gguf` | **Directeur Artistique (LLM)** : Enrichit les prompts simples en descriptions professionnelles adaptées à la diffusion. |
-| **4x-UltraSharp (ESRGAN)** | `4x-UltraSharp.pth` | **Super-Résolution 4K (Défaut)** : Upscaling IA 4x (1024 ➔ 4096 px) ultra-net avec préservation intégrale du canal Alpha Godot. |
-| **RealESRGAN Anime** | `RealESRGAN_x4plus_anime_6B.pth` | **Super-Résolution Stylisée** : Idéal pour les contours nets, cel-shading, cartoon et anime. |
+| **FLUX.1 [dev]** | `flux1-dev-Q6_K.gguf` | **Default Engine (3D & Photorealism)**: Unmatched prompt adherence via T5-XXL. Ideal for realistic PBR surfaces, intricate micro-details, and crisp 1024×1024 outputs. |
+| **SDXL Juggernaut** | `juggernautXL_ragnarok.safetensors` | **Styles & LoRAs Engine**: Blazing fast generation (~3s/it). Automatically activated when applying style LoRAs. |
+| **LFM2.5 8B** | `LFM2.5-8B-A1B-Q6_K.gguf` | **Local Art Director (LLM)**: Enriches concise prompts into professional visual diffusion descriptors. |
+| **4x-UltraSharp** | `4x-UltraSharp.pth` | **Super-Resolution 4K (Default)**: 4x upscale (1024 ➔ 4096 px) preserving crisp edges and Godot Alpha transparency. |
+| **RealESRGAN Anime** | `RealESRGAN_x4plus_anime_6B.pth` | **Stylized Super-Resolution**: Optimized for clean linework, cel-shading, and cartoon sprites. |
 
 ---
 
-### 2. Bibliothèque des LoRAs Installés (`C:\Modeles_LLM\loras\`)
+### 2. Pre-Installed LoRAs (`loras/` or `C:\Modeles_LLM\loras\`)
 
-Vous pouvez appliquer un ou plusieurs LoRAs sur n'importe quel workflow via le flag `-l "nom:poids"` (bascule automatiquement sur `JuggernautXL`) :
+Apply any LoRA to any workflow via `-l "name:weight"`. When a LoRA is selected, the pipeline automatically switches to `SDXL Juggernaut`:
 
-| Nom du LoRA | Poids | Usage recommandé |
+| LoRA Identifier | Size | Recommended Use Case |
 | :--- | :---: | :--- |
-| **`game_icon_diablo_style`** | `870 Mo` | Icônes d'items, armes, potions et reliques dans un style Dark Fantasy / Diablo. |
-| **`JJsDungeon_XL`** | `435 Mo` | Décors, dalles de sol, murs de pierre et environnements souterrains pour la 3D. |
-| **`360RedmondResized`** | `433 Mo` | Panoramas sphériques 360° pour Skyboxes et éclairage d'environnement Godot. |
-| **`space_backround-XL-7`** | `217 Mo` | Ciels spatiaux, nébuleuses cosmiques et étoiles pour la 3D. |
-| **`game_icon_v1.0`** | `2.6 Go` | Icônes de jeu stylisées et objets d'inventaire aux contours nets. |
+| **`game_icon_diablo_style`** | `870 MB` | Item icons, weapons, flasks, and artifacts in a dark fantasy Diablo aesthetic. |
+| **`JJsDungeon_XL`** | `435 MB` | Underground stone flagstones, dungeon walls, and mossy subterranean environments. |
+| **`360RedmondResized`** | `433 MB` | Spherical 360° equirectangular panoramas for Godot environment lighting. |
+| **`space_backround-XL-7`** | `217 MB` | Cosmic nebulas, deep space starfields, and planetary horizons. |
+| **`game_icon_v1.0`** | `2.6 GB` | Stylized, high-contrast game inventory icons with sharp outlines. |
 
 ```bash
-# Vérifier la liste des LoRAs et upscalers disponibles à tout moment :
+# Inspect available LoRAs and upscalers anytime:
 python main.py --list-loras
 python main.py --list-upscalers
 ```
 
 ---
 
-## 🎨 Galerie d'Assets Générés
+<span id="workflows"></span>
+## 📦 Complete Workflow Catalog
 
-| Sol Runique PBR (Albedo) | Relief 3D (Normal Map OpenGL) | Pack ORM (AO + Roughness) | Dalle 3D GLB (`mesh3d`) |
-| :---: | :---: | :---: | :---: |
-| <img src="godot_assets/sol_runique_albedo.png" width="150" alt="Sol Albedo" /> | <img src="godot_assets/sol_runique_normal.png" width="150" alt="Normal Map" /> | <img src="godot_assets/sol_runique_orm.png" width="150" alt="ORM Pack" /> | <img src="godot_assets/sol_runique_preview3x3.png" width="150" alt="Preview 3x3" /> |
-| *Texture de couleur* | *Gradients de relief en temps réel* | *R=AO, G=Roughness, B=Metal* | *Raccord sans couture* |
+The engine features **26 modular workflows** selectable via `-w <workflow_name>`:
 
-| Potion Diablo (`SDXL LoRA`) | Casque ESRGAN 2048x2048 (`upscale`) | Casque Pixel Art (`pico8`) | Monture Endesga (`32 couleurs`) |
-| :---: | :---: | :---: | :---: |
-| <img src="godot_assets/potion_diablo.png" width="150" alt="Potion Diablo" /> | <img src="godot_assets/casque_esrgan_4x.png" width="150" alt="Casque ESRGAN" /> | <img src="godot_assets/casque_pico8.png" width="150" alt="Casque Pico-8" /> | <img src="godot_assets/cheval_endesga32.png" width="150" alt="Cheval Endesga" /> |
-| *SDXL + LoRA Diablo* | *Super-résolution 4x nette* | *Palette 16 couleurs Pico-8* | *Palette 32 couleurs Endesga* |
-
----
-
-## 📦 Catalogue Complet des Workflows
-
-Le projet intègre **25 workflows spécialisés** sélectionnables via le paramètre `-w <nom>` :
-
-```text
-📋 Workflows Disponibles :
-  • ip_adapter   : Cohérence de style & charte graphique (IP-Adapter) depuis une image de référence + Palettes Godot
-  • anim_loop    : Boucles de textures & shaders animés fluides (Loop Engine / AnimateDiff) (.gdshader / .tres)
-  • pose_control : Contrôle d'armatures & poses de personnages (ControlNet OpenPose) + Scène Godot (.tscn) & Marker2D
-  • tts_dialogue : Synthèse vocale émotionnelle (TTS / Kokoro) synchronisée avec portraits RPG et lip-sync Godot
-  • audio_ambience: Ambiances sonores immersives & paysages procéduraux en boucle sans couture (.wav / .ogg / .tres)
-  • material3d   : Pack Matériau 3D PBR complet (Albedo, DeepBump Normal, Roughness, Height, AO, ORM + .tres Godot)
-  • character3d  : Personnage 3D Humanoïde MakeHuman/MPFB2 (.blend + .glb) avec textures PBR et traits signature
-  • mesh3d       : Modèle 3D Maillé .GLB complet avec textures PBR pour Godot (Blender Headless)
-  • voxel3d      : Modèle 3D Voxel (.GLB) optimisé avec Vertex Colors pour GridMap Godot 4
-  • autotile_pack: Planche d'Autotiles 47 tuiles (Wang / Minimal 3x3) + Ressource TileSet.tres
-  • rembg        : Détourage IA haute précision (RMBG-1.4 / BiRefNet ONNX) sans frange blanche
-  • flowmap      : Cartes de flux vectoriels (Flowmaps) et Shaders d'eau/lave animés (.gdshader + .tres)
-  • ui_9slice    : Cadres d'UI, fenêtres d'inventaire et boutons 9-Patch extensibles (.tres / .tscn)
-  • rife_interp  : Super-fluidité d'animation IA (RIFE v4 ONNX) : multiplie les trames (60 FPS)
-  • vfx_flipbook : Planches d'animation de particules VFX (Flipbooks 4x4) et matériaux Godot 4
-  • rpg_portrait : Galerie de dialogues RPG multi-émotions (Neutre, Joie, Colère...) + JSON Godot
-  • sfx          : Effets sonores & bruitages procéduraux (.wav / .ogg) pour AudioStreamPlayer
-  • skybox       : Environnement Skybox 360° équirectangulaire et ressource Environment Godot 4
-  • turnaround3d : Planche de modélisation 3D (Vues orthogonales Face + Profil calibrées pour Blender)
-  • generate     : Asset 2D isolé (LLM -> Diffusion -> Détourage -> Centrage Godot)
-  • upscale      : Super-résolution IA (ESRGAN Vulkan / Lanczos) avec préservation du canal Alpha
-  • spritesheet  : Planche de sprites multi-angles (Face, Profils, Dos) avec export JSON Godot
-  • variations   : Déclinaisons thématiques d'éléments (Feu, Glace, Poison, Foudre, etc.)
-  • tileable     : Textures seamless / tuiles de terrain infinies pour TileMaps Godot
-  • pixelart     : Conversion & quantification rétro (Pico-8, Endesga-32, GameBoy)
-  • batch        : Génération par lots depuis un fichier JSON de recette
-```
+### 🧱 1. 3D & PBR Textures
+- **`material3d`** : Full PBR 3D material pack (Albedo, DeepBump OpenGL Normal, Roughness, Height, AO, packed Godot ORM + ready-to-use `.tres` resource).
+- **`mesh3d`** : Complete 3D mesh exported as `.GLB` via headless Blender with embedded PBR textures (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`).
+- **`voxel3d`** : Optimized 3D Voxel mesh (`.GLB`) with internal face culling and Vertex Colors for Godot 4 `GridMap`.
+- **`skybox`** : 360° equirectangular panoramic environment with auto-configured Godot 4 `WorldEnvironment` `.tres`.
+- **`turnaround3d`** : Calibrated orthographic Front + Side modeling sheet for Blender character sculpting.
+- **`flowmap`** : Vector velocity flowmaps (Curl Noise) with dual-sample looping `.gdshader` and `.tres` material for moving water/lava.
 
 ---
 
-### 0. 👤 Workflow `character3d` : Pipeline Canonique Personnage Humanoïde (MakeHuman / MPFB2)
-Génère un personnage 3D complet prêt pour Godot 4 et Blender en 3 étapes automatisées :
-1. **Génération de la peau PBR & Décalques Signature** : Peau MakeHuman photoréaliste propre avec application organique des cicatrices, cernes de fatigue et détails de personnage (sans découpe ni artefact 2D).
-2. **Construction 3D Canonique MakeHuman** : Résolution barycentrique des vêtements (`.mhclo`), yeux, cheveux et morphing d'âge/morphologie.
-3. **Export GLB + Scène .blend + Rendu Studio de Validation Cycles**.
-
-```bash
-# Exécution du pipeline complet avec portrait de référence et recette MPFB2 :
-uv run python scripts/character_pipeline.py --portrait "assets/portraits/marc_portrait.png" --recipe-script "poc_3d/create_marc_mpfb2.py" --name marc_novice
-```
+### 👤 2. Humanoid 3D Characters & Wardrobe (MakeHuman / MPFB2)
+- **`character3d`** : Canonical humanoid 3D pipeline: realistic skin generation, organic scars/blemishes, barycentric clothing attachment, `.blend` scene, and `.glb` export.
+- **`makehuman_clothes`** : Complete wardrobe generation (Torso/Top, Pants/Bottom, Shoes/Boots) conforming to MakeHuman quad helper geometry with `.mhclo`, `.obj`, and `.mhmat` export.
+- **`outfit`** : Retextures and maps custom fabric materials (burlap, weathered leather, chainmail) directly onto existing MakeHuman UV patterns without altering geometry.
+- **`pose_control`** : OpenPose armature guidance (`idle`, `slash_attack`, `cast_spell`, `shield_block`, `jump`, `walk`) + Godot `.tscn` with `Marker2D` weapon attachment points.
+- **`rpg_portrait`** : Character dialogue expression gallery (*Neutral, Happy, Angry, Sad, Hurt*) with Godot dialogue JSON manifest.
 
 ---
 
-### 👗 Gestion & Aiguillage IA des Vêtements 3D MakeHuman
-
-#### 1. Catalogue & Aiguilleur Sémantique Bilingue (177 Modèles 3D) (`core/clothes_catalog.py`)
-- Base de données JSON [`data/clothes_catalog.json`](file:///C:/GIT/generator-assets/data/clothes_catalog.json) indexant **177 modèles 3D MakeHuman** (robes de moine, capes, armures, salopettes, bottes, barbes, coiffures, chemises, chapeaux).
-- Aiguillage automatique bilingue (FR / EN) depuis n'importe quelle description textuelle :
-```bash
-# Reconstruire le catalogue d'assets :
-uv run python core/clothes_catalog.py
-```
-
-#### 2. Retexturation IA sur Patrons UV Existants (`scripts/retexture_uv_garment.py`)
-- Part des vrais patrons UV MakeHuman pour préserver 100% de la géométrie, des boutons, poches et coutures, et transforme la matière (denim -> toile de jute médiévale, cuir vieilli) avec sa Normal Map PBR :
-```bash
-uv run python scripts/retexture_uv_garment.py
-```
-
-#### 3. Compilation MakeClothes depuis un Maillage 3D / IA 3D (`makeclothes_from_mesh.py`)
-- Transforme n'importe quel modèle 3D (`.obj`, `.glb`, `.fbx`) issu d'une IA 3D ou modélisé en Quads en vêtement MakeHuman officiel (`.mhclo`) avec liaison barycentrique automatique :
-```bash
-uv run python scripts/makeclothes_from_mesh.py --mesh "assets/models/cape.obj" --name "cape_voyageur" --category "clothes"
-```
-
-#### 4. Import Automatique de Packs d'Assets MakeHuman (`install_asset_packs.py`)
-- Extrait et installe des packs ZIP MakeHuman Community dans le répertoire MPFB et met à jour le catalogue :
-```bash
-uv run python scripts/install_asset_packs.py
-```
+### 🎨 3. 2D Sprites, Tiles & UI
+- **`generate`** : Standard isolated 2D asset (Diffusion -> RMBG cutout -> Godot anchor centering).
+- **`upscale`** : ESRGAN Vulkan / Lanczos AI super-resolution with full Alpha preservation.
+- **`spritesheet`** : Multi-angle character sprite sheet (Front, Sides, Back) with JSON coordinate atlas.
+- **`autotile_pack`** : 47-tile Wang / Minimal 3x3 autotile atlas between two biomes with pre-configured `TileSet.tres`.
+- **`tileable`** : Seamless repeating textures for infinite floors and walls.
+- **`pixelart`** : Retro palette color reduction and downsampling (Pico-8, Endesga-32, GameBoy).
+- **`variations`** : Generates elemental variations of an item (Fire, Ice, Poison, Lightning).
+- **`ui_9slice`** : 9-Patch expandable inventory frames, dialogue boxes, and buttons with `.tres` and `.tscn` output.
+- **`rembg`** : High-precision background removal using RMBG-1.4 / BiRefNet ONNX (no fringe halos).
 
 ---
 
-### 1. 🧱 Workflow `material3d` : Pack Matériau PBR 3D Complet (DeepBump ONNX)
-Génère toutes les cartes de textures nécessaires au rendu physique réaliste dans Godot 4 (avec estimation neuronale DeepBump) et produit le fichier ressource `.tres` prêt à l'emploi.
-
-```bash
-# Estimation PBR neuronale depuis une texture 2D :
-python main.py -w material3d -i godot_assets/sol_runique_albedo.png -o sol_pbr
-
-# Génération complète depuis un concept textuel :
-python main.py -w material3d "dalles de pierre gothique sombre avec runes violettes et mousse" -s 1024 -o sol_runique
-```
+### 🔊 4. Audio, Voice & VFX
+- **`sfx`** : Procedural combat, item, and magic sound effects in `.wav` and `.ogg` formats.
+- **`audio_ambience`** : Seamless procedural stereo ambient soundscapes (Dungeon, Forest, Storm, Space, Tavern) + `AudioBusLayout.tres`.
+- **`tts_dialogue`** : Expressive character speech synthesis with emotional pitch modulation and Godot viseme lip-sync JSON.
+- **`vfx_flipbook`** : 4x4 animated particle sheets (explosions, fireballs, portals) with `GPUParticles3D` scene.
+- **`anim_loop`** : Seamless looping animated textures with `AnimatedTexture.tres` and `loop.gdshader`.
+- **`rife_interp`** : RIFE v4 ONNX optical flow frame interpolation to boost sprite animation smoothness up to 60 FPS.
 
 ---
 
-### 2. ✂️ Workflow `rembg` : Détourage IA Haute Précision (RMBG-1.4 / BiRefNet)
-Détoure les images avec un réseau de neurones ONNX ultra-rapide, éliminant les halos blancs même sur les cheveux, les armes et le verre semi-transparent.
-
-```bash
-python main.py -w rembg -i godot_assets/cheval.png -o cheval_transparent
-```
+### 🛠️ 5. Style Consistency & Batching
+- **`ip_adapter`** : Visual style locking from a reference image to generate consistent item sets + Godot `.tres` / `.gpl` palettes.
+- **`batch`** : Batch generation from JSON recipes.
 
 ---
 
-### 3. 🌊 Workflow `flowmap` : Cartes de Flux Vectoriels & Shaders Godot
-Génère une texture de vélocité vectorielle (R=X, G=Y, B=Magnitude) avec turbulences (Curl Noise) et produit le code `.gdshader` et le matériau `.tres` avec double-échantillonnage déphasé sans couture.
-
-```bash
-python main.py -w flowmap "riviere de lave fluide" --angle 45 --turbulence 0.4 -o lave_flow
-```
-
----
-
-### 4. 🖼️ Workflow `ui_9slice` : Cadres & Boutons 9-Patch Extensibles
-Génère un cadre d'interface d'inventaire ou dialogue, analyse les bordures et produit la ressource `StyleBoxTexture.tres` et la scène `NinePatchRect.tscn` Godot 4.
-
-```bash
-python main.py -w ui_9slice -i godot_assets/cadre_source.png --margin 32 -o fenetre_inventaire
-```
-
----
-
-### 5. 🧊 Workflow `voxel3d` : Modèles 3D Voxel (.GLB) pour GridMap Godot 4
-Extrude et discrétise un sprite 2D en volume 3D Voxel avec optimisation géométrique (culling des faces internes invisibles) et exporte un fichier `.glb` avec Vertex Colors via Blender Headless.
-
-```bash
-python main.py -w voxel3d -i godot_assets/cheval.png --grid-size 32 --voxel-depth 4 -o cheval_voxel
-```
-
----
-
-### 6. 🗺️ Workflow `autotile_pack` : Planches Autotile 47 Tuiles Wang Minimal 3x3
-Génère l'atlas de 47 tuiles canoniques de transition entre deux biomes (ex: Herbe vers Terre) et crée la ressource `TileSet.tres` Godot 4 avec les terrains et peering bits pré-configurés.
-
-```bash
-python main.py -w autotile_pack --biome-a "herbe verte fleurie" --biome-b "terre sombre" --size 64 -o terrain_herbe
-```
-
----
-
-### 7. ⚡ Workflow `rife_interp` : Fluidité d'Animation 60 FPS (RIFE v4 ONNX)
-Multiplie le nombre de trames d'une planche de sprites d'animation via le flux optique neuronal RIFE v4 (facteur 2x ou 4x).
-
-```bash
-python main.py -w rife_interp -i godot_assets/spritesheet.png --columns 4 --factor 2 -o spritesheet_60fps
-```
-
----
-
-### 8. 💥 Workflow `vfx_flipbook` : Particules & Flipbooks 4x4
-Génère une planche de particules d'effets visuels (explosions, sorts, flammes) en grille 4x4 et exporte le matériau `StandardMaterial3D` avec UV Flipbook, le `ParticleProcessMaterial` et la scène `GPUParticles`.
-
-```bash
-python main.py -w vfx_flipbook "explosion magique violette" --vfx-type explosion -o explosion_magique
-```
-
----
-
-### 9. 🎭 Workflow `rpg_portrait` : Portraits de Dialogues Multi-Émotions
-Génère pour un même personnage sa galerie d'expressions clés (*Neutre, Joie, Colère, Tristesse, Blessé*) et exporte le manifeste JSON pour les systèmes de dialogue Godot.
-
-```bash
-python main.py -w rpg_portrait "sorcière sombre aux yeux dorés" --emotions "neutral,happy,angry,sad,hurt" -o sorciere
-```
-
----
-
-### 10. 🔊 Workflow `sfx` : Bruitages & Effets Sonores (.wav / .ogg)
-Synthétise des effets sonores procéduraux (coups d'épée, potions, explosions, pièces de monnaie, sorts) et les exporte directement au format WAV et OGG pour Godot 4.
-
-```bash
-python main.py -w sfx "coup d epee magique tranchant" --duration 1.2 -o epee_slash
-python main.py -w sfx "potion magique de soin" --duration 2.0 -o potion_soin
-```
-
----
-
-### 11. 🎨 Workflow `ip_adapter` : Cohérence Stylistique & Palettes Godot
-Prend une image de référence pour verrouiller la charte graphique et décline une série d'items parfaitement assortis, avec export de la palette `.tres` et `.gpl`.
-
-```bash
-python main.py -w ip_adapter -i godot_assets/potion_diablo.png --items "sword,shield,ring,helmet" -o set_diablo
-```
-
----
-
-### 12. 🔄 Workflow `anim_loop` : Boucles de Textures & Shaders Animés
-Génère une séquence cyclique en boucle fermée sans coupure (portails, cascades, flammes) avec export de `AnimatedTexture.tres` et `loop.gdshader`.
-
-```bash
-python main.py -w anim_loop "portail du vide cosmique" --vfx-type portal --frames 16 --fps 12 -o portail_loop
-```
-
----
-
-### 13. 🕺 Workflow `pose_control` : Contrôle d'Armature OpenPose & Scène Godot
-Guide la pose d'un personnage avec les 18 points OpenPose (`idle`, `slash_attack`, `cast_spell`, `shield_block`, `jump`, `walk`) et exporte la scène Godot avec `Marker2D` pour attacher armes et VFX.
-
-```bash
-python main.py -w pose_control "chevalier de l'ombre" --pose slash_attack -o chevalier_attaque
-```
-
----
-
-### 14. 🎙️ Workflow `tts_dialogue` : Voix Émotionnelles & Lip-Sync Godot
-Synthétise les répliques vocales `.wav` & `.ogg` avec modulation d'intonation par émotion (Neutre, Joie, Colère, Tristesse, Blessé) et produit le fichier de lip-sync JSON (visèmes).
-
-```bash
-python main.py -w tts_dialogue "sorciere_sombre" --emotions "neutral,happy,angry,hurt" --pitch 175 -o sorciere_voix
-```
-
----
-
-### 15. 🌌 Workflow `audio_ambience` : Ambiances Immersives Bouclables
-Génère des paysages sonores procéduraux stéréo en boucle seamless (Donjon, Forêt féerique, Orage volcanique, Espace, Feu de camp) avec configuration `AudioBusLayout.tres`.
-
-```bash
-python main.py -w audio_ambience "donjon souterrain sombre avec gouttes" --duration 8.0 -o ambiance_donjon
-```
-
----
-
-### 16. 🎲 Workflow `mesh3d` : Modèle 3D Maillé `.GLB` via Blender
-Génère des modèles 3D volumétriques (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`) avec matériaux PBR complets.
-
-```bash
-python main.py -w mesh3d "coffre ancien orné de fer forgé" --shape cube -o coffre_3d
-```
-
----
-
-### 17. 🌌 Workflow `skybox` : Ciels 360° Équirectangulaires
-Génère un panorama sphérique 2:1 et la ressource `Environment.tres` pour le `WorldEnvironment` de Godot 3D.
-
-```bash
-python main.py -w skybox "galaxie avec nébuleuse pourpre et lunes d'obsidienne" -o ciel_espace
-```
-
----
-
-### 18. 👾 Workflow `pixelart` : Quantification Rétro (Pico-8, Endesga-32)
-Convertit les assets en pixel art authentique avec palettes rétro.
-
-```bash
-python main.py -w pixelart -i godot_assets/cheval.png --palette pico8 --grid-size 64
-```
-
----
-
-### 19. 👗 Workflow `makehuman_clothes` : Garde-robe MakeHuman / MPFB2 & Scène New Human .blend
-Génère une garde-robe complète 100% compatible MakeHuman et MPFB2 (Torso/Haut, Pantalon/Bas, Chaussures/Bottes) à partir d'un thème stylistique :
-- **Génération IA PBR & Super-Résolution** : Création des textures Albedo, Normal Maps et Ambient Occlusion en matières brutes pures (cuir grainé, laine tissée, suède) avec upscaling IA matériel automatique (4x-UltraSharp / RealESRGAN sous GPU Vulkan).
-- **Géométries Officielles & Découpe Quad** : Exploite les géométries d'aide MakeHuman (`helper-tights` et `helper-skirt`) pour des volumes 3D réalistes (évasements naturels, manches dégageant les mains, bottes montantes intégrales) et compile les fichiers morphologiques `.mhclo`, `.obj`, `.mhmat` et vignettes `.thumb` dans la bibliothèque `AppData/Roaming/Blender Foundation/Blender/5.2/mpfb/data/data/clothes/`.
-- **Assemblage 3D & Rendu Multi-Angles** : Crée une scène Blender (`.blend`) avec un *New Human* MPFB habillé des pièces, éclairage studio 3 points et rendu `.png` ultra haute résolution (4096x4096).
-
-### 20. 🗺️ Workflows Skins MakeHuman / MPFB2 & Calibrage de Teint
-Génère et installe des packs de skins complets pour MakeHuman et Blender MPFB2 :
-- **Pack Complet MPFB** : Crée la texture Diffuse 2048x2048 (`diffuse.png`), la Normal Map PBR (`normal.png`), le fichier de matériau MakeHuman (`.mhmat`) avec paramètres de Subsurface Scattering (SSS) calibrés et la vignette d'interface (`.thumb`).
-- **Scripts Dédiés dans `scripts/`** :
-  - `scripts/build_clean_marc_skin.py` : Assemble et restaure une texture de peau MakeHuman propre et homogène sans couture avec colorimétrie dédiée (ex: teint d'hiver froid pour Marc de *Vent-Gris*).
-  - `scripts/align_marc_portrait_to_uv.py` : Calibre et projette les traits anatomiques 2D sur le patron UV standard MakeHuman hm08.
-- **Déploiement Automatique** : Installe les assets directement dans `AppData/Roaming/Blender Foundation/Blender/5.2/mpfb/data/skins/<nom_skin>/` et synchronise les dossiers de projet Godot.
-
----
-
-## 💻 Référence Complète de la CLI (`main.py`)
+<span id="cli"></span>
+## 💻 CLI Reference & Cheat Sheet
 
 ```text
 Usage: python main.py [prompt] [options]
 
-Paramètres Principaux :
-  prompt                    Description ou concept de l'asset.
-  -w, --workflow            Nom du workflow (défaut: 'generate').
-  -i, --input               Chemin de l'image source (pour variations, pixelart, upscale ou Img2Img guidé).
-  -t, --type                Type d'asset 2D : item, character, prop, tile.
-  --shape                   Forme 3D pour mesh3d : tile, cube, pillar, cylinder, sphere, card, cutout.
-  -o, --output              Nom du fichier de sortie (sans extension).
-  -d, --output-dir          Dossier de destination (défaut: 'godot_assets/').
-  -s, --size                Résolution carrée finale en pixels.
+Primary Options:
+  prompt                    Asset description or design concept.
+  -w, --workflow            Target workflow name (default: 'generate').
+  -i, --input               Input image path (for Img2Img, upscale, variations, pixelart).
+  -t, --type                2D asset category: item, character, prop, tile.
+  --shape                   3D shape for mesh3d: tile, cube, pillar, cylinder, sphere, card, cutout.
+  -o, --output              Output file basename (without extension).
+  -d, --output-dir          Destination directory (default: 'godot_assets/').
+  -s, --size                Square output resolution in pixels.
 
-Modèles & Moteurs IA :
-  --sd-model                Modèle de diffusion : 'flux', 'juggernaut', 'sdxl' ou chemin absolu .safetensors/.gguf.
-  --strength                Force de débruitage Img2Img / guidage d'image (défaut: 0.55).
-  --segmenter               Moteur de détourage : 'auto', 'birefnet', 'rmbg', 'floodfill', 'none'.
-  --pbr-engine              Moteur d'estimation PBR : 'auto', 'deep' (DeepBump ONNX), 'sobel'.
-  -l, --lora                Applique un LoRA 'nom:poids' (ex: -l 'game_icon_diablo_style:0.8').
-  --upscale                 Active l'upscaling IA automatique (ESRGAN 4x ou Lanczos) après la génération.
-  --upscale-model           Modèle d'upscale ESRGAN ('ultrasharp', 'anime', 'RealESRGAN_x4plus.pth', 'auto').
+AI Engines & Models:
+  --sd-model                Diffusion model: 'flux', 'juggernaut', 'sdxl' or file path.
+  --use-llm                 Enable local LLM prompt expansion (default: direct prompt passthrough).
+  --no-llm                  Disable local LLM prompt expansion (default behavior).
+  --seed                    Random seed (-1 for automatic random).
+  --strength                Denoising strength for Img2Img / guided diffusion (default: 0.55).
+  --segmenter               Background remover: 'auto', 'birefnet', 'rmbg', 'floodfill', 'none'.
+  --pbr-engine              PBR estimator: 'auto', 'deep' (DeepBump ONNX), 'sobel'.
+  -l, --lora                Apply LoRA in 'name:weight' format (e.g. -l 'game_icon_diablo_style:0.8').
+  --upscale                 Automatically trigger 4K ESRGAN AI upscaling after generation.
+  --upscale-model           ESRGAN model ('ultrasharp', 'anime', 'auto').
 
-Options Spécifiques aux Workflows :
-  --pose                    Pose OpenPose pour pose_control (idle, slash_attack, cast_spell, shield_block, jump, walk).
-  --pitch                   Pitch vocal fondamental en Hz pour tts_dialogue (défaut: 160.0).
-  --fps                     Cadence d'images/s pour anim_loop (défaut: 12.0).
-  --items                   Liste d'assets cohérents pour ip_adapter (ex: 'sword,shield,potion,helmet').
-  --angle                   Angle de flux en degrés pour flowmap (défaut: 90 = bas).
-  --flow-type               Type de flux pour flowmap ('river', 'vortex', 'radial', 'optical').
-  --turbulence              Intensité des tourbillons pour flowmap (défaut: 0.35).
-  --margin                  Marge fixe 9-slice en pixels (workflow ui_9slice).
-  --auto-margin             Détection automatique des marges pour ui_9slice.
-  --voxel-depth             Épaisseur en voxels (workflow voxel3d).
-  --voxel-scale             Échelle des voxels en unités Godot (workflow voxel3d).
-  --biome-a, --biome-b      Textures ou prompts des 2 biomes pour autotile_pack.
-  --factor                  Facteur de multiplication (upscale ou interpolation rife 2x, 4x).
-  --vfx-type                Type d'effet pour vfx_flipbook ou anim_loop ('portal', 'fire', 'waterfall', 'nebula').
-  --emotions                Liste d'émotions séparées par des virgules pour rpg_portrait et tts_dialogue.
-  --duration                Durée en secondes pour sfx ou audio_ambience.
-  --mode-2d                 Active la génération orientée Godot 2D (CanvasItem).
+Workflow-Specific Flags:
+  --pose                    OpenPose preset for pose_control (idle, slash_attack, cast_spell, shield_block, jump, walk).
+  --pitch                   Voice pitch in Hz for tts_dialogue (default: 160.0).
+  --fps                     Framerate for anim_loop (default: 12.0).
+  --items                   Comma-separated list of items for ip_adapter (e.g. 'sword,shield,ring,helmet').
+  --angle                   Flow angle in degrees for flowmap (default: 90 = downwards).
+  --flow-type               Flow type for flowmap ('river', 'vortex', 'radial', 'optical').
+  --turbulence              Turbulence strength for flowmap (default: 0.35).
+  --margin                  Fixed 9-slice margin in pixels for ui_9slice.
+  --auto-margin             Automatic margin detection for ui_9slice.
+  --voxel-depth             Extrusion thickness in voxels for voxel3d.
+  --voxel-scale             Voxel size in Godot units for voxel3d.
+  --biome-a, --biome-b      Biome prompts/textures for autotile_pack.
+  --factor                  Multiplication factor for upscaling or RIFE interpolation (2x, 4x).
+  --vfx-type                Effect preset for vfx_flipbook or anim_loop ('explosion', 'fire', 'portal').
+  --emotions                Comma-separated emotions for rpg_portrait and tts_dialogue.
+  --duration                Duration in seconds for sfx and audio_ambience.
+  --character               Target character name for outfit (default: 'marc_novice').
+  --top, --shoes            Materials description for outfit workflow.
 
-Commandes Utilitaires :
-  --interactive             Lance la console interactive avec menus numérotés (1-25).
-  --check                   Vérifie la présence des exécutables et des modèles.
-  --list-workflows          Affiche la liste complète des 25 workflows.
-  --list-loras              Affiche la liste des LoRAs installés.
-  --list-upscalers          Affiche la liste des modèles ESRGAN installés.
+Utility Flags:
+  --interactive             Launch the interactive console menu (workflows 1-26).
+  --check                   Verify system requirements, paths, and model checkpoints.
+  --list-workflows          Display all registered workflows.
+  --list-loras              Display detected LoRAs.
+  --list-upscalers          Display detected ESRGAN models.
 ```
 
-### 💡 Exemples Pratiques (Génération, LoRAs & Upscale 4K) :
+---
+
+### ⚡ Practical CLI Quick Examples
 
 ```bash
-# 1. Génération d'asset 2D en 1024x1024 avec Auto-Upscale IA 4K (4096x4096)
-uv run python main.py -w generate -p "un bouclier royal en or avec un lion grave" --upscale
+# 1. Generate 2D item icon with auto 4K AI upscaling (4096×4096 px)
+uv run python main.py -w generate "royal gold shield with an engraved lion" --upscale
 
-# 2. Asset avec style LoRA Diablo (Bascule auto sur SDXL Juggernaut) + Upscale 4K
-uv run python main.py -w generate -p "potion de mana sombre" -l game_icon_diablo_style:0.9 --upscale
+# 2. Generate dark fantasy potion using Diablo LoRA (auto-switches to SDXL)
+uv run python main.py -w generate "dark mana potion" -l game_icon_diablo_style:0.9 --upscale
 
-# 3. Génération guidée par image source (Img2Img avec force de débruitage ajustée)
-uv run python main.py -w generate -i assets/croquis_base.png -p "bouclier magique de cristal runique" --strength 0.60 --upscale
+# 3. Create complete PBR stone floor tile (.tres + OpenGL Normal + ORM + Albedo)
+uv run python main.py -w material3d "ancient gothic stone tile with purple runes" -s 1024 -o sol_runique
 
-# 4. Skybox 360° avec LoRA Redmond
-uv run python main.py -w skybox -p "dark fantasy dungeon hall with torches" -l 360RedmondResized:1.0
+# 4. Generate 3D mesh model with embedded PBR textures via Blender
+uv run python main.py -w mesh3d "ancient iron wrought treasure chest" --shape cube -o coffre_3d
 
-# 5. Upscaling direct d'une image existante avec le modèle 4x-UltraSharp
-uv run python main.py -w upscale -i godot_assets/mon_asset.png --factor 4 --upscale-model ultrasharp
+# 5. Generate 360° equirectangular skybox with space LoRA
+uv run python main.py -w skybox "purple cosmic nebula with dark obsidian moons" -l space_backround-XL-7:1.0
+
+# 6. Re-texture MakeHuman character outfit with custom medieval materials
+uv run python main.py -w outfit --character marc_novice --top "rustic medieval beige burlap tunic" --shoes "dark worn leather boots"
+
+# 7. Upscale existing image directly with 4x-UltraSharp
+uv run python main.py -w upscale -i godot_assets/casque.png --factor 4 --upscale-model ultrasharp
 ```
 
 ---
 
-## 🎮 Guide d'Intégration Godot 4
+<span id="godot"></span>
+## 🎮 Godot 4 Integration Guide
 
-### 1. Application des Matériaux PBR (`.tres`)
-1. Glissez-déposez le dossier `godot_assets/` dans `res://assets/` de votre projet Godot.
-2. Créez un nœud **`MeshInstance3D`** (ex: un `PlaneMesh` pour le sol ou un `BoxMesh` pour un mur).
-3. Dans l'inspecteur, glissez le fichier `.tres` généré (ex: `sol_runique_material.tres`) directement dans la propriété **Material** du Mesh.
-4. L'albedo, le relief dynamique de la Normal Map et les reflets de rugosité sont immédiatement opérationnels.
-
----
-
-### 2. Utilisation des Modèles 3D Maillés (`.glb`)
-1. Glissez le fichier `.glb` généré (ex: `sol_runique_3d_tile.glb` ou `coffre_3d.glb`) directement dans votre **Arborescence de Scène 3D** ou dans le Viewport.
-2. Le maillage, les UVs et les textures PBR sont **intégrés nativement dans le fichier binaire**.
+### 1. Applying PBR Materials (`.tres`)
+1. Drag and drop the `godot_assets/` folder into your Godot project's `res://assets/`.
+2. Add a **`MeshInstance3D`** node (e.g. `PlaneMesh` for ground or `BoxMesh` for walls).
+3. In the Inspector, drag the generated `.tres` file (e.g. `sol_runique_material.tres`) directly into the **Material** property.
+4. Albedo, dynamic OpenGL Normal relief, and ORM reflections are active immediately.
 
 ---
 
-### 3. Configuration de la Skybox 360°
-1. Ajoutez un nœud **`WorldEnvironment`** dans votre scène 3D.
-2. Dans la propriété **Environment**, glissez le fichier ressource généré (ex: `ciel_dark_env.tres`).
-3. Votre scène bénéficie instantanément d'un ciel à 360° et d'un éclairage IBL (Image-Based Lighting) global.
+### 2. Using 3D Meshes (`.glb`)
+1. Drag the `.glb` file (e.g. `coffre_3d.glb` or `sol_runique_3d_tile.glb`) into your **3D Scene Tree** or Viewport.
+2. Geometry, UV coordinates, and embedded PBR textures load seamlessly with zero manual shader setup.
 
 ---
 
-## 🤖 Guide pour les Agents IA de Codage (Blender MCP & Godot MCP)
+### 3. Setting Up 360° Skyboxes
+1. Add a **`WorldEnvironment`** node to your 3D scene.
+2. Drag the generated environment resource (e.g. `ciel_space_env.tres`) into the **Environment** slot.
+3. Your scene instantly gains realistic 360° panoramic background visuals and Image-Based Lighting (IBL).
 
-> **Message à l'attention de l'Agent IA qui assiste l'utilisateur :**  
-> L'utilisateur ne souhaite pas modéliser manuellement dans Blender. Vous disposez des serveurs MCP (`blender` et `godot-mcp-toolkit`) pour automatiser l'intégralité du pipeline 3D.
+---
 
-### 📋 Pipeline Recommandé pour l'Agent IA :
+<span id="agents"></span>
+## 🤖 AI Coding Agents Guide (MCP)
+
+> **Note for AI Assistant Agents (Claude, Gemini, Antigravity):**  
+> Users often do not wish to model manually in Blender or write repetitive engine setup code. You can leverage the `blender` and `godot-mcp-toolkit` MCP servers to automate the complete asset pipeline end-to-end.
 
 ```mermaid
 flowchart TD
-    Step1["1. Exécuter Generator Assets en CLI<br><code>python main.py -w turnaround3d ...</code><br>ou <code>python main.py -w material3d ...</code>"] --> Step2["2. Utiliser le MCP Blender<br><code>execute_blender_code</code> ou <code>download_polyhaven_asset</code><br>pour créer/importer le mesh creux & appliquer le PBR"]
-    Step2 --> Step3["3. Exporter le fichier .GLB<br>dans <code>godot_assets/mon_modele.glb</code>"]
-    Step3 --> Step4["4. Utiliser le MCP Godot<br><code>scene_create_node</code> pour placer l'asset<br>directement dans la scène de jeu"]
+    Step1["1. Execute Generator Assets CLI<br><code>python main.py -w turnaround3d ...</code><br>or <code>python main.py -w material3d ...</code>"] --> Step2["2. Blender MCP<br><code>execute_blender_code</code> or <code>download_polyhaven_asset</code><br>builds geometry & hooks PBR shaders"]
+    Step2 --> Step3["3. Export Production .GLB<br>into <code>godot_assets/my_model.glb</code>"]
+    Step3 --> Step4["4. Godot MCP Toolkit<br><code>scene_create_node</code> instantiates the asset<br>directly into the active game scene"]
 ```
 
-### 🛠️ Actions Types de l'Agent IA :
-
-1. **Pour l'Habillage de Personnages 3D (MakeHuman / MPFB)** :
-   - Référez-vous au guide complet pour agents IA dans [**`GUIDE_AGENT_IA_HABILLAGE.md`**](GUIDE_AGENT_IA_HABILLAGE.md).
-   - Utilisez les **patrons officiels MakeHuman Community (`.mhclo`)** qui s'adaptent dynamiquement à toutes les morphologies (**Homme**, **Femme**, **Enfant**).
-   - Séparez les vêtements en objets 3D indépendants (`Torso`, `Pants`, `Shoes`).
-   - Appliquez le masquage anatomique universel (8398 sommets fixes) pour préserver 100% du visage, cou, poignets, paumes et des 10 doigts.
-   - Enregistrez les nouveaux vêtements dans `packs/generator_assets.json` pour qu'ils soient immédiatement disponibles dans la bibliothèque Blender **MPFB > Apply assets > Clothes library**.
-
-2. **Pour les Équipements 3D Complexes (Casques, Armures, Créatures)** :
-   - Lancez le workflow `turnaround3d` pour générer la fiche Face + Profil.
-   - Utilisez l'outil MCP `execute_blender_code` pour exécuter un script Python `bpy` :
-     - Création du maillage de base symétrique (`Mirror Modifier`).
-     - Extrusion et mise en volume creuse guidée par les proportions de la fiche.
-     - Branchement des textures PBR dans le shader `Principled BSDF`.
-     - Exportation vers `godot_assets/<nom>.glb`.
-3. **Pour les Objets & Décors Déjà Disponibles** :
-   - Utilisez `search_polyhaven_assets` / `download_polyhaven_asset` ou `search_sketchfab_models` pour télécharger un maillage propre, puis appliquez-lui les textures générées par notre workflow `material3d`.
-4. **Pour l'Intégration dans le Jeu Godot** :
-   - Utilisez `scene_open` et `scene_create_node` du MCP Godot pour instancier le `.glb` ou appliquer le `.tres` sur un `MeshInstance3D` sans aucune intervention manuelle de l'utilisateur.
+### Typical Agent Actions:
+1. **Humanoid Characters & Outfits** :
+   - Consult the dedicated [**`GUIDE_AGENT_IA_HABILLAGE.md`**](GUIDE_AGENT_IA_HABILLAGE.md).
+   - Use official **MakeHuman Community patterns (`.mhclo`)** that automatically adapt to any body morphology (**Male**, **Female**, **Child**).
+   - Separate clothing into modular 3D objects (`Torso`, `Pants`, `Shoes`).
+   - Retexture existing UV patterns via `scripts/retexture_uv_garment.py` to preserve 100% of geometric seams, pockets, and buttons.
+2. **Complex Equipment (Helmets, Shields, Weapons)** :
+   - Run `turnaround3d` to produce orthogonal orthographic reference cards.
+   - Use `execute_blender_code` to extrude symmetrical quad geometry (`Mirror Modifier`) and hook up PBR maps in `Principled BSDF`.
+3. **Engine Placement** :
+   - Call `scene_open` and `scene_create_node` from the Godot MCP toolkit to instantiate the resulting `.glb` without requiring manual user intervention.
 
 ---
 
-## ⚡ Installation & Démarrage Rapide
+<span id="installation"></span>
+## ⚡ Installation & Quickstart
 
-### 1. Cloner le Projet & Environnement Virtuel
+### 1. Clone & Setup Virtual Environment
+This project is optimized for [**uv**](https://docs.astral.sh/uv/) for near-instant package installation:
+
 ```bash
 git clone https://github.com/votre-compte/generator-assets.git
 cd generator-assets
 
-# Synchroniser l'environnement virtuel avec uv (ultra-rapide) :
+# Synchronize dependencies with uv:
 uv sync
 ```
 
-### 2. Vérifier les Prérequis Système
+*(Alternatively, standard pip: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`)*
+
+---
+
+### 2. Verify System Requirements & Paths
+Check that your local executables (`sd-cli.exe`, `llama-cli.exe`, Blender) and model checkpoints are detected:
+
 ```bash
 python main.py --check
 ```
 
-### 3. Lancer la Console Interactive
+---
+
+### 3. Launch the Interactive Console
 ```bash
 python main.py --interactive
 ```
 
 ---
 
-## 📄 Licence
-Distribué sous licence **MIT**. Modèle FLUX.1 sous [FLUX.1 [dev] Non-Commercial License](https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md).
+## 📂 Project Structure
+
+```text
+generator-assets/
+├── core/                   # Pipeline core: config, CLI orchestrators, LLM enrichers
+│   ├── clothes_catalog.py  # 177-model MakeHuman semantic clothes catalog
+│   ├── config.py           # Model paths, VRAM management, hardware settings
+│   └── pbr.py              # DeepBump ONNX and Sobel PBR map generators
+├── workflows/              # 26 modular workflow implementations
+│   ├── material3d.py       # PBR materials & Godot .tres export
+│   ├── mesh3d.py           # Headless Blender 3D meshing
+│   ├── character3d.py      # MakeHuman humanoid character pipeline
+│   ├── outfit.py           # UV garment texture generator
+│   └── ...                 # audio, skybox, turnaround, autotile, etc.
+├── godot_assets/           # Default output directory for generated assets
+├── data/                   # JSON registries & garment databases
+├── scripts/                # Specialized helper utilities and build scripts
+├── loras/                  # Local directory for SDXL / Flux LoRAs
+├── upscalers/              # Local directory for ESRGAN .pth checkpoints
+├── docs/                   # Documentation assets (banner, diagrams)
+└── main.py                 # Unified CLI entrypoint & interactive shell
+```
+
+---
+
+## 📄 License
+This project is distributed under the **MIT License**.  
+FLUX.1 [dev] model weights are governed by the [FLUX.1 [dev] Non-Commercial License](https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md).  
+SDXL and ESRGAN models are subject to their respective open licenses.
