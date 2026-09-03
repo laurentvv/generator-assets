@@ -62,7 +62,7 @@ Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with *
 | 🔨 **Headless Blender 3D Meshing** | Automatically builds 3D meshes (`.glb`) with embedded PBR textures via headless Blender CLI (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`). |
 | 👗 **MakeHuman / MPFB2 Character Suite** | Canonical humanoid 3D pipeline: seamless facial UV projections, barycentric garment retargeting (`.mhclo`), and studio Cycles validation renders. |
 | 🌌 **Equirectangular 360° Skyboxes** | 2:1 panoramic skies with automated Godot 4 `WorldEnvironment` and Image-Based Lighting (IBL) configuration. |
-| ⚡ **Zero VRAM Spikes** | Sequential sub-process execution: local LLM prompt enricher terminates and frees all VRAM before diffusion launches on Vulkan/GPU. |
+| ⚡ **Direct by Default & Zero VRAM Spikes** | Direct, verbatim prompt execution by default for instantaneous generation. When optional LLM prompt enrichment is enabled (`--use-llm`), the LLM terminates and frees 100% of VRAM before diffusion launches. |
 
 ---
 
@@ -71,11 +71,13 @@ Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with *
 
 ```mermaid
 flowchart TD
-    UserPrompt["💡 User Prompt<br><i>e.g. 'runic gothic dungeon stone floor'</i>"] --> LLM["🧠 Local LLM Art Director<br><i>(LFM2.5-8B via llama-cli)</i><br>Enriches visual descriptors, lighting & palette"]
+    UserPrompt["💡 User Prompt<br><i>e.g. 'runic gothic dungeon stone floor'</i>"] --> ModeChoice{Prompt Mode}
     
-    LLM --> VRAM_Free["⚡ Full VRAM Release<br><i>(LLM process terminates)</i>"]
+    ModeChoice -->|Default: Direct Passthrough<br><i>Fast, verbatim prompt</i>| EngineSelect{Engine Selection}
+    ModeChoice -->|Optional: --use-llm<br><i>Enrich lighting, style & palette</i>| LLM["🧠 Local LLM Art Director<br><i>(LFM2.5-8B via llama-cli)</i>"]
     
-    VRAM_Free --> EngineSelect{Engine Selection}
+    LLM --> VRAM_Free["⚡ Full VRAM Release<br><i>(LLM process terminates before diffusion)</i>"]
+    VRAM_Free --> EngineSelect
     
     EngineSelect -->|Max Fidelity & PBR| Flux["🎨 Flux.1 Dev GGUF (Vulkan)<br><i>(sd-cli.exe)</i>"]
     EngineSelect -->|Fast & Thematic LoRAs| SDXL["🚀 SDXL Juggernaut + LoRAs<br><i>(Diablo, Dungeon, 360 Redmond)</i>"]
@@ -95,6 +97,10 @@ flowchart TD
     
     Blender --> GodotGLB["🎮 Production 3D Models (.GLB)<br>with baked PBR textures"]
 ```
+
+> [!NOTE]
+> **Direct Mode by Default & Optional LLM Art Director**:  
+> By default, `generator-assets` uses direct prompt passthrough for instantaneous rendering with zero overhead. Passing the `--use-llm` flag invokes the **🧠 Local LLM Art Director** (`LFM2.5-8B` via `llama-cli`) to expand brief prompts into atmospheric diffusion descriptors. The LLM process fully terminates and frees 100% of its VRAM before the diffusion engine launches.
 
 ---
 
@@ -373,6 +379,38 @@ The engine features **26+ modular workflows** organized into 5 functional catego
   ```bash
   uv run python main.py -w rpg_portrait "dark sorceress with golden eyes" --emotions "neutral,happy,angry,sad,hurt" -o sorceress
   ```
+
+#### 2.6. 👗 MakeHuman 3D Wardrobe Suite & Bilingual Semantic AI Router
+* **Bilingual Semantic Router (177 3D Models)** (`core/clothes_catalog.py`):
+  - Automatically indexes **177 MakeHuman 3D community assets** into [`data/clothes_catalog.json`](data/clothes_catalog.json) (monk robes, capes, plate armor, overalls, boots, beards, hairstyles).
+  - The `aiguiller_modele_vetement(prompt, category, gender)` function semantically pairs natural language prompts in **English or French** (e.g. *"rustic medieval peasant tunic"*, *"monk robe"*, *"viking beard"*, *"heavy leather boots"*) with the ideal 3D base model.
+  ```bash
+  uv run python core/clothes_catalog.py
+  ```
+* **AI Retexturing on Canonical UV Sewing Patterns** (`scripts/retexture_uv_garment.py`):
+  - Retextures official MakeHuman UV patterns directly (e.g. `male_worksuit01_diffuse.png`, `shoes01_diffuse.png`) to preserve 100% of underlying geometry, pocket seams, and button coordinates while converting blue denim to weathered burlap or aged leather with normal maps.
+  ```bash
+  uv run python scripts/retexture_uv_garment.py
+  ```
+* **External 3D Mesh to MakeClothes Compiler** (`scripts/makeclothes_from_mesh.py`):
+  - Converts arbitrary quad meshes (`.obj`, `.glb`, `.fbx`) generated from 3D AI tools or sculpted in Blender into official MakeHuman `.mhclo` garments with automatic barycentric vertex binding.
+  ```bash
+  uv run python scripts/makeclothes_from_mesh.py --mesh "assets/models/cape.obj" --name "traveler_cape" --category "clothes"
+  ```
+* **Community Asset Pack Installer** (`scripts/install_asset_packs.py`):
+  - Extracts and deploys MakeHuman Community zip archives directly into the active MPFB directory and updates the catalog.
+  ```bash
+  uv run python scripts/install_asset_packs.py
+  ```
+
+#### 2.7. 🗺️ MakeHuman Skin Synthesis & Anatomical Calibration
+* **Complete MPFB Skin Pack Pipeline**:
+  - Generates 2048×2048 diffuse skin maps (`diffuse.png`), PBR normal maps (`normal.png`), MakeHuman material definitions (`.mhmat`) with calibrated Subsurface Scattering (SSS) parameters, and UI thumbnail previews (`.thumb`).
+* **Dedicated Scripts**:
+  - `scripts/build_clean_marc_skin.py`: Generates seamless, homogeneous skin textures with dedicated colorimetry (e.g., cold winter complexion for Marc).
+  - `scripts/align_marc_portrait_to_uv.py`: Projects 2D anatomical facial features (eyes, eyebrows, scars, lips) accurately onto standard MakeHuman hm08 UV layouts without seam tearing.
+* **Deployment**:
+  - Installs skin assets automatically into `%APPDATA%/Blender Foundation/Blender/5.2/mpfb/data/skins/<skin_name>/` and syncs them with Godot asset targets.
 
 ---
 
