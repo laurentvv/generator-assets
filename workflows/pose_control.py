@@ -69,7 +69,8 @@ class PoseControlWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor=self.config.get("style_anchor"),
-                custom_cadrage="full body character sprite, head to toe visible, isolated on plain white background"
+                custom_cadrage="full body character sprite, head to toe visible, isolated on plain white background",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             # 3. Rendu par diffusion

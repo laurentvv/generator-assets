@@ -50,7 +50,8 @@ class Turnaround3DWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor=self.config.get("style_anchor"),
-                custom_cadrage=desc_v
+                custom_cadrage=desc_v,
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             img_b = generer_image_vulkan(

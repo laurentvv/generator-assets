@@ -21,21 +21,40 @@ def construire_prompt_coherant(
     llama_cli: str = DEFAULT_LLAMA_CLI,
     llm_model: str = DEFAULT_LLM_MODEL,
     style_anchor: str = DEFAULT_STYLE_ANCHOR,
-    custom_cadrage: Optional[str] = None
+    custom_cadrage: Optional[str] = None,
+    sans_llm: bool = True
 ) -> str:
     """
-    Appelle llama.cpp en sous-processus. 
-    Le processus se termine et libère 100% de la VRAM avant l'étape de diffusion.
+    Construit le prompt de diffusion final.
+    Par défaut (sans_llm=True), le concept est transmis directement avec son cadrage et style.
+    Si sans_llm=False, appelle llama.cpp en sous-processus pour enrichir le prompt.
     """
     cadrage = custom_cadrage or CADRAGE_INSTRUCTIONS.get(type_asset, "centered 2D game asset")
 
+    # Mode direct sans LLM (comportement par défaut)
+    if sans_llm:
+        parties = [concept]
+        if cadrage:
+            parties.append(cadrage)
+        if style_anchor:
+            parties.append(style_anchor)
+        prompt_final = ", ".join([p.strip().rstrip(",") for p in parties if p and p.strip()])
+        try:
+            print(f"✨ [Prompt Direct (Sans LLM)] :\n   {prompt_final}\n")
+        except UnicodeEncodeError:
+            print(f"[Prompt Direct (Sans LLM)] :\n   {prompt_final}\n")
+        return prompt_final
+
     prompt_texte = (
-        f"You are the art director for a dark fantasy 2D game. "
-        f"Describe this asset in English concisely (max 30 words), focusing ONLY on the object: {concept}.\n"
+        f"You are a professional art director and visual prompt engineer for video game assets. "
+        f"Describe this asset in English concisely (max 30 words), focusing strictly on the visual appearance, material, and texture of: {concept}.\n"
         f"Description:"
     )
 
-    print(f"🧠 [LLM] Direction artistique via llama.cpp pour '{concept}'...")
+    try:
+        print(f"🧠 [LLM] Direction artistique via llama.cpp pour '{concept}'...")
+    except UnicodeEncodeError:
+        print(f"[LLM] Direction artistique via llama.cpp pour '{concept}'...")
 
     commande_llm = [
         llama_cli,
@@ -75,12 +94,23 @@ def construire_prompt_coherant(
         description_llm = lignes[0].strip() if lignes else concept
 
         prompt_final = f"{description_llm}, {cadrage}, {style_anchor}"
-        print(f"✨ [Prompt Final LLM] (VRAM libérée) :\n   {prompt_final}\n")
+        try:
+            print(f"✨ [Prompt Final LLM] (VRAM libérée) :\n   {prompt_final}\n")
+        except UnicodeEncodeError:
+            print(f"[Prompt Final LLM] (VRAM libérée) :\n   {prompt_final}\n")
         return prompt_final
 
     except Exception as e:
-        print(f"❌ Erreur lors de l'exécution de llama.cpp : {e}")
+        try:
+            print(f"❌ Erreur lors de l'exécution de llama.cpp : {e}")
+        except UnicodeEncodeError:
+            print(f"Erreur lors de l'exécution de llama.cpp : {e}")
         if hasattr(e, 'stderr') and e.stderr:
             print(f"Détails : {e.stderr}")
         print("⚠️  Repli sur le prompt conceptuel brut.")
-        return f"{concept}, {cadrage}, {style_anchor}"
+        parties = [concept]
+        if cadrage:
+            parties.append(cadrage)
+        if style_anchor:
+            parties.append(style_anchor)
+        return ", ".join([p.strip().rstrip(",") for p in parties if p and p.strip()])

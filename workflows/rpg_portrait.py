@@ -105,7 +105,8 @@ class RPGPortraitWorkflow(BaseWorkflow):
                     llama_cli=self.config.get("llama_cli"),
                     llm_model=self.config.get("llm_model"),
                     style_anchor=style_portrait,
-                    custom_cadrage="bust shot portrait, head and shoulders centered"
+                    custom_cadrage="bust shot portrait, head and shoulders centered",
+                    sans_llm=params.get("sans_llm", params.get("no_llm", True))
                 )
 
                 img_brute = generer_image_vulkan(

@@ -181,7 +181,8 @@ class UI9SliceWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor=style_ui,
-                custom_cadrage="symmetrical 2D game interface border frame"
+                custom_cadrage="symmetrical 2D game interface border frame",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             img_brute = generer_image_vulkan(

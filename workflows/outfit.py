@@ -42,6 +42,8 @@ class OutfitWorkflow(BaseWorkflow):
         top_albedo_path = os.path.join(text_dir, f"top_{top_slug}_albedo.png")
         top_norm_path = os.path.join(text_dir, f"top_{top_slug}_normal.png")
         
+        sans_llm = params.get("sans_llm", params.get("no_llm", True))
+        
         if not os.path.exists(top_albedo_path):
             prompt_top = construire_prompt_coherant(
                 concept=top_prompt,
@@ -49,7 +51,8 @@ class OutfitWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor="seamless texture, macro fabric weave pattern, top-down flat lighting, clean repeatable cloth texture, photorealistic",
-                custom_cadrage="seamless repeatable tile texture"
+                custom_cadrage="seamless repeatable tile texture",
+                sans_llm=sans_llm
             )
             img_top = generer_image_vulkan(
                 prompt=prompt_top,
@@ -81,7 +84,8 @@ class OutfitWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor="seamless texture, rough worn brown leather texture, top-down flat lighting, clean repeatable surface, photorealistic",
-                custom_cadrage="seamless repeatable tile texture"
+                custom_cadrage="seamless repeatable tile texture",
+                sans_llm=sans_llm
             )
             img_shoes = generer_image_vulkan(
                 prompt=prompt_shoes,

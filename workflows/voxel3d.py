@@ -61,7 +61,8 @@ class Voxel3DWorkflow(BaseWorkflow):
                 type_asset="item",
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
-                style_anchor=style_voxel
+                style_anchor=style_voxel,
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             img_brute = generer_image_vulkan(

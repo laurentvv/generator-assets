@@ -135,6 +135,8 @@ def generer_image_vulkan(
 
     if seed >= 0:
         commande.extend(["-s", str(seed)])
+    else:
+        commande.extend(["-s", "-1"])
 
     if init_img and os.path.exists(init_img):
         commande.extend(["-i", init_img, "--strength", str(strength)])

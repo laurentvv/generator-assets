@@ -77,7 +77,8 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor="macro photographic PBR material texture, flat top-down surface, neutral lighting, 8k scan, full frame texture",
-                custom_cadrage="macro surface texture map, no person, no mannequins, no borders, no pre-modeled objects"
+                custom_cadrage="macro surface texture map, no person, no mannequins, no borders, no pre-modeled objects",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             # 1. Génération Albedo

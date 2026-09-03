@@ -46,7 +46,8 @@ class SkyboxWorkflow(BaseWorkflow):
             llama_cli=self.config.get("llama_cli"),
             llm_model=self.config.get("llm_model"),
             style_anchor=style_skybox,
-            custom_cadrage="360 equirectangular spherical panorama, horizontal seamless looping"
+            custom_cadrage="360 equirectangular spherical panorama, horizontal seamless looping",
+            sans_llm=params.get("sans_llm", params.get("no_llm", True))
         )
 
         # Rendu 2:1

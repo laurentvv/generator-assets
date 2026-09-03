@@ -1,0 +1,39 @@
+# Material file for MakeHuman / MPFB
+name marc_novice
+tag MakeHuman™
+tag marc_novice
+
+ambientColor 0.28 0.26 0.27
+diffuseColor 1.0 1.0 1.0
+specularColor 0.025 0.025 0.025
+shininess 0.45
+emissiveColor 0.15 0.08 0.08
+opacity 1.0
+translucency 0.0
+shadeless False
+wireframe False
+transparent False
+alphaToCoverage False
+backfaceCull True
+depthless False
+castShadows True
+receiveShadows True
+
+diffuseTexture marc_novice_diffuse.png
+normalTexture marc_novice_normal.png
+sssEnabled True
+sssRScale 4.8
+sssGScale 2.1
+sssBScale 0.85
+
+shader data/shaders/glsl/litsphere
+shaderParam litsphereTexture data/litspheres/lit_standard_skin.png
+
+shaderConfig ambientOcclusion True
+shaderConfig normal True
+shaderConfig bump True
+shaderConfig displacement False
+shaderConfig vertexColors True
+shaderConfig spec True
+shaderConfig transparency False
+shaderConfig diffuse True

@@ -70,7 +70,8 @@ class Material3DWorkflow(BaseWorkflow):
                 llama_cli=self.config.get("llama_cli"),
                 llm_model=self.config.get("llm_model"),
                 style_anchor=style_pbr,
-                custom_cadrage="seamless repeatable tileable texture"
+                custom_cadrage="seamless repeatable tileable texture",
+                sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
             # Rendu avec padding circulaire
