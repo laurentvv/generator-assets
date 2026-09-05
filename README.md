@@ -162,6 +162,20 @@ To ensure maximum productivity and avoid false expectations, here is a transpare
 
 ---
 
+### 4. AI Music Loops Showcase (`music_bg`) — 🎧 *cliquez pour écouter*
+| Waveforms (seamless loops, 48 kHz stereo) |
+| :---: |
+| <img src="docs/exemples/musique/waveforms_boucles_tech.png" width="100%" alt="Waveforms des 3 boucles tech" /> |
+
+| 🎵 Boucle tech n°1 — 95 BPM ⭐ | 🎵 Boucle tech n°2 — 78 BPM | 🎵 Boucle tech n°3 — 71 BPM |
+| :---: | :---: | :---: |
+| [![Écouter cand_1](https://img.shields.io/badge/%C3%89couter-cand__1%20%E2%80%A2%2095%20BPM%20%E2%80%A2%2020.3s-9b59b6.svg)](docs/exemples/musique/boucle_tech_cand1_95bpm.mp3) | [![Écouter cand_2](https://img.shields.io/badge/%C3%89couter-cand__2%20%E2%80%A2%2078%20BPM%20%E2%80%A2%2021.6s-1abc9c.svg)](docs/exemples/musique/boucle_tech_cand2_78bpm.mp3) | [![Écouter cand_3](https://img.shields.io/badge/%C3%89couter-cand__3%20%E2%80%A2%2071%20BPM%20%E2%80%A2%2020.3s-e67e22.svg)](docs/exemples/musique/boucle_tech_cand3_71bpm.mp3) |
+| *Seam Δ0.1 dB — promoted as `tech_loop_minimal_bed.wav` (-30 LUFS voice-over bed)* | *Seam Δ0.3 dB — deeper, slower groove* | *Seam Δ11.7 dB — kept as raw material* |
+
+*Generated 100% locally with MiniMax-Music3 GGUF on audio.cpp (Vulkan, AMD RX 6950 XT) — `lyrics=[Instrumental]`, no vocals. Each preview plays the seamless loop **three times in a row** at -16 LUFS (listening level); production beds ship at -30 LUFS behind voice-over with an ffmpeg `sidechaincompress` ducking recipe.*
+
+---
+
 <span id="models"></span>
 ## 🤖 AI Models & LoRA Library
 
