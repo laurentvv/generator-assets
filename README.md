@@ -208,7 +208,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   • 3D Geometry & PBR Textures     : material3d, mesh3d, voxel3d, skybox, turnaround3d, flowmap
   • Humanoid 3D Characters & Outfits: character3d, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -569,7 +569,28 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   uv run python main.py -w audio_ambience "dark subterranean dungeon with distant water drops" --duration 8.0 -o dungeon_ambience
   ```
 
-#### 4.3. `tts_dialogue` — Emotional Character Voice & Lip-Sync
+#### 4.3. `music_bg` — AI Music Loops as Background Beds (MiniMax-Music3 GGUF Vulkan)
+
+* **Process**:
+  1. Generates several music candidates from an English style description via **MiniMax-Music3 GGUF** running on **audio.cpp** with the **Vulkan** backend (AMD GPU accelerated, CPU fallback) — same GGUF/Vulkan philosophy as `sd-cli` and `llama.cpp`. Fully instrumental conditioning (`lyrics=[Instrumental]`, explicit per-candidate seeds).
+  2. Builds a **seamless loop** from each candidate: BPM estimation by onset-envelope autocorrelation, then **best-loop-point search** — among all windows of a whole number of bars (≥ target duration), picks the one whose head/tail energies match across 50–500 ms windows (the model composes song structures with intros/breaks/outros even in 23 s). Ends snapped to zero crossings + 20 ms equal-power micro-crossfade. Ambient mode: 1 s equal-power crossfade.
+  3. Applies **voice-over bed post-processing**: 80 Hz high-pass + −3 dB presence dip at 2.8 kHz so the loop stays discrete behind a (male) voice-over.
+  4. Validates each candidate (seam continuity, clipping, LUFS) and **finalizes every candidate**: bed normalized to −30 LUFS (ffmpeg 2-pass loudnorm), MP3, plus an `ECOUTE_cand<N>_boucle_x3.mp3` listening preview (loop ×3 at −16 LUFS). Best seam promoted to `output/music_bg/` root.
+  5. Writes a ready-to-use **ffmpeg ducking recipe** (`sidechaincompress` + `amix`) that loops the bed to the voice duration and automatically attenuates it whenever the voice speaks. Optional Music Flamingo QA (`--analyse`).
+* **Inputs**: `prompt` (English music description), `--duration` (loop seconds, default 12), `--candidats` (default 3), `--lufs` (bed target, default −30), `--loop-mode` (`percussive`|`ambient`), `--music-backend` (`vulkan`|`cpu`), `--seed`, `--analyse` (Music Flamingo QA).
+* **Engines**: audio.cpp v0.7.2 (`audiocpp_cli`, Vulkan, ~25 min per 23 s generation on RX 6950 XT) + MiniMax-Music3-GGUF Q4_0/Q8_0 (~8.5 GB, `C:\Modeles_LLM\MiniMax-Music3-GGUF`), NumPy/SciPy DSP, ffmpeg 9 (`C:\ffmpeg\dist\bin\ffmpeg.exe`), optional llama.cpp + Music Flamingo GGUF.
+* **Outputs** (`output/music_bg/`): `<name>_full.wav` (48 kHz PCM16 loop), `<name>_bed.wav` (−30 LUFS bed), `<name>.ogg`, `<name>_preview.mp3`, `recette_mixage_voix.txt` (ducking command), `candidats/` (every candidate: raw WAV + loop + bed + MP3), `ECOUTE_cand<N>_boucle_x3.mp3` (listening previews).
+* **Helpers**: `scripts/download_music3_gguf.py` (engine + models), `scripts/download_music_flamingo.py` (optional QA model), `scripts/generer_boucles_music_bg_batch.py N` (**resilient batch** — one candidate per process, resumes from existing files, survives AMD GPU driver resets), `scripts/finaliser_boucles_music_bg.py` (re-finalize raw WAVs), `scripts/ecoute_candidat_music_bg.py N` (listening preview).
+* **Example**:
+  ```bash
+  uv run python main.py -w music_bg "subtle minimal techno groove, soft pulsing analog synth bass, muffled kick, no vocals" --duration 20 --candidats 3 -o tech_loop_minimal
+  # Batch résilient (recommandé pour les gros volumes) :
+  uv run python -u scripts/generer_boucles_music_bg_batch.py 10
+  ```
+* **Status (2026-09-05)**: ✅ generator validated by user (3 tech loops 20-22 s delivered, seam ≤ 0.3 dB on the promoted loops). ⚠️ **Not yet tested**: Music Flamingo QA (`--analyse`, needs `download_music_flamingo.py`, non-commercial licence), ducking recipe on a real voice-over (`recette_mixage_voix.txt`), `--loop-mode ambient`. Known pitfalls (soundfile OGG stack overflow → use ffmpeg; AMD GPU watchdog resets → resilient batch) documented in `docs/MEMORY_BANK.md` §1.10.
+* **Licence**: MiniMax-Music3 community licence (MIT-style, commercial OK below $20M revenue; disclose AI-generated music in the video description: *« Musique : générée par IA (MiniMax-Music3) »*).
+
+#### 4.4. `tts_dialogue` — Emotional Character Voice & Lip-Sync
 * **Process**:
   1. Accepts a character name, a list of emotions (`neutral,happy,angry,sad,hurt`), and voice pitch tuning.
   2. Generates spoken voice lines with intonation, timbre, and cadence modified according to each emotional state.
@@ -584,7 +605,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   uv run python main.py -w tts_dialogue "dark_sorceress" --emotions "neutral,happy,angry,hurt" --pitch 180 -o sorceress_voice
   ```
 
-#### 4.4. `vfx_flipbook` — 4x4 Animated Particle Sheets (.tscn)
+#### 4.5. `vfx_flipbook` — 4x4 Animated Particle Sheets (.tscn)
 * **Process**:
   1. Takes an effect concept (`explosion`, `fire`, `lightning`, `portal`, `slash`, `aura`).
   2. Generates a 4×4 grid (16 chronological animation frames) of the evolving particle simulation with alpha transparency.
@@ -599,7 +620,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   uv run python main.py -w vfx_flipbook "purple arcane void explosion" --vfx-type explosion -o arcane_explosion
   ```
 
-#### 4.5. `anim_loop` — Seamless Animated Loop Shaders
+#### 4.6. `anim_loop` — Seamless Animated Loop Shaders
 * **Process**:
   1. Accepts an effect or texture animation prompt (portal vortex, flowing waterfall, flickering fire).
   2. Synthesizes a periodic keyframe sequence where frame N connects seamlessly back to frame 0.
@@ -614,7 +635,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   uv run python main.py -w anim_loop "swirling cosmic void portal" --frames 16 --fps 12 -o void_portal
   ```
 
-#### 4.6. `rife_interp` — AI Frame Rate Multiplication (60 FPS)
+#### 4.7. `rife_interp` — AI Frame Rate Multiplication (60 FPS)
 * **Process**:
   1. Takes an existing linear spritesheet (e.g. a 4-frame walk cycle or 8-frame attack).
   2. Slices the sheet into separate discrete sequential image frames.
@@ -629,7 +650,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   uv run python main.py -w rife_interp -i godot_assets/spritesheet.png --columns 4 --factor 2 -o anim_60fps
   ```
 
-#### 4.7. `video` — Native Hardware-Accelerated Video Generation (.webm)
+#### 4.8. `video` — Native Hardware-Accelerated Video Generation (.webm)
 * **Process**:
   1. Harnesses `stable-diffusion.cpp` native video inference mode (`-M vid_gen`) with full hardware acceleration under Vulkan.
   2. Supports 4 generation paradigms:
@@ -826,7 +847,13 @@ Workflow-Specific Flags:
   --factor                  Multiplication factor for upscaling or RIFE interpolation (2x, 4x).
   --vfx-type                Effect preset for vfx_flipbook or anim_loop ('explosion', 'fire', 'portal').
   --emotions                Comma-separated emotions for rpg_portrait and tts_dialogue.
-  --duration                Duration in seconds for sfx and audio_ambience.
+  --duration                Duration in seconds for sfx, audio_ambience and music_bg loop.
+  --lufs                    Bed loudness target in LUFS for music_bg (default: -30).
+  --loop-mode               Loop strategy for music_bg: 'percussive' (BPM-aligned, default) or 'ambient'.
+  --music-backend           audio.cpp backend for music_bg: 'vulkan' (default), 'cpu' or 'auto'.
+  --candidats               Number of music_bg candidates to generate and rank (default: 3).
+  --lyrics                  Lyrics/structure conditioning for music_bg (default: '[Instrumental]').
+  --analyse                 Enable optional Music Flamingo QA on the selected music_bg bed.
   --character               Target character name for outfit (default: 'marc_novice').
   --top, --shoes            Materials description for outfit workflow.
 

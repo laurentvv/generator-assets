@@ -93,11 +93,12 @@ def lancer_mode_interactif(config: dict):
         "23": ("pose_control", "🕺 Contrôle d'Armatures & Poses (ControlNet OpenPose)"),
         "24": ("tts_dialogue", "🎙️ Synthèse Vocale Émotionnelle & Lip-Sync Godot"),
         "25": ("audio_ambience", "🌌 Ambiances Sonores Immersives & Paysages Bouclables"),
-        "26": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
-        "27": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
-        "28": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
-        "29": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
-        "30": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
+        "26": ("music_bg", "🎵 Boucles Musicales IA en Fond Sonore (MiniMax-Music3 Vulkan + Bed Voix Off)"),
+        "27": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
+        "28": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
+        "29": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
+        "30": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
+        "31": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
     }
 
     while True:
@@ -106,7 +107,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-30) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-31) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
@@ -280,6 +281,16 @@ def lancer_mode_interactif(config: dict):
             elif wf_name == "audio_ambience":
                 params["prompt"] = input("🌌 Type d'ambiance (dungeon, forest, storm, space, campfire) : ").strip() or "dungeon"
                 params["duration"] = float(input("⏱️  Durée en secondes (défaut: 8.0) : ").strip() or 8.0)
+
+            elif wf_name == "music_bg":
+                params["prompt"] = input(
+                    "🎵 Description du fond musical en anglais (défaut: minimal techno discret) : "
+                ).strip() or None
+                params["duration"] = float(input("⏱️  Durée de la boucle en secondes (défaut: 12) : ").strip() or 12)
+                params["candidats"] = int(input("🎲 Nombre de candidats à générer (défaut: 3) : ").strip() or 3)
+                params["lufs"] = float(input("🎚️  LUFS cible du bed (défaut: -30) : ").strip() or -30.0)
+                analyse_choix = input("🧠 Activer la QA Music Flamingo ? (o/N) : ").strip().lower()
+                params["analyse"] = analyse_choix in ("o", "oui", "y", "yes")
 
             elif wf_name == "video":
                 params["prompt"] = input("🎬 Concept / Action de la vidéo (ex: cascade mystique dans jungle luxuriante) : ").strip()
@@ -508,6 +519,12 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--fps", type=float, default=12.0, help="Cadence FPS pour anim_loop (défaut: 12.0).")
     groupe_wf.add_argument("--items", help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet').")
     groupe_wf.add_argument("--ambience-type", choices=["dungeon", "forest", "storm", "space", "campfire", "tavern"], help="Type d'ambiance pour audio_ambience.")
+    groupe_wf.add_argument("--lufs", type=float, default=-30.0, help="LUFS cible du lit musical « bed » pour music_bg (défaut: -30).")
+    groupe_wf.add_argument("--loop-mode", choices=["percussive", "ambient"], default="percussive", help="Stratégie de bouclage music_bg (défaut: percussive, alignée BPM).")
+    groupe_wf.add_argument("--music-backend", choices=["vulkan", "cpu", "auto"], default="vulkan", help="Backend audio.cpp pour music_bg (défaut: vulkan).")
+    groupe_wf.add_argument("--candidats", type=int, default=3, help="Nombre de candidats music_bg à générer puis départager (défaut: 3).")
+    groupe_wf.add_argument("--lyrics", default="[Instrumental]", help="Paroles/structure pour music_bg (défaut: [Instrumental]).")
+    groupe_wf.add_argument("--analyse", action="store_true", help="Active la QA Music Flamingo sur le bed sélectionné (music_bg).")
     groupe_wf.add_argument("--character", default="marc_novice", help="Nom du personnage cible pour le workflow outfit (ex: marc_novice).")
     groupe_wf.add_argument("--top", default="rustic medieval beige burlap tunic fabric", help="Description du tissu/matière pour le haut/tunique (workflow outfit).")
     groupe_wf.add_argument("--shoes", default="worn dark brown medieval leather shoes texture", help="Description de la matière pour les chaussures/bottes (workflow outfit).")
@@ -778,7 +795,13 @@ Exemples de Workflows 3D & 2D :
         "mpfb_dir": args.mpfb_dir,
         "end_img": args.end_img,
         "control_video": args.control_video,
-        "flow_shift": args.flow_shift
+        "flow_shift": args.flow_shift,
+        "lufs": args.lufs,
+        "loop_mode": args.loop_mode,
+        "music_backend": args.music_backend,
+        "candidats": args.candidats,
+        "lyrics": args.lyrics,
+        "analyse": args.analyse
     }
 
     # Détection automatique du workflow si l'argument -w n'est pas spécifié

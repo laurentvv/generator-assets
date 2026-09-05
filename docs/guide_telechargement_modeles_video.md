@@ -158,6 +158,64 @@ Essentiel pour la **diffusion YouTube Master 4K**. Reconstitue les arêtes et le
 
 ---
 
+---
+
+## 🎵 6. MiniMax-Music3 GGUF (Génération Musicale Text-to-Music)
+
+Moteur de génération musicale du workflow `music_bg` : chansons et instrumentaux jusqu'à 5 minutes,
+sortie stéréo 32 kHz, exécuté via **audio.cpp** (moteur C++ GGUF Vulkan, même philosophie que
+sd-cli et llama.cpp — aucun PyTorch, GPU AMD utilisé).
+
+### Composants & Sources HuggingFace :
+| Fichier | Taille | Rôle | Emplacement |
+| :--- | :--- | :--- | :--- |
+| `language_model_q4_0.gguf` | 6.01 Go | LLM global 8B (structure musicale, Qwen3) | `C:\Modeles_LLM\MiniMax-Music3-GGUF\` |
+| `rvq_depth_decoder_q8_0.gguf` | 0.70 Go | Décodeur RVQ (codebooks acoustiques) | `C:\Modeles_LLM\MiniMax-Music3-GGUF\` |
+| `transformer_q4_0.gguf` | 1.40 Go | Flow Matching 2.4B | `C:\Modeles_LLM\MiniMax-Music3-GGUF\` |
+| `condition_encoder.gguf` | 101 Mo | Encodeur de conditionnement texte | `C:\Modeles_LLM\MiniMax-Music3-GGUF\` |
+| `vocoder.gguf` | 217 Mo | Flow-VAE → forme d'onde | `C:\Modeles_LLM\MiniMax-Music3-GGUF\` |
+| `config/` + `tokenizer/` | ~12 Mo | Configs runtime + tokenizer | `C:\Modeles_LLM\MiniMax-Music3-GGUF\` |
+
+Le runtime **audio.cpp** (release Windows x64 Vulkan, ~53 Mo) s'installe dans `C:\audio-cpp\`
+(`audiocpp_cli.exe`, surchargeable via `AUDIOCPP_PATH`).
+
+### Commande de téléchargement automatisé :
+
+```powershell
+uv run python scripts/download_music3_gguf.py
+```
+
+*Sources : [`audio-cpp/MiniMax-Music3-GGUF`](https://huggingface.co/audio-cpp/MiniMax-Music3-GGUF) •
+[audio.cpp (GitHub)](https://github.com/0xShug0/audio.cpp) •
+[`MiniMaxAI/MiniMax-Music3`](https://huggingface.co/MiniMaxAI/MiniMax-Music3)*
+
+### 📜 Licence & bonnes pratiques YouTube :
+- **Licence communauté MiniMax-Music3** (type MIT) : usage **commercial autorisé** sous 20 M$ de CA
+  annuel ; mention « MiniMax-Music3 » exigée sur les produits/services exposant le modèle.
+- L'AUP demande de **signaler le contenu généré par IA** publié publiquement → ajoutez une ligne
+  dans la description YouTube : *« Musique : générée par IA (MiniMax-Music3) »*.
+- Pic VRAM mesuré ~9.8 Gio (mix Q4_0/Q8_0, 30 s) → conforme au budget 16 Go de la RX 6950 XT.
+
+### 🧠 Module optionnel : Music Flamingo (QA musicale via llama.cpp)
+
+Modèle de **compréhension** musicale (NVIDIA, backbone Audio Flamingo 3) utilisé par `music_bg --analyse`
+pour la QA des boucles (BPM, instrumental, verdict « discret en fond ») via `llama-cli` + mmproj audio.
+
+| Fichier | Taille | Emplacement |
+| :--- | :--- | :--- |
+| `music-flamingo-hf.Q4_K_M.gguf` | 4.8 Go | `C:\Modeles_LLM\music-flamingo\` |
+| `music-flamingo-hf.mmproj-f16.gguf` | 1.4 Go | `C:\Modeles_LLM\music-flamingo\` |
+
+```powershell
+uv run python scripts/download_music_flamingo.py
+```
+
+⚠️ **Licence NVIDIA OneWay Noncommercial** : usage non commercial uniquement (analyse interne,
+jamais distribué) — c'est pourquoi ce module est optionnel et désactivé par défaut.
+
+*Sources : [`mradermacher/music-flamingo-hf-GGUF`](https://huggingface.co/mradermacher/music-flamingo-hf-GGUF) •
+[NVIDIA/audio-flamingo](https://github.com/NVIDIA/audio-flamingo)*
+
 <span id="script-tout-en-un"></span>
 ## 🚀 Téléchargement Global Automatisé
 
