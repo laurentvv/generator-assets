@@ -9,7 +9,8 @@ du pilote GPU AMD (LiveKernelEvent 141) en réessayant, puis finalise toutes
 les boucles via l'algorithme corrigé (zone d'énergie stable).
 
 Usage :
-  uv run python -u scripts/generer_boucles_music_bg_batch.py [nb_candidats]
+  uv run python -u scripts/generer_boucles_music_bg_batch.py [nb_candidats] [moteur]
+  moteur : acestep (défaut, rapide) | music3 (lent, ~25 min/candidat)
 """
 
 import os
@@ -22,9 +23,10 @@ for f in (sys.stdout, sys.stderr):
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.music_ai import generer_musique_music3, empreinte_fichier
+from core.music_ai import generer_musique_acestep, generer_musique_music3, empreinte_fichier
 
 NB_CANDIDATS = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+MOTEUR = sys.argv[2] if len(sys.argv) > 2 else "acestep"
 DOSSIER = os.path.join("output", "music_bg")
 DOSSIER_BRUTS = os.path.join(DOSSIER, "candidats")
 
@@ -32,14 +34,21 @@ PROMPT = (
     "subtle minimal techno groove, soft pulsing analog synth bass, muffled kick, "
     "airy hi-hats, clean dark pads, instrumental only, steady understated momentum, no vocals"
 )
-DUREE_GENERATION = 23.0   # 20 s de boucle visée + marge d'alignement mesures
-ETAPES = 30
+# 20 s de boucle visée + marge : ACE-Step termine par un long fondu de sortie
+# (~4-6 s) → +8 s ; Music3 se contente de +3 s.
+if MOTEUR == "acestep":
+    DUREE_GENERATION = 28.0
+    ETAPES = 8
+else:
+    DUREE_GENERATION = 23.0
+    ETAPES = 30
 PAUSE_ENTRE_CANDIDATS_S = 8.0
 
 
 def main():
     os.makedirs(DOSSIER_BRUTS, exist_ok=True)
-    print(f"🎵 Batch résilient music_bg : {NB_CANDIDATS} candidats, génération {DUREE_GENERATION:.0f} s, prompt minimal techno instrumental")
+    print(f"🎵 Batch résilient music_bg : {NB_CANDIDATS} candidats, moteur {MOTEUR}, "
+          f"génération {DUREE_GENERATION:.0f} s, prompt minimal techno instrumental")
     print(f"   Dossier : {DOSSIER_BRUTS}")
 
     reussis, echoues = [], []
@@ -52,11 +61,12 @@ def main():
             continue
 
         t0 = time.time()
-        print(f"\n▶️ Génération cand_{i}/{NB_CANDIDATS} (graine {1000 + i})...")
+        print(f"\n▶️ Génération cand_{i}/{NB_CANDIDATS} (moteur {MOTEUR}, graine {1000 + i})...")
         try:
             # Graine explicite par candidat : garantit des variations distinctes
             # (le seed par défaut du runtime est déterministe).
-            chemin_ok, backend = generer_musique_music3(
+            generateur = generer_musique_acestep if MOTEUR == "acestep" else generer_musique_music3
+            chemin_ok, backend = generateur(
                 description=PROMPT,
                 chemin_sortie=chemin,
                 duree=DUREE_GENERATION,
