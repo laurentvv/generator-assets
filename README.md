@@ -652,23 +652,23 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   uv run python main.py -w video -i godot_assets/heros_portrait.png -p "character breathing and blinking with atmospheric fog" --frames 25 -o heros_idle
   ```
 
-* **📥 Téléchargement Automatisé des Modèles Vidéo (`C:\Modeles_LLM`)** :
-  Le pipeline vidéo s'appuie sur le modèle de pointe **Alibaba Wan 2.1** (ou LTX-2.5). Trois composants sont requis dans `C:\Modeles_LLM` :
-  1. `wan_2.1_vae.safetensors` (242 Mo — VAE Vidéo spécialisé)
-  2. `umt5-xxl-encoder-Q4_K_M.gguf` (3.4 Go — Encodeur de texte multilingue)
-  3. `wan2.1_t2v_1.3b-q8_0.gguf` (1.47 Go — Modèle de diffusion léger et rapide pour 16 Go VRAM)
+* **📥 Guide de Récupération des Modèles Vidéo SOTA (`C:\Modeles_LLM`)** :
+  Tous les modèles vidéo sont stockés dans `C:\Modeles_LLM\` (et son sous-dossier `upscalers\`).  
+  *(Consultez le guide exhaustif avec liens directs et sources HuggingFace dans [`docs/guide_telechargement_modeles_video.md`](docs/guide_telechargement_modeles_video.md))*
 
-  Téléchargement en une commande :
-  ```powershell
-  # Pack Recommandé Wan 2.1 1.3B (~5.2 Go au total) :
-  .\scripts\download_video_models.ps1 -Model 1.3b
+  | Modèle & Rôle | Fichiers Requis (`C:\Modeles_LLM`) | Taille | Commande de Téléchargement Automatisé |
+  | :--- | :--- | :--- | :--- |
+  | **LTX-2.5 Distilled** 👑<br>*(15B Audio + Vidéo)* | `LTX-2.5-Distilled-Q4_K_M.gguf`<br>`gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf`<br>`ltx-2.5-video-vae-conv-bf16.safetensors`<br>`ltx-2.5-audio-vae-bf16.safetensors` | ~25.7 Go | `python scripts/download_ltx25.py`<br>`python scripts/download_gemma4_gguf.py`<br>`python scripts/download_ltx25_vaes.py` |
+  | **Wan 2.1 14B & 1.3B**<br>*(Géométrie 3D & Isométrie)* | `wan2.1-t2v-14b-Q4_K_M.gguf`<br>`umt5-xxl-encoder-Q4_K_M.gguf`<br>`wan_2.1_vae.safetensors` | ~13.8 Go | `.\scripts\download_video_models.ps1 -Model 14b` |
+  | **Wan 2.2 MoE**<br>*(Photoréalisme Absolu Dual-DiT)* | `Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf`<br>`Wan2.2-T2V-A14B-HighNoise-Q4_K_M.gguf`<br>`umt5-xxl-encoder-Q4_K_M.gguf` | ~23.1 Go | `python scripts/download_wan22_official.py` |
+  | **MiniMax-H3**<br>*(Hailuo 32B DiT + Son)* | `MiniMax-H3-Q4_K_M.gguf`<br>`Qwen3-VL-32B-Instruct-Q4_K_M.gguf` | ~27.8 Go | `python scripts/download_minimax_h3.py` |
+  | **Super-Résolution 4K**<br>*(Netteté YouTube ESRGAN)* | `upscalers/4x-UltraSharp.pth` | 64 Mo | Inclus dans le repo ou via HuggingFace `Kim2091/4x-UltraSharp` |
 
-  # Pack Cinéma Studio Wan 2.1 14B :
-  .\scripts\download_video_models.ps1 -Model 14b
-
-  # Ou via le CLI Python :
-  uv run python scripts/download_models.py --pack video-1.3b
-  ```
+  > [!TIP]
+  > **Téléchargement global en 1 commande** : Pour rapatrier l'intégralité de la suite vidéo avec reprise automatique sur coupure réseau :
+  > ```powershell
+  > python scripts/download_all_sota_models.py
+  > ```
 
 * **🔍 Workflow Recommandé : Preview Rapide 480p/512p ➔ Super-Résolution IA 4K Master** :
   Pour allier vitesse d'itération et netteté chirurgicale de niveau broadcast, le pipeline de production se divise en 2 étapes :
