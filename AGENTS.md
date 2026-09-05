@@ -30,3 +30,7 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
 - Code : docstrings et logs en français, identifiants en anglais, prompts modèles en anglais.
 - Gros téléchargements HF/ModelScope : `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).
+- Veille versions (audio.cpp, FFmpeg, Python, paquets, modèles GGUF, llama.cpp) :
+  `uv run python scripts/veille_versions.py` — état dans `output/veille/`, rapport uniquement
+  (jamais de mise à jour automatique). Automatisation quotidienne 9 h planifiée côté session
+  (titre « Veille quotidienne des versions … »).
