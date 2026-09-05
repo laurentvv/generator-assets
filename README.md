@@ -40,13 +40,13 @@
 ## 📌 About & Quick Overview
 
 > **Repository Description (for GitHub "About"):**  
-> *Headless, modular AI pipeline orchestrator generating production-ready 2D & 3D assets, PBR materials, .GLB models, and 360° skyboxes for Godot 4 & Blender via Flux.1, SDXL, and ESRGAN.*
+> *Headless, modular local AI pipeline: 2D/3D Godot & Blender assets (Flux.1, SDXL, ESRGAN), AI video generation (Wan 2.1/2.2, LTX-2.5, MiniMax-H3) with 4K YouTube masters, and AI music loops (MiniMax-Music3 via audio.cpp) — 100% Vulkan/GGUF, no CUDA, no cloud.*
 
 ### 🏷️ Recommended GitHub Topics / Keywords
 ```text
-ai-game-assets, godot, godot-4, blender, blender-python, flux-dev, sdxl, pbr-textures,
-game-development, deepbump, vulkan, esrgan, makehuman, mpfb2, procedural-generation,
-headless-pipeline, 3d-mesh, audio-generation, pixel-art, controlnet, gguf, lora
+ai-game-assets, godot, godot-4, blender, flux-dev, sdxl, pbr-textures, game-development,
+vulkan, esrgan, makehuman, mpfb2, procedural-generation, headless-pipeline, pixel-art,
+gguf, text-to-video, ai-music, music-generation, audio-generation
 ```
 
 `generator-assets` is a lightweight, local, and fully headless CLI pipeline orchestrator designed to transform natural language descriptions into **engine-ready 2D and 3D assets for Godot 4 and Blender**. 
