@@ -162,34 +162,34 @@ To ensure maximum productivity and avoid false expectations, here is a transpare
 
 ---
 
-### 4. AI Music Loops Showcase (`music_bg`) — 🎧 *cliquez sur ▶ pour écouter*
+### 4. AI Music Loops Showcase (`music_bg`) — 🎧
 | Waveforms (seamless loops, 48 kHz stereo) |
 | :---: |
 | <img src="docs/exemples/musique/waveforms_boucles_tech.png" width="100%" alt="Waveforms des 3 boucles tech" /> |
 
-> ℹ️ GitHub ne dispose pas de lecteur audio natif : les boucles sont donc présentées en **vidéos waveform** (lecture inline ci-dessous, le son est la boucle ×3). Les fichiers MP3 et WAV restent téléchargeables dans [`docs/exemples/musique/`](docs/exemples/musique/).
+> ℹ️ GitHub n'embarque pas de lecteur audio : les fichiers sont **téléchargeables** (MP3 aperçu ×3 / MP4 waveform avec son / WAV bruts dans [`docs/exemples/musique/`](docs/exemples/musique/) et [`docs/exemples/videos/`](docs/exemples/videos/)).
 
 | 🎵 Boucle tech n°1 — 95 BPM ⭐ | 🎵 Boucle tech n°2 — 78 BPM | 🎵 Boucle tech n°3 — 71 BPM |
 | :---: | :---: | :---: |
-| ![Écouter cand_1](docs/exemples/videos/musique_cand1_95bpm_waveform.mp4) | ![Écouter cand_2](docs/exemples/videos/musique_cand2_78bpm_waveform.mp4) | ![Écouter cand_3](docs/exemples/videos/musique_cand3_71bpm_waveform.mp4) |
-| *Seam Δ0.1 dB — promoted as `tech_loop_minimal_bed.wav` (-30 LUFS voice-over bed) — [MP3](docs/exemples/musique/boucle_tech_cand1_95bpm.mp3)* | *Seam Δ0.3 dB — deeper, slower groove — [MP3](docs/exemples/musique/boucle_tech_cand2_78bpm.mp3)* | *Seam Δ11.7 dB — kept as raw material — [MP3](docs/exemples/musique/boucle_tech_cand3_71bpm.mp3)* |
+| [MP3 ×3](docs/exemples/musique/boucle_tech_cand1_95bpm.mp3) • [MP4 waveform](docs/exemples/videos/musique_cand1_95bpm_waveform.mp4) | [MP3 ×3](docs/exemples/musique/boucle_tech_cand2_78bpm.mp3) • [MP4 waveform](docs/exemples/videos/musique_cand2_78bpm_waveform.mp4) | [MP3 ×3](docs/exemples/musique/boucle_tech_cand3_71bpm.mp3) • [MP4 waveform](docs/exemples/videos/musique_cand3_71bpm_waveform.mp4) |
+| *Seam Δ0.1 dB — promoted as `tech_loop_minimal_bed.wav` (-30 LUFS voice-over bed)* | *Seam Δ0.3 dB — deeper, slower groove* | *Seam Δ11.7 dB — kept as raw material* |
 
 *Generated 100% locally with MiniMax-Music3 GGUF on audio.cpp (Vulkan, AMD RX 6950 XT) — `lyrics=[Instrumental]`, no vocals. Each preview plays the seamless loop **three times in a row** at -16 LUFS (listening level); production beds ship at -30 LUFS behind voice-over with an ffmpeg `sidechaincompress` ducking recipe.*
 
 ---
 
-### 5. AI Video Showcase (`video` pipeline) — 🎬 *cliquez pour lire*
-All clips generated 100% locally on AMD RX 6950 XT (Vulkan/GGUF, no CUDA) — re-encoded to 1080p web-friendly H.264 for the showcase; production masters are 4K (up to 50 Mbps AMD AMF).
+### 5. AI Video Showcase (`video` pipeline) — 🎬
+All clips generated 100% locally on AMD RX 6950 XT (Vulkan/GGUF, no CUDA). **GIF previews animate inline** (muted); the linked **MP4s carry full quality + sound** (download & play — GitHub has no inline player for committed videos).
 
 | 🎬 Wan 2.2 MoE I2V — flagship scene | 🎬 2.5D Parallax vs Wan 2.2 AI — split-screen |
 | :---: | :---: |
-| ![Wan 2.2 MoE Image-to-Video scene](docs/exemples/videos/video_wan22_i2v_scene01_1080p.mp4) | ![Comparatif 2.5D vs Wan 2.2](docs/exemples/videos/video_comparatif_2.5d_vs_wan22.mp4) |
-| *Wan 2.2 I2V A14B → Real-ESRGAN 4K + FidelityFX CAS • 4.9 s @ 30 fps* | *Static 2.5D parallax (left) vs true AI animation (right) • 5.5 s @ 30 fps* |
+| <img src="docs/exemples/videos/video_wan22_i2v_scene01_1080p.gif" width="100%" alt="Wan 2.2 I2V scene (GIF)" /> | <img src="docs/exemples/videos/video_comparatif_2.5d_vs_wan22.gif" width="100%" alt="Comparatif 2.5D vs Wan 2.2 (GIF)" /> |
+| *Wan 2.2 I2V A14B → Real-ESRGAN 4K + FidelityFX CAS • 4.9 s @ 30 fps — [MP4](docs/exemples/videos/video_wan22_i2v_scene01_1080p.mp4)* | *Static 2.5D parallax (left) vs true AI animation (right) • 5.5 s @ 30 fps — [MP4](docs/exemples/videos/video_comparatif_2.5d_vs_wan22.mp4)* |
 
 | 🎬 Cinematic 2-Plan Film + Audio Mix | 🎬 LTX-2.5 with Native Stereo Audio | 🎬 ESRGAN 4K Super-Resolution |
 | :---: | :---: | :---: |
-| ![Film 2 plans dragon](docs/exemples/videos/video_film_2plans_dragon_1080p_master.mp4) | ![LTX-2.5 dragon audio](docs/exemples/videos/video_ltx25_dragon_audio.mp4) | ![ESRGAN 4K dragon](docs/exemples/videos/video_esrgan_4k_dragon.mp4) |
-| *Two chained shots + RIFE 60 fps + procedural cinematic score* | *LTX-2.5 Distilled (8 steps) with native synchronized stereo sound* | *Real-ESRGAN + 4x-UltraSharp Vulkan upscaling to 4K* |
+| <img src="docs/exemples/videos/video_film_2plans_dragon_master.gif" width="100%" alt="Film 2 plans (GIF)" /> | <img src="docs/exemples/videos/video_ltx25_dragon_audio.gif" width="100%" alt="LTX-2.5 dragon (GIF)" /> | <img src="docs/exemples/videos/video_esrgan_4k_dragon.gif" width="100%" alt="ESRGAN 4K dragon (GIF)" /> |
+| *Two chained shots + RIFE 60 fps + procedural cinematic score — [MP4](docs/exemples/videos/video_film_2plans_dragon_master.mp4)* | *LTX-2.5 Distilled (8 steps) with native synchronized stereo sound — [MP4](docs/exemples/videos/video_ltx25_dragon_audio.mp4)* | *Real-ESRGAN + 4x-UltraSharp Vulkan upscaling to 4K — [MP4](docs/exemples/videos/video_esrgan_4k_dragon.mp4)* |
 
 ---
 
