@@ -176,6 +176,21 @@ To ensure maximum productivity and avoid false expectations, here is a transpare
 
 ---
 
+### 5. AI Video Showcase (`video` pipeline) — 🎬 *cliquez pour lire*
+All clips generated 100% locally on AMD RX 6950 XT (Vulkan/GGUF, no CUDA) — re-encoded to 1080p web-friendly H.264 for the showcase; production masters are 4K (up to 50 Mbps AMD AMF).
+
+| 🎬 Wan 2.2 MoE I2V — flagship scene | 🎬 2.5D Parallax vs Wan 2.2 AI — split-screen |
+| :---: | :---: |
+| ![Wan 2.2 MoE Image-to-Video scene](docs/exemples/videos/video_wan22_i2v_scene01_1080p.mp4) | ![Comparatif 2.5D vs Wan 2.2](docs/exemples/videos/video_comparatif_2.5d_vs_wan22.mp4) |
+| *Wan 2.2 I2V A14B → Real-ESRGAN 4K + FidelityFX CAS • 4.9 s @ 30 fps* | *Static 2.5D parallax (left) vs true AI animation (right) • 5.5 s @ 30 fps* |
+
+| 🎬 Cinematic 2-Plan Film + Audio Mix | 🎬 LTX-2.5 with Native Stereo Audio | 🎬 ESRGAN 4K Super-Resolution |
+| :---: | :---: | :---: |
+| ![Film 2 plans dragon](docs/exemples/videos/video_film_2plans_dragon_1080p_master.mp4) | ![LTX-2.5 dragon audio](docs/exemples/videos/video_ltx25_dragon_audio.mp4) | ![ESRGAN 4K dragon](docs/exemples/videos/video_esrgan_4k_dragon.mp4) |
+| *Two chained shots + RIFE 60 fps + procedural cinematic score* | *LTX-2.5 Distilled (8 steps) with native synchronized stereo sound* | *Real-ESRGAN + 4x-UltraSharp Vulkan upscaling to 4K* |
+
+---
+
 <span id="models"></span>
 ## 🤖 AI Models & LoRA Library
 
