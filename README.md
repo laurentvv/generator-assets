@@ -11,6 +11,8 @@
 [![Godot 4.x Ready](https://img.shields.io/badge/Godot-4.x%20Ready-478CBF.svg?logo=godotengine&logoColor=white)](https://godotengine.org/)
 [![Blender 5.x](https://img.shields.io/badge/Blender-5.x%20Headless%20GLB-e87d0d.svg?logo=blender&logoColor=white)](https://www.blender.org/)
 [![Vulkan](https://img.shields.io/badge/Vulkan-Hardware%20Accelerated-red.svg?logo=vulkan&logoColor=white)](https://www.vulkan.org/)
+[![Video Generation](https://img.shields.io/badge/Video%20AI-Wan2.1%20%26%20LTX%20(.webm)-8A2BE2.svg)](#-generation-video-native-webm)
+[![sd.cpp Auto-Update](https://img.shields.io/badge/sd.cpp-Vulkan%20Auto--Update%20%26%20Build-blue.svg)](#-automatisation-de-la-mise-a-jour--compilation-vulkan-stable-diffusioncpp)
 [![Flux.1 & SDXL](https://img.shields.io/badge/Models-Flux.1%20Dev%20%26%20SDXL-black.svg)](https://blackforestlabs.ai/)
 [![PBR 3D Materials](https://img.shields.io/badge/3D-PBR%20Materials%20%26%20ORM-orange.svg)](#-3d-materials--geometry)
 [![LoRA Support](https://img.shields.io/badge/LoRA-Multi--LoRA%20SDXL-ff69b4.svg)](#-ai-models--lora-library)
@@ -21,8 +23,8 @@
   <a href="#about">About</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#capabilities">Capabilities</a> •
-  <a href="#showcase">Showcase</a> •
-  <a href="#models">Models & LoRAs</a> •
+  <a href="#sd-cpp-update">sd.cpp Vulkan Updater</a> •
+  <a href="#video-generation">Nouveautés stable-diffusion.cpp (Vidéo)</a> •
   <a href="#workflows">Workflows</a> •
   <a href="#cli">CLI Reference</a> •
   <a href="#godot">Godot 4 Guide</a> •
@@ -62,6 +64,8 @@ Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with *
 | 🔨 **Headless Blender 3D Meshing** | Automatically builds 3D meshes (`.glb`) with embedded PBR textures via headless Blender CLI (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`). |
 | 👗 **MakeHuman / MPFB2 Character Suite** | Canonical humanoid 3D pipeline: seamless facial UV projections, barycentric garment retargeting (`.mhclo`), and studio Cycles validation renders. |
 | 🌌 **Equirectangular 360° Skyboxes** | 2:1 panoramic skies with automated Godot 4 `WorldEnvironment` and Image-Based Lighting (IBL) configuration. |
+| 🎬 **Native AI Video (.webm)** | Direct hardware-accelerated video rendering (Wan 2.1, Wan 2.2, LTX-2.3/2.5) with WebM container export and Godot 4 `VideoStreamPlayer` scenes. |
+| 🔄 **Automated sd.cpp Vulkan Compiler** | 1-click update tool: fetches official GitHub Vulkan binaries or compiles native master sources via CMake + MSVC with automatic rollback backups. |
 | ⚡ **Direct by Default & Zero VRAM Spikes** | Direct, verbatim prompt execution by default for instantaneous generation. When optional LLM prompt enrichment is enabled (`--use-llm`), the LLM terminates and frees 100% of VRAM before diffusion launches. |
 
 ---
@@ -197,14 +201,14 @@ python main.py --list-upscalers
 <span id="workflows"></span>
 ## 📦 Complete Workflow Catalog
 
-The engine features **26+ modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
+The engine features **27+ modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
 
 ```text
 📋 Quick Category Map:
   • 3D Geometry & PBR Textures     : material3d, mesh3d, voxel3d, skybox, turnaround3d, flowmap
   • Humanoid 3D Characters & Outfits: character3d, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice & VFX             : sfx, audio_ambience, tts_dialogue, vfx_flipbook, anim_loop, rife_interp
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -625,6 +629,93 @@ The engine features **26+ modular workflows** organized into 5 functional catego
   uv run python main.py -w rife_interp -i godot_assets/spritesheet.png --columns 4 --factor 2 -o anim_60fps
   ```
 
+#### 4.7. `video` — Native Hardware-Accelerated Video Generation (.webm)
+* **Process**:
+  1. Harnesses `stable-diffusion.cpp` native video inference mode (`-M vid_gen`) with full hardware acceleration under Vulkan.
+  2. Supports 4 generation paradigms:
+     - **T2V (Text-to-Video)** : Generates animated video clips from a descriptive prompt (cascading waterfalls, flickering campfire, drifting nebulae).
+     - **I2V (Image-to-Video)** : Animates an existing still image (`-i, --input`) with natural fluid motion.
+     - **FLF2V (First & Last Frame)** : Interpolates seamless motion between a starting keyframe (`--input`) and an ending keyframe (`--end-img`).
+     - **V2V (Video-to-Video)** : Applies video style transfer using a directory of guidance frames (`--control-video`).
+  3. Supports state-of-the-art video models: **Wan 2.1 / Wan 2.2** (1.3B, 14B MoE High/Low noise), **LTX-2.3 & LTX-2.5** (Lightricks DiT, Gemma 3/4 text encoders, audio VAE), and **MiniMax-H3**.
+  4. Encodes and packages video directly into a single lightweight `.webm` container (VP8 / `libwebm`) without external FFmpeg dependencies.
+  5. Automatically writes a ready-to-use Godot 4 `VideoStreamPlayer` scene (`.tscn`) configured with loop and autoplay parameters.
+* **Inputs**: `prompt`, `-i, --input` (init image), `--end-img` (final image), `--control-video` (frame directory), `--frames` (default: 33), `--fps` (default: 24), `--flow-shift` (default: 3.0), `-o, --output`.
+* **Engines**: stable-diffusion.cpp Vulkan (`-M vid_gen`), Wan 2.1 / Wan 2.2 / LTX-2.5 GGUF/Safetensors, libwebm.
+* **Outputs**: `_vid.webm`, `_player.tscn` (Godot 4 VideoStreamPlayer scene).
+* **Example**:
+  ```bash
+  # Text-to-Video (T2V)
+  uv run python main.py -w video "mystical glowing waterfall in ancient overgrown jungle" --frames 33 --fps 24 -o waterfall
+
+  # Image-to-Video (I2V)
+  uv run python main.py -w video -i godot_assets/heros_portrait.png -p "character breathing and blinking with atmospheric fog" --frames 25 -o heros_idle
+  ```
+
+* **📥 Téléchargement Automatisé des Modèles Vidéo (`C:\Modeles_LLM`)** :
+  Le pipeline vidéo s'appuie sur le modèle de pointe **Alibaba Wan 2.1** (ou LTX-2.5). Trois composants sont requis dans `C:\Modeles_LLM` :
+  1. `wan_2.1_vae.safetensors` (242 Mo — VAE Vidéo spécialisé)
+  2. `umt5-xxl-encoder-Q4_K_M.gguf` (3.4 Go — Encodeur de texte multilingue)
+  3. `wan2.1_t2v_1.3b-q8_0.gguf` (1.47 Go — Modèle de diffusion léger et rapide pour 16 Go VRAM)
+
+  Téléchargement en une commande :
+  ```powershell
+  # Pack Recommandé Wan 2.1 1.3B (~5.2 Go au total) :
+  .\scripts\download_video_models.ps1 -Model 1.3b
+
+  # Pack Cinéma Studio Wan 2.1 14B :
+  .\scripts\download_video_models.ps1 -Model 14b
+
+  # Ou via le CLI Python :
+  uv run python scripts/download_models.py --pack video-1.3b
+  ```
+
+* **🔍 Workflow Recommandé : Preview Rapide 480p/512p ➔ Super-Résolution IA 4K Master** :
+  Pour allier vitesse d'itération et netteté chirurgicale de niveau broadcast, le pipeline de production se divise en 2 étapes :
+  1. **Preview Native Ultra-Rapide** : Génération native en 768×512 (LTX-2.5) ou 832×480 (Wan 2.1) pour valider le mouvement, le cadrage et l'esthétique en 1 à 3 minutes.
+  2. **Super-Résolution IA 4K (`scripts/upscale_video_ai.py`)** : Traitement trame par trame sous Vulkan via le réseau de neurones `4x-UltraSharp.pth`, application du filtre **AMD FidelityFX CAS 0.75**, préservation de la piste audio native, et conformation en **Master 4K Ultra HD (3840×2160 @ 50 Mbps)** via l'encodeur matériel AMD AMF (`h264_amf`).
+
+  ```bash
+  # 1. Génération de la séquence native (ex: LTX-2.5 en 8 steps distillés avec audio)
+  python scripts/generate_ansible_nexus.py --model ltx25
+
+  # 2. Ou upscale direct de n'importe quel fichier WebM/MP4 existant en Master 4K :
+  python scripts/upscale_video_ai.py output/clip_brut.webm -o output/clip_4k_master.mp4 --cas 0.75 --bitrate 50M
+  ```
+
+* **📺 Levier de Netteté Ultime pour Diffusion YouTube (Pourquoi la 4K est impérative)** :
+  > [!IMPORTANT]
+  > **Le piège de la compression YouTube 1080p** : Si vous uploadez un fichier Full HD 1080p, YouTube lui applique automatiquement son profil de compression le plus destructeur (**codec AVC1 limité à ~4-6 Mbps**), ce qui transforme les lignes fines de grilles, les textures sombres et les flux lumineux en bouillie de macro-blocs.  
+  > **La solution Master 4K UHD (3840×2160)** : En publiant une vidéo masterisée en 4K (grâce à notre Super-Résolution IA `4x-UltraSharp` + AMD CAS 0.75), YouTube est **techniquement forcé d'activer son profil premium VP09 ou AV01 (débit de 25 à 45 Mbps)**. Résultat : même un spectateur lisant la vidéo sur un écran 1080p ou un smartphone bénéficie du suréchantillonnage VP09 haute fidélité avec une netteté et un micro-contraste parfaits !
+
+* **⏱️ Durée Standardisée par Scène : 5,5 secondes (165 trames à 30 FPS)** :
+  Pour la production de plans de coupes, teasers et scènes d'illustration, la cadence standardisée est de **5,5 secondes (165 trames @ 30 fps)**.
+  Deux stratégies sont disponibles selon l'architecture :
+  - **Stratégie 1 : Chaînage Multi-Plans I2V (Recommandée)** : Découpage en 2 ou 3 plans courts successifs (ex: 2 plans de 82 trames ou 3 plans de 55 trames). Chaque plan est généré dans la zone de confort VRAM (<11 Go) sans saturation de l'attention $O(N^2)$ ni adoucissement temporel des textures. L'enchaînement est fluide à 100% en réinjectant la dernière trame du plan $N$ en image source (`-i`) du plan $N+1$.
+  - **Stratégie 2 : Génération Native Directe LTX-2.5** : Pour les scènes continues rapides avec sound design procédural synchronisé.
+
+* **🎬 Chaînage Continu Multi-Plans I2V (`scripts/chain_video.py`)** :
+  1. **Plan 1 (T2V)** : Génération de l'amorce à partir d'un prompt descriptif (ex. plan d'ensemble 33 trames).
+  2. **Extraction de transition** : Capture automatique de l'ultime trame (trame N-1) en PNG via OpenCV.
+  3. **Plan 2 (I2V)** : Génération du plan suivant en injectant la trame capturée en image de départ (`-i`) avec un prompt de travelling ou de zoom.
+  4. **Assemblage 0-saccade** : Concaténation automatique en sautant la première trame dupliquée pour une continuité parfaite.
+  5. **Mastering 4K IA** : Passe de Super-Résolution IA 4K sur la séquence finale assemblée.
+
+  ```bash
+  # Lancement du chaînage multi-plans avec transition fluide :
+  uv run python scripts/chain_video.py
+  ```
+
+* **👑 Comparatif des 4 Fleurons Vidéo SOTA (Validés Empiriquement sur AMD RX 6950 XT)** :
+  *(Voir le guide complet dans [`docs/comparatif_modeles_video_ai.md`](docs/comparatif_modeles_video_ai.md) et le rapport nocturne [`output/overnight/overnight_summary.md`](output/overnight/overnight_summary.md))*
+
+  | Modèle SOTA | Architecture & Taille | Pas Optimaux | Vitesse DiT | Audio Stéréo | Qualité Visuelle Dragon | Master Conforme 4K / 1080p |
+  | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+  | **LTX-2.5 Distilled** 👑 | Spatio-Temporal DiT (15B) + Gemma 4 12B | **8 steps** (distillés) | ⚡ **9.98s / pas** (3.8 min total) | 🔊 **OUI (AAC 48 kHz)** | 🟢 Héroïque 3D parfait (Écailles or, cornes, ailes) | [`01_ltx25_dragon_4k_ultrasharp.mp4`](output/overnight/esrgan_4k/01_ltx25_dragon_4k_ultrasharp.mp4) |
+  | **Wan 2.1 14B** | DiT Monolithe (14B) + UMT5-XXL | **8-10 steps** (CFG 6.0) | 🐢 **312s / pas** (~6 min total) | ❌ (Muet) | 🟢 Géométrie isométrique ultra-précise, structure 3D | [`02_wan21_14steps_dragon_1080p.mp4`](output/overnight/02_wan21_14steps_dragon_1080p.mp4) |
+  | **Wan 2.2 MoE** | Dual-DiT MoE (2x 14B = 28B) + UMT5-XXL | **8 steps MoE** (4 High + 4 Low) | ⏳ **~350s / pas** (~11 min total) | ❌ (Muet) | 👑 **Piqué photoréaliste absolu** (Micro-détails, regard) | [`wan22_moe_dragon_4k_ultrasharp.mp4`](output/overnight/esrgan_4k/wan22_moe_dragon_4k_ultrasharp.mp4) |
+  | **MiniMax-H3** | DiT FL2VA (15B) + Qwen3-VL 32B | **12 steps** (CFG 1.0) | 🚀 **16.96s / pas** (6.6 min total) | 🔊 **OUI (AAC 32 kHz)** | 🟢 Wyvern titanesque (Crête enflammée, ailes massives) | [`04_minimax_h3_20steps_dragon_1080p.mp4`](output/overnight/04_minimax_h3_20steps_dragon_1080p.mp4) |
+
 ---
 
 ### 🛠️ 5. Style Consistency, Upscaling & Batching
@@ -839,6 +930,291 @@ python main.py --check
 ### 3. Launch the Interactive Console
 ```bash
 python main.py --interactive
+```
+
+---
+
+<span id="sd-cpp-update"></span>
+## 🔄 Automatisation de la Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)
+
+Le cœur algorithmique de génération de `generator-assets` repose directement sur [**stable-diffusion.cpp**](https://github.com/leejet/stable-diffusion.cpp) développé par `@leejet`. Contrairement aux solutions lourdes basées sur Python et PyTorch (ComfyUI, Automatic1111), `stable-diffusion.cpp` est une implémentation C/C++ pure ultra-optimisée basée sur `ggml` qui s'exécute directement sur GPU via **Vulkan** avec une empreinte mémoire minimale et zéro surcharge de serveur.
+
+Pour maintenir ce moteur toujours au sommet des performances et bénéficier des dernières fonctionnalités (génération vidéo Wan 2.1/2.2, LTX-2.5, Flux.2), un programme dédié d'automatisation et de compilation a été intégré au dépôt.
+
+### 🛠️ Modes de Fonctionnement
+
+Le script [`scripts/update_sd_cpp.py`](scripts/update_sd_cpp.py) et son lanceur PowerShell [`scripts/update_sd_cpp.ps1`](scripts/update_sd_cpp.ps1) proposent deux approches complémentaires :
+
+| Mode | Option | Description | Temps estimé |
+| :--- | :--- | :--- | :--- |
+| **🔍 Vérification** | `--check` | Compare la version locale (`sd-cli.exe --version`) avec la dernière release officielle GitHub et le dernier commit de la branche `master`. | ~1 seconde |
+| **🚀 Téléchargement Rapide** | `--download` | Télécharge directement les binaires pré-compilés officiels Windows x64 Vulkan (`sd-*-bin-win-vulkan-x64.zip`) depuis les GitHub Releases, crée une sauvegarde horodatée et déploie dans `C:\SD`. | ~5 secondes |
+| **⚙️ Compilation Native Vulkan** | `--build` | Clone/met à jour le dépôt Git avec ses submodules récursifs, configure CMake avec le SDK Vulkan et compile nativement avec Visual Studio (MSVC) en mode Release multi-threadé. | ~2 à 5 minutes |
+| **⏪ Restauration** | `--rollback` | Restaure instantanément la dernière sauvegarde archivée dans `C:\SD\backups\` en cas d'incompatibilité ou de régression. | ~2 secondes |
+
+---
+
+### 💻 Utilisation en Ligne de Commande
+
+#### 1. Via PowerShell (Recommandé sous Windows)
+```powershell
+# 1. Vérifier si une mise à jour est disponible
+.\scripts\update_sd_cpp.ps1 -Check
+
+# 2. Mise à jour rapide via la release officielle Vulkan
+.\scripts\update_sd_cpp.ps1 -Download
+
+# 3. Compilation native complète depuis les sources Git avec Vulkan
+.\scripts\update_sd_cpp.ps1 -Build -Clean
+
+# 4. En cas de besoin : restaurer la version précédente
+.\scripts\update_sd_cpp.ps1 -Rollback
+```
+
+#### 2. Via le CLI Unifié `main.py`
+```bash
+# Vérification
+uv run python main.py --update-sd check
+
+# Téléchargement de la dernière release Vulkan
+uv run python main.py --update-sd download
+
+# Compilation native depuis les sources
+uv run python main.py --update-sd build
+
+# Restauration de la sauvegarde
+uv run python main.py --update-sd rollback
+```
+
+#### 3. Via le Script Python Dédié
+```bash
+uv run python scripts/update_sd_cpp.py --check
+uv run python scripts/update_sd_cpp.py --download
+uv run python scripts/update_sd_cpp.py --build --jobs 16
+uv run python scripts/update_sd_cpp.py --list-backups
+```
+
+#### 4. Depuis la Console Interactive
+Lancez `uv run python main.py --interactive` puis choisissez l'option :  
+`[28] 🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)`.
+
+---
+
+### 🛡️ Sécurité & Système de Sauvegardes Automatiques
+
+Chaque opération de mise à jour (que ce soit par téléchargement ou par compilation) crée automatiquement une archive de sauvegarde horodatée de tous les exécutables (`sd-cli.exe`, `sd-server.exe`) et bibliothèques dynamiques (`ggml-vulkan.dll`, `stable-diffusion.dll`, `webm.dll`, etc.) dans :
+```text
+C:\SD\backups\backup_YYYYMMDD_HHMMSS\
+```
+Vous pouvez lister les sauvegardes avec `--list-backups` et revenir à tout moment à l'état antérieur via `--rollback`.
+
+---
+
+### 🦙 Automatisation & Compilation Vulkan de llama.cpp
+
+Le module d'enrichissement textuel et de direction artistique optionnel (`--use-llm`) repose sur [**llama.cpp**](https://github.com/ggml-org/llama.cpp). Pour garantir une inférence LLM instantanée sur GPU sans nécessiter de pilotes CUDA propriétaires NVIDIA, `llama.cpp` s'exécute avec le backend **Vulkan** (`ggml-vulkan.dll`), permettant d'exploiter à 100% la puissance des cartes graphiques **AMD Radeon (RX 6000 / 7000 / 8000)**, **Intel Arc** et **NVIDIA GeForce**.
+
+Le script [`scripts/update_llama_cpp.py`](scripts/update_llama_cpp.py) et son lanceur [`scripts/update_llama_cpp.ps1`](scripts/update_llama_cpp.ps1) assurent la mise à jour et la compilation native :
+
+#### 1. Commandes d'utilisation llama.cpp :
+```powershell
+# Vérification des versions (locale vs distante)
+.\scripts\update_llama_cpp.ps1 -Check
+
+# Téléchargement rapide de la dernière release Vulkan officielle (ex: b10797)
+.\scripts\update_llama_cpp.ps1 -Download
+
+# Compilation native complète avec Vulkan (CMake + MSVC)
+.\scripts\update_llama_cpp.ps1 -Build -Clean
+
+# Restauration de la sauvegarde précédente
+.\scripts\update_llama_cpp.ps1 -Rollback
+```
+
+#### 2. Via le CLI Unifié :
+```bash
+uv run python main.py --update-llama check
+uv run python main.py --update-llama download
+uv run python main.py --update-llama build
+uv run python main.py --update-llama rollback
+```
+
+---
+
+### ⚡ Suite Complète Vulkan : Gestionnaire Unifié (SD + LLaMA + GPU)
+
+Pour administrer en une seule commande l'ensemble de votre écosystème IA sous Vulkan, le script [`scripts/update_vulkan_stack.py`](scripts/update_vulkan_stack.py) et son lanceur [`scripts/update_vulkan_stack.ps1`](scripts/update_vulkan_stack.ps1) orchestrent simultanément :
+1. Le **diagnostic matériel Vulkan** (détection GPU AMD Radeon / NVIDIA / Intel, version API et pilote).
+2. L'inspection ou mise à jour de **stable-diffusion.cpp** (`C:\SD`).
+3. L'inspection ou mise à jour de **llama.cpp** (`C:\llama.cpp`).
+
+```powershell
+# Diagnostic complet du GPU et vérification des deux moteurs
+.\scripts\update_vulkan_stack.ps1 -Check
+
+# Mise à jour synchronisée des 2 moteurs via releases officielles Vulkan
+.\scripts\update_vulkan_stack.ps1 -Download
+
+# Recompilation native complète des 2 moteurs avec Vulkan
+.\scripts\update_vulkan_stack.ps1 -Build -Clean
+
+# Restauration globale des sauvegardes
+.\scripts\update_vulkan_stack.ps1 -Rollback
+```
+
+Ou directement depuis le CLI principal :
+```bash
+uv run python main.py --update-vulkan check
+uv run python main.py --update-vulkan download
+uv run python main.py --update-vulkan build
+```
+
+---
+
+<span id="video-generation"></span>
+## 🎬 Nouvelles Fonctionnalités Majeures de stable-diffusion.cpp (Moteur Vidéo & Architectures 2026)
+
+La mise à jour récente de `stable-diffusion.cpp` apporte une évolution majeure : **le support complet de la génération vidéo native en C/C++** ainsi que la prise en charge des toutes dernières architectures de modèles génératifs.
+
+```mermaid
+flowchart LR
+    subgraph VideoEngine["🎥 stable-diffusion.cpp Video Engine (-M vid_gen)"]
+        Wan["Wan 2.1 / Wan 2.2<br>(1.3B & 14B MoE)"]
+        LTX["LTX-2.3 & LTX-2.5<br>(Lightricks DiT)"]
+        MiniMax["MiniMax-H3<br>(Ref2VA Audio/Video)"]
+    end
+
+    subgraph Modes["Modes de Génération"]
+        T2V["Text-to-Video (T2V)"]
+        I2V["Image-to-Video (I2V)"]
+        FLF2V["First & Last Frame (FLF2V)"]
+        V2V["Video-to-Video (V2V)"]
+    end
+
+    subgraph Output["Export & Moteur de Jeu"]
+        WebM["🎬 Single-File WebM (VP8)<br>Zero FFmpeg dependency"]
+        Godot["🎮 Godot 4 VideoStreamPlayer<br>(.tscn & .webm)"]
+    end
+
+    VideoEngine --> Modes
+    Modes --> Output
+```
+
+### 1. 🎥 Moteur de Génération Vidéo Native (`-M vid_gen`)
+
+* **Modes de Synthèse Vidéo Avancés** :
+  - **T2V (Text-to-Video)** : Génère des séquences vidéo animées directement à partir d'une description textuelle (ex: cascades, flammes de torche, nébuleuses, personnages en mouvement).
+  - **I2V (Image-to-Video)** : Donne vie à une image fixe existante (`--init-img` ou `-i`) en conservant la structure et le style avec des mouvements naturels.
+  - **FLF2V (First & Last Frame to Video)** : Génère une transition vidéo continue et fluide reliant une image de départ (`--init-img`) et une image d'arrivée (`--end-img`).
+  - **V2V (Video-to-Video Control)** : Transfert de style et guidage temporel guidé par un dossier de trames vidéo (`--control-video`).
+* **Export Conteneur WebM Autonome** :
+  - L'exécutable `sd-cli.exe` intègre nativement `libwebm` et `libwebp` (compression VP8). Il génère directement des fichiers `.webm` compacts et légers sans dépendre de l'installation de FFmpeg.
+  - Également compatible avec les formats WebP animé et les séquences d'images numérotées (`%03d.png`).
+
+---
+
+### 2. 🧠 Modèles Vidéo de Dernière Génération Supportés
+
+| Famille de Modèle | Variantes | Points Forts & Spécificités |
+| :--- | :--- | :--- |
+| **Alibaba Wan 2.1 & 2.2** | `1.3B`, `14B`, `Wan 2.2 MoE` | Architecture DiT de pointe. La version 1.3B tourne sur des GPU grand public (8 Go VRAM). Wan 2.2 supporte la double diffusion High-Noise / Low-Noise (`--high-noise-diffusion-model`). Support du guidage Wan VACE (`--vace-strength`). |
+| **Lightricks LTX-2.3 & LTX-2.5** | `LTX-2.3`, `LTX-2.5` | Transformers ultra-rapides conçus pour la vidéo temps réel. Utilisent les encodeurs Google Gemma 3 et Gemma 4. Supportent le VAE audio (`--audio-vae`), les embeddings connectors et l'upscaler spatial latent. |
+| **MiniMax-H3** | `Day-1 Support` | Architecture multimodale Ref2VA permettant le conditionnement combiné par image, vidéo et piste sonore WAV (`--ref-video`, `--ref-audio`, `--ref-video-audio`). |
+| **HunyuanVideo 1.5 & LingBot** | `HunyuanVideo`, `LingBot-Video` | Modèles de diffusion vidéo grand format à haute cohérence temporelle. |
+
+---
+
+### 3. ⚡ Optimisations Matérielles & Vulkan
+
+* **Flash Attention (`--diffusion-fa`)** :
+  Optimise drastiquement le calcul des matrices d'attention pour les modèles DiT (Diffusion Transformer), diminuant les besoins en VRAM de 30% à 50% et accélérant le rendu.
+* **Temporal VAE Tiling (`--temporal-tiling`)** :
+  Découpe le décodage du VAE vidéo en tuiles spatio-temporelles (`--extra-tiling-args temporal_tile_frames=4,temporal_tile_overlap=3`). Permet de décoder des vidéos longues sans dépassement de mémoire vidéo.
+* **Flow Shift Ajustable (`--flow-shift`)** :
+  Contrôle précis de l'échantillonnage pour les modèles basés sur le Flow Matching (Wan 2.1, SD3.5).
+* **Déchargement CPU Hybride (`--offload-to-cpu`)** :
+  Bascule dynamique des tenseurs inactifs en mémoire vive système pour permettre l'exécution de modèles 14B même avec une VRAM modeste.
+* **Calculs Natifs FP8 Vulkan** :
+  Exécution directe des multiplications matricielles en FP8 sur les cœurs tenseurs GPU compatibles Vulkan sans conversion préalable coûteuse.
+
+---
+
+### 4. 🎨 Nouvelles Architectures d'Images (2025/2026)
+
+En plus de la vidéo, `stable-diffusion.cpp` a étendu sa compatibilité aux architectures d'images de dernière génération :
+* **FLUX.2-dev & FLUX.2-klein** : Nouveaux modèles phares de Black Forest Labs avec prompt adherence et rendu de texte améliorés.
+* **Qwen-Image & Qwen-Image-Edit (série 2509)** : Retouche contextuelle précise et édition d'images guidée par langage naturel.
+* **Z-Image, Krea2, Ideogram4, Lens, PiD** : Modèles spécialisés dans le design graphique, l'illustration et le rendu typographique.
+* **Serveur Web Embarqué (`sd-server.exe`)** : Interface utilisateur Web interactive et API serveur prêtes à l'emploi.
+
+---
+
+### 🎮 Utilisation du Workflow Vidéo dans Generator Assets
+
+Vous pouvez directement exploiter ces nouveautés grâce au workflow unifié `video` :
+
+```bash
+# 1. Génération d'une cinématique Text-to-Video (T2V) en 832x480 (24 FPS, 33 trames)
+uv run python main.py -w video "cinematic waterfall cascading into glowing purple crystal pool in fantasy jungle" --frames 33 --fps 24 -o waterfall
+
+# 2. Animation d'un asset ou portrait existant Image-to-Video (I2V)
+uv run python main.py -w video -i godot_assets/heros_portrait.png -p "character breathing, gentle wind blowing through hair and fog" --frames 25 -o heros_idle
+
+# 3. Transition fluide entre deux images First-and-Last-Frame (FLF2V)
+uv run python main.py -w video -i godot_assets/sol_herbe.png --end-img godot_assets/sol_lave.png -p "ground slowly cracking and transforming into molten lava" --frames 33 -o transition_sol
+```
+
+Chaque génération produit :
+1. Le fichier vidéo autonome : `godot_assets/<nom>.webm`.
+2. Une scène Godot 4 prête à l'emploi : `godot_assets/<nom>_player.tscn` configurée avec un nœud `VideoStreamPlayer` pour intégration immédiate en jeu.
+
+---
+
+### 🏆 5. Modèles Flagship Cinéma & Rendu Nocturne Autonome
+
+Pour une qualité visuelle cinématographique sans compromis, la suite intègre les modèles phares SOTA et un pipeline de rendu vidéo accéléré par matériel :
+
+#### 👑 5.1. LTX-2.5 Distilled (15B Audio + Vidéo SOTA Validé)
+* **Architecture Hybride Vulkan / CPU (`diffusion=vulkan0,te=cpu,vae=cpu`)** :
+  * **Diffusion DiT (15B)** : 14.05 Go VRAM sur GPU AMD Radeon RX 6950 XT (100% stable).
+  * **Encodeur Texte Gemma 4 (12B)** : Exécuté en RAM CPU via instructions AVX2 (précision Q5_K_M).
+  * **Audio VAE Stéréo** : Décodage simultané de la piste sonore stéréo PCM 48 kHz native.
+* **Performances Record** :
+  * Échantillonnage DiT (8 étapes Lightricks distillées) : **1 min 24s chrono** sur GPU Vulkan (~10.5s/step) !
+  * Vitesse **3.5× plus rapide que Wan 2.1** grâce au CFG 1.0 (une seule passe par étape).
+  * Rendu validé en production supérieure (crocs, cornes, ailes et écailles d'or).
+* **Script Dédié** (`scripts/generate_ltx25_8steps.py`) :
+  ```bash
+  python scripts/generate_ltx25_8steps.py
+  ```
+
+#### 👑 5.2. Wan 2.1 14B (Modèle Monolithique de Référence)
+* **Architecture Mémoire Hybride Vulkan/CPU (`diffusion=vulkan0,te=cpu`)** :
+  - **Diffusion Transformer (14B)** : Alloué à 100% en VRAM GDDR6 sur le GPU AMD Radeon RX 6950 XT (14.05 Go max).
+  - **Encodeur T5XXL** : Exécuté en RAM système (6.66 Go) en précision FP32 pure. Élimine totalement les dépassements numériques (black frames / CFG blowout).
+  - **VAE Décodeur** : 242 Mo en VRAM avec tiling spatial et temporel natif.
+* **Génération Cinéma Dédiée** (`scripts/generate_14b_cinema.py`) :
+  ```bash
+  python scripts/generate_14b_cinema.py <steps> <frames>
+  ```
+
+#### 🌙 Pipeline de Rendu Nocturne par Lots (`scripts/run_overnight_batch.py`)
+Permet d'enchaîner une suite de générations cinématiques complexes durant la nuit sans intervention humaine :
+* Définition d'une file d'attente de prompts et de modèles (Wan 2.1 14B, Wan 2.2 MoE, MiniMax-H3, LTX-2.5).
+* Traitement séquentiel avec libération mémoire automatique entre chaque plan.
+* Extraction automatique d'une trame d'aperçu haute résolution (`_preview.png`).
+* Conformation automatique en **Full HD 1080p YouTube (1920×1080 @ 60 FPS, CBR 20 Mbps)** via l'encodeur matériel AMD AMF (`h264_amf`).
+```bash
+python scripts/run_overnight_batch.py
+```
+
+#### 📺 Conformation Matérielle YouTube Full HD (`scripts/conform_youtube_hd.py`)
+Transforme instantanément les fichiers bruts WebM/VP8 en vidéos MP4 Full HD 1080p prêtes à être téléversées sur YouTube :
+* Encodage matériel ultra-rapide AMD AMF (`h264_amf`).
+* Interpolation de mise à l'échelle Lanczos 1080p sans perte de piqué.
+* Rendu en moins de 1 seconde par clip.
+```bash
+python scripts/conform_youtube_hd.py input.webm output_1080p.mp4
 ```
 
 ---

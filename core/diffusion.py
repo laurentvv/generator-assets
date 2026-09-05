@@ -19,6 +19,12 @@ from core.config import (
     DEFAULT_VAE,
     DEFAULT_BACKEND,
     DEFAULT_THREADS,
+    DEFAULT_WAN_MODEL,
+    DEFAULT_WAN_VAE,
+    DEFAULT_WAN_T5XXL,
+    resoudre_modele_video,
+    resoudre_vae_video,
+    resoudre_t5xxl_video,
     TEMP_IMAGE
 )
 
@@ -159,3 +165,114 @@ def generer_image_vulkan(
     except Exception as e:
         print(f"❌ Erreur lors du rendu ({moteur_nom}) via sd-cli : {e}")
         raise
+
+
+def generer_video_vulkan(
+    prompt: str,
+    sd_cli: str = DEFAULT_SD_CLI,
+    model_path: Optional[str] = None,
+    vae_path: Optional[str] = None,
+    t5xxl_path: Optional[str] = None,
+    high_noise_model_path: Optional[str] = None,
+    video_frames: int = 33,
+    fps: int = 24,
+    width: int = 832,
+    height: int = 480,
+    steps: int = 20,
+    cfg_scale: float = 6.0,
+    flow_shift: float = 3.0,
+    sampling_method: str = "euler",
+    seed: int = -1,
+    negative_prompt: Optional[str] = None,
+    init_img: Optional[str] = None,
+    end_img: Optional[str] = None,
+    control_video_dir: Optional[str] = None,
+    offload_to_cpu: bool = True,
+    diffusion_fa: bool = True,
+    temporal_tiling: bool = True,
+    backend: str = DEFAULT_BACKEND,
+    threads: int = DEFAULT_THREADS,
+    output_path: str = "godot_assets/output_video.webm"
+) -> str:
+    """
+    Génère une séquence vidéo (.webm ou séquence d'images) via stable-diffusion.cpp
+    en exploitant l'accélération matérielle Vulkan (Wan 2.1/2.2, LTX-2.3/2.5, MiniMax-H3).
+    Supporte Text-to-Video (T2V), Image-to-Video (I2V), First & Last Frame (FLF2V), et Video-to-Video (V2V).
+    """
+    modele_effectif = resoudre_modele_video(model_path)
+    vae_effectif = resoudre_vae_video(vae_path)
+    t5xxl_effectif = resoudre_t5xxl_video(t5xxl_path)
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+
+    mode_str = "T2V (Text-to-Video)"
+    if init_img and end_img:
+        mode_str = "FLF2V (First & Last Frame to Video)"
+    elif init_img:
+        mode_str = "I2V (Image-to-Video)"
+    elif control_video_dir:
+        mode_str = "V2V (Video-to-Video Control)"
+
+    print(f"[Vidéo Vulkan - {mode_str}] Génération ({width}x{height}, {video_frames} trames @ {fps} fps, steps={steps})...")
+
+    commande = [
+        sd_cli,
+        "-M", "vid_gen",
+        "--diffusion-model", modele_effectif,
+        "-p", prompt,
+        "-W", str(width),
+        "-H", str(height),
+        "--video-frames", str(video_frames),
+        "--fps", str(fps),
+        "--steps", str(steps),
+        "--cfg-scale", str(cfg_scale),
+        "--flow-shift", str(flow_shift),
+        "--sampling-method", sampling_method,
+        "-o", output_path,
+        "-t", str(threads),
+        "--backend", backend,
+        "-v"
+    ]
+
+    if vae_effectif and os.path.exists(vae_effectif):
+        commande.extend(["--vae", vae_effectif])
+    if t5xxl_effectif and os.path.exists(t5xxl_effectif):
+        commande.extend(["--t5xxl", t5xxl_effectif])
+    if high_noise_model_path and os.path.exists(high_noise_model_path):
+        commande.extend(["--high-noise-diffusion-model", high_noise_model_path])
+
+    if negative_prompt:
+        commande.extend(["-n", negative_prompt])
+
+    if init_img and os.path.exists(init_img):
+        commande.extend(["--init-img", init_img])
+    if end_img and os.path.exists(end_img):
+        commande.extend(["--end-img", end_img])
+    if control_video_dir and os.path.exists(control_video_dir):
+        commande.extend(["--control-video", control_video_dir])
+
+    # Optimisation VRAM : les modèles 1.3B tiennent à 100% dans la VRAM (16 Go).
+    # On n'active --offload-to-cpu que pour les modèles lourds (14B) ou si explicitement requis.
+    activer_offload = offload_to_cpu and ("14b" in modele_effectif.lower())
+    if activer_offload:
+        commande.append("--offload-to-cpu")
+    if diffusion_fa:
+        commande.append("--diffusion-fa")
+    if temporal_tiling:
+        commande.append("--temporal-tiling")
+
+    if seed >= 0:
+        commande.extend(["-s", str(seed)])
+    else:
+        commande.extend(["-s", "-1"])
+
+    try:
+        subprocess.run(commande, check=True)
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"La vidéo de sortie {output_path} n'a pas été produite.")
+        print(f"✅ Vidéo générée avec succès : {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"❌ Erreur lors de la génération vidéo via sd-cli : {e}")
+        raise
+

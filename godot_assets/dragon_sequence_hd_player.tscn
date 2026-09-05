@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://dragon_cinematic_player"]
+
+[ext_resource type="VideoStreamTheora" path="res://dragon_sequence_6s_hd.mp4" id="1_video"]
+
+[node name="DragonCinematic" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stream = ExtResource("1_video")
+autoplay = true
+expand = true
+loop = true

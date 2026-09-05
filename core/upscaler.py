@@ -158,3 +158,94 @@ def upscaler_asset(
     # 2. Repli vers Smart Lanczos
     print(f"🔍 [Smart Lanczos] Upscaling logiciel vers {largeur_cible}x{hauteur_cible}...")
     return upscale_smart_lanczos(image_entree, largeur_cible, hauteur_cible)
+
+
+def upscale_video(
+    video_input_path: str,
+    output_path: str,
+    facteur: float = 2.0,
+    taille_cible: Optional[int] = None,
+    mode: str = "auto",
+    upscale_model: Optional[str] = None,
+    sd_cli: str = DEFAULT_SD_CLI,
+    backend: str = DEFAULT_BACKEND,
+    log_fn=print
+) -> str:
+    """
+    Upscale une vidéo (.webm, .mp4, .avi) trame par trame avec super-résolution IA (ESRGAN Vulkan ou Smart Lanczos).
+    Permet la validation rapide en basse résolution (preview 480p) puis l'agrandissement en HD / 4K.
+    """
+    import cv2
+    import numpy as np
+
+    if not os.path.exists(video_input_path):
+        raise FileNotFoundError(f"Vidéo source introuvable : {video_input_path}")
+
+    cap = cv2.VideoCapture(video_input_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Impossible d'ouvrir la vidéo source : {video_input_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    largeur_init = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    hauteur_init = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    if taille_cible and taille_cible > 0:
+        largeur_cible = taille_cible
+        hauteur_cible = int(hauteur_init * (taille_cible / largeur_init))
+    else:
+        largeur_cible = int(largeur_init * facteur)
+        hauteur_cible = int(hauteur_init * facteur)
+
+    # Dimensions paires requises par les codecs
+    largeur_cible = (largeur_cible // 2) * 2
+    hauteur_cible = (hauteur_cible // 2) * 2
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    ext = os.path.splitext(output_path)[1].lower()
+    if ext not in [".webm", ".mp4"]:
+        output_path = os.path.splitext(output_path)[0] + ".mp4"
+        ext = ".mp4"
+
+    log_fn(f"[Upscale Vidéo] {largeur_init}x{hauteur_init} ➔ {largeur_cible}x{hauteur_cible} ({total_frames} trames @ {fps:.1f} fps)...")
+
+    writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (largeur_cible, hauteur_cible))
+    if not writer.isOpened():
+        output_path = os.path.splitext(output_path)[0] + ".avi"
+        writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'XVID'), fps, (largeur_cible, hauteur_cible))
+
+    frame_idx = 0
+    try:
+        while True:
+            ret, frame_bgr = cap.read()
+            if not ret:
+                break
+            frame_idx += 1
+            if frame_idx % 5 == 0 or frame_idx == 1 or frame_idx == total_frames:
+                log_fn(f"  Trame {frame_idx}/{total_frames} en cours...")
+
+            frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            img_pil = Image.fromarray(frame_rgb)
+
+            img_upscaled = upscaler_asset(
+                image_entree=img_pil,
+                facteur=facteur,
+                taille_cible=largeur_cible,
+                mode=mode,
+                upscale_model=upscale_model,
+                sd_cli=sd_cli,
+                backend=backend
+            )
+
+            arr_upscaled = cv2.cvtColor(np.array(img_upscaled), cv2.COLOR_RGB2BGR)
+            if arr_upscaled.shape[1] != largeur_cible or arr_upscaled.shape[0] != hauteur_cible:
+                arr_upscaled = cv2.resize(arr_upscaled, (largeur_cible, hauteur_cible), interpolation=cv2.INTER_LANCZOS4)
+
+            writer.write(arr_upscaled)
+    finally:
+        cap.release()
+        writer.release()
+
+    log_fn(f"✅ Vidéo upscalée avec succès : {output_path} ({largeur_cible}x{hauteur_cible})")
+    return output_path
+
