@@ -10,6 +10,7 @@ Format : `AAAA-MM-JJ • source • changement • impact projet / action`
 
 ---
 
+- **2026-09-06 • ace-step/audio.cpp • routes audio-conditionnées (cover/repaint/lego/extract) bloquées sur Vulkan** : le VAE encoder exige un buffer unique de ~4,5-4,8 Gio, au-dessus de la limite `maxBufferSize` (4 Gio) du pilote AMD Windows — limite **par buffer** (VK_KHR_maintenance4), pas de VRAM totale (d'où aucun pic VRAM visible). Buffer de taille fixe, indépendante de la durée de la source. **Workaround validé : `--backend cpu --threads 20`** (cover 30 s en 77 s, RTF 2,58, turbo 2B). Test réel : cover « Love Like Blood » (Killing Joke) réinterprété en dark folk Vent-Gris. **Impact projet : réinterprétations calées sur un audio existant = CPU obligatoire pour l'instant** ; si une future release audio.cpp/ggml splitte ce buffer ou si le pilote AMD relève la limite → retester en Vulkan.
 - **2026-09-06 • veille • mise en place du système** : script `scripts/veille_versions.py`
   (audio.cpp, FFmpeg, Python, paquets uv, paquets GGUF ACE-Step HF, repo ACE-Step-1.5,
   llama.cpp ; notes de release archivées dans `output/veille/notes/`), automatisation
