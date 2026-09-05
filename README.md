@@ -4,14 +4,15 @@
 
 # ⚔️ Generator Assets
 
-### Modular, Headless AI Asset Pipeline for Godot Engine & Blender
-**Flux.1 Dev & SDXL (Vulkan) • 3D PBR Materials • Headless Blender .GLB Meshes • 360° Skyboxes • MakeHuman / MPFB2 Characters • Procedural Audio & SFX • ESRGAN 4K**
+### Modular, Headless Local AI Pipeline — Game Assets, Video Generation & Music (100% Vulkan/GGUF, No CUDA, No Cloud)
+**Flux.1 Dev & SDXL (Vulkan) • AI Video Wan 2.1/2.2 • LTX-2.5 • MiniMax-H3 (4K YouTube Masters) • AI Music Loops MiniMax-Music3 (audio.cpp) • 3D PBR Materials • Headless Blender .GLB Meshes • 360° Skyboxes • MakeHuman / MPFB2 Characters • Procedural Audio & SFX • ESRGAN 4K**
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Godot 4.x Ready](https://img.shields.io/badge/Godot-4.x%20Ready-478CBF.svg?logo=godotengine&logoColor=white)](https://godotengine.org/)
 [![Blender 5.x](https://img.shields.io/badge/Blender-5.x%20Headless%20GLB-e87d0d.svg?logo=blender&logoColor=white)](https://www.blender.org/)
 [![Vulkan](https://img.shields.io/badge/Vulkan-Hardware%20Accelerated-red.svg?logo=vulkan&logoColor=white)](https://www.vulkan.org/)
-[![Video Generation](https://img.shields.io/badge/Video%20AI-Wan2.1%20%26%20LTX%20(.webm)-8A2BE2.svg)](#-generation-video-native-webm)
+[![Video Generation](https://img.shields.io/badge/Video%20AI-Wan%202.1%2F2.2%20%E2%80%A2%20LTX--2.5%20%E2%80%A2%20MiniMax--H3-8A2BE2.svg)](#-generation-video-native-webm)
+[![Music Generation](https://img.shields.io/badge/Music%20AI-MiniMax--Music3%20Loops%20(audiocpp)-1DB954.svg)](#43-music_bg--ai-music-loops-as-background-beds-minimax-music3-gguf-vulkan)
 [![sd.cpp Auto-Update](https://img.shields.io/badge/sd.cpp-Vulkan%20Auto--Update%20%26%20Build-blue.svg)](#-automatisation-de-la-mise-a-jour--compilation-vulkan-stable-diffusioncpp)
 [![Flux.1 & SDXL](https://img.shields.io/badge/Models-Flux.1%20Dev%20%26%20SDXL-black.svg)](https://blackforestlabs.ai/)
 [![PBR 3D Materials](https://img.shields.io/badge/3D-PBR%20Materials%20%26%20ORM-orange.svg)](#-3d-materials--geometry)
