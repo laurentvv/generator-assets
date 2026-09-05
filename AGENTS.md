@@ -20,6 +20,10 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
 - `README.md` — catalogue des workflows et statuts (mettre à jour à chaque évolution).
 - `docs/MEMORY_BANK.md` — **banque mémoire des stacks validées et écueils** (une section par
   domaine, ex. §1.10 Music3, §1.11 ACE-Step) : y consigner tout apprentissage opérationnel.
+- `docs/veille_journal.md` — **journal de veille** : chaque nouveauté de stack détectée par la
+  veille y est consignée avec son impact projet. **À lire au démarrage d'une session** pour
+  connaître les évolutions récentes des outils (nouveaux modèles disponibles, correctifs,
+  changements cassants).
 - `docs/Générateurs Musique en Boucle.md` — analyse de fond + implémentation retenue.
 
 ## 🔧 Règles du dépôt
