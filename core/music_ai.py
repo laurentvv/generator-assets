@@ -27,11 +27,13 @@ import scipy.signal
 import soundfile
 
 from core.config import (
+    ACESTEP15_VARIANTES,
     DEFAULT_AUDIOCPP_CLI,
     DEFAULT_FFMPEG,
     DEFAULT_LLAMA_CLI,
     DEFAULT_MUSIC_FLAMINGO_LM,
     DEFAULT_MUSIC_FLAMINGO_MMPROJ,
+    resoudre_gguf_acestep15,
     resoudre_modele_musique,
 )
 
@@ -161,6 +163,133 @@ def generer_musique_music3(
 
 
 # ==============================================================================
+# Génération ACE-Step 1.5 via audio.cpp (famille ace_step)
+# ==============================================================================
+
+LYRICS_INSTRUMENTAL = ("", "[instrumental]", "[Instrumental]", "instrumental")
+
+
+def generer_musique_acestep(
+    description: str,
+    chemin_sortie: str,
+    duree: float = 14.0,
+    etapes: int = 8,
+    backend: str = "vulkan",
+    lyrics: str = "[Instrumental]",
+    graine: int = -1,
+    bpm: Optional[int] = None,
+    tonalite: Optional[str] = None,
+    mesure: Optional[str] = None,
+    variante: str = "turbo",
+    langue: str = "en",
+    log: Callable[[str], None] = print,
+    timeout_s: int = 2400,
+) -> Tuple[str, str]:
+    """
+    Génère un extrait musical via audiocpp_cli (famille ace_step, ACE-Step 1.5
+    bf16). Retourne (chemin_wav, backend_utilisé). Bascule sur CPU si
+    Vulkan échoue.
+
+    Variantes : turbo (DiT 2B distillé, défaut) | xl-turbo (DiT 4B distillé,
+    ~1,8× plus lent) | xl-sft (DiT 4B avec CFG, plus de pas requis).
+
+    Spécificités ACE-Step 1.5 :
+    - lyrics vide = instrumental natif (pas de méta-tag à passer)
+    - 8 pas suffisent pour les variantes distillées (turbo)
+    - BPM / tonalité / signature peuvent être imposés au planner (request
+      options bpm / keyscale / timesignature) → boucles alignées au mesure
+      garanties, au lieu d'estimer le tempo a posteriori
+    """
+    exe = resoudre_audiocpp()
+    if not os.path.exists(exe):
+        raise FileNotFoundError(
+            f"audiocpp_cli.exe introuvable : {exe}\n"
+            "→ Lancez : uv run python scripts/download_music3_gguf.py"
+        )
+
+    # Le paquet est monolithique : audio.cpp exige le chemin du .gguf lui-même
+    # (les configs/tokenizers sont embarqués dans le fichier — embedded_sidecars).
+    gguf = resoudre_gguf_acestep15(variante)
+    if not os.path.exists(gguf):
+        raise FileNotFoundError(
+            f"GGUF ACE-Step 1.5 ({variante}) introuvable : {gguf}\n"
+            "→ Lancez : uv run python scripts/download_acestep15_gguf.py\n"
+            "  (variantes XL : miroir ModelScope, voir docs/MEMORY_BANK.md §1.11)"
+        )
+    _, dit_model_path = ACESTEP15_VARIANTES[variante]
+    os.makedirs(os.path.dirname(os.path.abspath(chemin_sortie)), exist_ok=True)
+
+    instrumental = (lyrics or "").strip() in LYRICS_INSTRUMENTAL
+
+    def _construire(backend_cible: str) -> List[str]:
+        cmd = [
+            exe, "--task", "gen", "--family", "ace_step",
+            "--model", gguf, "--backend", backend_cible,
+            "--task-route", "text2music",
+            "--threads", "16", "--log", "--metrics",
+            "--text", description,
+            "--duration-seconds", f"{int(round(duree))}",
+            "--num-inference-steps", str(int(etapes)),
+            # Un seul morceau par processus : libérer la VRAM de graphe est gratuit
+            "--session-option", "ace_step.mem_saver=true",
+            "--out", chemin_sortie,
+        ]
+        if dit_model_path:
+            # Les paquets GGUF sont spécifiques à une variante : il faut la nommer
+            cmd += ["--load-option", f"ace_step.dit_model_path={dit_model_path}"]
+        if not instrumental:
+            cmd += ["--lyrics", lyrics, "--language", langue]
+        if graine >= 0:
+            cmd += ["--seed", str(int(graine))]
+        if bpm:
+            cmd += ["--request-option", f"bpm={int(bpm)}"]
+        if tonalite:
+            cmd += ["--request-option", f"keyscale={tonalite}"]
+        if mesure:
+            cmd += ["--request-option", f"timesignature={mesure}"]
+        return cmd
+
+    backends = ["vulkan", "cpu"] if backend in ("vulkan", "auto") else ["cpu"]
+    essais = []
+    for b in backends:
+        # Vulkan : 2 tentatives (un reset du pilote GPU AMD est récupérable)
+        essais += [b] * (2 if b == "vulkan" else 1)
+
+    derniere_erreur: Optional[str] = None
+    for i, backend_cible in enumerate(essais):
+        if i > 0:
+            log(f"🔄 Nouvel essai : backend={backend_cible}...")
+            time.sleep(5.0)
+        cmd = _construire(backend_cible)
+        try:
+            resultat = subprocess.run(
+                cmd, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired:
+            derniere_erreur = f"timeout après {timeout_s}s"
+            continue
+
+        erreurs = (resultat.stderr or "") + (resultat.stdout or "")
+        if resultat.returncode == 0 and os.path.exists(chemin_sortie) and os.path.getsize(chemin_sortie) > 4096:
+            # Garde-fou anti-silence (même risque d'effondrement que Music3)
+            audio, _sr = soundfile.read(chemin_sortie, always_2d=True)
+            if float(np.sqrt((audio ** 2).mean())) < SEUIL_SILENCE_RMS:
+                derniere_erreur = "sortie quasiment silencieuse (effondrement du modèle)"
+                os.remove(chemin_sortie)
+                continue
+            for ligne in (resultat.stdout or "").splitlines():
+                if "RTF" in ligne or "wall" in ligne.lower():
+                    log(f"⏱️  {ligne.strip()}")
+            return chemin_sortie, backend_cible
+
+        extrait = erreurs.strip()[-600:]
+        derniere_erreur = f"code {resultat.returncode} :: {extrait}"
+
+    raise RuntimeError(f"Génération ACE-Step 1.5 impossible. Dernière erreur : {derniere_erreur}")
+
+
+# ==============================================================================
 # DSP : chargement, BPM, bouclage, post-traitement
 # ==============================================================================
 
@@ -287,10 +416,19 @@ def fabriquer_boucle_percussive(
     ])
 
     pas = max(1, int(0.02 * sr))
+    # La recherche est restreinte à la zone d'énergie stable : ACE-Step (comme
+    # tout modèle compositionnel) termine ses morceaux par un fondu de sortie de
+    # plusieurs secondes — une fenêtre qui s'y termine produit une couture
+    # catastrophique (queue quasi silencieuse).
+    debut_stable, fin_stable = _zone_stable(audio, sr)
     meilleur = None
     for k in candidats_k:
         longueur = int(round(k * ech_mesure))
-        for debut in range(0, n_total - longueur + 1, pas):
+        bornes = range(debut_stable, min(fin_stable, n_total) - longueur + 1, pas)
+        if not len(bornes):
+            # Zone stable trop courte pour k mesures → recherche sur tout l'audio
+            bornes = range(0, n_total - longueur + 1, pas)
+        for debut in bornes:
             fin = debut + longueur
             ecarts, tetes, queues = [], [], []
             for fb in fen_bords:

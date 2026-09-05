@@ -93,7 +93,7 @@ def lancer_mode_interactif(config: dict):
         "23": ("pose_control", "🕺 Contrôle d'Armatures & Poses (ControlNet OpenPose)"),
         "24": ("tts_dialogue", "🎙️ Synthèse Vocale Émotionnelle & Lip-Sync Godot"),
         "25": ("audio_ambience", "🌌 Ambiances Sonores Immersives & Paysages Bouclables"),
-        "26": ("music_bg", "🎵 Boucles Musicales IA en Fond Sonore (MiniMax-Music3 Vulkan + Bed Voix Off)"),
+        "26": ("music_bg", "🎵 Boucles Musicales IA en Fond Sonore (MiniMax-Music3 / ACE-Step 1.5 Vulkan + Bed Voix Off)"),
         "27": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
         "28": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
         "29": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
@@ -287,6 +287,8 @@ def lancer_mode_interactif(config: dict):
                     "🎵 Description du fond musical en anglais (défaut: minimal techno discret) : "
                 ).strip() or None
                 params["duration"] = float(input("⏱️  Durée de la boucle en secondes (défaut: 12) : ").strip() or 12)
+                moteur_choix = input("🎚️  Moteur : 1=ACE-Step 1.5 (défaut), 2=MiniMax-Music3 : ").strip()
+                params["moteur"] = "music3" if moteur_choix == "2" else "acestep"
                 params["candidats"] = int(input("🎲 Nombre de candidats à générer (défaut: 3) : ").strip() or 3)
                 params["lufs"] = float(input("🎚️  LUFS cible du bed (défaut: -30) : ").strip() or -30.0)
                 analyse_choix = input("🧠 Activer la QA Music Flamingo ? (o/N) : ").strip().lower()
@@ -522,6 +524,11 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--lufs", type=float, default=-30.0, help="LUFS cible du lit musical « bed » pour music_bg (défaut: -30).")
     groupe_wf.add_argument("--loop-mode", choices=["percussive", "ambient"], default="percussive", help="Stratégie de bouclage music_bg (défaut: percussive, alignée BPM).")
     groupe_wf.add_argument("--music-backend", choices=["vulkan", "cpu", "auto"], default="vulkan", help="Backend audio.cpp pour music_bg (défaut: vulkan).")
+    groupe_wf.add_argument("--moteur", choices=["acestep", "music3"], default="acestep", help="Moteur musical de music_bg : acestep = ACE-Step 1.5 Turbo bf16 (défaut, MIT, ~36x plus rapide), music3 = MiniMax-Music3.")
+    groupe_wf.add_argument("--variante", choices=["turbo", "xl-turbo", "xl-sft"], default="turbo", help="Variante ACE-Step : turbo = DiT 2B distillé (défaut), xl-turbo = DiT 4B distillé (~1,8x plus lent), xl-sft = DiT 4B avec CFG (plus de pas).")
+    groupe_wf.add_argument("--force-bpm", type=int, default=None, help="Imposer le tempo (ACE-Step uniquement) — ex: 124.")
+    groupe_wf.add_argument("--tonalite", default=None, help="Imposer la tonalité (ACE-Step uniquement) — ex: A minor.")
+    groupe_wf.add_argument("--mesure", default=None, help="Imposer la signature (ACE-Step uniquement) — ex: 4/4.")
     groupe_wf.add_argument("--candidats", type=int, default=3, help="Nombre de candidats music_bg à générer puis départager (défaut: 3).")
     groupe_wf.add_argument("--lyrics", default="[Instrumental]", help="Paroles/structure pour music_bg (défaut: [Instrumental]).")
     groupe_wf.add_argument("--analyse", action="store_true", help="Active la QA Music Flamingo sur le bed sélectionné (music_bg).")
@@ -799,6 +806,11 @@ Exemples de Workflows 3D & 2D :
         "lufs": args.lufs,
         "loop_mode": args.loop_mode,
         "music_backend": args.music_backend,
+        "moteur": args.moteur,
+        "variante": args.variante,
+        "bpm_force": args.force_bpm,
+        "tonalite": args.tonalite,
+        "mesure": args.mesure,
         "candidats": args.candidats,
         "lyrics": args.lyrics,
         "analyse": args.analyse

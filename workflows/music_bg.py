@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Music BG : Boucles Musicales IA en Fond Sonore (MiniMax-Music3 via audio.cpp Vulkan).
+Workflow Music BG : Boucles Musicales IA en Fond Sonore (audio.cpp Vulkan).
+Moteurs disponibles : MiniMax-Music3 (défaut) ou ACE-Step 1.5 Turbo (MIT,
+contraintes BPM/tonalité/mesure imposables au planner).
 Produit :
 - Boucle sans couture WAV 48 kHz PCM16 (alignée BPM/mesures ou crossfade ambiante)
 - Version « bed » normalisée (défaut -30 LUFS) prête derrière une voix off
@@ -17,7 +19,7 @@ from typing import Any, Dict, List
 import numpy as np
 import soundfile
 
-from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.config import ACESTEP15_VARIANTES, DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.music_ai import (
     SR_CIBLE,
     analyser_boucle_flamingo,
@@ -28,6 +30,7 @@ from core.music_ai import (
     empreinte_fichier,
     exporter_bed_lufs,
     fabriquer_boucle,
+    generer_musique_acestep,
     generer_musique_music3,
     mesurer_lufs,
     normaliser_pic,
@@ -44,13 +47,18 @@ PROMPT_TECH_DEFAUT = (
     "airy hi-hats, clean dark pads, instrumental only, steady understated momentum, no vocals"
 )
 
+MOTEURS = {
+    "music3": "MiniMax-Music3 GGUF (audio.cpp)",
+    "acestep": "ACE-Step 1.5 Turbo bf16 GGUF (audio.cpp)",
+}
+
 
 @WorkflowRegistry.register
 class MusicBgWorkflow(BaseWorkflow):
-    """Génération de boucles musicales IA (MiniMax-Music3 GGUF, Vulkan) calibrées comme fond sonore derrière une voix off."""
+    """Génération de boucles musicales IA (MiniMax-Music3 ou ACE-Step 1.5 GGUF, Vulkan) calibrées comme fond sonore derrière une voix off."""
 
     name = "music_bg"
-    description = "Boucles musicales IA « tech » en fond sonore YouTube (MiniMax-Music3 GGUF Vulkan + bed -30 LUFS + recette ducking)"
+    description = "Boucles musicales IA « tech » en fond sonore YouTube (MiniMax-Music3 / ACE-Step 1.5 GGUF Vulkan + bed -30 LUFS + recette ducking)"
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or PROMPT_TECH_DEFAUT
@@ -58,7 +66,27 @@ class MusicBgWorkflow(BaseWorkflow):
         duree = float(params.get("duration") or 12.0)
         if duree < 4.0:
             duree = 12.0
-        etapes = int(params.get("steps") or 30)
+        etapes = int(params.get("steps") or 0)
+        # Défaut : ACE-Step 1.5 (validé plus qualitatif par l'utilisateur le
+        # 2026-09-05, ~36x plus rapide, MIT, 48 kHz natif). Music3 reste
+        # disponible via --moteur music3.
+        moteur = params.get("moteur") or "acestep"
+        if moteur not in MOTEURS:
+            raise ValueError(f"Moteur inconnu : {moteur} (choix : {', '.join(MOTEURS)})")
+        variante = params.get("variante") or "turbo"
+        if variante not in ACESTEP15_VARIANTES:
+            raise ValueError(f"Variante ACE-Step inconnue : {variante} (choix : {', '.join(ACESTEP15_VARIANTES)})")
+        if etapes <= 0:
+            # Variantes distillées (turbo) : 8 pas ; xl-sft (CFG) en demande
+            # davantage ; Music3 : 30 pas
+            if moteur == "music3":
+                etapes = 30
+            else:
+                etapes = 8 if variante != "xl-sft" else 25
+        # Contraintes musicales (ACE-Step uniquement : imposées au planner LM)
+        bpm_force = params.get("bpm_force")
+        tonalite = params.get("tonalite") or None
+        mesure = params.get("mesure") or None
         backend = params.get("music_backend") or "vulkan"
         lufs_cible = float(params.get("lufs") or -30.0)
         loop_mode = params.get("loop_mode") or "percussive"
@@ -75,13 +103,26 @@ class MusicBgWorkflow(BaseWorkflow):
 
         exe = resoudre_audiocpp()
         if not os.path.exists(exe):
+            script = "download_acestep15_gguf.py" if moteur == "acestep" else "download_music3_gguf.py"
             raise FileNotFoundError(
                 f"audiocpp_cli.exe introuvable : {exe}\n"
-                "→ Lancez : uv run python scripts/download_music3_gguf.py"
+                f"→ Lancez : uv run python scripts/{script}"
             )
 
-        self.log(f"Moteur : audio.cpp ({os.path.basename(exe)}) • backend={backend} • {nb_candidats} candidat(s)")
+        self.log(f"Moteur : {MOTEURS[moteur]}{f' • variante {variante}' if moteur == 'acestep' and variante != 'turbo' else ''} • backend={backend} • {nb_candidats} candidat(s)")
         self.log(f"Prompt : « {prompt} »")
+        contraintes = []
+        if bpm_force:
+            contraintes.append(f"{int(bpm_force)} BPM")
+        if tonalite:
+            contraintes.append(tonalite)
+        if mesure:
+            contraintes.append(mesure)
+        if contraintes:
+            if moteur != "acestep":
+                self.log("⚠️ bpm/tonalité/mesure imposés : ignorés par MiniMax-Music3 (ACE-Step uniquement).")
+            else:
+                self.log(f"Contraintes imposées au planner : {' • '.join(contraintes)}")
         self.log(f"Cible : boucle {duree:.0f} s • mode={loop_mode} • bed {lufs_cible:.0f} LUFS")
 
         # ------------------------------------------------------------------
@@ -89,7 +130,10 @@ class MusicBgWorkflow(BaseWorkflow):
         # ------------------------------------------------------------------
         dossier_bruts = os.path.join(output_dir, "candidats")
         os.makedirs(dossier_bruts, exist_ok=True)
-        duree_generation = duree + 3.0
+        # Marge pour l'alignement mesures : ACE-Step termine ses morceaux par un
+        # long fondu de sortie (~4-6 s) → marge large (le moteur est ~40x plus
+        # rapide que Music3, le coût est négligeable).
+        duree_generation = duree + (8.0 if moteur == "acestep" else 3.0)
         empreintes_vues = set()
         bruts: List[Dict[str, Any]] = []
 
@@ -97,16 +141,32 @@ class MusicBgWorkflow(BaseWorkflow):
             chemin_brut = os.path.join(dossier_bruts, f"cand_{i}_brut.wav")
             self.log(f"Génération candidat {i}/{nb_candidats} ({duree_generation:.0f} s)...", emoji="🎵")
             graine_i = graine + i - 1 if graine >= 0 else -1
-            chemin, backend_utilise = generer_musique_music3(
-                description=prompt,
-                chemin_sortie=chemin_brut,
-                duree=duree_generation,
-                etapes=etapes,
-                backend=backend,
-                lyrics=lyrics,
-                graine=graine_i,
-                log=lambda m: self.log(m, emoji="   "),
-            )
+            if moteur == "acestep":
+                chemin, backend_utilise = generer_musique_acestep(
+                    description=prompt,
+                    chemin_sortie=chemin_brut,
+                    duree=duree_generation,
+                    etapes=etapes,
+                    backend=backend,
+                    lyrics=lyrics,
+                    graine=graine_i,
+                    bpm=bpm_force,
+                    tonalite=tonalite,
+                    mesure=mesure,
+                    variante=variante,
+                    log=lambda m: self.log(m, emoji="   "),
+                )
+            else:
+                chemin, backend_utilise = generer_musique_music3(
+                    description=prompt,
+                    chemin_sortie=chemin_brut,
+                    duree=duree_generation,
+                    etapes=etapes,
+                    backend=backend,
+                    lyrics=lyrics,
+                    graine=graine_i,
+                    log=lambda m: self.log(m, emoji="   "),
+                )
 
             empreinte = empreinte_fichier(chemin)
             if empreinte in empreintes_vues and graine_i < 0:
@@ -243,6 +303,7 @@ class MusicBgWorkflow(BaseWorkflow):
             "bpm": meilleur["boucle"].get("bpm"),
             "duree_boucle": meilleur["boucle"]["duree"],
             "strategie": meilleur["boucle"]["strategie"],
+            "moteur": moteur,
             "backend": meilleur["backend"],
             "lufs_bed": mesures_bed["I"],
             "analyse_flamingo": resultat_analyse,

@@ -48,6 +48,9 @@ DEFAULT_WAN_T5XXL = os.getenv("WAN_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, 
 # Modèles Musique (MiniMax-Music3 GGUF via audio.cpp + Music Flamingo via llama.cpp)
 DEFAULT_MUSIC3_DIR = os.getenv("MUSIC3_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "MiniMax-Music3-GGUF"))
 DEFAULT_MUSIC3_LM = os.getenv("MUSIC3_LM_PATH", os.path.join(DEFAULT_MUSIC3_DIR, "language_model_q4_0.gguf"))
+# ACE-Step 1.5 Turbo GGUF (bf16) via audio.cpp — paquet monolithique, licence MIT.
+# ⚠️ q8_0 non supporté pour cette famille (échec d'échantillonnage du planner).
+DEFAULT_ACESTEP15_DIR = os.getenv("ACESTEP15_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "ACE-Step1.5-GGUF"))
 DEFAULT_MUSIC_FLAMINGO_DIR = os.getenv("MUSIC_FLAMINGO_DIR", os.path.join(DEFAULT_MODEL_DIR, "music-flamingo"))
 DEFAULT_MUSIC_FLAMINGO_LM = os.getenv(
     "MUSIC_FLAMINGO_LM_PATH", os.path.join(DEFAULT_MUSIC_FLAMINGO_DIR, "music-flamingo-hf.Q4_K_M.gguf")
@@ -404,6 +407,24 @@ def resoudre_modele_musique(chemin: Optional[str] = None) -> str:
 
     return DEFAULT_MUSIC3_DIR
 
+
+# Variantes ACE-Step 1.5 : (chemin relatif du GGUF, load-option dit_model_path
+# ou None). Les paquets sont spécifiques à une variante — xl-* exigent leur
+# load-option (docs audio.cpp). XL = DiT 4B (~14,2 Gio bf16, non testé HF :
+# hébergé sur le miroir ModelScope de audio.cpp).
+ACESTEP15_VARIANTES = {
+    "turbo": (os.path.join("turbo", "ace-step-1.5-turbo-bf16.gguf"), None),
+    "xl-turbo": (os.path.join("xl-turbo", "ace-step-1.5-xl-turbo-bf16.gguf"), "acestep-v15-xl-turbo"),
+    "xl-sft": (os.path.join("xl-sft", "ace-step-1.5-xl-sft-bf16.gguf"), "acestep-v15-xl-sft"),
+}
+
+
+def resoudre_gguf_acestep15(variante: str = "turbo") -> str:
+    """Retourne le chemin absolu du GGUF ACE-Step 1.5 pour la variante donnée."""
+    if variante not in ACESTEP15_VARIANTES:
+        raise ValueError(f"Variante ACE-Step inconnue : {variante} (choix : {', '.join(ACESTEP15_VARIANTES)})")
+    chemin_relatif, _ = ACESTEP15_VARIANTES[variante]
+    return os.path.join(DEFAULT_ACESTEP15_DIR, chemin_relatif)
 
 
 def verifier_prerequis(config: dict) -> bool:
