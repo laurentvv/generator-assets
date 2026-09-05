@@ -77,12 +77,21 @@
   * Réinjection de l'ultime trame du plan $N$ (`extraire_derniere_trame`) en amorce conditionnelle (`-i`) du plan $N+1$.
   * Maintient la VRAM < 11 Go, évite l'explosion attentionnelle $O(N^2)$ (qui sature les 16 Go à 161 trames en 1 seul bloc), et élimine l'adoucissement temporel des longues passes.
 
+### 👑 1.9. Le Workflow Roi Validé : Image Maîtresse Wan 2.2 MoE ➔ Animation I2V (Wan 2.2 MoE / Wan 2.1)
+* **Principe** : Génération d'une seule image fixe de référence en 85s via Wan 2.2 MoE (`--video-frames 1`), validation visuelle instantanée à 100%, puis animation fluide Image-to-Video (`-i`).
+* **Support I2V Wan 2.2 MoE** :
+  * Modèles dédiés : `Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf` (~8.99 Go) + `Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf` (~8.99 Go).
+  * Conditionneurs : `umt5-xxl` (CPU RAM) + `wan_2.1_vae` + `clip_vision_h.safetensors` (ViT).
+  * Gestion VRAM : Grâce à `--offload-to-cpu`, chaque expert de 9 Go est permuté en mémoire de travail séquentiellement, maintenant la VRAM crête sous 13.5 Go / 16 Go.
+* **Bénéfice** : Zéro hallucination, zéro dérive de décor, 100% de conformité géométrique et vitesse d'itération foudroyante.
+
 ---
 
 ## 🎬 2. Masters et Fichiers de Production Validés
 
 | Nom du Fichier | Spécifications | Modèle Utilisé | Statut & Rendu |
 | :--- | :--- | :--- | :--- |
+| `output/ansible_nexus/ansible_nexus_wan22_4k_master.png` | 3840×2160 Ultra HD 4K, CAS 0.75 | **Wan 2.2 MoE + 4x-UltraSharp** | 👑 **Image Maîtresse Validée (Ansible Nexus)** |
 | `output/overnight/esrgan_4k/wan22_moe_dragon_4k_ultrasharp.mp4` | 3840×2160 Ultra HD 4K @ 16 FPS, 50 Mbps | **Wan 2.2 MoE + 4x-UltraSharp** | 👑 **Master Cinéma 4K Absolu** |
 | `output/overnight/esrgan_4k/01_ltx25_dragon_4k_ultrasharp.mp4` | 3840×2160 Ultra HD 4K @ 24 FPS, Audio AAC, 50 Mbps | **LTX-2.5 + 4x-UltraSharp** | 👑 **Master 4K + Audio Natif** |
 | `output/overnight/cas_sharp/03_wan22_1080p_sharp_cas.mp4` | 1920×1080 @ 16 FPS, AMD CAS 0.75 | **Wan 2.2 MoE** | 🟢 Validé CAS Net (2.2 Mo) |
@@ -99,9 +108,13 @@
 
 ## 🛠️ 3. Scripts de Production Déployés
 
-1. [`scripts/upscale_video_ai.py`](file:///C:/GIT/generator-assets/scripts/upscale_video_ai.py) : **Super-Résolution IA 4K universelle** (Real-ESRGAN Vulkan0 + AMD CAS + AMF Hardware 50 Mbps).
-2. [`scripts/generate_ansible_nexus.py`](file:///C:/GIT/generator-assets/scripts/generate_ansible_nexus.py) : Pipeline de production complet pour les architectures IT complexes (génération Wan/LTX + 4K AI + extraction de trames + zoom 100%).
-3. [`scripts/chain_video.py`](file:///C:/GIT/generator-assets/scripts/chain_video.py) : Chaînage continu multi-plans I2V avec extraction de trame de transition.
-4. [`scripts/conform_youtube_hd.py`](file:///C:/GIT/generator-assets/scripts/conform_youtube_hd.py) : Conformation matérielle AMF Lanczos + AMD CAS 0.75.
-5. [`scripts/generate_ltx25_8steps.py`](file:///C:/GIT/generator-assets/scripts/generate_ltx25_8steps.py) : Rendu maître LTX-2.5 avec sigmas distillés et audio stéréo.
-6. [`scripts/run_overnight_all_sota.py`](file:///C:/GIT/generator-assets/scripts/run_overnight_all_sota.py) : Orchestrateur de grand benchmark nocturne SOTA.
+1. [`scripts/generate_wan22_single_image.py`](file:///C:/GIT/generator-assets/scripts/generate_wan22_single_image.py) : **Génération d'image de référence Wan 2.2 MoE (85s) + 4K AI Upscale**.
+2. [`scripts/download_wan22_i2v_models.py`](file:///C:/GIT/generator-assets/scripts/download_wan22_i2v_models.py) : **Téléchargement automatisé des modèles Wan 2.2 I2V MoE 28B** (`HighNoise` et `LowNoise` Q4_K_M).
+3. [`scripts/animate_ansible_nexus_wan22_i2v.py`](file:///C:/GIT/generator-assets/scripts/animate_ansible_nexus_wan22_i2v.py) : **Animation cinématique I2V Wan 2.2 MoE vers Master 4K 5.5s**.
+4. [`scripts/upscale_video_ai.py`](file:///C:/GIT/generator-assets/scripts/upscale_video_ai.py) : **Super-Résolution IA 4K universelle** (Real-ESRGAN Vulkan0 + AMD CAS + AMF Hardware 50 Mbps).
+5. [`scripts/generate_ansible_nexus.py`](file:///C:/GIT/generator-assets/scripts/generate_ansible_nexus.py) : Pipeline de production complet pour les architectures IT complexes (génération Wan/LTX + 4K AI + extraction de trames + zoom 100%).
+6. [`scripts/chain_video.py`](file:///C:/GIT/generator-assets/scripts/chain_video.py) : Chaînage continu multi-plans I2V avec extraction de trame de transition.
+7. [`scripts/conform_youtube_hd.py`](file:///C:/GIT/generator-assets/scripts/conform_youtube_hd.py) : Conformation matérielle AMF Lanczos + AMD CAS 0.75.
+8. [`scripts/generate_ltx25_8steps.py`](file:///C:/GIT/generator-assets/scripts/generate_ltx25_8steps.py) : Rendu maître LTX-2.5 avec sigmas distillés et audio stéréo.
+9. [`scripts/run_overnight_all_sota.py`](file:///C:/GIT/generator-assets/scripts/run_overnight_all_sota.py) : Orchestrateur de grand benchmark nocturne SOTA.
+

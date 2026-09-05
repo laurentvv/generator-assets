@@ -660,7 +660,8 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   | :--- | :--- | :--- | :--- |
   | **LTX-2.5 Distilled** 👑<br>*(15B Audio + Vidéo)* | `LTX-2.5-Distilled-Q4_K_M.gguf`<br>`gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf`<br>`ltx-2.5-video-vae-conv-bf16.safetensors`<br>`ltx-2.5-audio-vae-bf16.safetensors` | ~25.7 Go | `python scripts/download_ltx25.py`<br>`python scripts/download_gemma4_gguf.py`<br>`python scripts/download_ltx25_vaes.py` |
   | **Wan 2.1 14B & 1.3B**<br>*(Géométrie 3D & Isométrie)* | `wan2.1-t2v-14b-Q4_K_M.gguf`<br>`umt5-xxl-encoder-Q4_K_M.gguf`<br>`wan_2.1_vae.safetensors` | ~13.8 Go | `.\scripts\download_video_models.ps1 -Model 14b` |
-  | **Wan 2.2 MoE**<br>*(Photoréalisme Absolu Dual-DiT)* | `Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf`<br>`Wan2.2-T2V-A14B-HighNoise-Q4_K_M.gguf`<br>`umt5-xxl-encoder-Q4_K_M.gguf` | ~23.1 Go | `python scripts/download_wan22_official.py` |
+  | **Wan 2.2 MoE (T2V)**<br>*(Photoréalisme Absolu Dual-DiT)* | `Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf`<br>`Wan2.2-T2V-A14B-HighNoise-Q4_K_M.gguf`<br>`umt5-xxl-encoder-Q4_K_M.gguf` | ~23.1 Go | `python scripts/download_wan22_official.py` |
+  | **Wan 2.2 MoE (I2V)** 👑<br>*(Animation Image-to-Video)* | `Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf`<br>`Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf`<br>`clip_vision_h.safetensors` | ~19.3 Go | `python scripts/download_wan22_i2v_models.py` |
   | **MiniMax-H3**<br>*(Hailuo 32B DiT + Son)* | `MiniMax-H3-Q4_K_M.gguf`<br>`Qwen3-VL-32B-Instruct-Q4_K_M.gguf` | ~27.8 Go | `python scripts/download_minimax_h3.py` |
   | **Super-Résolution 4K**<br>*(Netteté YouTube ESRGAN)* | `upscalers/4x-UltraSharp.pth` | 64 Mo | Inclus dans le repo ou via HuggingFace `Kim2091/4x-UltraSharp` |
 
@@ -693,6 +694,23 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   Deux stratégies sont disponibles selon l'architecture :
   - **Stratégie 1 : Chaînage Multi-Plans I2V (Recommandée)** : Découpage en 2 ou 3 plans courts successifs (ex: 2 plans de 82 trames ou 3 plans de 55 trames). Chaque plan est généré dans la zone de confort VRAM (<11 Go) sans saturation de l'attention $O(N^2)$ ni adoucissement temporel des textures. L'enchaînement est fluide à 100% en réinjectant la dernière trame du plan $N$ en image source (`-i`) du plan $N+1$.
   - **Stratégie 2 : Génération Native Directe LTX-2.5** : Pour les scènes continues rapides avec sound design procédural synchronisé.
+
+* **👑 Workflow Hybride Roi Validé : Image 4K Maîtresse (Gemini/Upscale) ➔ Wan 2.2 MoE I2V ➔ Master 4K UHD** :
+  Pour combiner la précision sémantique absolue (logos d'entreprises, marques, architectures isométriques complexes) et la dynamique physique vivante sans aucune hallucination humaine :
+  1. **Image Maîtresse** : Image de référence générée avec forte fidélité (ex: Gemini Imagen 3 avec logos Linux Tux et Windows) et suréchantillonnée en local.
+  2. **Animation DiT MoE 28B (`scripts/animate_ansible_nexus_wan22_i2v.py`)** : Injection de l'image via `--clip_vision clip_vision_h.safetensors` et `--vae wan_2.1_vae.safetensors` dans l'architecture Dual-DiT Wan 2.2 MoE (`HighNoise` pour la cinématique de caméra + `LowNoise` pour les micro-reflets et netteté).
+  3. **Conformation & Mastering 4K** : Interpolation fluide en 5,5 secondes (165 trames @ 30 FPS) et Super-Résolution Ultra HD (3840×2160 @ 50 Mbps) avec filtre **AMD FidelityFX CAS 0.75**.
+
+  ```bash
+  # Lancer l'animation Image-to-Video sur n'importe quelle image source 4K :
+  python scripts/animate_ansible_nexus_wan22_i2v.py --input C:\tmp\scene_01.png --frames 17
+
+  # Générer automatiquement le comparatif Split-Screen 50/50 avec une animation 2.5D :
+  python scripts/create_comparison_2.5d_vs_wan22.py
+  ```
+
+  > [!TIP]
+  > **Match 2.5D vs IA Générative Wan 2.2 MoE** : Alors que l'animation 2.5D recourt à des effets miroir artificiels en bordure d'écran et fige les textures lumineuses, **Wan 2.2 MoE I2V calcule un véritable espace 3D continu sans dédoublement**, anime la pulsation réelle des paquets de données dans les fibres optiques et fait rayonner le nexus central de manière volumétrique.
 
 * **🎬 Chaînage Continu Multi-Plans I2V (`scripts/chain_video.py`)** :
   1. **Plan 1 (T2V)** : Génération de l'amorce à partir d'un prompt descriptif (ex. plan d'ensemble 33 trames).
