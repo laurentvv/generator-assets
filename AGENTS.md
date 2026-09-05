@@ -2,11 +2,11 @@
 
 ## 🎯 Contexte d'usage (buts finaux)
 
-Ce dépôt alimente **deux productions** :
+**Fabrique locale universelle de médias générés par IA — tout projet nécessitant image, son, vidéo ou musique.** Deux productions principales actuelles :
 1. **Un jeu sous Godot** — assets générés : matériaux PBR, maillages, boucles musicales OGG (workflow `music_bg`), ambiances, sprites ;
 2. **Une chaîne YouTube générée à 100 % en IA à partir de documentations sysadmin** — voix off (TTS) + lits musicaux −30 LUFS avec ducking automatique + vidéos IA (Wan/LTX/MiniMax-H3) + masters 4K conformés YouTube.
 
-Toute évolution doit servir l'un de ces deux buts (ou l'outillage qui les maintient : veille, docs, téléchargement).
+Tout nouveau besoin média (autre jeu, autre chaîne, habillage, démo…) est un cas d'usage légitime. Les composants doivent rester génériques et réutilisables ; toute évolution doit servir un projet concret (ou l'outillage qui les maintient : veille, docs, téléchargement).
 
 ## 📚 Documentation des outils locaux : À MAINTENIR SYSTÉMATIQUEMENT
 
