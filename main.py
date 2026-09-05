@@ -93,7 +93,11 @@ def lancer_mode_interactif(config: dict):
         "23": ("pose_control", "🕺 Contrôle d'Armatures & Poses (ControlNet OpenPose)"),
         "24": ("tts_dialogue", "🎙️ Synthèse Vocale Émotionnelle & Lip-Sync Godot"),
         "25": ("audio_ambience", "🌌 Ambiances Sonores Immersives & Paysages Bouclables"),
-        "26": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend")
+        "26": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
+        "27": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
+        "28": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
+        "29": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
+        "30": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
     }
 
     while True:
@@ -102,7 +106,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-25) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-30) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
@@ -277,6 +281,86 @@ def lancer_mode_interactif(config: dict):
                 params["prompt"] = input("🌌 Type d'ambiance (dungeon, forest, storm, space, campfire) : ").strip() or "dungeon"
                 params["duration"] = float(input("⏱️  Durée en secondes (défaut: 8.0) : ").strip() or 8.0)
 
+            elif wf_name == "video":
+                params["prompt"] = input("🎬 Concept / Action de la vidéo (ex: cascade mystique dans jungle luxuriante) : ").strip()
+                if not params["prompt"]:
+                    continue
+                img_init = input("🖼️  Image initiale pour Image-to-Video (ou laisser vide pour Text-to-Video) : ").strip()
+                if img_init and os.path.exists(img_init):
+                    params["input"] = img_init
+                    img_fin = input("🖼️  Image finale (laisser vide pour I2V, spécifier pour FLF2V) : ").strip()
+                    if img_fin and os.path.exists(img_fin):
+                        params["end_img"] = img_fin
+                params["frames"] = int(input("🎞️  Nombre de trames [17, 33, 49, 81] (défaut: 33) : ").strip() or 33)
+                params["fps"] = int(input("⏱️  Cadence FPS (défaut: 24) : ").strip() or 24)
+                nom_out = input("💾 Nom du fichier vidéo [défaut: auto] : ").strip()
+                if nom_out:
+                    params["output"] = nom_out
+
+            elif wf_name == "update_sd":
+                from pathlib import Path
+                import scripts.update_sd_cpp as sd_up
+                print("\n🔄 Gestionnaire stable-diffusion.cpp (Vulkan) :")
+                print("   [1] Vérifier les versions (locale vs distante)")
+                print("   [2] Télécharger la dernière release Vulkan officielle GitHub (Rapide)")
+                print("   [3] Compiler nativement depuis les sources avec Vulkan (CMake + MSVC)")
+                print("   [4] Restaurer une sauvegarde précédente")
+                choix_sd = input("Choix (1-4) [défaut: 1] : ").strip() or "1"
+                inst_dir = Path(config.get("sd_dir") or os.getenv("SD_DIR", r"C:\SD"))
+                src_dir = Path(os.getenv("SD_SOURCE_DIR", r"C:\GIT\stable-diffusion.cpp"))
+                if choix_sd == "1":
+                    sd_up.action_verifier(inst_dir)
+                elif choix_sd == "2":
+                    sd_up.action_telecharger_release(inst_dir)
+                elif choix_sd == "3":
+                    sd_up.action_compiler_vulkan(source_dir=src_dir, install_dir=inst_dir)
+                elif choix_sd == "4":
+                    sd_up.restaurer_sauvegarde(inst_dir)
+                continue
+
+            elif wf_name == "update_llama":
+                from pathlib import Path
+                import scripts.update_llama_cpp as llama_up
+                print("\n🦙 Gestionnaire llama.cpp (Vulkan) :")
+                print("   [1] Vérifier les versions (locale vs distante)")
+                print("   [2] Télécharger la dernière release Vulkan officielle GitHub (Rapide)")
+                print("   [3] Compiler nativement depuis les sources avec Vulkan (CMake + MSVC)")
+                print("   [4] Restaurer une sauvegarde précédente")
+                choix_l = input("Choix (1-4) [défaut: 1] : ").strip() or "1"
+                inst_dir = Path(config.get("llama_dir") or os.getenv("LLAMA_DIR", r"C:\llama.cpp"))
+                src_dir = Path(os.getenv("LLAMA_SOURCE_DIR", r"C:\GIT\llama.cpp"))
+                if choix_l == "1":
+                    llama_up.action_verifier(inst_dir)
+                elif choix_l == "2":
+                    llama_up.action_telecharger_release(inst_dir)
+                elif choix_l == "3":
+                    llama_up.action_compiler_vulkan(source_dir=src_dir, install_dir=inst_dir)
+                elif choix_l == "4":
+                    llama_up.restaurer_sauvegarde(inst_dir)
+                continue
+
+            elif wf_name == "update_vulkan":
+                import scripts.update_vulkan_stack as v_stack
+                v_stack.inspecter_gpu_vulkan()
+                print("   [1] Vérifier l'état de toute la suite IA Vulkan (SD + LLaMA)")
+                print("   [2] Mettre à jour tous les moteurs (Releases officielles Vulkan)")
+                print("   [3] Recompiler tous les moteurs nativement (CMake + MSVC + Vulkan)")
+                print("   [4] Restaurer les sauvegardes précédentes")
+                choix_v = input("Choix (1-4) [défaut: 1] : ").strip() or "1"
+                if choix_v == "1":
+                    v_stack.check_sd(v_stack.DEFAULT_SD_DIR)
+                    v_stack.check_llama(v_stack.DEFAULT_LLAMA_DIR)
+                elif choix_v == "2":
+                    v_stack.download_sd(v_stack.DEFAULT_SD_DIR)
+                    v_stack.download_llama(v_stack.DEFAULT_LLAMA_DIR)
+                elif choix_v == "3":
+                    v_stack.build_sd(v_stack.DEFAULT_SD_SRC, v_stack.DEFAULT_SD_DIR)
+                    v_stack.build_llama(v_stack.DEFAULT_LLAMA_SRC, v_stack.DEFAULT_LLAMA_DIR)
+                elif choix_v == "4":
+                    v_stack.rollback_sd(v_stack.DEFAULT_SD_DIR)
+                    v_stack.rollback_llama(v_stack.DEFAULT_LLAMA_DIR)
+                continue
+
             wf_instance.run(params)
 
         except KeyboardInterrupt:
@@ -428,6 +512,9 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--top", default="rustic medieval beige burlap tunic fabric", help="Description du tissu/matière pour le haut/tunique (workflow outfit).")
     groupe_wf.add_argument("--shoes", default="worn dark brown medieval leather shoes texture", help="Description de la matière pour les chaussures/bottes (workflow outfit).")
     groupe_wf.add_argument("--mpfb-dir", help="Répertoire personnalisé des assets MakeHuman / MPFB.")
+    groupe_wf.add_argument("--end-img", help="Image clé de fin pour l'interpolation vidéo FLF2V (workflow video).")
+    groupe_wf.add_argument("--control-video", help="Dossier de trames de guidage vidéo V2V (workflow video).")
+    groupe_wf.add_argument("--flow-shift", type=float, default=3.0, help="Facteur de shift flow-matching pour modèles Wan/SD3 (défaut: 3.0).")
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
@@ -447,6 +534,33 @@ Exemples de Workflows 3D & 2D :
     parser.add_argument("--list-workflows", action="store_true", help="Affiche la liste des workflows disponibles.")
     parser.add_argument("--list-loras", action="store_true", help="Affiche la liste des LoRAs installés.")
     parser.add_argument("--list-upscalers", action="store_true", help="Affiche la liste des modèles d'upscaling installés.")
+    parser.add_argument(
+        "--update-sd",
+        nargs="?",
+        const="check",
+        choices=["check", "download", "build", "rollback", "list-backups"],
+        help="Gère la mise à jour et compilation Vulkan de stable-diffusion.cpp (check, download, build, rollback, list-backups)."
+    )
+    parser.add_argument("--sd-install-dir", help="Dossier d'installation de stable-diffusion.cpp (défaut: C:\\SD).")
+    parser.add_argument("--sd-source-dir", help="Dossier source git pour la compilation Vulkan (défaut: C:\\GIT\\stable-diffusion.cpp).")
+    parser.add_argument(
+        "--update-llama",
+        nargs="?",
+        const="check",
+        choices=["check", "download", "build", "rollback", "list-backups"],
+        help="Gère la mise à jour et compilation Vulkan de llama.cpp (check, download, build, rollback, list-backups)."
+    )
+    parser.add_argument("--llama-install-dir", help="Dossier d'installation de llama.cpp (défaut: C:\\llama.cpp).")
+    parser.add_argument("--llama-source-dir", help="Dossier source git pour la compilation Vulkan (défaut: C:\\GIT\\llama.cpp).")
+    parser.add_argument(
+        "--update-vulkan",
+        "--update-all",
+        dest="update_vulkan",
+        nargs="?",
+        const="check",
+        choices=["check", "download", "build", "rollback"],
+        help="Gère la mise à jour complète de toute la Suite IA Vulkan (stable-diffusion.cpp + llama.cpp)."
+    )
 
     # Chemins
     groupe_chemins = parser.add_argument_group("Chemins & Exécutables")
@@ -507,6 +621,87 @@ Exemples de Workflows 3D & 2D :
             for u in upscalers:
                 print(f"  • {u['name'].ljust(35)} ({u['size_mb']} Mo) -> {u['path']}")
         print()
+        sys.exit(0)
+
+    if args.update_sd:
+        from pathlib import Path
+        from scripts.update_sd_cpp import (
+            action_compiler_vulkan,
+            action_telecharger_release,
+            action_verifier,
+            lister_sauvegardes,
+            restaurer_sauvegarde
+        )
+        install_dir = Path(args.sd_install_dir or os.getenv("SD_DIR", r"C:\SD"))
+        source_dir = Path(args.sd_source_dir or os.getenv("SD_SOURCE_DIR", r"C:\GIT\stable-diffusion.cpp"))
+
+        if args.update_sd == "check":
+            action_verifier(install_dir)
+        elif args.update_sd == "download":
+            action_telecharger_release(install_dir)
+        elif args.update_sd == "build":
+            action_compiler_vulkan(source_dir=source_dir, install_dir=install_dir)
+        elif args.update_sd == "rollback":
+            restaurer_sauvegarde(install_dir)
+        elif args.update_sd == "list-backups":
+            backups = lister_sauvegardes(install_dir)
+            print(f"\n📦 Sauvegardes trouvées dans {install_dir / 'backups'} :")
+            if not backups:
+                print("  (Aucune sauvegarde)")
+            for b in backups:
+                print(f"  • {b.name}")
+        sys.exit(0)
+
+    if args.update_llama:
+        from pathlib import Path
+        from scripts.update_llama_cpp import (
+            action_compiler_vulkan,
+            action_telecharger_release,
+            action_verifier,
+            lister_sauvegardes,
+            restaurer_sauvegarde
+        )
+        install_dir = Path(args.llama_install_dir or os.getenv("LLAMA_DIR", r"C:\llama.cpp"))
+        source_dir = Path(args.llama_source_dir or os.getenv("LLAMA_SOURCE_DIR", r"C:\GIT\llama.cpp"))
+
+        if args.update_llama == "check":
+            action_verifier(install_dir)
+        elif args.update_llama == "download":
+            action_telecharger_release(install_dir)
+        elif args.update_llama == "build":
+            action_compiler_vulkan(source_dir=source_dir, install_dir=install_dir)
+        elif args.update_llama == "rollback":
+            restaurer_sauvegarde(install_dir)
+        elif args.update_llama == "list-backups":
+            backups = lister_sauvegardes(install_dir)
+            print(f"\n📦 Sauvegardes trouvées dans {install_dir / 'backups'} :")
+            if not backups:
+                print("  (Aucune sauvegarde)")
+            for b in backups:
+                print(f"  • {b.name}")
+        sys.exit(0)
+
+    if args.update_vulkan:
+        from pathlib import Path
+        import scripts.update_vulkan_stack as v_stack
+        v_stack.inspecter_gpu_vulkan()
+        mode = args.update_vulkan
+        if mode == "check":
+            print("▶️ [1/2] Inspection de stable-diffusion.cpp...")
+            v_stack.check_sd(v_stack.DEFAULT_SD_DIR)
+            print("▶️ [2/2] Inspection de llama.cpp...")
+            v_stack.check_llama(v_stack.DEFAULT_LLAMA_DIR)
+        elif mode == "download":
+            print("\n🚀 Téléchargement et mise à jour de la Suite Vulkan...")
+            v_stack.download_sd(v_stack.DEFAULT_SD_DIR)
+            v_stack.download_llama(v_stack.DEFAULT_LLAMA_DIR)
+        elif mode == "build":
+            print("\n⚙️ Compilation native complète de la Suite Vulkan...")
+            v_stack.build_sd(v_stack.DEFAULT_SD_SRC, v_stack.DEFAULT_SD_DIR)
+            v_stack.build_llama(v_stack.DEFAULT_LLAMA_SRC, v_stack.DEFAULT_LLAMA_DIR)
+        elif mode == "rollback":
+            v_stack.rollback_sd(v_stack.DEFAULT_SD_DIR)
+            v_stack.rollback_llama(v_stack.DEFAULT_LLAMA_DIR)
         sys.exit(0)
 
     if args.check:
@@ -580,7 +775,10 @@ Exemples de Workflows 3D & 2D :
         "character": args.character,
         "top": args.top,
         "shoes": args.shoes,
-        "mpfb_dir": args.mpfb_dir
+        "mpfb_dir": args.mpfb_dir,
+        "end_img": args.end_img,
+        "control_video": args.control_video,
+        "flow_shift": args.flow_shift
     }
 
     # Détection automatique du workflow si l'argument -w n'est pas spécifié

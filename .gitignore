@@ -31,6 +31,16 @@ models/
 upscalers/
 loras/
 
+# Rendu vidéo & outputs lourds
+output/
+scratch/
+*.webm
+*.mp4
+*.mkv
+*.avi
+*.wav
+test_*
+
 # IDE & OS
 .vscode/
 .idea/

@@ -13,6 +13,8 @@ from typing import Dict, List, Optional, Tuple
 # Chemins des exécutables
 DEFAULT_LLAMA_CLI = os.getenv("LLAMA_CLI_PATH", r"C:\llama.cpp\llama-cli.exe")
 DEFAULT_SD_CLI = os.getenv("SD_CLI_PATH", r"C:\SD\sd-cli.exe")
+DEFAULT_SD_DIR = os.getenv("SD_DIR", r"C:\SD")
+DEFAULT_SD_SOURCE_DIR = os.getenv("SD_SOURCE_DIR", r"C:\GIT\stable-diffusion.cpp")
 
 # Dossiers et Modèles de base
 DEFAULT_MODEL_DIR = os.getenv("MODEL_DIR", r"C:\Modeles_LLM")
@@ -21,6 +23,11 @@ DEFAULT_SD_MODEL = os.getenv("SD_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "f
 DEFAULT_CLIP_L = os.getenv("SD_CLIP_L_PATH", os.path.join(DEFAULT_MODEL_DIR, "clip_l.safetensors"))
 DEFAULT_T5XXL = os.getenv("SD_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "t5xxl_fp16.safetensors"))
 DEFAULT_VAE = os.getenv("SD_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "ae.safetensors"))
+
+# Modèles Vidéo (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
+DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))
+DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))
+DEFAULT_WAN_T5XXL = os.getenv("WAN_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q8_0.gguf"))
 
 # Dossiers spécialisés pour LoRAs et Upscalers (Recherche dans C:\Modeles_LLM\... puis dans le projet local)
 DEFAULT_LORA_DIRS = [
@@ -254,6 +261,90 @@ def resoudre_modele_onnx(cle_ou_chemin: Optional[str], defaut_path: Optional[str
             return m["path"]
 
     return defaut_path if defaut_path and os.path.exists(defaut_path) else None
+
+
+def resoudre_modele_video(chemin: Optional[str] = None) -> str:
+    """
+    Résout le modèle vidéo DiT (Wan 2.1 / 2.2, LTX-2.3 / 2.5).
+    Recherche automatiquement dans DEFAULT_MODEL_DIR si aucun chemin direct valide n'est fourni.
+    """
+    if chemin and os.path.exists(chemin):
+        return os.path.abspath(chemin)
+
+    # Candidats Wan 2.1 / 2.2 et LTX par ordre de priorité
+    candidats = [
+        "wan2.1-t2v-14b-Q4_K_M.gguf",
+        "wan2.1-t2v-14b-q4_k_m.gguf",
+        "LTX-2.5-Distilled-Q4_K_M.gguf",
+        "wan2.1-i2v-14b-480p-Q4_K_M.gguf",
+        "Wan2.2-T2V-P14B-HighNoise-Q4_K_M.gguf",
+        "Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf",
+        "minimax_h3_fl2va_pruned-Q4_K_M.gguf",
+        "ltx-video-2b-v0.9-Q8_0.gguf"
+    ]
+    for nom in candidats:
+        p = os.path.join(DEFAULT_MODEL_DIR, nom)
+        if os.path.exists(p):
+            return p
+
+    # Recherche floue dans DEFAULT_MODEL_DIR
+    if os.path.exists(DEFAULT_MODEL_DIR):
+        for f in os.listdir(DEFAULT_MODEL_DIR):
+            f_lower = f.lower()
+            if (f_lower.startswith("wan") or f_lower.startswith("ltx")) and f_lower.endswith((".gguf", ".safetensors")):
+                if "vae" not in f_lower and "encoder" not in f_lower:
+                    return os.path.join(DEFAULT_MODEL_DIR, f)
+
+    return os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-14b-Q4_K_M.gguf")
+
+
+def resoudre_t5xxl_video(chemin: Optional[str] = None) -> str:
+    """
+    Résout l'encodeur de texte UMT5-XXL pour Wan 2.1 (Q4_K_M, Q8_0 ou fp16).
+    """
+    if chemin and os.path.exists(chemin):
+        return os.path.abspath(chemin)
+
+    candidats = [
+        "umt5-xxl-encoder-Q8_0.gguf",
+        "umt5-xxl-encoder-Q4_K_M.gguf",
+        "umt5-xxl-encoder-q4_k_m.gguf",
+        "umt5-xxl-encoder-q8_0.gguf",
+        "umt5_xxl_fp16.safetensors"
+    ]
+    for nom in candidats:
+        p = os.path.join(DEFAULT_MODEL_DIR, nom)
+        if os.path.exists(p):
+            return p
+
+    if os.path.exists(DEFAULT_MODEL_DIR):
+        for f in os.listdir(DEFAULT_MODEL_DIR):
+            f_lower = f.lower()
+            if "umt5" in f_lower and f_lower.endswith((".gguf", ".safetensors")):
+                return os.path.join(DEFAULT_MODEL_DIR, f)
+
+    return os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q8_0.gguf")
+
+
+def resoudre_vae_video(chemin: Optional[str] = None) -> str:
+    """
+    Résout le VAE vidéo Wan 2.1 / 2.2.
+    """
+    if chemin and os.path.exists(chemin):
+        return os.path.abspath(chemin)
+
+    candidats = [
+        "wan_2.1_vae.safetensors",
+        "wan2.1_vae.safetensors",
+        "wan2.2_vae.safetensors"
+    ]
+    for nom in candidats:
+        p = os.path.join(DEFAULT_MODEL_DIR, nom)
+        if os.path.exists(p):
+            return p
+
+    return os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors")
+
 
 
 def verifier_prerequis(config: dict) -> bool:
