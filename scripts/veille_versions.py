@@ -163,10 +163,21 @@ def veille() -> tuple:
         deja_vues = etat.get("paquets_python", {}).get("obsolete", [])
         nouvelles = [p for p in cles if p not in deja_vues]
         if nouvelles:
+            # Lien changelog/dépôt pour chaque nouveau paquet (via PyPI)
+            details = []
+            for paquet in nouvelles[:5]:
+                try:
+                    rp = requests.get(f"https://pypi.org/pypi/{paquet}/json", timeout=20).json()
+                    urls = rp.get("info", {}).get("project_urls", {}) or {}
+                    source = (urls.get("Changelog") or urls.get("Release Notes")
+                              or urls.get("Source") or urls.get("Repository") or "")
+                    details.append(f"{paquet}: {source}" if source else paquet)
+                except Exception:
+                    details.append(paquet)
             rapport.ajouter("🆕", "paquets-python",
                             f"{len(cles)} paquet(s) avec mise à jour disponible, dont nouveaux : "
                             f"{', '.join(nouvelles[:8])}{'…' if len(nouvelles) > 8 else ''} "
-                            f"→ uv lock --upgrade && uv sync")
+                            f"→ uv lock --upgrade && uv sync — changelogs : {' | '.join(details)}")
         elif cles:
             rapport.ajouter("✅", "paquets-python", f"{len(cles)} mise(s) à jour possible(s), déjà signalées")
         else:
