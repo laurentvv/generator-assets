@@ -15,6 +15,22 @@ DEFAULT_LLAMA_CLI = os.getenv("LLAMA_CLI_PATH", r"C:\llama.cpp\llama-cli.exe")
 DEFAULT_SD_CLI = os.getenv("SD_CLI_PATH", r"C:\SD\sd-cli.exe")
 DEFAULT_SD_DIR = os.getenv("SD_DIR", r"C:\SD")
 DEFAULT_SD_SOURCE_DIR = os.getenv("SD_SOURCE_DIR", r"C:\GIT\stable-diffusion.cpp")
+DEFAULT_AUDIOCPP_CLI = os.getenv("AUDIOCPP_PATH", r"C:\audio-cpp\audiocpp_cli.exe")
+
+
+def _detecter_ffmpeg() -> str:
+    """ffmpeg 9 (C:\\ffmpeg\\dist) en priorité, puis ancien build Amuse, puis PATH."""
+    candidats = [
+        r"C:\ffmpeg\dist\bin\ffmpeg.exe",
+        r"C:\Program Files\Amuse\ffmpeg.exe",
+    ]
+    for c in candidats:
+        if os.path.exists(c):
+            return c
+    return "ffmpeg"
+
+
+DEFAULT_FFMPEG = os.getenv("FFMPEG_PATH", _detecter_ffmpeg())
 
 # Dossiers et Modèles de base
 DEFAULT_MODEL_DIR = os.getenv("MODEL_DIR", r"C:\Modeles_LLM")
@@ -28,6 +44,17 @@ DEFAULT_VAE = os.getenv("SD_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "ae.safet
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))
 DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))
 DEFAULT_WAN_T5XXL = os.getenv("WAN_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q8_0.gguf"))
+
+# Modèles Musique (MiniMax-Music3 GGUF via audio.cpp + Music Flamingo via llama.cpp)
+DEFAULT_MUSIC3_DIR = os.getenv("MUSIC3_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "MiniMax-Music3-GGUF"))
+DEFAULT_MUSIC3_LM = os.getenv("MUSIC3_LM_PATH", os.path.join(DEFAULT_MUSIC3_DIR, "language_model_q4_0.gguf"))
+DEFAULT_MUSIC_FLAMINGO_DIR = os.getenv("MUSIC_FLAMINGO_DIR", os.path.join(DEFAULT_MODEL_DIR, "music-flamingo"))
+DEFAULT_MUSIC_FLAMINGO_LM = os.getenv(
+    "MUSIC_FLAMINGO_LM_PATH", os.path.join(DEFAULT_MUSIC_FLAMINGO_DIR, "music-flamingo-hf.Q4_K_M.gguf")
+)
+DEFAULT_MUSIC_FLAMINGO_MMPROJ = os.getenv(
+    "MUSIC_FLAMINGO_MMPROJ_PATH", os.path.join(DEFAULT_MUSIC_FLAMINGO_DIR, "music-flamingo-hf.mmproj-f16.gguf")
+)
 
 # Dossiers spécialisés pour LoRAs et Upscalers (Recherche dans C:\Modeles_LLM\... puis dans le projet local)
 DEFAULT_LORA_DIRS = [
@@ -328,7 +355,7 @@ def resoudre_t5xxl_video(chemin: Optional[str] = None) -> str:
 
 def resoudre_vae_video(chemin: Optional[str] = None) -> str:
     """
-    Résout le VAE vidéo Wan 2.1 / 2.2.
+    Résout le VAE vidéo Wan 2.1 / Wan 2.2.
     """
     if chemin and os.path.exists(chemin):
         return os.path.abspath(chemin)
@@ -344,6 +371,38 @@ def resoudre_vae_video(chemin: Optional[str] = None) -> str:
             return p
 
     return os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors")
+
+
+# Composants requis du paquet MiniMax-Music3 GGUF (mix par défaut Q4_0 / Q8_0)
+MUSIC3_FICHIERS_REQUIS = [
+    "language_model_q4_0.gguf",
+    "rvq_depth_decoder_q8_0.gguf",
+    "transformer_q4_0.gguf",
+    "condition_encoder.gguf",
+    "vocoder.gguf",
+    "tokenizer/tokenizer.json",
+]
+
+
+def resoudre_modele_musique(chemin: Optional[str] = None) -> str:
+    """
+    Résout le dossier du paquet MiniMax-Music3 GGUF pour audio.cpp
+    et vérifie la présence des composants requis.
+    """
+    candidats_dir = [chemin, DEFAULT_MUSIC3_DIR] if chemin else [DEFAULT_MUSIC3_DIR]
+
+    # Recherche floue d'un dossier MiniMax-Music3* dans DEFAULT_MODEL_DIR
+    if os.path.exists(DEFAULT_MODEL_DIR):
+        for f in os.listdir(DEFAULT_MODEL_DIR):
+            if "minimax-music3" in f.lower() and os.path.isdir(os.path.join(DEFAULT_MODEL_DIR, f)):
+                candidats_dir.append(os.path.join(DEFAULT_MODEL_DIR, f))
+
+    for dossier in candidats_dir:
+        if dossier and os.path.isdir(dossier):
+            if all(os.path.exists(os.path.join(dossier, c)) for c in MUSIC3_FICHIERS_REQUIS):
+                return dossier
+
+    return DEFAULT_MUSIC3_DIR
 
 
 
