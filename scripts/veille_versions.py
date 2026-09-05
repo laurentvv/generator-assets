@@ -6,9 +6,13 @@ uv, paquets GGUF de modèles (ACE-Step 1.5…), repos officiels (ACE-Step,
 llama.cpp).
 
 Chaque source est comparée à l'état mémorisé (output/veille/etat.json) : seules
-les NOUVEAUTÉS sont signalées (🆕). Le rapport complet est journalisé dans
+les NOUVEAUTÉS sont signalées (🆕), avec les notes de release complètes archivées
+dans output/veille/notes/. Le rapport complet est journalisé dans
 output/veille/rapports.log. Jamais bloquant : une source indisponible est
 signalée et ignorée.
+
+Quand une mise à jour est décidée : suivre la section « 🔄 Process de mise à
+jour » de AGENTS.md (une composante à la fois, smoke test, READMEs, rollback).
 """
 
 import json
@@ -34,12 +38,22 @@ VERSION_AUDIOCPP_INSTALLEE = "v0.7.2"  # fallback si version.json illisible
 
 
 def _github_derniere_release(repo: str) -> dict:
-    """Dernière release d'un repo GitHub (tag, nom, date)."""
+    """Dernière release d'un repo GitHub (tag, nom, date, notes complètes)."""
     r = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", timeout=30)
     r.raise_for_status()
     donnees = r.json()
     return {"tag": donnees.get("tag_name", "?"), "nom": donnees.get("name", ""),
-            "date": donnees.get("published_at", "")[:10]}
+            "date": donnees.get("published_at", "")[:10], "notes": donnees.get("body", "") or ""}
+
+
+def _archiver_notes(source: str, release: dict):
+    """Archive les notes de release d'une nouveauté → output/veille/notes/."""
+    dossier = os.path.join(DOSSIER_ETAT, "notes")
+    os.makedirs(dossier, exist_ok=True)
+    chemin = os.path.join(dossier, f"{source}_{release['tag']}.md")
+    with open(chemin, "w", encoding="utf-8") as f:
+        f.write(f"# {source} {release['tag']} — {release['nom']} ({release['date']})\n\n{release['notes']}\n")
+    return chemin
 
 
 def _charger_etat() -> dict:
@@ -82,10 +96,11 @@ def veille() -> tuple:
         derniere = _github_derniere_release("0xShug0/audio.cpp")
         deja_vue = etat.get("audio.cpp", {}).get("derniere_vue", installee)
         if derniere["tag"] != deja_vue:
+            chemin_notes = _archiver_notes("audio-cpp", derniere)
             rapport.ajouter("🆕", "audio.cpp",
                             f"nouvelle release {derniere['tag']} (installée : {installee}, le {derniere['date']}) — "
-                            f"« {derniere['nom']} » → mise à jour : C:\\audio-cpp\\update.ps1 "
-                            f"(vérifier les nouvelles familles de modèles dans les notes)")
+                            f"« {derniere['nom']} » → mise à jour : C:\\audio-cpp\\update.ps1 — "
+                            f"nouveautés détaillées : {chemin_notes}")
         else:
             rapport.ajouter("✅", "audio.cpp", f"à jour ({installee}, dernière release {derniere['tag']})")
         etat["audio.cpp"] = {"installee": installee, "derniere_vue": derniere["tag"]}
@@ -110,7 +125,8 @@ def veille() -> tuple:
         if derniere != deja_vue:
             rapport.ajouter("🆕", "ffmpeg",
                             f"nouvelle version {derniere} (build local : {installee}) → "
-                            f"MSYSTEM=UCRT64 /c/ffmpeg/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh'")
+                            f"MSYSTEM=UCRT64 /c/ffmpeg/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh' — "
+                            f"nouveautés : https://ffmpeg.org/index.html#news")
         else:
             rapport.ajouter("✅", "ffmpeg", f"à jour (build local {installee})")
         etat["ffmpeg"] = {"installee": installee, "derniere_vue": derniere}
@@ -181,8 +197,10 @@ def veille() -> tuple:
         derniere = _github_derniere_release("ace-step/ACE-Step-1.5")
         deja_vue = etat.get("acestep_repo", {}).get("derniere_vue", derniere["tag"])
         if derniere["tag"] != deja_vue:
+            chemin_notes = _archiver_notes("ace-step", derniere)
             rapport.ajouter("🆕", "ace-step", f"nouvelle release modèle {derniere['tag']} "
-                            f"« {derniere['nom']} » ({derniere['date']}) — vérifier si audio.cpp la supporte")
+                            f"« {derniere['nom']} » ({derniere['date']}) — vérifier si audio.cpp la supporte — "
+                            f"nouveautés détaillées : {chemin_notes}")
         else:
             rapport.ajouter("✅", "ace-step", f"dernière release modèle : {derniere['tag']}")
         etat["acestep_repo"] = {"derniere_vue": derniere["tag"]}
@@ -194,8 +212,9 @@ def veille() -> tuple:
         derniere = _github_derniere_release("ggml-org/llama.cpp")
         deja_vue = etat.get("llama.cpp", {}).get("derniere_vue", derniere["tag"])
         if derniere["tag"] != deja_vue:
+            chemin_notes = _archiver_notes("llama-cpp", derniere)
             rapport.ajouter("🆕", "llama.cpp", f"nouvelle release {derniere['tag']} ({derniere['date']}) — "
-                            f"mise à jour via C:\\llama.cpp si utilisée")
+                            f"mise à jour via C:\\llama.cpp si utilisée — nouveautés détaillées : {chemin_notes}")
         else:
             rapport.ajouter("✅", "llama.cpp", f"dernière release : {derniere['tag']}")
         etat["llama.cpp"] = {"derniere_vue": derniere["tag"]}
