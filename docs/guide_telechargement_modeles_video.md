@@ -111,6 +111,19 @@ L'architecture la plus avancée pour le piqué photoréaliste absolu, utilisant 
 python scripts/download_wan22_official.py
 ```
 
+### 🎬 Wan 2.2 I2V MoE (Image-to-Video 28B) :
+Pour animer une image existante avec la puissance du MoE Wan 2.2 :
+| Fichier | Taille | Rôle | Source HuggingFace |
+| :--- | :--- | :--- | :--- |
+| `Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf` | 8.99 Go | Expert DiT MoE I2V composition/mouvement | [`QuantStack/Wan2.2-I2V-A14B-GGUF`](https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF) |
+| `Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf` | 8.99 Go | Expert DiT MoE I2V micro-textures temporelles | [`QuantStack/Wan2.2-I2V-A14B-GGUF`](https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF) |
+| `clip_vision_h.safetensors` | 1.26 Go | Encodeur d'image visuelle (CLIP-ViT) | [`Comfy-Org/Wan_2.1_ComfyUI_repackaged`](https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged) |
+
+```powershell
+# Téléchargement automatisé Wan 2.2 I2V MoE :
+python scripts/download_wan22_i2v_models.py
+```
+
 ---
 
 <span id="4-minimax-h3"></span>

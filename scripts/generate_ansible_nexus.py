@@ -37,6 +37,7 @@ PROMPT = (
 )
 
 NEGATIVE_PROMPT = (
+    "human, person, woman, man, face, people, character, portrait, body, hands, "
     "text, typography, letters, words, logos, watermark, font, writing, labels, ui text, symbols, "
     "blurry, soft, out of focus, low quality, noisy, distorted, glitch, cartoon, messy, lowres, oversaturated"
 )
@@ -83,7 +84,38 @@ def run_pipeline(model_choice="wan21"):
     
     t_start = time.time()
     
-    if model_choice == "wan21":
+    if model_choice == "wan22":
+        raw_video = os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_raw.webm")
+        master_4k = os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_4k_master.mp4")
+        has_audio = False
+        
+        cmd_gen = [
+            SD_CLI, "-M", "vid_gen",
+            "--diffusion-model", os.path.join(MODELS_DIR, "Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf"),
+            "--high-noise-diffusion-model", os.path.join(MODELS_DIR, "Wan2.2-T2V-A14B-HighNoise-Q4_K_M.gguf"),
+            "--vae", os.path.join(MODELS_DIR, "wan_2.1_vae.safetensors"),
+            "--t5xxl", os.path.join(MODELS_DIR, "umt5-xxl-encoder-Q4_K_M.gguf"),
+            "-p", PROMPT,
+            "-n", NEGATIVE_PROMPT,
+            "-W", "832", "-H", "480",
+            "--video-frames", "17",
+            "--fps", "16",
+            "--steps", "4",
+            "--high-noise-steps", "4",
+            "--cfg-scale", "3.5",
+            "--high-noise-cfg-scale", "3.5",
+            "--sampling-method", "euler",
+            "--high-noise-sampling-method", "euler",
+            "--flow-shift", "3.0",
+            "--offload-to-cpu",
+            "--temporal-tiling",
+            "--vae-tiling",
+            "--backend", "diffusion=vulkan0,te=cpu",
+            "-o", raw_video,
+            "-v"
+        ]
+        
+    elif model_choice == "wan21":
         raw_video = os.path.join(OUTPUT_DIR, "ansible_nexus_wan21_raw.webm")
         master_4k = os.path.join(OUTPUT_DIR, "ansible_nexus_wan21_4k_master.mp4")
         has_audio = False
@@ -212,17 +244,11 @@ def run_pipeline(model_choice="wan21"):
 
 def main():
     parser = argparse.ArgumentParser(description="Génération Ansible Control Nexus 4K")
-    parser.add_argument("--model", choices=["wan21", "ltx25", "both"], default="wan21",
-                        help="Modèle de rendu (wan21 pour géométrie 3D optimale, ltx25 pour son natif, both pour les deux)")
+    parser.add_argument("--model", choices=["wan22", "wan21", "ltx25"], default="wan22",
+                        help="Modèle de rendu (wan22 pour photoréalisme MoE ultime, wan21 pour géométrie 3D, ltx25 pour son natif)")
     args = parser.parse_args()
     
-    if args.model == "both":
-        print("Lancement séquentiel des deux modèles : Wan 2.1 puis LTX-2.5...")
-        run_pipeline("wan21")
-        time.sleep(5)
-        run_pipeline("ltx25")
-    else:
-        run_pipeline(args.model)
+    run_pipeline(args.model)
 
 if __name__ == "__main__":
     main()
