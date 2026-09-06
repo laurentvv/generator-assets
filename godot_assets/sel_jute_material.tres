@@ -1,0 +1,23 @@
+[gd_resource type="StandardMaterial3D" load_steps=5 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sel_jute_albedo.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/sel_jute_normal.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/sel_jute_orm.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/sel_jute_height.png" id="4"]
+
+[resource]
+albedo_texture = ExtResource("1")
+roughness = 1.0
+roughness_texture = ExtResource("3")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_scale = 1.0
+normal_texture = ExtResource("2")
+ao_enabled = true
+ao_light_affect = 0.5
+ao_texture = ExtResource("3")
+ao_texture_channel = 0
+heightmap_enabled = true
+heightmap_scale = 2.0
+heightmap_texture = ExtResource("4")
+uv1_scale = Vector3(1, 1, 1)
