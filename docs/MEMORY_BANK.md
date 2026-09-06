@@ -163,7 +163,28 @@
 * **Workflow intégré le 2026-09-06** : `main.py -w voix_off "<texte ou fichier.txt>" --voix-ref <wav/mp3/m4a> [--instruct "…"] [--moteur qwen3|voxcpm2|fish] [--lufs-voix -16]` — pipeline complet : contrôle du niveau de la référence (seuil −26 dB moyen → normalisation auto −18 LUFS), transcription ASR auto (qwen3-asr) si le moteur l'exige, génération, finalisation −16 LUFS + MP3. Sorties `output/voix_off/<nom>/`. Testé fin à fin sur qwen3 (**RTF 0,64** Vulkan, chargements compris) et fish. Code : `core/voix_off.py` + `workflows/voix_off.py`. Note : la finalisation loudnorm linéaire (TP −3) peut plafonner à ~−19 LUFS sur les voix très crêtées — sans conséquence derrière un bed à −30 LUFS.
 * **Non testés** : stabilité sur textes longs (chunking `--text-chunk-size` fish 200 cars), voix design `--task vdes`, chatterbox (anglais seulement), omnivoice (600+ langues, licence à vérifier), qualité 1.7B CustomVoice qwen3.
 
+### 🧊 1.14. Image → 3D : TRELLIS.2-4B via trellis.cpp (GGUF, Vulkan) — VALIDÉ utilisateur le 2026-09-06
+
+* **Besoin** : passer d'une image 2D générée (sprites/icons du dépôt) à un **vrai maillage 3D volumique** pour Godot — l'extrusion 2,5D (`mesh3d --shape cutout`) fait du bas-relief, pas du volume fermé (cas d'école : le casque, §Capabilities README). Enquête du jour : TRELLIS.2-4B / Hunyuan3D-2.1 / stable-fast-3d → **seul TRELLIS.2 a un runtime C++/GGML** ; Hunyuan3D-2.1 = PyTorch+CUDA (10 Go shape / 21 Go texture, rasterizers custom) ; SF3D = nvdiffrast CUDA + gated → écartés, accès HF non demandé.
+* **Outil** : [`pwilkin/trellis.cpp`](https://github.com/pwilkin/trellis.cpp) **v0.6.0** (19/08/2026, MIT, projet très actif depuis 07/2026) — port ggml complet : preprocess+cutout BiRefNet → DINOv3 → flow sparse-structure → shape SLAT (FlexiDualGrid, marching cubes, rebouchage) → texture SLAT + PBR → décimation QEM GPU + atlas xatlas → **GLB PBR prêt Godot**. Concurrent moins mature écarté : `localai-org/trellis2cpp` (13★, pas de binaire Windows).
+* **Installé** : `C:\trellis\` (archive `trellis-vulkan-windows-x64.zip`, 96 Mo : trellis-cli.exe + trellis-server.exe HTTP + ggml-vulkan.dll) ; GGUF f16 `ilintar/trellis2-gguf` (10 fichiers, **16,4 Go**) dans `C:\Modeles_LLM\trellis2-gguf\` (variantes q4/q8 existent sur HF, non testées). README outil : `C:\trellis\README.md`.
+* **Commande validée** :
+  ```bash
+  cd /c/trellis && ./trellis-cli.exe -i <image.png> -o <out.glb> --models C:/Modeles_LLM/trellis2-gguf --res 512   # ou 1024 (défaut)
+  ```
+* **Perf Vulkan (RX 6950 XT, f16)** — tout passe du premier coup, aucun crash watchdog : device vu `fp16: 1 | matrix cores: none` (16 368 Mo).
+  * **res 512 : 10 min 44 s** → GLB 5,3 Mo, 144 200 faces, atlas 1024² (mesh brut 1,06 M sommets ; flow ss ~11 s/pas, shape ~27 s/pas).
+  * **res 1024 (cascade LR→HR) : 55 min 10 s** → GLB 12 Mo, 293 356 faces, atlas 2048² (mesh brut 6,25 M sommets → remesh DC ~20 M faces → QEM 300 k ; shape HR ~152 s/pas = ~30 min à lui seul). **Budget réaliste : 512 pour itérer, 1024 pour le master.**
+* **⚠️ Écueils** : ① pas de « matrix cores » Vulkan sur RDNA2 → ~4-6× plus lent que les benchmarks Strix Halo du projet (6 min @1024) ; ② `_base.png` exporté à côté du GLB = aperçu de l'**atlas**, pas l'image source ; ③ cutout par défaut = BiRefNet (`--bg-removal auto`), le mode threshold découpe les hautes lumières → trous.
+* **Licence** : trellis.cpp **MIT** ; TRELLIS.2-4B **MIT** ; DINOv3 Apache-2.0 ; BiRefNet MIT — **production jeu + chaîne OK, zéro contrainte**.
+* **À inspecter** (`output/trellis_smoke/`) : planches de contrôle Blender 4 vues + texture `casque_512_planche.png` / `casque_1024_planche.png`, GLB `casque_512.glb` / `casque_1024.glb` (script de rendu réutilisable : `output/trellis_smoke/rendu_controle.py`).
+* **Validation utilisateur (2026-09-06)** : *« énorme ça marche »* — planches 512 et 1024 validées à l'inspection.
+* **Workflow intégré le 2026-09-06** : `main.py -w mesh_ia "<prompt>" | -i <image.png> [--res 512|1024|1536] [--faces-cible N] [--seed N] [-o nom]` — prompt → image Flux (workflow `generate`, détourée : l'alpha est conservé par trellis) → GLB PBR + 4 rendus Blender + planche 2×3 dans `output/mesh_ia/<nom>/`. Code : `core/mesh_ia.py` (trellis + rendus + planche) + `workflows/mesh_ia.py`. Veille étendue : releases `pwilkin/trellis.cpp` (via `C:\trellis\version.json`) + nouveaux GGUF sur `ilintar/trellis2-gguf`. Défaut `--res 512` (itération), 1024 = master. **Réduction optionnelle `--faces-cible N`** (défaut 0 = master complet, demandée par l'utilisateur le 2026-09-06) : décimation Blender headless (collapse délimité UV/SHARP, PBR conservé) → `<nom>_<res>_jeu.glb` ; mesuré 144 200 → 29 999 faces (5,3 → 1,5 Mo). Repères : 30 k = item héro, 10 k = prop décor, 3 k = clutter répété, ≥8 k si silhouette très courbe. Test bout-en-bout workflow validé (potion 512 : 8 min 53 s, GLB 7,4 Mo).
+* **Non testés** : variantes q4/q8 des GGUF (division ~2-4 de la taille/VRAM, qualité à mesurer), `--res 1536`, mode `--no-texture`, `trellis-server.exe` (HTTP POST /generate), stabilité sur objets complexes multi-objets.
+
 ## 🎬 2. Masters et Fichiers de Production Validés
+
+
 
 
 

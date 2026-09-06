@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Veille des versions de la stack locale : audio.cpp, sd-cli (stable-diffusion.cpp),
-FFmpeg, Python + paquets uv, paquets GGUF de modèles (ACE-Step 1.5…), org audio-cpp
+trellis.cpp (image → 3D, workflow mesh_ia) + GGUF TRELLIS.2 sur HF, FFmpeg,
+Python + paquets uv, paquets GGUF de modèles (ACE-Step 1.5…), org audio-cpp
 sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, llama.cpp).
 
 Chaque source est comparée à l'état mémorisé (output/veille/etat.json) : seules
@@ -131,6 +132,50 @@ def veille() -> tuple:
         etat["sd_cli"] = {"installe": installe, "derniere_vue": commit_dernier}
     except Exception as e:
         rapport.ajouter("⚠️", "sd-cli", f"vérification impossible : {e}")
+
+    # ------------------------------------------- trellis.cpp (image → 3D, mesh_ia)
+    # Pas de flag --version dans trellis-cli : la version installée est
+    # consignée manuellement dans C:\trellis\version.json (à chaque maj).
+    try:
+        installee = "inconnue"
+        chemin_vj = r"C:\trellis\version.json"
+        if os.path.exists(chemin_vj):
+            with open(chemin_vj, encoding="utf-8") as f:
+                installee = json.load(f).get("version", installee)
+        derniere = _github_derniere_release("pwilkin/trellis.cpp")
+        deja_vue = etat.get("trellis.cpp", {}).get("derniere_vue", installee)
+        if derniere["tag"] != deja_vue:
+            chemin_notes = _archiver_notes("trellis-cpp", derniere)
+            rapport.ajouter("🆕", "trellis.cpp",
+                            f"nouvelle release {derniere['tag']} (installée : {installee}, le {derniere['date']}) — "
+                            f"asset : trellis-vulkan-windows-x64.zip ; sauvegarder C:\\trellis\\*.exe/*.dll dans "
+                            f"C:\\trellis\\backups\\ avant remplacement, puis mettre à jour version.json et "
+                            f"C:\\trellis\\README.md — nouveautés détaillées : {chemin_notes}")
+        else:
+            rapport.ajouter("✅", "trellis.cpp", f"à jour ({installee}, dernière release {derniere['tag']})")
+        etat["trellis.cpp"] = {"installee": installee, "derniere_vue": derniere["tag"]}
+    except Exception as e:
+        rapport.ajouter("⚠️", "trellis.cpp", f"vérification impossible : {e}")
+
+    # -------------------------------- GGUF TRELLIS.2 (ilintar/trellis2-gguf sur HF)
+    try:
+        r = requests.get(
+            "https://huggingface.co/api/models/ilintar/trellis2-gguf/tree/main?recursive=true",
+            timeout=30)
+        r.raise_for_status()
+        fichiers = sorted(item["path"] for item in r.json()
+                          if item.get("type") == "file" and item["path"].endswith(".gguf"))
+        deja_vus = set(etat.get("trellis_gguf", {}).get("fichiers", fichiers))
+        nouveaux = [f for f in fichiers if f not in deja_vus]
+        if nouveaux:
+            rapport.ajouter("🆕", "trellis-gguf",
+                            f"nouveaux GGUF sur ilintar/trellis2-gguf : {', '.join(nouveaux)} — "
+                            f"variante quantifiée ou nouveau cascade potentiellement à tester (workflow mesh_ia)")
+        else:
+            rapport.ajouter("✅", "trellis-gguf", f"{len(fichiers)} GGUF, aucun nouveau (ilintar/trellis2-gguf)")
+        etat["trellis_gguf"] = {"fichiers": fichiers}
+    except Exception as e:
+        rapport.ajouter("⚠️", "trellis-gguf", f"vérification impossible : {e}")
 
     # ------------------------------------------------------- FFmpeg (tags GitHub)
     try:

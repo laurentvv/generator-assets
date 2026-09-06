@@ -3,7 +3,7 @@
 ## 🎯 Contexte d'usage (buts finaux)
 
 **Fabrique locale universelle de médias générés par IA — tout projet nécessitant image, son, vidéo ou musique.** Deux productions principales actuelles :
-1. **Un jeu sous Godot** — assets générés : matériaux PBR, maillages, boucles musicales OGG (workflow `music_bg`), ambiances, sprites ;
+1. **Un jeu sous Godot** — assets générés : matériaux PBR, maillages, objets 3D IA image→GLB (workflow `mesh_ia`, TRELLIS.2), boucles musicales OGG (workflow `music_bg`), ambiances, sprites ;
 2. **Une chaîne YouTube générée à 100 % en IA à partir de documentations sysadmin** — voix off (TTS) + lits musicaux −30 LUFS avec ducking automatique + vidéos IA (Wan/LTX/MiniMax-H3) + masters 4K conformés YouTube.
 
 Tout nouveau besoin média (autre jeu, autre chaîne, habillage, démo…) est un cas d'usage légitime. Les composants doivent rester génériques et réutilisables ; toute évolution doit servir un projet concret (ou l'outillage qui les maintient : veille, docs, téléchargement).
@@ -20,6 +20,7 @@ benchmark mesuré) :
 | `C:\audio-cpp\README.md` | audio.cpp (Vulkan) | Version installée + notes de release, familles de modèles (ace_step, minimax_music3…), commandes validées, écueils (`--model` = chemin du .gguf, q8_0 ace_step KO, paquets XL sur ModelScope), scripts de mise à jour |
 | `C:\ffmpeg\README.md` | FFmpeg 9.0.1 (build custom) | Optimisations machine (AMF, SVT-AV1, libfdk-aac), recettes validées (bed −30 LUFS loudnorm 2 passes, ducking sidechaincompress, OGG), rebuild MSYS2 |
 | `C:\SD\README.md` | sd-cli / stable-diffusion.cpp (Vulkan) | Release (commit) installée, familles de modèles (Flux, SDXL+LoRAs, Wan 2.1/2.2, LTX-2.5, MiniMax-H3, upscalers), commandes validées (img/vid_gen/upscale), procédure maj + rollback |
+| `C:\trellis\README.md` | trellis.cpp (Vulkan) | Version installée (`version.json`, lu par la veille), GGUF TRELLIS.2 requis (10 fichiers, 16,4 Go, `C:\Modeles_LLM\trellis2-gguf`), commandes validées (image → GLB PBR, workflow `mesh_ia`), perfs mesurées (512 = ~11 min, 1024 = ~55 min), procédure maj + rollback |
 
 Ne pas confondre avec les README de dépôts clonés (ex. `C:\llama.cpp\README.md` = README GitHub,
 ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_LLM` (modèles GGUF).
@@ -43,8 +44,8 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
 - Code : docstrings et logs en français, identifiants en anglais, prompts modèles en anglais.
 - Gros téléchargements HF/ModelScope : `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).
-- Veille versions (audio.cpp, sd-cli, FFmpeg, Python, paquets, modèles GGUF + org
-  audio-cpp sur HF, llama.cpp) : `uv run python scripts/veille_versions.py` — état dans
+- Veille versions (audio.cpp, sd-cli, trellis.cpp + GGUF TRELLIS.2 sur HF, FFmpeg, Python,
+  paquets, modèles GGUF + org audio-cpp sur HF, llama.cpp) : `uv run python scripts/veille_versions.py` — état dans
   `output/veille/`, rapport uniquement (jamais de mise à jour automatique). Automatisation
   quotidienne 9 h planifiée côté session (titre « Veille quotidienne des versions … »).
 - 🛡️ **Modèles : vérifier la retéléchargeabilité AVANT toute suppression dans `C:\Modeles_LLM`.**
