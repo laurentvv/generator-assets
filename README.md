@@ -240,7 +240,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   • 3D Geometry & PBR Textures     : material3d, mesh3d, voxel3d, skybox, turnaround3d, flowmap
   • Humanoid 3D Characters & Outfits: character3d, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -821,6 +821,39 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   ```
 * **Status (2026-09-06)**: ✅ End-to-end validated with a real French voice reference on qwen3-tts (RTF 0.64 Vulkan) and Fish S2-Pro — auto level-gate (a −39 LUFS phone recording was auto-normalized), auto ASR transcript, cloning and −16 LUFS finalization all verified. ✅ **User listening validation: all 3 engines judged good** (*« franchement les 3 sont bien »*) — production choice therefore follows the license: **qwen3-tts / VoxCPM2 (Apache-2.0) production-safe**, Fish S2-Pro kept as quality reference (commercial use requires a Fish Audio license). Tie-breakers if needed: voxcpm2 = native 48 kHz, qwen3 = `--instruct` expression steering, fish = richest inline tags. Known engine constraints: qwen3-tts **Base** requires both reference audio AND transcript (hence the ASR step) and outputs 24 kHz mono; VoxCPM2 clones **without** transcript; Fish requires the transcript only when a reference is provided.
 * **Helpers**: `scripts/download_tts_gguf.py` planned — meanwhile download the q8_0 GGUFs from `audio-cpp/audio.cpp-gguf` (Qwen3-TTS-12Hz-1.7B-Base-GGUF, VoxCPM2-GGUF, Fish-Audio-S2-Pro-GGUF, Qwen3-ASR-0.6B-GGUF) via `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`.
+
+---
+
+#### 4.10. `chanson` — Full Songs WITH LYRICS (ACE-Step 1.5 xl-turbo Vulkan)
+* **Process**:
+  1. Takes the lyrics — inline or from a `.txt` file — with structure tags (`[Intro]`, `[Verse]`, `[Chorus]`, `[Bridge]`, `[Outro]`) that the LM planner orchestrates.
+  2. Generates the complete sung song on **ACE-Step 1.5 xl-turbo** (validated variant for vocal quality), French by default (`--langue`), 8 distilled steps, Vulkan with automatic CPU fallback.
+  3. Exports WAV + MP3 224k. ⚠️ Clean any citation/annotation from the lyrics — otherwise it gets sung.
+* **Inputs**: `prompt` (lyrics text or `.txt` path), `--style-musique` (EN style description, default: the user-validated Vent-Gris dark folk direction), `--duration` (default 180 s), `--variante` (default `xl-turbo`), `--langue` (default `fr`), `--seed`.
+* **Engines**: audio.cpp (Vulkan) + ACE-Step 1.5 xl-turbo bf16 GGUF (14.2 Gio) — ~15 min for a 4-minute song (RTF ~3.5-3.9).
+* **Outputs** (`output/music_chanson/`): `<name>.wav` + `<name>.mp3`.
+* **Example**:
+  ```bash
+  # Chanson de 4 minutes à partir d'un fichier de paroles :
+  uv run python main.py -w chanson paroles_vers_le_nord.txt --duration 240 -o vers_le_nord
+  ```
+* **Status (2026-09-06)**: ✅ User-validated capability (« La Symphonie du Silence », « Le Neuvième Fils » — *« c'est incroyable »*) as script `scripts/generer_chanson_acestep.py`; workflow `chanson` wraps the exact validated recipe (same defaults). One Vulkan driver reset was survived by the auto CPU fallback during validation.
+
+#### 4.11. `musique_adn` — New Music with a Reference's DNA (auto BPM + key, imposed on the planner)
+* **Process**:
+  1. Analyzes the reference audio (`-i <MP3/WAV>`): BPM by onset-envelope autocorrelation + key by Krumhansl chroma correlation (or force it with `--tonalite`).
+  2. Builds a SOBER style description (your `prompt` in English) + the detected numbers, and **imposes BPM + key + a sober instrumental suffix on the ACE-Step 1.5 planner** — bar-aligned by construction.
+  3. Optional lyrics via `--lyrics <fichier.txt>` (a chanson instead of an instrumental — the instrumental suffix is then omitted, unlike the legacy script).
+* **Inputs**: `prompt` (EN style description — keep it sober, see pitfalls), `-i` reference audio (required), `--duration` (default 60 s), `--tonalite` (override), `--negatif`, `--lyrics` (.txt), `--variante` (default `xl-turbo`), `--langue`, `--seed`.
+* **Engines**: audio.cpp (Vulkan) + ACE-Step 1.5 xl-turbo.
+* **Outputs** (`output/music_chanson/`): `<name>.wav` + `<name>.mp3` (log shows the detected BPM/key).
+* **Example**:
+  ```bash
+  uv run python main.py -w musique_adn "German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass, chiming chorus guitars" \
+      -i "C:\musique\reference.mp3" --duration 45 -o inspire_ref
+  ```
+* **Status (2026-09-06)**: ✅ User-validated recipe (`llb_xl_adn.mp3` — rendered BPM 83.3 vs 83.3 source). ⚠️ Honest card in `docs/MEMORY_BANK.md` §1.11: every "improvement" attempted beyond the sober recipe was rejected (major key → pop feel, "dominant bass" → 73% bass, punk push → 163 BPM). Rules: always check/impose MINOR for dark rock, sober descriptions, no superlatives.
+* **⚠️ NOT yet user-validated (no workflow until then — AGENTS.md rule)**: SA3 `init_audio` essence mode (tested, quality judged insufficient) and the ACE-Step `cover` route (generated once, never listening-validated). CLI recipes documented in `docs/MEMORY_BANK.md` §1.11.
 
 ---
 

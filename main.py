@@ -95,11 +95,13 @@ def lancer_mode_interactif(config: dict):
         "25": ("audio_ambience", "🌌 Ambiances Sonores Immersives & Paysages Bouclables"),
         "26": ("music_bg", "🎵 Boucles Musicales IA en Fond Sonore (MiniMax-Music3 / ACE-Step 1.5 Vulkan + Bed Voix Off)"),
         "27": ("voix_off", "🎙️ Voix Off Expressive avec Clonage Vocal (qwen3-tts / VoxCPM2 / Fish GGUF Vulkan)"),
-        "28": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
-        "29": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
-        "30": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
-        "31": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
-        "32": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
+        "28": ("chanson", "🎵 Chanson Complète AVEC PAROLES (ACE-Step 1.5 xl-turbo, balises structure)"),
+        "29": ("musique_adn", "🧬 Nouvelle Musique avec l'ADN d'une Référence (BPM + tonalité auto imposés)"),
+        "30": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
+        "31": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
+        "32": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
+        "33": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
+        "34": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
     }
 
     while True:
@@ -108,7 +110,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-32) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-34) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
@@ -314,6 +316,28 @@ def lancer_mode_interactif(config: dict):
                     "🎭 Consigne de style/émotion pour qwen3 (ex: 'energetic YouTube narrator', vide = aucune) : "
                 ).strip() or None
                 params["lufs_voix"] = float(input("🎚️ LUFS cible de la voix (défaut: -16) : ").strip() or -16.0)
+
+            elif wf_name == "chanson":
+                params["prompt"] = input("🎵 Paroles (texte) ou chemin d'un fichier .txt : ").strip()
+                if not params["prompt"]:
+                    continue
+                params["style_musique"] = input(
+                    "🎼 Style musical EN (défaut : dark folk Vent-Gris) : "
+                ).strip() or None
+                params["duration"] = float(input("⏱️  Durée cible en secondes (défaut: 180) : ").strip() or 180.0)
+
+            elif wf_name == "musique_adn":
+                params["prompt"] = input(
+                    "🧬 Style EN de la nouvelle musique (ex: 'German gothic rock 1990, dark wave, hypnotic tribal groove') : "
+                ).strip()
+                if not params["prompt"]:
+                    continue
+                params["input"] = input("🎵 Audio de référence (MP3/WAV) : ").strip()
+                if not params["input"] or not os.path.exists(params["input"]):
+                    print("❌ Référence introuvable.")
+                    continue
+                params["duration"] = float(input("⏱️  Durée en secondes (défaut: 60) : ").strip() or 60.0)
+                params["tonalite"] = input("🎼 Forcer la tonalité (ex: 'C# minor', vide = détection auto) : ").strip() or None
 
             elif wf_name == "video":
                 params["prompt"] = input("🎬 Concept / Action de la vidéo (ex: cascade mystique dans jungle luxuriante) : ").strip()
@@ -546,7 +570,7 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--loop-mode", choices=["percussive", "ambient"], default="percussive", help="Stratégie de bouclage music_bg (défaut: percussive, alignée BPM).")
     groupe_wf.add_argument("--music-backend", choices=["vulkan", "cpu", "auto"], default="vulkan", help="Backend audio.cpp pour music_bg (défaut: vulkan).")
     groupe_wf.add_argument("--moteur", choices=["acestep", "music3", "qwen3", "voxcpm2", "fish"], default="acestep", help="Moteur : music_bg → acestep (défaut, ACE-Step 1.5) | music3 ; voix_off → qwen3 (clonage+instruct, Apache-2.0) | voxcpm2 (clonage sans transcript, Apache-2.0) | fish (balises expression, licence recherche).")
-    groupe_wf.add_argument("--variante", choices=["turbo", "xl-turbo", "xl-sft"], default="turbo", help="Variante ACE-Step : turbo = DiT 2B distillé (défaut), xl-turbo = DiT 4B distillé (~1,8x plus lent), xl-sft = DiT 4B avec CFG (plus de pas).")
+    groupe_wf.add_argument("--variante", choices=["turbo", "xl-turbo", "xl-sft"], default=None, help="Variante ACE-Step : défaut = turbo pour music_bg, xl-turbo pour chanson/musique_adn (qualité vocale, recettes validées) ; turbo = DiT 2B distillé, xl-turbo = DiT 4B distillé (~1,8x plus lent), xl-sft = DiT 4B avec CFG.")
     groupe_wf.add_argument("--force-bpm", type=int, default=None, help="Imposer le tempo (ACE-Step uniquement) — ex: 124.")
     groupe_wf.add_argument("--tonalite", default=None, help="Imposer la tonalité (ACE-Step uniquement) — ex: A minor.")
     groupe_wf.add_argument("--mesure", default=None, help="Imposer la signature (ACE-Step uniquement) — ex: 4/4.")
@@ -556,6 +580,9 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--voix-ref", default=None, help="Référence vocale à cloner pour voix_off (WAV/MP3/M4A ; niveau contrôlé/normalisé automatiquement).")
     groupe_wf.add_argument("--instruct", default=None, help="Consigne de style/émotion pour qwen3-tts (voix_off) — ex: 'energetic YouTube narrator tone'.")
     groupe_wf.add_argument("--lufs-voix", type=float, default=-16.0, help="LUFS cible de la voix off (défaut: -16, standard dialogue YouTube).")
+    groupe_wf.add_argument("--style-musique", default=None, help="Description musicale EN pour chanson (défaut : dark folk Vent-Gris).")
+    groupe_wf.add_argument("--langue", default=None, help="Langue des paroles pour chanson/musique_adn (défaut: fr).")
+    groupe_wf.add_argument("--negatif", default=None, help="Prompt négatif EN pour musique_adn — ex: 'pop, soft, mellow, gentle'.")
     groupe_wf.add_argument("--character", default="marc_novice", help="Nom du personnage cible pour le workflow outfit (ex: marc_novice).")
     groupe_wf.add_argument("--top", default="rustic medieval beige burlap tunic fabric", help="Description du tissu/matière pour le haut/tunique (workflow outfit).")
     groupe_wf.add_argument("--shoes", default="worn dark brown medieval leather shoes texture", help="Description de la matière pour les chaussures/bottes (workflow outfit).")
@@ -840,7 +867,10 @@ Exemples de Workflows 3D & 2D :
         "analyse": args.analyse,
         "voix_ref": args.voix_ref,
         "instruct": args.instruct,
-        "lufs_voix": args.lufs_voix
+        "lufs_voix": args.lufs_voix,
+        "style_musique": args.style_musique,
+        "langue": args.langue,
+        "negatif": args.negatif
     }
 
     # Détection automatique du workflow si l'argument -w n'est pas spécifié
