@@ -29,6 +29,7 @@ from workflows.pose_control import PoseControlWorkflow
 from workflows.tts_dialogue import TTSDialogueWorkflow
 from workflows.audio_ambience import AudioAmbienceWorkflow
 from workflows.music_bg import MusicBgWorkflow
+from workflows.voix_off import VoixOffWorkflow
 from workflows.outfit import OutfitWorkflow
 from workflows.video import VideoWorkflow
 
@@ -61,6 +62,7 @@ __all__ = [
     "TTSDialogueWorkflow",
     "AudioAmbienceWorkflow",
     "MusicBgWorkflow",
+    "VoixOffWorkflow",
     "OutfitWorkflow",
     "VideoWorkflow"
 ]
