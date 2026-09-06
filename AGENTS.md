@@ -54,6 +54,12 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   `curl -s "https://huggingface.co/api/models?author=audio-cpp"` (+ miroir ModelScope au besoin).
   En cas de doute, demander. Fichiers irremplaçables (retirés de partout) : **aucun à ce jour**
   (constat 2026-09-06 ; tenir cette liste à jour si la veille signale un retrait réel).
+- 🧩 **Tout test réalisé avec l'utilisateur et VALIDÉ par l'utilisateur doit devenir un workflow**
+  (`main.py -w <nom>`) : encapsuler la recette gagnante (code dans `core/` + `workflows/`,
+  enregistrement, README §Workflows, MEMORY_BANK) — jamais la laisser en script autonome ou
+  commande CLI ad hoc. Réciproque : **ne PAS créer de workflow pour un test non validé** —
+  le consigner d'abord dans MEMORY_BANK (statut « testé, non validé ») et attendre la
+  validation utilisateur (ex. essence SA3 / cover ACE-Step, en attente le 2026-09-06).
 
 ## 🔄 Process de mise à jour (à exécuter quand la veille signale une nouveauté)
 
