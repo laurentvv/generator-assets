@@ -97,11 +97,12 @@ def lancer_mode_interactif(config: dict):
         "27": ("voix_off", "🎙️ Voix Off Expressive avec Clonage Vocal (qwen3-tts / VoxCPM2 / Fish GGUF Vulkan)"),
         "28": ("chanson", "🎵 Chanson Complète AVEC PAROLES (ACE-Step 1.5 xl-turbo, balises structure)"),
         "29": ("musique_adn", "🧬 Nouvelle Musique avec l'ADN d'une Référence (BPM + tonalité auto imposés)"),
-        "30": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
-        "31": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
-        "32": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
-        "33": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
-        "34": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
+        "30": ("retrait_voix", "🎧 Retrait du Chant d'un Morceau (HTDemucs — instrumental + stems)"),
+        "31": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
+        "32": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
+        "33": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
+        "34": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
+        "35": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
     }
 
     while True:
@@ -110,7 +111,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-34) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-35) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
@@ -338,6 +339,13 @@ def lancer_mode_interactif(config: dict):
                     continue
                 params["duration"] = float(input("⏱️  Durée en secondes (défaut: 60) : ").strip() or 60.0)
                 params["tonalite"] = input("🎼 Forcer la tonalité (ex: 'C# minor', vide = détection auto) : ").strip() or None
+
+            elif wf_name == "retrait_voix":
+                params["input"] = input("🎧 Morceau source (MP3/WAV — le chant sera retiré) : ").strip()
+                if not params["input"] or not os.path.exists(params["input"]):
+                    print("❌ Fichier introuvable.")
+                    continue
+                params["output"] = input("💾 Nom de sortie (défaut : nom du fichier) : ").strip() or None
 
             elif wf_name == "video":
                 params["prompt"] = input("🎬 Concept / Action de la vidéo (ex: cascade mystique dans jungle luxuriante) : ").strip()

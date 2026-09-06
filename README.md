@@ -240,7 +240,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   • 3D Geometry & PBR Textures     : material3d, mesh3d, voxel3d, skybox, turnaround3d, flowmap
   • Humanoid 3D Characters & Outfits: character3d, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -854,6 +854,21 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   ```
 * **Status (2026-09-06)**: ✅ User-validated recipe (`llb_xl_adn.mp3` — rendered BPM 83.3 vs 83.3 source). ⚠️ Honest card in `docs/MEMORY_BANK.md` §1.11: every "improvement" attempted beyond the sober recipe was rejected (major key → pop feel, "dominant bass" → 73% bass, punk push → 163 BPM). Rules: always check/impose MINOR for dark rock, sober descriptions, no superlatives.
 * **⚠️ NOT yet user-validated (no workflow until then — AGENTS.md rule)**: SA3 `init_audio` essence mode (tested, quality judged insufficient) and the ACE-Step `cover` route (generated once, never listening-validated). CLI recipes documented in `docs/MEMORY_BANK.md` §1.11.
+
+#### 4.12. `retrait_voix` — Vocal Removal & Stem Separation (HTDemucs GGUF Vulkan)
+* **Process**:
+  1. Takes any song (`-i <MP3/WAV>`, any sample rate) and auto-resamples to **44.1 kHz stereo** (HTDemucs requirement).
+  2. Separates it into 4 stems on **audio.cpp Vulkan** (drums, bass, other, vocals) — ~1 min for a 4-minute track.
+  3. Builds the **vocal-free instrumental** by summing drums+bass+other (`amix normalize=0` — levels preserved, no compression).
+  4. Exports instrumental WAV + MP3, and keeps all 4 stems (including the isolated `vocals.wav` — useful for vocal-timeline mapping and future dubbing experiments).
+* **Inputs**: `-i` song (required), `-o` output name, `--music-backend` (default `vulkan`).
+* **Engines**: audio.cpp v0.7.2 (family `htdemucs`) + `htdemucs-f16.gguf` (only **84 Mo**, `C:\Modeles_LLM\HTDemucs-GGUF`).
+* **Outputs** (`output/retrait_voix/<name>/`): `instrumental.wav` + `instrumental.mp3` (vocal-free), `stems/` (drums, bass, other, vocals), `source_44k.wav`.
+* **Example**:
+  ```bash
+  uv run python main.py -w retrait_voix -i "C:\musique\morceau.mp3" -o mon_instrumental
+  ```
+* **Status (2026-09-06)**: ✅ **User-validated** (*« retrait de la voix : OK validé »*) on a full 4:07 track. Known pitfalls baked in: HTDemucs requires 44.1 kHz (auto-handled) and stem writing requires `--out-dir` (multi-output). Note: the related "cover" route (AI reinterpretation of a track) was **tested and definitively rejected** by the user — see `docs/MEMORY_BANK.md` §1.11.
 
 ---
 
