@@ -93,6 +93,10 @@ def main():
     parseur.add_argument("--avec-paroles", default=None,
                          help="Fichier .txt de paroles (structure [Verse]/[Chorus]…) pour une chanson au lieu d'un instrumental")
     parseur.add_argument("--langue", default="fr", help="Langue des paroles (défaut : fr)")
+    parseur.add_argument("--tonalite", default=None,
+                         help="Forcer la tonalité (ex: \"C# minor\") — sinon détection auto sur la référence")
+    parseur.add_argument("--negatif", default=None,
+                         help="Prompt négatif EN — ce qu'on EXCLUT (ex: \"pop, soft, mellow, gentle, ambient, ballad\")")
     parseur.add_argument("--graine", type=int, default=-1)
     parseur.add_argument("-o", "--output", default="inspire_de_ref", help="Nom de sortie (défaut : inspire_de_ref)")
     args = parseur.parse_args()
@@ -109,7 +113,7 @@ def main():
         print("❌ Aucun tempo détecté dans la référence (audio non pulsatif ?).")
         sys.exit(1)
     bpm = int(round(bpm))
-    tonalite = detecter_tonalite(audio, sr)
+    tonalite = args.tonalite or detecter_tonalite(audio, sr)
     print(f"🧬 ADN détecté : {bpm} BPM • {tonalite} • {len(audio) / sr:.0f} s analysées")
 
     paroles = "[Instrumental]"
@@ -132,6 +136,7 @@ def main():
         variante=args.variante,
         langue=args.langue,
         graine=args.graine,
+        negatif=args.negatif,
         log=print,
     )
     mp3 = convertir_mp3(chemin, chemin.replace(".wav", ".mp3"), 224)
