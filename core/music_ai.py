@@ -180,6 +180,7 @@ def generer_musique_acestep(
     bpm: Optional[int] = None,
     tonalite: Optional[str] = None,
     mesure: Optional[str] = None,
+    negatif: Optional[str] = None,
     variante: str = "turbo",
     langue: str = "en",
     log: Callable[[str], None] = print,
@@ -247,6 +248,8 @@ def generer_musique_acestep(
             cmd += ["--request-option", f"keyscale={tonalite}"]
         if mesure:
             cmd += ["--request-option", f"timesignature={mesure}"]
+        if negatif:
+            cmd += ["--request-option", f"negative_prompt={negatif}"]
         return cmd
 
     backends = ["vulkan", "cpu"] if backend in ("vulkan", "auto") else ["cpu"]
