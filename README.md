@@ -346,7 +346,17 @@ The engine features **28+ modular workflows** organized into 5 functional catego
   5. Unlike `mesh3d` (parametric extrusions), produces a **true closed volume inferred by AI** — helmets, statues, creatures, complex props — with PBR textures (basecolor/metallic/roughness) ready for Godot 4 `MeshInstance3D`.
 * **Inputs**: `prompt` or `-i, --input`, `--res` (`512` = iteration ~11 min • `1024` = master ~55 min • `1536` = untested, default 512), `--faces-cible` (optional decimation target, e.g. 30000; default 0 = no reduction), `--seed`.
 * **Engines**: trellis.cpp v0.6.0 (Vulkan) + TRELLIS.2-4B GGUF f16 (10 files, ~16.4 GB, `C:\Modeles_LLM\trellis2-gguf`), Blender 5.x headless (decimation + control renders).
-* **Outputs** (`output/mesh_ia/<nom>/`): `<nom>_<res>.glb` (master, PBR atlas embedded), `<nom>_<res>_jeu.glb` (only with `--faces-cible`), `<nom>_<res>_base.png` (atlas preview), `<nom>_<res>_planche.png` (control sheet), `_vue0-3.png` (orbital renders), `.ply`.
+* **Outputs** (`output/mesh_ia/<nom>/`): `<nom>_<res>.glb` (master, PBR atlas embedded), `<nom>_<res>_jeu.glb` (only with `--faces-cible`), `<nom>_<res>_base.png` (atlas preview), `<nom>_<res>_planche.png` (control sheet), `_vue0-3.png` (orbital renders), `.ply`, `<nom>_<res>_infos.json` (durations, face counts, paths, seed).
+* **Measured generation durations (AMD RX 6950 XT, Vulkan, f16 GGUF)** :
+
+  | Stage | res 512 | res 1024 |
+  | :--- | :--- | :--- |
+  | TRELLIS.2 generation | **8 min 53 s – 10 min 44 s** (potion / helmet) | **55 min 10 s** (helmet, LR→HR cascade) |
+  | Optional decimation `--faces-cible` | ~40 s | ~1-2 min |
+  | Blender control renders + sheet | ~1 min | ~1-2 min |
+  | **Total** | **~10-12 min** | **~57-60 min** |
+
+  Practical rule: iterate at `--res 512`, master at `--res 1024`. RDNA2 has no Vulkan "matrix cores" (~4-6× slower than the project's Strix Halo benchmarks). Every run logs a per-stage duration recap (`⏱️ Durées : …`) and writes `<nom>_<res>_infos.json`.
 * **Example**:
   ```bash
   # From an existing image (fast iteration) :
