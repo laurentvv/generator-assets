@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Veille des versions de la stack locale : audio.cpp, FFmpeg, Python + paquets
-uv, paquets GGUF de modèles (ACE-Step 1.5…), repos officiels (ACE-Step,
-llama.cpp).
+Veille des versions de la stack locale : audio.cpp, sd-cli (stable-diffusion.cpp),
+FFmpeg, Python + paquets uv, paquets GGUF de modèles (ACE-Step 1.5…), org audio-cpp
+sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, llama.cpp).
 
 Chaque source est comparée à l'état mémorisé (output/veille/etat.json) : seules
 les NOUVEAUTÉS sont signalées (🆕), avec les notes de release complètes archivées
@@ -107,6 +107,31 @@ def veille() -> tuple:
     except Exception as e:
         rapport.ajouter("⚠️", "audio.cpp", f"vérification impossible : {e}")
 
+    # ------------------------------------------- sd-cli (stable-diffusion.cpp)
+    # Pas de version.json : le commit est embarqué dans le binaire, et le tag
+    # de release amont est de la forme « master-841-6b3edaa » (sha en suffixe).
+    try:
+        r = subprocess.run([r"C:\SD\sd-cli.exe", "--version"],
+                           capture_output=True, text=True, timeout=30)
+        sortie = (r.stdout or "") + (r.stderr or "")
+        m = re.search(r"commit ([0-9a-f]{7,40})", sortie)
+        installe = m.group(1)[:7] if m else "?"
+        derniere = _github_derniere_release("leejet/stable-diffusion.cpp")
+        m2 = re.search(r"([0-9a-f]{7,40})$", derniere["tag"])
+        commit_dernier = m2.group(1)[:7] if m2 else derniere["tag"]
+        deja_vue = etat.get("sd_cli", {}).get("derniere_vue", commit_dernier)
+        if commit_dernier != deja_vue:
+            chemin_notes = _archiver_notes("sd-cli", derniere)
+            rapport.ajouter("🆕", "sd-cli",
+                            f"nouvelle release {derniere['tag']} (installé : commit {installe}, le {derniere['date']}) — "
+                            f"asset : sd-master-<sha>-bin-win-vulkan-x64.zip ; sauvegarder C:\\SD\\*.exe/*.dll dans "
+                            f"backups/ avant remplacement — nouveautés détaillées : {chemin_notes}")
+        else:
+            rapport.ajouter("✅", "sd-cli", f"à jour (commit {installe}, dernière release {derniere['tag']})")
+        etat["sd_cli"] = {"installe": installe, "derniere_vue": commit_dernier}
+    except Exception as e:
+        rapport.ajouter("⚠️", "sd-cli", f"vérification impossible : {e}")
+
     # ------------------------------------------------------- FFmpeg (tags GitHub)
     try:
         r = subprocess.run([r"C:\ffmpeg\dist\bin\ffmpeg.exe", "-version"],
@@ -202,6 +227,40 @@ def veille() -> tuple:
         etat["acestep_gguf"] = {"fichiers": fichiers}
     except Exception as e:
         rapport.ajouter("⚠️", "modeles-gguf", f"vérification impossible : {e}")
+
+    # ------------------------------------ Org audio-cpp : repos et fichiers (HF)
+    # Certains modèles vivent dans des repos DÉDIÉS hors de la collection
+    # principale (ex. MiniMax-Music3-GGUF, VibeVoice-7B-GGUF) : on surveille
+    # donc toute l'org — nouveaux repos ET nouveaux fichiers (nouvelles
+    # familles/variantes dans audio.cpp-gguf y compris).
+    try:
+        r = requests.get("https://huggingface.co/api/models?author=audio-cpp&limit=100", timeout=30)
+        r.raise_for_status()
+        repos = sorted(m["id"].split("/", 1)[1] for m in r.json())
+        anciens = etat.get("org_audio_cpp", {}).get("repos")
+        fichiers_par_repo = {}
+        for repo in repos:
+            rr = requests.get(f"https://huggingface.co/api/models/audio-cpp/{repo}", timeout=30)
+            rr.raise_for_status()
+            fichiers_par_repo[repo] = sorted(s["rfilename"] for s in rr.json().get("siblings", []))
+        if anciens:
+            nouveaux_repos = [x for x in repos if x not in anciens]
+            nouveaux_fichiers = [f"{repo}/{f}" for repo in repos
+                                 for f in fichiers_par_repo[repo]
+                                 if repo in anciens and f not in anciens[repo]]
+            if nouveaux_repos or nouveaux_fichiers:
+                resume = (["repo " + x for x in nouveaux_repos] + nouveaux_fichiers)[:6]
+                rapport.ajouter("🆕", "org-audio-cpp",
+                                f"nouveautés : {'; '.join(resume)}"
+                                f"{'…' if len(nouveaux_repos) + len(nouveaux_fichiers) > 6 else ''}")
+            else:
+                rapport.ajouter("✅", "org-audio-cpp",
+                                f"{len(repos)} repos ({', '.join(repos)}) — aucun nouveau fichier")
+        else:
+            rapport.ajouter("✅", "org-audio-cpp", f"baseline enregistrée : {len(repos)} repos ({', '.join(repos)})")
+        etat["org_audio_cpp"] = {"repos": fichiers_par_repo}
+    except Exception as e:
+        rapport.ajouter("⚠️", "org-audio-cpp", f"vérification impossible : {e}")
 
     # ----------------------------------------------------------- ACE-Step (repo)
     try:
