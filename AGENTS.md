@@ -46,6 +46,14 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   `uv run python scripts/veille_versions.py` — état dans `output/veille/`, rapport uniquement
   (jamais de mise à jour automatique). Automatisation quotidienne 9 h planifiée côté session
   (titre « Veille quotidienne des versions … »).
+- 🛡️ **Fichiers locaux irremplaçables — NE JAMAIS supprimer, déplacer ni écraser** (modèles
+  retirés des dépôts officiels : la copie locale est la seule source existante). Liste à tenir
+  à jour quand la veille signale un retrait :
+  - `C:\Modeles_LLM\MiniMax-Music3-GGUF\` — retiré de HF `audio-cpp/audio.cpp-gguf` et du
+    miroir ModelScope (constaté 2026-09-06, voir `docs/veille_journal.md`).
+  Avant TOUTE suppression de modèle dans `C:\Modeles_LLM`, vérifier qu'il est toujours
+  retéléchargeable (HF/ModelScope) ; en cas de doute, demander. Aucun nettoyage disque ni
+  script ne doit toucher ces chemins.
 
 ## 🔄 Process de mise à jour (à exécuter quand la veille signale une nouveauté)
 
