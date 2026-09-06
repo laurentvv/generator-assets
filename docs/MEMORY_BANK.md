@@ -129,7 +129,31 @@
 * **Nettoyage fait le 2026-09-06 sur décision utilisateur** (« on oublie ») : modèle 9,8 Gio + venv + artéfacts d'écoute supprimés (~13,3 Gio libérés). Le modèle est retéléchargeable à tout moment (`snapshot_download('facebook/musicgen-melody-large')` avec hf_transfer) si un retest devient pertinent (voir conditions ci-dessus).
 * **Leçon transverse** : kwargs inconnus **ignorés silencieusement** par les processors transformers v5 (« will be ignored » en warning) — toujours vérifier par A/B (même graine, entrée changée) qu'un conditionnement atteint vraiment le modèle.
 
+### 🎙️ 1.13. Voix off TTS + clonage vocal français — 3 moteurs GGUF testés le 2026-09-06 (chaîne YouTube)
+
+* **Besoin** : cloner une voix française (référence 11,8 s de l'utilisateur, `output/comparatif_tts/ref_voix_laurent.wav`) puis lui faire lire des textes **avec expression**. Stack 100 % locale conforme philosophie : `audiocpp_cli` (v0.7.2, Vulkan) + paquets GGUF q8_0 monolithiques dans `C:\Modeles_LLM\`.
+* **Paquets installés** : `Qwen3-TTS-12Hz-1.7B-Base-GGUF` (2,51 Gio), `VoxCPM2-GGUF` (2,75 Gio), `Fish-Audio-S2-Pro-GGUF` (5,88 Gio) + **bonus** `Qwen3-ASR-0.6B-GGUF` (1,07 Gio) pour transcrire la référence (voir écueil ③).
+* **Commandes validées** :
+  ```powershell
+  # Zéro-shot (fish / voxcpm2 uniquement) :
+  audiocpp_cli --task tts --family fish_audio --model <fish q8_0.gguf> --backend vulkan --metrics --text "<FR>" --out out.wav
+  audiocpp_cli --task tts --family voxcpm2  --model <voxcpm2 q8_0.gguf> --backend vulkan --metrics --language French --text "<FR>" --out out.wav
+  # Clonage (les 3) :
+  #   qwen3 : --voice-ref ref.wav --reference-text "<transcript de ref>" [--instruct "<style/émotion>"] --language French
+  #   fish  : --voice-ref ref.wav --reference-text "<transcript>" (+ balises expression DANS le texte : [whisper] [excited] [pause]…)
+  #   voxcpm2 : --voice-ref ref.wav (transcript NON requis)
+  # ASR (transcription d'une référence) :
+  audiocpp_cli --task asr --family qwen3_asr --model <qwen3-asr-0.6b-q8_0.gguf> --backend vulkan --language fr --audio ref.wav
+  ```
+* **Perf Vulkan (RX 6950 XT)** : RTF fish 1,46 / voxcpm2 1,68 sur ~7 s de parole (chargement inclus). Sorties **mono** : fish 44,1 kHz • voxcpm2 48 kHz • qwen3 24 kHz (limite qualité HF — à réserver intermédiaire, rééchantillonner).
+* **Expression** : fish = **balises inline libres dans le texte** (`[whisper]`, `[excited]`, `[pause]`… 15 000 tags, la plus riche) ; qwen3 = `--instruct "<instruction style/émotion>"` ; voxcpm2 = non testé. Voix design (voix décrite plutôt que clonée) dispo : `--task vdes` (paquet qwen3 VoiceDesign séparé, non installé).
+* **⚠️ Écueils** : ① qwen3-TTS **Base** = pas de zéro-shot (« requires voice clone reference audio ») ET **transcript obligatoire** (« ICL mode requires reference text ») ; ② fish = zéro-shot OK mais **transcript obligatoire pour le clonage** (« inline reference audio requires reference_text ») ; ③ pas de transcript sous la main → transcription ASR locale (qwen3-asr 0.6B) : pipeline complet autonome validé (m4a → wav mono ffmpeg → ASR → clone). Voix de référence : enregistrement smartphone m4a 48 k stéréo converti `ffmpeg -ac 1 pcm_s16le` — suffisant.
+* **Licences** : qwen3-tts/qwen3-asr **Apache-2.0** ✓ production chaîne OK • voxcpm2 **Apache-2.0** ✓ • fish s2-pro **Research License = commercial payant** ⚠️ (référence qualité uniquement, pas de production chaîne sans licence).
+* **À écouter** (`output/comparatif_tts/ECOUTE_*.mp3`) : `ref_voix_laurent` (original) vs `qwen_fr_clone_laurent` (instruct présentateur), `voxcpm2_fr_clone_laurent` (transcript-free), `fish_fr_clone_laurent` (balises whisper/excited) + `*_sans_ref` pour le timbre natif fish/voxcpm2. Phrase test identique pour tous : « Trois heures du matin, le serveur principal s'effondre… ». **Validation utilisateur en attente** — voxcpm2 rend la phrase en 4,6 s vs ~6 s ailleurs (débit rapide ou troncature ? à l'écoute).
+* **Non testés** : stabilité sur textes longs (chunking `--text-chunk-size` fish 200 cars), voix design `--task vdes`, chatterbox (anglais seulement), omnivoice (600+ langues, licence à vérifier), qualité 1.7B CustomVoice qwen3.
+
 ## 🎬 2. Masters et Fichiers de Production Validés
+
 
 
 | Nom du Fichier | Spécifications | Modèle Utilisé | Statut & Rendu |
