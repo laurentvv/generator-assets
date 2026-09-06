@@ -240,7 +240,7 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   • 3D Geometry & PBR Textures     : material3d, mesh3d, voxel3d, skybox, turnaround3d, flowmap
   • Humanoid 3D Characters & Outfits: character3d, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -794,6 +794,33 @@ The engine features **27+ modular workflows** organized into 5 functional catego
   | **Wan 2.1 14B** | DiT Monolithe (14B) + UMT5-XXL | **8-10 steps** (CFG 6.0) | 🐢 **312s / pas** (~6 min total) | ❌ (Muet) | 🟢 Géométrie isométrique ultra-précise, structure 3D | [`02_wan21_14steps_dragon_1080p.mp4`](output/overnight/02_wan21_14steps_dragon_1080p.mp4) |
   | **Wan 2.2 MoE** | Dual-DiT MoE (2x 14B = 28B) + UMT5-XXL | **8 steps MoE** (4 High + 4 Low) | ⏳ **~350s / pas** (~11 min total) | ❌ (Muet) | 👑 **Piqué photoréaliste absolu** (Micro-détails, regard) | [`wan22_moe_dragon_4k_ultrasharp.mp4`](output/overnight/esrgan_4k/wan22_moe_dragon_4k_ultrasharp.mp4) |
   | **MiniMax-H3** | DiT FL2VA (15B) + Qwen3-VL 32B | **12 steps** (CFG 1.0) | 🚀 **16.96s / pas** (6.6 min total) | 🔊 **OUI (AAC 32 kHz)** | 🟢 Wyvern titanesque (Crête enflammée, ailes massives) | [`04_minimax_h3_20steps_dragon_1080p.mp4`](output/overnight/04_minimax_h3_20steps_dragon_1080p.mp4) |
+
+---
+
+#### 4.9. `voix_off` — Expressive AI Voice-Over with Voice Cloning (qwen3-tts / VoxCPM2 / Fish S2-Pro GGUF Vulkan)
+
+* **Process**:
+  1. Takes the text to read — inline or from a `.txt` file — and an optional **voice reference** (`--voix-ref`, any WAV/MP3/M4A recording, 10-60 s).
+  2. **Reference quality gate** (lesson from 2026-09-06): converts to mono 48 kHz, measures the level, and if the mean level is below **−26 dB** automatically normalizes to **−18 LUFS / −1.5 dBTP** (linear loudnorm — no audible compression on flat speech dynamics).
+  3. If the engine requires a transcript (qwen3-tts ICL mode, Fish inline cloning), transcribes the reference automatically with **qwen3-asr 0.6B** (cached next to the reference).
+  4. Generates the voice-over on **audio.cpp Vulkan**: **qwen3-tts 1.7B** (default with a reference, expression via `--instruct` style/emotion instruction, Apache-2.0, 24 kHz), **VoxCPM2** (default without reference — zero-shot or **transcript-free cloning**, Apache-2.0, 48 kHz), or **Fish S2-Pro** (free-form inline expression tags `[whisper]`, `[excited]`, `[pause]`… directly in the text, 44.1 kHz, ⚠️ research license — commercial use requires a Fish Audio license).
+  5. Finalizes the track to **−16 LUFS** (YouTube dialogue standard, 2-pass loudnorm, 48 kHz PCM16) + a 192k MP3 listening preview.
+* **Inputs**: `prompt` (text or `.txt` path), `--voix-ref`, `--moteur` (`qwen3`|`voxcpm2`|`fish`; auto if omitted — qwen3 with a reference, voxcpm2 without), `--instruct` (qwen3 expression instruction), `--lufs-voix` (default −16), `--music-backend` (`vulkan`|`cpu`), `--seed`.
+* **Engines**: audio.cpp v0.7.2 (`audiocpp_cli`, Vulkan) + Qwen3-TTS-12Hz-1.7B-Base q8_0 (2.51 Gio) / VoxCPM2 q8_0 (2.75 Gio) / Fish-Audio-S2-Pro q8_0 (5.88 Gio) + Qwen3-ASR-0.6B q8_0 (1.07 Gio) — all in `C:\Modeles_LLM`, ffmpeg 9.
+* **Outputs** (`output/voix_off/<name>/`): `voix_off_brut.wav` (raw engine output), `voix_off_brut_final.wav` (−16 LUFS 48 kHz) + `voix_off_brut_final.mp3` (listening), prepared reference WAV + transcript cache (reused across runs).
+* **Example**:
+  ```bash
+  # Voix clonée (référence = n'importe quel enregistrement) + instruction d'expression :
+  uv run python main.py -w voix_off "Trois heures du matin, le serveur principal s'effondre." \
+      --voix-ref "C:\musique\Enregistrement.m4a" --instruct "energetic YouTube narrator tone" -o incident_nuit
+  # Long texte depuis un fichier, balises d'expression Fish inline :
+  uv run python main.py -w voix_off script_ep03.txt --moteur fish \
+      --voix-ref "C:\musique\Enregistrement.m4a" -o episode_03
+  # Voix native sans clonage (VoxCPM2, Apache-2.0) :
+  uv run python main.py -w voix_off "Bienvenue sur la chaîne !" -o intro_courte
+  ```
+* **Status (2026-09-06)**: ✅ End-to-end validated with a real French voice reference on qwen3-tts (RTF 0.64 Vulkan) and Fish S2-Pro — auto level-gate (a −39 LUFS phone recording was auto-normalized), auto ASR transcript, cloning and −16 LUFS finalization all verified. ⚠️ **User listening validation of engine choice still pending** (A/B clones in `output/comparatif_tts/`). Known engine constraints: qwen3-tts **Base** requires both reference audio AND transcript (hence the ASR step) and outputs 24 kHz mono; VoxCPM2 clones **without** transcript; Fish requires the transcript only when a reference is provided. Licenses: qwen3-tts & VoxCPM2 = **Apache-2.0** (production-safe), Fish S2-Pro = research/non-commercial.
+* **Helpers**: `scripts/download_tts_gguf.py` planned — meanwhile download the q8_0 GGUFs from `audio-cpp/audio.cpp-gguf` (Qwen3-TTS-12Hz-1.7B-Base-GGUF, VoxCPM2-GGUF, Fish-Audio-S2-Pro-GGUF, Qwen3-ASR-0.6B-GGUF) via `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`.
 
 ---
 
