@@ -14,6 +14,7 @@ from workflows.material3d import Material3DWorkflow
 from workflows.skybox import SkyboxWorkflow
 from workflows.turnaround3d import Turnaround3DWorkflow
 from workflows.mesh3d import Mesh3DWorkflow
+from workflows.mesh_ia import MeshIaWorkflow
 from workflows.rembg import RembgWorkflow
 from workflows.flowmap import FlowmapWorkflow
 from workflows.ui_9slice import UI9SliceWorkflow
@@ -50,6 +51,7 @@ __all__ = [
     "SkyboxWorkflow",
     "Turnaround3DWorkflow",
     "Mesh3DWorkflow",
+    "MeshIaWorkflow",
     "RembgWorkflow",
     "FlowmapWorkflow",
     "UI9SliceWorkflow",

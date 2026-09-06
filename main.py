@@ -52,7 +52,8 @@ from workflows import (
     Material3DWorkflow,
     SkyboxWorkflow,
     Turnaround3DWorkflow,
-    Mesh3DWorkflow
+    Mesh3DWorkflow,
+    MeshIaWorkflow
 )
 
 
@@ -102,7 +103,8 @@ def lancer_mode_interactif(config: dict):
         "32": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
         "33": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
         "34": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
-        "35": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)")
+        "35": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)"),
+        "36": ("mesh_ia", "🧊 Objet 3D IA depuis Image/Prompt (TRELLIS.2 GGUF Vulkan — volume réel + PBR)")
     }
 
     while True:
@@ -111,7 +113,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-35) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-36) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
@@ -175,6 +177,21 @@ def lancer_mode_interactif(config: dict):
                 choix_s = input("Choix (1-5) [défaut: 1] : ").strip()
                 s_map = {"1": "tile", "2": "cube", "3": "pillar", "4": "sphere", "5": "card"}
                 params["shape"] = s_map.get(choix_s, "tile")
+
+            elif wf_name == "mesh_ia":
+                chemin = input("🖼️  Image de l'objet (ou laisser vide pour générer depuis un prompt) : ").strip()
+                if chemin and os.path.exists(chemin):
+                    params["input"] = chemin
+                else:
+                    params["prompt"] = input("💡 Description de l'objet 3D (ex: casque de guerre en acier sombre) : ").strip()
+                    if not params["prompt"]:
+                        continue
+                print("🧊 Résolution : [1] 512 — rapide ~11 min (itération)   [2] 1024 — qualité ~55 min (master)")
+                choix_r = input("Choix (1-2) [défaut: 1] : ").strip()
+                params["res"] = 1024 if choix_r == "2" else 512
+                faces = input("📉 Cible de faces du GLB jeu (ex: 30000 ; vide = pas de réduction, master complet) : ").strip()
+                if faces:
+                    params["faces_cible"] = int(faces)
 
             elif wf_name == "material3d":
                 chemin = input("🖼️  Texture existante (ou laisser vide pour générer à partir d'un prompt) : ").strip()
@@ -450,6 +467,10 @@ Exemples de Workflows 3D & 2D :
   python main.py -w mesh3d "coffre ancien orné de runes en acier sombre" --shape cube
   python main.py -w mesh3d -i godot_assets/casque.png --shape card -o casque_3d
 
+  # 1b. Objet 3D IA volumique depuis une image ou un prompt (TRELLIS.2 GGUF, Vulkan)
+  python main.py -w mesh_ia -i godot_assets/casque.png --res 512
+  python main.py -w mesh_ia "crâne de dragon sculpté dans l'obsidienne" --res 1024
+
   # 2. Pack Matériau 3D PBR complet (Albedo, Normal, Roughness, ORM, Height + .tres Godot)
   python main.py -w material3d "dalles de pierre sombre avec runes violettes et mousse" -s 1024
 
@@ -481,7 +502,7 @@ Exemples de Workflows 3D & 2D :
     parser.add_argument(
         "-w", "--workflow",
         default="generate",
-        help="Nom du workflow : generate, mesh3d, material3d, skybox, turnaround3d, upscale, spritesheet, variations, tileable, pixelart, batch."
+        help="Nom du workflow : generate, mesh3d, mesh_ia, material3d, skybox, turnaround3d, upscale, spritesheet, variations, tileable, pixelart, batch."
     )
     parser.add_argument(
         "-p", "--prompt",
@@ -551,6 +572,8 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--segmenter", default="auto", choices=["auto", "birefnet", "rmbg", "floodfill", "none"], help="Moteur de détourage 2D.")
     groupe_wf.add_argument("--palette", default="pico8", choices=["pico8", "gameboy", "endesga32"], help="Palette pour le workflow pixelart.")
     groupe_wf.add_argument("--grid-size", type=int, default=64, help="Taille de grille pour le pixel art (ex: 32, 64).")
+    groupe_wf.add_argument("--res", type=int, choices=[512, 1024, 1536], default=512, help="Résolution de génération 3D pour mesh_ia (TRELLIS.2) : 512 = itération ~11 min, 1024 = master ~55 min (défaut: 512).")
+    groupe_wf.add_argument("--faces-cible", type=int, default=0, help="Cible de faces du GLB « jeu » pour mesh_ia : décimation Blender OPTIONNELLE (master conservé ; défaut: 0 = pas de réduction). Repères : 30000 = item héro vu de près • 10000 = prop de décor • 3000 = clutter répété • >=8000 pour les silhouettes très courbes.")
     groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
     groupe_wf.add_argument("--file", "--recipe", dest="recipe_file", help="Fichier JSON ou liste texte pour le workflow batch.")
     groupe_wf.add_argument("--columns", type=int, default=4, help="Nombre de colonnes pour la planche de sprites.")
@@ -817,6 +840,8 @@ Exemples de Workflows 3D & 2D :
         "normal_strength": args.normal_strength,
         "palette": args.palette,
         "grid_size": args.grid_size,
+        "res": args.res,
+        "faces_cible": args.faces_cible,
         "themes": args.themes,
         "file": args.recipe_file,
         "columns": args.columns,
