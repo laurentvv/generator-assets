@@ -359,7 +359,7 @@ The engine features **28+ modular workflows** organized into 5 functional catego
   | Blender control renders + sheet | ~1 min | ~1-2 min |
   | **Total** | **~10-12 min** | **~57-60 min** |
 
-  Practical rule: iterate at `--res 512`, master at `--res 1024`. RDNA2 has no Vulkan "matrix cores" (~4-6× slower than the project's Strix Halo benchmarks). Every run logs a per-stage duration recap (`⏱️ Durées : …`) and writes `<nom>_<res>_infos.json`.
+  Practical rule: iterate at `--res 512`, master at `--res 1024`. RDNA2 has no Vulkan "matrix cores" (~4-6× slower than the project's Strix Halo benchmarks). Every run logs a per-stage duration recap and writes `<nom>_<res>_infos.json`.
 * **Example**:
   ```bash
   # From a plain prompt — generate + mesh_ia chained automatically (image → 3D) :
