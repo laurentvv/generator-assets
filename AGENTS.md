@@ -46,8 +46,18 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).
 - Veille versions (audio.cpp, sd-cli, trellis.cpp + GGUF TRELLIS.2 sur HF, FFmpeg, Python,
   paquets, modèles GGUF + org audio-cpp sur HF, llama.cpp) : `uv run python scripts/veille_versions.py` — état dans
-  `output/veille/`, rapport uniquement (jamais de mise à jour automatique). Automatisation
-  quotidienne 9 h planifiée côté session (titre « Veille quotidienne des versions … »).
+  `output/veille/`, rapport uniquement (jamais de mise à jour automatique). Déclenchement
+  **automatique à l'ouverture de session** (pas de cron) : le hook SessionStart relance la
+  veille en arrière-plan si la dernière date de plus de 20 h (fraîcheur lue sur la date de
+  `output/veille/rapports.log`, log de fond : `output/veille/veille_arriere_plan.log`) ;
+  le script alimente `output/veille/maj_en_attente.json`. Lancement manuel toujours
+  possible à la demande : « lance la veille » en session.
+- Hook SessionStart ZCode (`.zcode/config.json` → `scripts/hook_session_start.py`) : à chaque
+  nouvelle session du projet, les entrées des 7 derniers jours de `docs/veille_journal.md`
+  sont injectées automatiquement dans le contexte, ainsi que les mises à jour en attente
+  lues dans `output/veille/maj_en_attente.json` (voir 🔄 Process de mise à jour). Validé en
+  session réelle le 2026-09-07 ; premier usage : approuver le hook via la bannière « Review »
+  (gate de confiance des hooks de scope projet). Test manuel : `uv run python scripts/hook_session_start.py`.
 - 🛡️ **Modèles : vérifier la retéléchargeabilité AVANT toute suppression dans `C:\Modeles_LLM`.**
   Lister tous les repos de l'org, pas seulement le repo principal — certains modèles vivent dans
   des repos dédiés hors `audio.cpp-gguf` (ex. `audio-cpp/MiniMax-Music3-GGUF`,
@@ -68,6 +78,15 @@ Règles générales : **une seule mise à jour à la fois** • vérifier qu'auc
 `ffmpeg.exe` ne tourne avant de toucher aux binaires • tester après chaque mise à jour •
 mettre à jour les README d'outils (voir §Documentation) • commit/push des fichiers du dépôt
 (docs, uv.lock). Jamais de mise à jour en plein batch de génération.
+
+📝 **Suivi des majs en attente** (`output/veille/maj_en_attente.json`) : fichier maintenu par
+le script de veille (`_sauver_maj_en_attente`) — une nouveauté y entre au moment de sa
+détection et disparaît automatiquement quand la version installée rattrape la dernière vue ;
+l'agent peut aussi y retirer une entrée refusée par l'utilisateur. Lisible à chaque session
+via le hook SessionStart, qui le signale à l'agent ; cela ne change rien à la règle :
+**jamais de mise à jour sans accord explicite**. Quand une session y voit des nouveautés
+absentes de `docs/veille_journal.md`, les y ajouter (format journal, avec détail du
+changelog depuis les notes archivées) puis commit/push (docs uniquement).
 
 | Composant | Procédure | Vérification post-maj | Rollback |
 |---|---|---|---|
