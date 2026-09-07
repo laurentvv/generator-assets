@@ -26,6 +26,7 @@ MS_BASE = "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/master
 
 VARIANTES = {
     "turbo":    {"fichier": "turbo/ace-step-1.5-turbo-bf16.gguf",          "source": HF_BASE, "gib": 9.40},
+    "base":     {"fichier": "base/ace-step-1.5-base-bf16.gguf",           "source": HF_BASE, "gib": 9.40},
     "xl-turbo": {"fichier": "xl-turbo/ace-step-1.5-xl-turbo-bf16.gguf",    "source": MS_BASE, "gib": 14.23},
     "xl-sft":   {"fichier": "xl-sft/ace-step-1.5-xl-sft-bf16.gguf",        "source": MS_BASE, "gib": 14.23},
 }
@@ -37,7 +38,13 @@ curl_path = shutil.which("curl.exe") or "curl"
 
 
 def telecharger(nom: str, url: str, dossier: str, taille_attendue_mo: float):
-    """Télécharge via curl (reprise -C -) avec fichier .part, skip si déjà complet."""
+    """Télécharge, avec fichier .part, skip si déjà complet.
+
+    Gros fichiers (≥ 1 Gio) : délègue au téléchargeur parallèle par segments
+    HTTP Range — bridage CDN mono-connexion contourné, mesuré 166 Mo/s sur
+    ModelScope le 2026-09-07 (vs ~2 Mo/s en curl direct ; xl-sft 14,23 Gio en
+    ~3,5 min). ModelScope supporte Range (HTTP 206 vérifié).
+    """
     dest = os.path.join(dossier, nom)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
 
@@ -51,6 +58,14 @@ def telecharger(nom: str, url: str, dossier: str, taille_attendue_mo: float):
 
     print(f"\n⬇️ Téléchargement : {nom} (~{taille_attendue_mo:.0f} Mo)...")
     print(f"   Source : {url}")
+    if taille_attendue_mo >= 1024:
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "telecharger_gros_fichier_parallele.py")
+        resultat = subprocess.run([sys.executable, script, url, dest])
+        if resultat.returncode != 0 or not os.path.exists(dest):
+            raise RuntimeError(
+                f"Échec du téléchargement parallèle de {nom} (code {resultat.returncode})")
+        return
     part = dest + ".part"
     t0 = time.time()
     cmd = [curl_path, "-L", "-C", "-", "--fail", "--retry", "5", "--retry-delay", "3",
