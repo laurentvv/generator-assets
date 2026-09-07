@@ -349,16 +349,18 @@ def veille() -> tuple:
     except Exception as e:
         rapport.ajouter("⚠️", "org-audio-cpp", f"vérification impossible : {e}")
 
-    # --------------------- Nouveaux modèles LLM/VLM GGUF tendance (HF, global)
+    # --------------------- Nouveaux modèles LLM/VLM/audio GGUF tendance (HF)
     # Objectif : repérer les modèles GGUF qui ÉMERGENT sur Hugging Face (top
     # trending), pas tout HF (des milliers de dépôts/jour). Diff du top
-    # trending (text-generation + image-text-to-text) entre deux runs ; le
-    # premier run enregistre la baseline sans rien signaler. Rôle : info
-    # uniquement — vérifier la compatibilité (llama.cpp, audio.cpp, Vulkan)
-    # avant tout téléchargement, selon le process AGENTS.md.
+    # trending (text-generation + image-text-to-text + text-to-audio, dont les
+    # moteurs musicaux — plafond actuel : réalisme instrumental rock, cf.
+    # MEMORY_BANK §1.11) entre deux runs ; le premier run enregistre la
+    # baseline sans rien signaler. Rôle : info uniquement — vérifier la
+    # compatibilité (llama.cpp, audio.cpp, Vulkan) avant tout téléchargement,
+    # selon le process AGENTS.md.
     try:
         modeles = []
-        for pipeline in ("text-generation", "image-text-to-text"):
+        for pipeline in ("text-generation", "image-text-to-text", "text-to-audio"):
             r = requests.get(
                 "https://huggingface.co/api/models",
                 params={"sort": "trendingScore", "direction": -1, "limit": 30,
