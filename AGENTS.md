@@ -64,6 +64,17 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   « Review » (gate de confiance des hooks de scope projet). Test manuel :
   `uv run python scripts/hook_session_start.py`. À supprimer une fois une release sd-cli
   corrigée installée (fonction `bloc_issue_sdcli` + état + cette mention).
+- 🎯 **Instruction permanente (2026-09-07) : dès que la veille signale un NOUVEAU modèle de
+  musique/audio potentiellement compatible, lancer le test sans attendre d'accord** (sources :
+  section veille `hf-modeles-gguf` pipeline `text-to-audio`, nouvelles familles dans audio.cpp,
+  miroir ModelScope). Recette de test de référence : candidat gothic rock 30 s — description
+  sobre « German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass,
+  chiming chorus guitars », 83 BPM + « C# minor » imposés (`--request-option`), graine 42
+  (exemples : `output/test_acestep_sft/`). Téléchargement via le downloader parallèle si gros
+  fichier. Soumettre à l'écoute utilisateur, consigner le verdict dans MEMORY_BANK (statut
+  « testé, non validé » — jamais de workflow avant validation, cf. règle ci-dessus).
+  Contexte : plafond réalisme instrumental rock d'ACE-Step (§1.11) ; objectif = un moteur
+  musical GGUF Vulkan rendant basse/batterie/guitares crédibles.
 - 🛡️ **Modèles : vérifier la retéléchargeabilité AVANT toute suppression dans `C:\Modeles_LLM`.**
   Lister tous les repos de l'org, pas seulement le repo principal — certains modèles vivent dans
   des repos dédiés hors `audio.cpp-gguf` (ex. `audio-cpp/MiniMax-Music3-GGUF`,
