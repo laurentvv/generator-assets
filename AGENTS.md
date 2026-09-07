@@ -45,7 +45,8 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
 - Gros téléchargements HF/ModelScope : `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).
 - Veille versions (audio.cpp, sd-cli, trellis.cpp + GGUF TRELLIS.2 sur HF, FFmpeg, Python,
-  paquets, modèles GGUF + org audio-cpp sur HF, llama.cpp) : `uv run python scripts/veille_versions.py` — état dans
+  paquets, modèles GGUF + org audio-cpp sur HF, **nouveaux modèles LLM/VLM GGUF tendance
+  sur HF** (top trending en diff, baseline 2026-09-07), llama.cpp) : `uv run python scripts/veille_versions.py` — état dans
   `output/veille/`, rapport uniquement (jamais de mise à jour automatique). Déclenchement
   **automatique à l'ouverture de session** (pas de cron) : le hook SessionStart relance la
   veille en arrière-plan si la dernière date de plus de 20 h (fraîcheur lue sur la date de
