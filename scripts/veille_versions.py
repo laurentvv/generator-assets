@@ -34,6 +34,7 @@ import requests
 DOSSIER_ETAT = os.path.join("output", "veille")
 CHEMIN_ETAT = os.path.join(DOSSIER_ETAT, "etat.json")
 CHEMIN_LOG = os.path.join(DOSSIER_ETAT, "rapports.log")
+CHEMIN_MAJ = os.path.join(DOSSIER_ETAT, "maj_en_attente.json")
 
 VERSION_AUDIOCPP_INSTALLEE = "v0.7.2"  # fallback si version.json illisible
 
@@ -70,12 +71,47 @@ def _sauver_etat(etat: dict):
         json.dump(etat, f, indent=2, ensure_ascii=False)
 
 
+def _sauver_maj_en_attente(rapport: "Rapport", resolus: dict):
+    """Synchronise output/veille/maj_en_attente.json (lu par le hook SessionStart).
+
+    Une entrée persiste tant que la mise à jour n'est pas appliquée : une
+    nouveauté signalée une fois reste en attente même si les runs suivants
+    reviennent au ✅ ; elle disparaît quand la version installée rattrape la
+    dernière vue (resolus) ou si l'agent la retire (convention AGENTS.md).
+    """
+    existant = {}
+    if os.path.exists(CHEMIN_MAJ):
+        try:
+            with open(CHEMIN_MAJ, encoding="utf-8") as f:
+                existant = json.load(f)
+        except Exception:
+            existant = {}
+    items = {it.get("source"): it for it in existant.get("items", [])
+             if isinstance(it, dict) and it.get("source")}
+    for source, resolu in resolus.items():
+        if resolu:
+            items.pop(source, None)
+    for source, message, notes in rapport.nouveautes:
+        item = {"source": source, "details": message}
+        if notes:
+            item["notes"] = notes
+        items[source] = item
+    os.makedirs(DOSSIER_ETAT, exist_ok=True)
+    with open(CHEMIN_MAJ, "w", encoding="utf-8") as f:
+        json.dump({"detecte_le": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                   "items": list(items.values())},
+                  f, indent=2, ensure_ascii=False)
+
+
 class Rapport:
     def __init__(self):
         self.lignes: list = []
+        self.nouveautes: list = []  # (source, message, chemin_notes) pour maj_en_attente.json
 
-    def ajouter(self, emoji: str, source: str, message: str):
+    def ajouter(self, emoji: str, source: str, message: str, notes: str = ""):
         self.lignes.append(f"{emoji} [{source}] {message}")
+        if emoji == "🆕":
+            self.nouveautes.append((source, message, notes))
 
     def sortie(self) -> str:
         return "\n".join(self.lignes)
@@ -85,6 +121,7 @@ def veille() -> tuple:
     etat = _charger_etat()
     etat_avant = json.dumps(etat, sort_keys=True)
     rapport = Rapport()
+    resolus: dict = {}  # source → True si la version installée rattrape la dernière vue
     maintenant = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     # ------------------------------------------------------------------ audio.cpp
@@ -101,10 +138,11 @@ def veille() -> tuple:
             rapport.ajouter("🆕", "audio.cpp",
                             f"nouvelle release {derniere['tag']} (installée : {installee}, le {derniere['date']}) — "
                             f"« {derniere['nom']} » → mise à jour : C:\\audio-cpp\\update.ps1 — "
-                            f"nouveautés détaillées : {chemin_notes}")
+                            f"nouveautés détaillées : {chemin_notes}", notes=chemin_notes)
         else:
             rapport.ajouter("✅", "audio.cpp", f"à jour ({installee}, dernière release {derniere['tag']})")
         etat["audio.cpp"] = {"installee": installee, "derniere_vue": derniere["tag"]}
+        resolus["audio.cpp"] = (installee == derniere["tag"])
     except Exception as e:
         rapport.ajouter("⚠️", "audio.cpp", f"vérification impossible : {e}")
 
@@ -126,10 +164,11 @@ def veille() -> tuple:
             rapport.ajouter("🆕", "sd-cli",
                             f"nouvelle release {derniere['tag']} (installé : commit {installe}, le {derniere['date']}) — "
                             f"asset : sd-master-<sha>-bin-win-vulkan-x64.zip ; sauvegarder C:\\SD\\*.exe/*.dll dans "
-                            f"backups/ avant remplacement — nouveautés détaillées : {chemin_notes}")
+                            f"backups/ avant remplacement — nouveautés détaillées : {chemin_notes}", notes=chemin_notes)
         else:
             rapport.ajouter("✅", "sd-cli", f"à jour (commit {installe}, dernière release {derniere['tag']})")
         etat["sd_cli"] = {"installe": installe, "derniere_vue": commit_dernier}
+        resolus["sd-cli"] = (installe != "?" and installe == commit_dernier)
     except Exception as e:
         rapport.ajouter("⚠️", "sd-cli", f"vérification impossible : {e}")
 
@@ -150,10 +189,11 @@ def veille() -> tuple:
                             f"nouvelle release {derniere['tag']} (installée : {installee}, le {derniere['date']}) — "
                             f"asset : trellis-vulkan-windows-x64.zip ; sauvegarder C:\\trellis\\*.exe/*.dll dans "
                             f"C:\\trellis\\backups\\ avant remplacement, puis mettre à jour version.json et "
-                            f"C:\\trellis\\README.md — nouveautés détaillées : {chemin_notes}")
+                            f"C:\\trellis\\README.md — nouveautés détaillées : {chemin_notes}", notes=chemin_notes)
         else:
             rapport.ajouter("✅", "trellis.cpp", f"à jour ({installee}, dernière release {derniere['tag']})")
         etat["trellis.cpp"] = {"installee": installee, "derniere_vue": derniere["tag"]}
+        resolus["trellis.cpp"] = (installee == derniere["tag"])
     except Exception as e:
         rapport.ajouter("⚠️", "trellis.cpp", f"vérification impossible : {e}")
 
@@ -200,6 +240,7 @@ def veille() -> tuple:
         else:
             rapport.ajouter("✅", "ffmpeg", f"à jour (build local {installee})")
         etat["ffmpeg"] = {"installee": installee, "derniere_vue": derniere}
+        resolus["ffmpeg"] = (installee == derniere)
     except Exception as e:
         rapport.ajouter("⚠️", "ffmpeg", f"vérification impossible : {e}")
 
@@ -253,6 +294,7 @@ def veille() -> tuple:
         else:
             rapport.ajouter("✅", "paquets-python", "tous à jour")
         etat["paquets_python"] = {"obsolete": cles}
+        resolus["paquets-python"] = (not cles)
     except Exception as e:
         rapport.ajouter("⚠️", "paquets-python", f"vérification impossible : {e}")
 
@@ -340,6 +382,7 @@ def veille() -> tuple:
     os.makedirs(DOSSIER_ETAT, exist_ok=True)
     if json.dumps(etat, sort_keys=True) != etat_avant:
         _sauver_etat(etat)
+    _sauver_maj_en_attente(rapport, resolus)
     texte = rapport.sortie()
     with open(CHEMIN_LOG, "a", encoding="utf-8") as f:
         f.write(f"\n===== {maintenant} =====\n{texte}\n")
