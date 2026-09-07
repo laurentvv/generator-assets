@@ -349,6 +349,53 @@ def veille() -> tuple:
     except Exception as e:
         rapport.ajouter("⚠️", "org-audio-cpp", f"vérification impossible : {e}")
 
+    # --------------------- Nouveaux modèles LLM/VLM GGUF tendance (HF, global)
+    # Objectif : repérer les modèles GGUF qui ÉMERGENT sur Hugging Face (top
+    # trending), pas tout HF (des milliers de dépôts/jour). Diff du top
+    # trending (text-generation + image-text-to-text) entre deux runs ; le
+    # premier run enregistre la baseline sans rien signaler. Rôle : info
+    # uniquement — vérifier la compatibilité (llama.cpp, audio.cpp, Vulkan)
+    # avant tout téléchargement, selon le process AGENTS.md.
+    try:
+        modeles = []
+        for pipeline in ("text-generation", "image-text-to-text"):
+            r = requests.get(
+                "https://huggingface.co/api/models",
+                params={"sort": "trendingScore", "direction": -1, "limit": 30,
+                        "library": "gguf", "pipeline_tag": pipeline},
+                timeout=30)
+            r.raise_for_status()
+            modeles += r.json()
+        vus, top = set(), []
+        for m in modeles:  # dédoublonnage en gardant le meilleur rang trending
+            if m.get("id") and m["id"] not in vus:
+                vus.add(m["id"])
+                top.append(m)
+
+        def _resume_modele(m: dict) -> str:
+            return (f"{m['id']} (dl {m.get('downloads', 0)}, ♥{m.get('likes', 0)}, "
+                    f"créé {m.get('createdAt', '?')[:10]})")
+
+        deja_vus = etat.get("hf_modeles_gguf", {}).get("top")
+        if deja_vus:
+            nouveaux = [m for m in top if m["id"] not in set(deja_vus)]
+            if nouveaux:
+                details = ", ".join(_resume_modele(m) for m in nouveaux[:5])
+                rapport.ajouter("🆕", "hf-modeles-gguf",
+                                f"{len(nouveaux)} nouveau(x) modèle(s) GGUF en tendance HF : "
+                                f"{details}{'…' if len(nouveaux) > 5 else ''} → info : vérifier "
+                                f"compatibilité moteur (llama.cpp/audio.cpp, Vulkan) avant usage")
+            else:
+                rapport.ajouter("✅", "hf-modeles-gguf",
+                                f"top tendance GGUF stable ({len(top)} modèles, aucun nouveau)")
+        else:
+            rapport.ajouter("✅", "hf-modeles-gguf",
+                            f"baseline enregistrée : top {len(top)} GGUF tendance HF (ex. "
+                            f"{', '.join(_resume_modele(m) for m in top[:3])})")
+        etat["hf_modeles_gguf"] = {"top": [m["id"] for m in top]}
+    except Exception as e:
+        rapport.ajouter("⚠️", "hf-modeles-gguf", f"vérification impossible : {e}")
+
     # ----------------------------------------------------------- ACE-Step (repo)
     try:
         derniere = _github_derniere_release("ace-step/ACE-Step-1.5")
