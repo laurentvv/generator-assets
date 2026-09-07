@@ -55,9 +55,14 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
 - Hook SessionStart ZCode (`.zcode/config.json` → `scripts/hook_session_start.py`) : à chaque
   nouvelle session du projet, les entrées des 7 derniers jours de `docs/veille_journal.md`
   sont injectées automatiquement dans le contexte, ainsi que les mises à jour en attente
-  lues dans `output/veille/maj_en_attente.json` (voir 🔄 Process de mise à jour). Validé en
-  session réelle le 2026-09-07 ; premier usage : approuver le hook via la bannière « Review »
-  (gate de confiance des hooks de scope projet). Test manuel : `uv run python scripts/hook_session_start.py`.
+  lues dans `output/veille/maj_en_attente.json` (voir 🔄 Process de mise à jour) et le
+  **statut de l'issue sd-cli [#1946](https://github.com/leejet/stable-diffusion.cpp/issues/1946)**
+  (régression master-848 rollbackée le 2026-09-07 — un appel API GitHub léger par session,
+  alerte uniquement si réponses/changement d'état ; état vu : `output/veille/issue_sdcli_1946.json`).
+  Validé en session réelle le 2026-09-07 ; premier usage : approuver le hook via la bannière
+  « Review » (gate de confiance des hooks de scope projet). Test manuel :
+  `uv run python scripts/hook_session_start.py`. À supprimer une fois une release sd-cli
+  corrigée installée (fonction `bloc_issue_sdcli` + état + cette mention).
 - 🛡️ **Modèles : vérifier la retéléchargeabilité AVANT toute suppression dans `C:\Modeles_LLM`.**
   Lister tous les repos de l'org, pas seulement le repo principal — certains modèles vivent dans
   des repos dédiés hors `audio.cpp-gguf` (ex. `audio-cpp/MiniMax-Music3-GGUF`,
