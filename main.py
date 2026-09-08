@@ -105,7 +105,8 @@ def lancer_mode_interactif(config: dict):
         "34": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
         "35": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)"),
         "36": ("mesh_ia", "🧊 Objet 3D IA depuis Image/Prompt (TRELLIS.2 GGUF Vulkan — volume réel + PBR)"),
-        "37": ("character_makeup", "💄 MakeUp & Features MPFB2 depuis Portrait IA (YuNet + Calque hm08 + Rendus Cycles)")
+        "37": ("character_makeup", "💄 MakeUp & Features MPFB2 depuis Portrait IA (YuNet + Calque hm08 + Rendus Cycles)"),
+        "38": ("musique_essence", "🧬 Musique à l'Essence d'une Référence (SA3 Medium init_audio + retrait voix HTDemucs)")
     }
 
     while True:
@@ -364,6 +365,21 @@ def lancer_mode_interactif(config: dict):
                     print("❌ Fichier introuvable.")
                     continue
                 params["output"] = input("💾 Nom de sortie (défaut : nom du fichier) : ").strip() or None
+
+            elif wf_name == "musique_essence":
+                params["prompt"] = input(
+                    "🧬 Style EN de la musique (ex: 'German gothic rock 1990, dark wave, hypnotic tribal groove') : "
+                ).strip()
+                if not params["prompt"]:
+                    continue
+                params["input"] = input("🎵 Audio de référence dont capter l'essence (MP3/WAV) : ").strip()
+                if not params["input"] or not os.path.exists(params["input"]):
+                    print("❌ Référence introuvable.")
+                    continue
+                params["duration"] = float(input("⏱️  Durée en secondes (défaut: 30) : ").strip() or 30.0)
+                params["scale"] = float(input("🎚️  Échelle d'essence 0-1 (défaut: 0.45 ; plateau validé 0.40-0.45) : ").strip() or 0.45)
+                brut = input("🎭 Garder la version brute avec la bave de chant ? (o/N) : ").strip().lower()
+                params["keep_vocals"] = brut in ("o", "oui", "y", "yes")
 
             elif wf_name == "video":
                 params["prompt"] = input("🎬 Concept / Action de la vidéo (ex: cascade mystique dans jungle luxuriante) : ").strip()
@@ -630,6 +646,8 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--style-musique", default=None, help="Description musicale EN pour chanson (défaut : dark folk Vent-Gris).")
     groupe_wf.add_argument("--langue", default=None, help="Langue des paroles pour chanson/musique_adn (défaut: fr).")
     groupe_wf.add_argument("--negatif", default=None, help="Prompt négatif EN pour musique_adn — ex: 'pop, soft, mellow, gentle'.")
+    groupe_wf.add_argument("--scale", type=float, default=0.45, help="Échelle d'essence init_audio pour musique_essence (défaut: 0.45 ; plateau validé 0.40-0.45, >=0.5 = loterie de graine, <=0.35 = quasi-copie avec bave de chant).")
+    groupe_wf.add_argument("--keep-vocals", action="store_true", help="musique_essence : saute le retrait de voix HTDemucs (conserve la version brute avec la bave du chant de référence).")
     groupe_wf.add_argument("--character", default="marc_novice", help="Nom du personnage cible (workflows outfit, character_makeup).")
     groupe_wf.add_argument("--top", default="rustic medieval beige burlap tunic fabric", help="Description du tissu/matière pour le haut/tunique (workflow outfit).")
     groupe_wf.add_argument("--shoes", default="worn dark brown medieval leather shoes texture", help="Description de la matière pour les chaussures/bottes (workflow outfit).")
@@ -935,6 +953,8 @@ Exemples de Workflows 3D & 2D :
         "style_musique": args.style_musique,
         "langue": args.langue,
         "negatif": args.negatif,
+        "scale": args.scale,
+        "keep_vocals": args.keep_vocals,
         "portrait": args.portrait or args.input_file,
         "skin": args.skin,
         "eye_color": args.eye_color,

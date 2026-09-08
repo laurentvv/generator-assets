@@ -240,7 +240,7 @@ The engine features **36 modular workflows** organized into 5 functional categor
   • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -1140,7 +1140,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
       -i "C:\musique\reference.mp3" --duration 45 -o inspire_ref
   ```
 * **Status (2026-09-06)**: ✅ User-validated recipe (`llb_xl_adn.mp3` — rendered BPM 83.3 vs 83.3 source). ⚠️ Honest card in `docs/MEMORY_BANK.md` §1.11: every "improvement" attempted beyond the sober recipe was rejected (major key → pop feel, "dominant bass" → 73% bass, punk push → 163 BPM). Rules: always check/impose MINOR for dark rock, sober descriptions, no superlatives.
-* **⚠️ NOT yet user-validated (no workflow until then — AGENTS.md rule)**: SA3 `init_audio` essence mode (tested, quality judged insufficient) and the ACE-Step `cover` route (generated once, never listening-validated). CLI recipes documented in `docs/MEMORY_BANK.md` §1.11.
+* **Update (2026-09-09)**: SA3 `init_audio` essence mode is now **user-validated on SA3 Medium** → dedicated workflow `musique_essence` (§4.13). The ACE-Step `cover` route remains rejected (tested once, never listening-validated).
 
 #### 4.12. `retrait_voix` — Vocal Removal & Stem Separation (HTDemucs GGUF Vulkan)
 * **Process**:
@@ -1156,6 +1156,22 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   uv run python main.py -w retrait_voix -i "C:\musique\morceau.mp3" -o mon_instrumental
   ```
 * **Status (2026-09-06)**: ✅ **User-validated** (*« retrait de la voix : OK validé »*) on a full 4:07 track. Known pitfalls baked in: HTDemucs requires 44.1 kHz (auto-handled) and stem writing requires `--out-dir` (multi-output). Note: the related "cover" route (AI reinterpretation of a track) was **tested and definitively rejected** by the user — see `docs/MEMORY_BANK.md` §1.11.
+
+---
+
+#### 4.13. `musique_essence` — New Music Carrying a Reference's Essence (SA3 Medium `init_audio` + vocal removal)
+* **Process**:
+  1. Conditions **Stable Audio 3 Medium** on the reference audio (`-i <MP3/WAV>`, mode `init_audio`, scale `--scale`): the groove/timbre of the reference transfers to the generation — the one lever that beats the text-prompt pop drift on dark rock registers (validated on the LLB gothic rock quest, 2026-09-08/09).
+  2. Fixed seed by default (**42**) — at scale ≥0.5 the essence capture becomes a seed lottery; the validated plateau is **0.40–0.45** (≤0.35 = near-copy with source-vocal bleed).
+  3. The reference's singing bleeds into the raw generation → **HTDemucs vocal removal** delivers a clean instrumental (no cloned voice = no derivative-content risk for YouTube). `--keep-vocals` skips the removal.
+* **Inputs**: `prompt` (EN style description — keep it sober), `-i` reference audio (required), `--duration` (default 30 s), `--scale` (default 0.45), `--seed` (default 42 = validated recipe), `--keep-vocals`.
+* **Engines**: audio.cpp (Vulkan) — SA3 Medium f16 (**5.43 Gio**, `C:\Modeles_LLM\Stable-Audio-3-Medium-GGUF`) + HTDemucs. Perf: RTF ≈ 0.8–0.9 (a 30 s piece in ~25 s), + ~1 min vocal removal.
+* **Outputs** (`output/musique_essence/<name>/`): `brut.wav`/`brut.mp3` (raw, with possible vocal bleed) + `instrumental.wav`/`instrumental.mp3` + `stems/` (drums, bass, other, vocals).
+* **Example**:
+  ```bash
+  uv run python main.py -w musique_essence "German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass, chiming chorus guitars"       -i "C:\musiqueeference.wav" --duration 30 --scale 0.45 --seed 42
+  ```
+* **Status (2026-09-09)**: ✅ **User-validated** (*« c bien »* on the LLB reference, scales 0.40/0.45 with 30 s or 60 s references). Context: SA3 Medium **text-only** was rejected ("toujours pop") and the whole ACE-Step anti-pop text campaign is closed (all rejected — `docs/MEMORY_BANK.md` §1.11); SA3 Small is superseded by Medium.
 
 ---
 
