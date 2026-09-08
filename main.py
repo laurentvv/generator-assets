@@ -104,7 +104,8 @@ def lancer_mode_interactif(config: dict):
         "33": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
         "34": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
         "35": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)"),
-        "36": ("mesh_ia", "🧊 Objet 3D IA depuis Image/Prompt (TRELLIS.2 GGUF Vulkan — volume réel + PBR)")
+        "36": ("mesh_ia", "🧊 Objet 3D IA depuis Image/Prompt (TRELLIS.2 GGUF Vulkan — volume réel + PBR)"),
+        "37": ("character_makeup", "💄 MakeUp & Features MPFB2 depuis Portrait IA (YuNet + Calque hm08 + Rendus Cycles)")
     }
 
     while True:
@@ -113,7 +114,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-36) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-37) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
@@ -380,6 +381,21 @@ def lancer_mode_interactif(config: dict):
                 if nom_out:
                     params["output"] = nom_out
 
+            elif wf_name == "character_makeup":
+                port = input("🖼️  Chemin vers le portrait de référence (ex: elian_portrait.png) : ").strip()
+                if not port:
+                    continue
+                params["portrait"] = port
+                nom = input("👤 Nom du personnage [défaut: extrait du portrait] : ").strip()
+                if nom:
+                    params["character"] = nom
+                skin = input("🎨 Skin diffuse 3D existant (laisser vide pour auto-détection) : ").strip()
+                if skin:
+                    params["skin"] = skin
+                blend = input("🎬 Scène .blend pour rendus de contrôle studio (laisser vide pour calque seul) : ").strip()
+                if blend:
+                    params["blend_file"] = blend
+
             elif wf_name == "update_sd":
                 from pathlib import Path
                 import scripts.update_sd_cpp as sd_up
@@ -614,9 +630,18 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--style-musique", default=None, help="Description musicale EN pour chanson (défaut : dark folk Vent-Gris).")
     groupe_wf.add_argument("--langue", default=None, help="Langue des paroles pour chanson/musique_adn (défaut: fr).")
     groupe_wf.add_argument("--negatif", default=None, help="Prompt négatif EN pour musique_adn — ex: 'pop, soft, mellow, gentle'.")
-    groupe_wf.add_argument("--character", default="marc_novice", help="Nom du personnage cible pour le workflow outfit (ex: marc_novice).")
+    groupe_wf.add_argument("--character", default="marc_novice", help="Nom du personnage cible (workflows outfit, character_makeup).")
     groupe_wf.add_argument("--top", default="rustic medieval beige burlap tunic fabric", help="Description du tissu/matière pour le haut/tunique (workflow outfit).")
     groupe_wf.add_argument("--shoes", default="worn dark brown medieval leather shoes texture", help="Description de la matière pour les chaussures/bottes (workflow outfit).")
+    groupe_wf.add_argument("--portrait", help="Chemin vers le portrait 2D de référence pour character_makeup.")
+    groupe_wf.add_argument("--skin", help="Chemin vers la texture de peau diffuse 3D pour le transfert de gamut (character_makeup).")
+    groupe_wf.add_argument("--eye-color", default="cyan", help="Teinte d'iris personnalisée pour les yeux MPFB (ex: 'cyan', 'amber', 'none').")
+    groupe_wf.add_argument("--blend-file", help="Fichier Blender .blend pour rendus de contrôle studio Cycles (character_makeup).")
+    groupe_wf.add_argument("--render-modes", default="head,body", help="Modes de rendus studio à exécuter pour character_makeup ('head,body', 'head', 'body').")
+    groupe_wf.add_argument("--samples", type=int, default=48, help="Nombre d'échantillons de rendu Cycles pour Blender (défaut: 48).")
+    groupe_wf.add_argument("--age", type=float, default=0.12, help="Âge normalisé MPFB (0.12 = enfant 4-5 ans, 0.18 = 8 ans, 0.5 = adulte).")
+    groupe_wf.add_argument("--gender", type=float, default=0.0, help="Genre morphologique MPFB (0.0 = enfant/féminin neutre, 1.0 = masculin).")
+    groupe_wf.add_argument("--makeup-only", action="store_true", help="Génère uniquement le calque d'encre MakeUp sans construire le corps 3D complet.")
     groupe_wf.add_argument("--mpfb-dir", help="Répertoire personnalisé des assets MakeHuman / MPFB.")
     groupe_wf.add_argument("--end-img", help="Image clé de fin pour l'interpolation vidéo FLF2V (workflow video).")
     groupe_wf.add_argument("--control-video", help="Dossier de trames de guidage vidéo V2V (workflow video).")
@@ -903,7 +928,16 @@ Exemples de Workflows 3D & 2D :
         "lufs_voix": args.lufs_voix,
         "style_musique": args.style_musique,
         "langue": args.langue,
-        "negatif": args.negatif
+        "negatif": args.negatif,
+        "portrait": args.portrait or args.input_file,
+        "skin": args.skin,
+        "eye_color": args.eye_color,
+        "blend_file": args.blend_file,
+        "render_modes": args.render_modes,
+        "samples": args.samples,
+        "age": args.age,
+        "gender": args.gender,
+        "makeup_only": args.makeup_only
     }
 
     # Détection automatique du workflow si l'argument -w n'est pas spécifié

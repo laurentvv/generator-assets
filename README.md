@@ -376,21 +376,69 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 
 ### 👤 2. Humanoid 3D Characters & Wardrobe (MakeHuman / MPFB2)
 
-#### 2.1. `character3d` — Canonical Humanoid Pipeline
-* **Process**:
-  1. Generates photorealistic skin albedo and projects facial details (scars, dark circles, eye color) onto the MakeHuman hm08 standard UV layout without 2D cutting seams.
-  2. Resolves barycentric vertex bindings for official quad garments (`.mhclo`), matching the target character's age, gender, and muscle sliders.
-  3. Instantiates an MPFB2 avatar in headless Blender, attaches hair, eyes, and eyebrows, and configures Principled BSDF materials with Subsurface Scattering (SSS).
-  4. Exports the editable `.blend` project, a game-ready `.glb` file, and produces a 3-point studio Cycles validation render.
-* **Inputs**: `--portrait` (reference image), `--recipe-script` (MPFB python recipe), `--name` (character identifier).
-* **Engines**: MakeHuman / MPFB2 headless, Blender Cycles, NumPy UV alignment.
-* **Outputs**: `_face_diffuse.png`, `.blend`, `.glb`, `_beauty_render.png`.
-* **Example**:
+#### 2.1. `character3d` / `character_makeup` — Pipeline 100 % Automatique Portrait IA → Corps 3D Blender (.blend, .glb, MakeUp, Shaders, Rendus Cycles)
+
+Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un portrait 2D en un personnage 3D complet pour Godot 4 et Blender. Il applique la règle fondamentale du projet : **ne jamais coller le portrait 2D sur le maillage**, mais extraire par vision IA les caractéristiques anatomiques et signature de l'avatar pour les peindre sur un calque d'encre vectoriel étagé et composer un corps MPFB2 natif, habillé, gréé et rendu.
+
+##### 🖼️ Résultat Visuel Produit par le Workflow (Cas d'usage : Elian)
+
+| 1. Portrait 2D Source | 2. MakeUp UV hm08 (2048²) | 3. Tête Face (Cycles 85mm) | 4. Corps Plein Pied (Cycles 55mm) |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/exemples/character_3d/elian_portrait.png" width="220" /> | <img src="docs/exemples/character_3d/elian_makeup_ink.png" width="220" /> | <img src="docs/exemples/character_3d/elian_tete_face.png" width="220" /> | <img src="docs/exemples/character_3d/elian_perso_face.png" width="220" /> |
+| *Portrait de référence IA (YuNet)* | *Calque vectoriel multi-couches SSS* | *Rendu studio sans bug de mâchoire* | *Corps complet + Robe + Rig Mixamo* |
+
+| 5. Contrôle Tête 3/4 (Cycles 85mm) | 6. Contrôle Plein Pied 3/4 (Cycles 55mm) |
+| :---: | :---: |
+| <img src="docs/exemples/character_3d/elian_tete_tiers.png" width="280" /> | <img src="docs/exemples/character_3d/elian_perso_tiers.png" width="280" /> |
+| *Détail orbites, arête nasale, tempes* | *Silhouette 3D drapée & chaussures paysannes* |
+
+##### 🔬 Étapes Détaillées du Pipeline (Haute Précision)
+
+1. **Extraction Anatomique & Colorimétrique Vision (YuNet ONNX)** :
+   * Détecte les repères faciaux clés (pupilles, coins des yeux, arête et pointe du nez, commissures des lèvres, boîte englobante).
+   * Calcule la distance inter-pupillaire (IPD) pour calibrer l'échantillonnage adaptatif.
+   * Mesure le contraste de fatigue sous-orbitaire ($\Delta L^* = 70.6$), le ratio BGR cernes/joues, le creux des tempes et la teinte labiale.
+2. **Transfert vers le Gamut Peau 3D & Compensation SSS** :
+   * La diffusion sous-surfacique (*Subsurface Scattering*) de Cycles diffuse la composante rouge ~5× plus loin que le vert/bleu. Pour éviter un rendu « écorché » ou rougeoyant, les ombres sont refroidies et assombries (facteur 0.82) avec un cœur violacé/anthracite subtil.
+3. **Peinture Vectorielle Multi-Calques sur Carte UV hm08 (2048×2048 RGBA)** :
+   * Peinture sur l'îlot facial droit ($X \in [1450..2000], Y \in [800..1300]$, symétrie axiale à $Y = 1058$) :
+     - *Calque 1 (Pénombre diffuse)* : orbites, tempes creuses, arête nasale, flush de pommettes (flou gaussien $\sigma = 14$).
+     - *Calque 2 (Croissant orbitaire)* : délimitation sous-palpébrale intermédiaire ($\sigma = 8$).
+     - *Calque 3 (Cœur de fatigue)* : vallée des larmes et centre orbitaire profond ($\sigma = 5$).
+     - *Calque 4 (Creux supérieur)* : ombre sous arcade palpébrale ($\sigma = 5$).
+     - *Calque 5 (Lèvres)* : teinte naturelle douce ($\sigma = 6$).
+   * Génération automatique du manifeste officiel MPFB2 (`.json`) et du calque (`.png`) dans le projet et dans `%APPDATA%/.../mpfb/data/data/ink_layers/`.
+4. **Personnalisation Shaders & Textures Yeux** :
+   * Ajustement de l'iris (ex: cyan / turquoise luminescent, limbe net, émission 0.06) vers `%APPDATA%/.../mpfb/data/data/eyes/materials/`.
+5. **Assemblage Automatique du Corps 3D dans Blender (Headless `bpy`)** :
+   * Instanciation du basemesh MPFB2 avec macro-paramètres canoniques (`--age`, `--gender`, `--height`, `--weight`, `--muscle`).
+   * Application du skin `MAKESKIN` et greffe immédiate du calque d'encre MakeUp.
+   * **Greffe préalable de l'armature standard Mixamo (`HumanService.add_builtin_rig(human, "mixamo")`)** : étape impérative *avant* les vêtements pour que MPFB détecte le squelette et génère automatiquement les modificateurs `Armature` et les groupes de sommets pondérés sur chaque pièce d'équipement.
+   * Attachement des assets quads officiels (`HumanService.add_mhclo_asset`) : yeux `low-poly.mhclo`, sourcils `eyebrow001.mhclo`, langue, dents, cheveux courts sombres `short01.mhclo`, robe moniale et chaussures paysannes (héritent automatiquement des 52 os Mixamo sans déchirure).
+   * Shaders PBR : micro-relief procédural de peau (bruit scale 180 + bump normal 0.15), sourcils/cheveux noir-charbon `(0.015, 0.015, 0.018)`, yeux humides roughness 0.03.
+   * Export simultané de la scène native **`.blend`** (humain 100% paramétrique et éditable) et du fichier optimisé pour le jeu **`.glb`** (compatible 100% avec les 49 animations Mixamo de Godot).
+6. **Rendus de Contrôle Studio Cycles (4 Vues Automatisées)** :
+   * Éclairage 3 points calibré (Key, Fill, Rim) avec contraintes **`TRACK_TO`** orientées automatiquement vers la cible.
+   * Cadrage tête 85mm avec **désactivation préventive des modificateurs MASK de vêtements** (supprime le bug de mâchoire/menton tronqué).
+   * Cadrage plein pied 55mm avec **calcul trigonométrique exact du recul caméra** selon le capteur vertical en ratio portrait 896×1536 ($dist = (H \times 1.28) / (2 \tan \theta)$).
+   * Débruitage Cycles activé (`use_denoising = True`).
+
+* **Entrées** : `--portrait` (ou `-i, --input`), `--character` (nom), `--age` (défaut 0.12), `--gender` (défaut 0.0), `--eye-color` (`cyan`), `--samples` (défaut 48).
+* **Moteurs** : OpenCV YuNet ONNX, NumPy / PIL multi-layer raster, MakeHuman / MPFB2, Blender 5.2 Cycles headless.
+* **Sorties** : `<character>_mpfb2.blend`, `<character>_mpfb2.glb`, `makeup/<character>_fatigue_ventgris.{png,json}`, `<character>_cyan_eye.png`, 4 rendus `.png` (`tete_face`, `tete_tiers`, `perso_face`, `perso_tiers`).
+* **Commandes CLI** :
   ```bash
-  uv run python scripts/character_pipeline.py --portrait "godot_assets/exact_face_portrait.png" --recipe-script "poc_3d/create_marc_mpfb2.py" --name marc_novice
+  # 🚀 Génération 100% automatique : du portrait 2D au corps 3D complet + 4 rendus studio :
+  uv run python main.py -w character3d --portrait "assets/portraits/elian_portrait.png" --character elian
+
+  # Variante : génération rapide avec 16 samples Cycles :
+  uv run python main.py -w character3d --portrait "assets/portraits/elian_portrait.png" --character elian --samples 16
+
+  # Variante : génération du calque d'encre MakeUp seul sans reconstruire le corps :
+  uv run python main.py -w character_makeup --portrait "assets/portraits/elian_portrait.png" --character elian --makeup-only
   ```
 
-#### 2.2. `makehuman_clothes` — Modular Quad Wardrobe Generator
+#### 2.3. `makehuman_clothes` — Modular Quad Wardrobe Generator
 * **Process**:
   1. Takes a thematic clothing concept (e.g. *"medieval leather rogue armor"*).
   2. Generates pure seamless raw material PBR textures (leather, linen, iron rings) with 4K ESRGAN Vulkan upscaling.
@@ -405,7 +453,7 @@ The engine features **28+ modular workflows** organized into 5 functional catego
   uv run python main.py -w makehuman_clothes "dark worn leather ranger armor" --parts "torso,pants,shoes" -o dark_ranger
   ```
 
-#### 2.3. `outfit` — Automated UV Garment Retexturing
+#### 2.4. `outfit` — Automated UV Garment Retexturing
 * **Process**:
   1. Inspects existing clothing meshes attached to a character in a Blender scene.
   2. Reads the original MakeHuman sewing pattern UV layouts (preserving 100% of seams, pockets, folds, and button placements).
@@ -420,7 +468,7 @@ The engine features **28+ modular workflows** organized into 5 functional catego
   uv run python main.py -w outfit --character marc_novice --top "rough medieval beige burlap tunic" --shoes "dark worn leather boots"
   ```
 
-#### 2.4. `pose_control` — OpenPose Skeleton Guidance & Rigged Godot Scenes
+#### 2.5. `pose_control` — OpenPose Skeleton Guidance & Rigged Godot Scenes
 * **Process**:
   1. Queries the 18-point COCO OpenPose coordinate library for the chosen action pose (`idle`, `slash_attack`, `cast_spell`, `shield_block`, `jump`, `walk`).
   2. Renders the OpenPose colored bone skeleton stick-figure card.
@@ -436,14 +484,14 @@ The engine features **28+ modular workflows** organized into 5 functional catego
   uv run python main.py -w pose_control "shadow knight with a glowing sword" --pose slash_attack -o knight_slash
   ```
 
-#### 2.5. `rpg_portrait` — Multi-Emotion Dialogue Character Sets
+#### 2.6. `rpg_portrait` — Multi-Emotion Dialogue Character Sets
 * **Process**:
   1. Takes a base character description or portrait image.
   2. Iterates across specified emotional states (*Neutral, Happy, Angry, Sad, Hurt, Surprised*), injecting calibrated emotional micro-descriptors while locking identity seeds.
   3. Removes background halos to isolate the character portraits.
   4. Combines the resulting portraits into a single reference contact sheet (`_portrait_grid.png`).
   5. Writes a Godot dialogue JSON manifest containing paths, emotional tags, and metadata ready for Dialogic or custom dialogue managers.
-* **Inputs**: `prompt` or `-i, --input`, `--emotions` (default: `neutral,happy,angry,sad,hurt`), `-s, --size`.
+  6. Inputs: `prompt` or `-i, --input`, `--emotions` (default: `neutral,happy,angry,sad,hurt`), `-s, --size`.
 * **Engines**: Flux.1 / SDXL Vulkan, BiRefNet / RMBG ONNX, JSON Manifest Generator.
 * **Outputs**: individual emotion `.png` files, `_portrait_grid.png`, `_dialogue_manifest.json`.
 * **Example**:
@@ -451,7 +499,7 @@ The engine features **28+ modular workflows** organized into 5 functional catego
   uv run python main.py -w rpg_portrait "dark sorceress with golden eyes" --emotions "neutral,happy,angry,sad,hurt" -o sorceress
   ```
 
-#### 2.6. 👗 MakeHuman 3D Wardrobe Suite & Bilingual Semantic AI Router
+#### 2.7. 👗 MakeHuman 3D Wardrobe Suite & Bilingual Semantic AI Router
 * **Bilingual Semantic Router (177 3D Models)** (`core/clothes_catalog.py`):
   - Automatically indexes **177 MakeHuman 3D community assets** into [`data/clothes_catalog.json`](data/clothes_catalog.json) (monk robes, capes, plate armor, overalls, boots, beards, hairstyles).
   - The `aiguiller_modele_vetement(prompt, category, gender)` function semantically pairs natural language prompts in **English or French** (e.g. *"rustic medieval peasant tunic"*, *"monk robe"*, *"viking beard"*, *"heavy leather boots"*) with the ideal 3D base model.
@@ -1004,11 +1052,19 @@ Workflow-Specific Flags:
   --candidats               Number of music_bg candidates to generate and rank (default: 3).
   --lyrics                  Lyrics/structure conditioning for music_bg (default: '[Instrumental]').
   --analyse                 Enable optional Music Flamingo QA on the selected music_bg bed.
-  --character               Target character name for outfit (default: 'marc_novice').
+  --character               Target character name for character3d, character_makeup or outfit (e.g. 'elian', 'marc_novice').
+  --portrait                Input 2D reference portrait image path for character3d or character_makeup.
+  --skin                    MakeSkin base preset name (default: 'makeskin').
+  --eye-color               Eye material/iris color (e.g. 'cyan', 'blue', 'brown').
+  --blend-file              Target .blend file path when updating existing model.
+  --render-modes            Render views for character3d ('head_front,head_three_quarters,full_front,full_three_quarters').
+  --samples                 Cycles render sample count (default: 48).
+  --age, --gender           MakeHuman anatomical macro factors (age: 0.0=child, 0.5=adult; gender: 0.0=male, 1.0=female).
+  --makeup-only             Only generate MakeUp ink layer texture + manifest without building body.
   --top, --shoes            Materials description for outfit workflow.
 
 Utility Flags:
-  --interactive             Launch the interactive console menu (all 36 workflows).
+  --interactive             Launch the interactive console menu (all 37 workflows).
   --check                   Verify system requirements, paths, and model checkpoints.
   --list-workflows          Display all registered workflows.
   --list-loras              Display detected LoRAs.
