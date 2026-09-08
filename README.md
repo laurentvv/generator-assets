@@ -233,12 +233,12 @@ python main.py --list-upscalers
 <span id="workflows"></span>
 ## 📦 Complete Workflow Catalog
 
-The engine features **28+ modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
+The engine features **36 modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
 
 ```text
 📋 Quick Category Map:
   • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap
-  • Humanoid 3D Characters & Outfits: character3d, makehuman_clothes, outfit, pose_control, rpg_portrait
+  • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
   • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
@@ -279,7 +279,7 @@ The engine features **28+ modular workflows** organized into 5 functional catego
   3. Constructs parametric 3D quad geometry according to `--shape` (`tile` = beveled floor slab, `cube` = chest/crate with chamfered edges, `pillar` = octagonal dungeon column, `sphere` = magic orb, `card` = 2.5D standee, `cutout` = extruded silhouette).
   4. Automatically constructs a `Principled BSDF` material node graph with normal mapping and roughness reflections hooked up to the generated textures.
   5. Packs all textures directly into a binary `.glb` container optimized for Godot 4 `MeshInstance3D`.
-* **Inputs**: `prompt` or `-i, --input`, `--shape` (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`), `-s, --size`.
+* **Inputs**: `prompt` or `-i, --input`, `--shape` (`tile`, `cube`, `pillar`, `cylinder`, `sphere`, `card`, `cutout`).
 * **Engines**: Flux.1 Dev GGUF, DeepBump ONNX, Blender 5.x CLI (`bpy`).
 * **Outputs**: `_3d_<shape>.glb` (self-contained with embedded textures), plus all underlying PBR map files.
 
@@ -461,7 +461,7 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 4. **Personnalisation Shaders & Textures Yeux** :
    * Ajustement de l'iris (ex: cyan / turquoise luminescent, limbe net, émission 0.06) vers `%APPDATA%/.../mpfb/data/data/eyes/materials/`.
 5. **Assemblage Automatique du Corps 3D dans Blender (Headless `bpy`)** :
-   * Instanciation du basemesh MPFB2 avec macro-paramètres canoniques (`--age`, `--gender`, `--height`, `--weight`, `--muscle`).
+   * Instanciation du basemesh MPFB2 avec macro-paramètres canoniques (`--age` et `--gender` exposés en CLI ; `height`, `weight`, `muscle` paramétrables via recette JSON batch).
    * Application du skin `MAKESKIN` et greffe immédiate du calque d'encre MakeUp.
    * **Greffe préalable de l'armature standard Mixamo (`HumanService.add_builtin_rig(human, "mixamo")`)** : étape impérative *avant* les vêtements pour que MPFB détecte le squelette et génère automatiquement les modificateurs `Armature` et les groupes de sommets pondérés sur chaque pièce d'équipement.
    * Attachement des assets quads officiels (`HumanService.add_mhclo_asset`) : yeux `low-poly.mhclo`, sourcils `eyebrow001.mhclo`, langue, dents, cheveux courts sombres `short01.mhclo`, robe moniale et chaussures paysannes (héritent automatiquement des 52 os Mixamo sans déchirure).
@@ -776,7 +776,7 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
   2. Runs ONNX neural segmentation (RMBG-1.4 or BiRefNet).
   3. Computes a continuous alpha matte, completely removing solid or noisy backgrounds without white fringes.
   4. Automatically centers the sprite and tightens transparent margins.
-* **Inputs**: `-i, --input` (required), `--segmenter` (`birefnet`, `rmbg`), `-s, --size` (optional resize).
+* **Inputs**: `-i, --input` (required), `-s, --size` (optional resize, keep original dimensions by default) — segmentation model selected automatically (BiRefNet / RMBG-1.4), overridable via batch JSON recipe (`segmenter_model`).
 * **Engines**: BiRefNet ONNX / RMBG-1.4 ONNX, NumPy, PIL.
 * **Outputs**: `_rembg.png`.
 
@@ -788,7 +788,7 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 
 * **Example**:
   ```bash
-  uv run python main.py -w rembg -i godot_assets/cheval.png -o horse_transparent
+  uv run python main.py -w rembg -i godot_assets/casque.png -o casque_transparent
   ```
 
 ---
@@ -1065,14 +1065,16 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
   ```
 
 * **👑 Comparison of the 4 SOTA Video Flagships (Empirically Validated on AMD RX 6950 XT)** :
-  *(See the full guide in [`docs/comparatif_modeles_video_ai.md`](docs/comparatif_modeles_video_ai.md) and the overnight report [`output/overnight/overnight_summary.md`](output/overnight/overnight_summary.md))*
+  *(See the full guide in [`docs/comparatif_modeles_video_ai.md`](docs/comparatif_modeles_video_ai.md) — the raw overnight report lives in `output/overnight/overnight_summary.md`, local & non versioned)*
 
   | SOTA Model | Architecture & Size | Optimal Steps | DiT Speed | Stereo Audio | Dragon Visual Quality | Conformant 4K / 1080p Master |
   | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-  | **LTX-2.5 Distilled** 👑 | Spatio-Temporal DiT (15B) + Gemma 4 12B | **8 steps** (distilled) | ⚡ **9.98s / step** (3.8 min total) | 🔊 **YES (AAC 48 kHz)** | 🟢 Perfect heroic 3D (gold scales, horns, wings) | [`01_ltx25_dragon_4k_ultrasharp.mp4`](output/overnight/esrgan_4k/01_ltx25_dragon_4k_ultrasharp.mp4) |
-  | **Wan 2.1 14B** | Monolithic DiT (14B) + UMT5-XXL | **8-10 steps** (CFG 6.0) | 🐢 **312s / step** (~6 min total) | ❌ (silent) | 🟢 Ultra-precise isometric geometry, 3D structure | [`02_wan21_14steps_dragon_1080p.mp4`](output/overnight/02_wan21_14steps_dragon_1080p.mp4) |
-  | **Wan 2.2 MoE** | Dual-DiT MoE (2x 14B = 28B) + UMT5-XXL | **8 MoE steps** (4 High + 4 Low) | ⏳ **~350s / step** (~11 min total) | ❌ (silent) | 👑 **Absolute photoreal sharpness** (micro-details, gaze) | [`wan22_moe_dragon_4k_ultrasharp.mp4`](output/overnight/esrgan_4k/wan22_moe_dragon_4k_ultrasharp.mp4) |
-  | **MiniMax-H3** | FL2VA DiT (15B) + Qwen3-VL 32B | **12 steps** (CFG 1.0) | 🚀 **16.96s / step** (6.6 min total) | 🔊 **YES (AAC 32 kHz)** | 🟢 Titanic wyvern (flaming crest, massive wings) | [`04_minimax_h3_20steps_dragon_1080p.mp4`](output/overnight/04_minimax_h3_20steps_dragon_1080p.mp4) |
+  | **LTX-2.5 Distilled** 👑 | Spatio-Temporal DiT (15B) + Gemma 4 12B | **8 steps** (distilled) | ⚡ **9.98s / step** (3.8 min total) | 🔊 **YES (AAC 48 kHz)** | 🟢 Perfect heroic 3D (gold scales, horns, wings) | `01_ltx25_dragon_4k_ultrasharp.mp4` |
+  | **Wan 2.1 14B** | Monolithic DiT (14B) + UMT5-XXL | **8-10 steps** (CFG 6.0) | 🐢 **312s / step** (~6 min total) | ❌ (silent) | 🟢 Ultra-precise isometric geometry, 3D structure | `02_wan21_14steps_dragon_1080p.mp4` |
+  | **Wan 2.2 MoE** | Dual-DiT MoE (2x 14B = 28B) + UMT5-XXL | **8 MoE steps** (4 High + 4 Low) | ⏳ **~350s / step** (~11 min total) | ❌ (silent) | 👑 **Absolute photoreal sharpness** (micro-details, gaze) | `wan22_moe_dragon_4k_ultrasharp.mp4` |
+  | **MiniMax-H3** | FL2VA DiT (15B) + Qwen3-VL 32B | **12 steps** (CFG 1.0) | 🚀 **16.96s / step** (6.6 min total) | 🔊 **YES (AAC 32 kHz)** | 🟢 Titanic wyvern (flaming crest, massive wings) | `04_minimax_h3_20steps_dragon_1080p.mp4` |
+
+  > Masters kept **locally** in `output/overnight/` (non versioned — too heavy for git).
 
 ---
 
@@ -1291,7 +1293,7 @@ Workflow-Specific Flags:
   --top, --shoes            Materials description for outfit workflow.
 
 Utility Flags:
-  --interactive             Launch the interactive console menu (all 37 workflows).
+  --interactive             Launch the interactive console menu (all 36 workflows).
   --check                   Verify system requirements, paths, and model checkpoints.
   --list-workflows          Display all registered workflows.
   --list-loras              Display detected LoRAs.

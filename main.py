@@ -643,6 +643,9 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--gender", type=float, default=0.0, help="Genre morphologique MPFB (0.0 = enfant/féminin neutre, 1.0 = masculin).")
     groupe_wf.add_argument("--makeup-only", action="store_true", help="Génère uniquement le calque d'encre MakeUp sans construire le corps 3D complet.")
     groupe_wf.add_argument("--mpfb-dir", help="Répertoire personnalisé des assets MakeHuman / MPFB.")
+    groupe_wf.add_argument("--parts", default="torso,pants,shoes", help="Pièces de garde-robe séparées par des virgules pour makehuman_clothes (défaut: 'torso,pants,shoes').")
+    groupe_wf.add_argument("--width", type=int, default=None, help="Largeur personnalisée en pixels (skybox : panoramique 2:1, video).")
+    groupe_wf.add_argument("--height", type=int, default=None, help="Hauteur personnalisée en pixels (skybox : panoramique 2:1, video).")
     groupe_wf.add_argument("--end-img", help="Image clé de fin pour l'interpolation vidéo FLF2V (workflow video).")
     groupe_wf.add_argument("--control-video", help="Dossier de trames de guidage vidéo V2V (workflow video).")
     groupe_wf.add_argument("--flow-shift", type=float, default=3.0, help="Facteur de shift flow-matching pour modèles Wan/SD3 (défaut: 3.0).")
@@ -909,6 +912,9 @@ Exemples de Workflows 3D & 2D :
         "top": args.top,
         "shoes": args.shoes,
         "mpfb_dir": args.mpfb_dir,
+        "parts": args.parts,
+        "width": args.width,
+        "height": args.height,
         "end_img": args.end_img,
         "control_video": args.control_video,
         "flow_shift": args.flow_shift,
