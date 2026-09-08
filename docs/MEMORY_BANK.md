@@ -90,7 +90,7 @@
 ### 🎵 1.10. Génération Musicale IA : MiniMax-Music3 GGUF via audio.cpp (Vulkan) — moteur alternatif
 
 * **Validation Utilisateur** : *« le générateur de musique est validé [...] c'est suffisant »* (3 boucles tech 20-22 s livrées, cand_1 95 BPM promue ; QA Music Flamingo `--analyse` et recette ducking voix non testées à ce jour — optionnelles).
-* **Stack validée** : `audiocpp_cli.exe` (audio.cpp v0.7.2, release Windows x64 **Vulkan**, `C:\audio-cpp\`) + paquet `audio-cpp/MiniMax-Music3-GGUF` (mix Q4_0/Q8_0 : LM 6 Go + RVQ 0,66 + flow 1,3 + encoder 0,1 + vocoder 0,2 Go + `config/` + `tokenizer/`) dans `C:\Modeles_LLM\MiniMax-Music3-GGUF\`. Zéro PyTorch, même philosophie que sd-cli/llama.cpp.
+* **Stack validée** : `audiocpp_cli.exe` (audio.cpp v0.7.3, release Windows x64 **Vulkan**, `C:\audio-cpp\`) + paquet `audio-cpp/MiniMax-Music3-GGUF` (mix Q4_0/Q8_0 : LM 6 Go + RVQ 0,66 + flow 1,3 + encoder 0,1 + vocoder 0,2 Go + `config/` + `tokenizer/`) dans `C:\Modeles_LLM\MiniMax-Music3-GGUF\`. Zéro PyTorch, même philosophie que sd-cli/llama.cpp.
 * **Backend** : **Vulkan retenu** — RTF 55,8 (10 s de musique en 9 min 17 s) vs CPU RTF 75,2 (12 min 31 s, i7-13700KF 20 threads). La RX 6950 XT (RDNA2, pas de matrix cores, `int dot: 0`) reste ~1,3× plus rapide que le CPU pour ce modèle. Budget : ~21 min par boucle de 20 s (générée sur 23 s).
 * **Sortie réelle** : WAV **stéréo 44,1 kHz** (pas 32 kHz comme annoncé par la fiche HF) → rééchantillonnage rationnel 160:147 vers 48 kHz via `scipy.resample_poly` dans `core/music_ai.py`.
 * **CLI de génération** : `audiocpp_cli --task gen --family minimax_music3 --model <dossier> --backend vulkan --threads 16 --metrics --text "<desc EN>" --request-option lyrics=[Instrumental] --request-option duration_sec=23 --request-option num_inference_steps=30 --out out.wav`. `lyrics` est **requis** ; `[Instrumental]` donne des lits sans voix. `--metrics` imprime RTF/durée. Options session préfixées famille (`--session-option minimax_music3.<option>=<valeur>`, ex. `mem_saver`, `rvq_depth_decoder_gguf`).
@@ -104,7 +104,7 @@
 ### 🎵 1.11. Génération Musicale IA : ACE-Step 1.5 Turbo GGUF — moteur PAR DÉFAUT depuis le 2026-09-05
 
 * **Validation Utilisateur** : comparatif A/B sur le même prompt tech (3 candidats par moteur) → *« c encore mieux que l'autre !! »*. ACE-Step promu défaut (`--moteur acestep` implicite) ; Music3 reste via `--moteur music3`.
-* **Stack** : `audiocpp_cli.exe` (audio.cpp v0.7.2, famille `ace_step`) + paquet monolithique `audio-cpp/audio.cpp-gguf → ACE-Step1.5-GGUF/turbo/ace-step-1.5-turbo-bf16.gguf` (**9,4 Gio**, tout embarqué : DiT turbo + LM planner 1.7B + text encoder Qwen3 + VAE, `embedded_sidecars=true`) dans `C:\Modeles_LLM\ACE-Step1.5-GGUF\`. Licence **MIT** (aucune mention obligatoire). Zéro PyTorch.
+* **Stack** : `audiocpp_cli.exe` (audio.cpp v0.7.3, famille `ace_step`) + paquet monolithique `audio-cpp/audio.cpp-gguf → ACE-Step1.5-GGUF/turbo/ace-step-1.5-turbo-bf16.gguf` (**9,4 Gio**, tout embarqué : DiT turbo + LM planner 1.7B + text encoder Qwen3 + VAE, `embedded_sidecars=true`) dans `C:\Modeles_LLM\ACE-Step1.5-GGUF\`. Licence **MIT** (aucune mention obligatoire). Zéro PyTorch.
 * **CLI** : `audiocpp_cli --task gen --family ace_step --model <chemin/vers/le.gguf> --backend vulkan --task-route text2music --text "<desc>" --duration-seconds 28 --num-inference-steps 8 [--seed N] [--lyrics "..."] [--request-option bpm=126] --out out.wav`. **`--model` doit pointer le .gguf LUI-MÊME** : le dossier donne une erreur trompeuse (`source 'safetensors'... missing lm_chat_template`). `--lyrics` omis = instrumental natif. Turbo distillé : 8 pas suffisent. BPM/tonalité/signature imposables (`--request-option bpm= / keyscale= / timesignature=`).
 * **Perf Vulkan (RX 6950 XT)** : ~42 s par génération de 28 s (RTF ~1,5) — **~36× plus rapide que Music3** (RTF 55,8). Sortie native **48 kHz stéréo** (aucun rééchantillonnage).
 * ⚠️ **q8_0 non fonctionnel** pour cette famille (`docs/gguf.md` audio.cpp : « planner sampling can fail » — « found no valid token ») → **bf16 obligatoire** (d'où 9,4 Gio au lieu de 6,2).
@@ -140,7 +140,7 @@
 
 ### 🎙️ 1.13. Voix off TTS + clonage vocal français — 3 moteurs GGUF testés le 2026-09-06 (chaîne YouTube)
 
-* **Besoin** : cloner une voix française (référence 11,8 s de l'utilisateur, `output/comparatif_tts/ref_voix_laurent.wav`) puis lui faire lire des textes **avec expression**. Stack 100 % locale conforme philosophie : `audiocpp_cli` (v0.7.2, Vulkan) + paquets GGUF q8_0 monolithiques dans `C:\Modeles_LLM\`.
+* **Besoin** : cloner une voix française (référence 11,8 s de l'utilisateur, `output/comparatif_tts/ref_voix_laurent.wav`) puis lui faire lire des textes **avec expression**. Stack 100 % locale conforme philosophie : `audiocpp_cli` (v0.7.3, Vulkan) + paquets GGUF q8_0 monolithiques dans `C:\Modeles_LLM\`.
 * **Paquets installés** : `Qwen3-TTS-12Hz-1.7B-Base-GGUF` (2,51 Gio), `VoxCPM2-GGUF` (2,75 Gio), `Fish-Audio-S2-Pro-GGUF` (5,88 Gio) + **bonus** `Qwen3-ASR-0.6B-GGUF` (1,07 Gio) pour transcrire la référence (voir écueil ③).
 * **Commandes validées** :
   ```powershell
