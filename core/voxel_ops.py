@@ -205,7 +205,7 @@ bpy.ops.export_scene.gltf(
         f.write(script_blender)
 
     cmd = [blender_exe, "-b", "--python", script_temp]
-    subprocess.run(cmd, capture_output=True, text=True, check=True)
+    subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", check=True)
 
     # Nettoyage fichiers temporaires
     for temp in (json_temp, script_temp):
