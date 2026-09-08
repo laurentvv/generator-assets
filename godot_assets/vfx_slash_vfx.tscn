@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Material" path="res://vfx_slash_vfx_material.tres" id="1_mat"]
+[ext_resource type="Material" path="res://vfx_slash_particles_process.tres" id="2_proc"]
+
+[node name="VFX_Vfx_slash" type="GPUParticles3D"]
+material_override = ExtResource("1_mat")
+emitting = true
+amount = 1
+process_material = ExtResource("2_proc")
+lifetime = 1.0
+one_shot = false

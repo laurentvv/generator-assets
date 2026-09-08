@@ -122,7 +122,7 @@ castShadows True
 receiveShadows True
 
 diffuseTexture marc_novice_diffuse.png
-normalTexture marc_novice_normal.png
+normalmapTexture marc_novice_normal.png
 sssEnabled True
 sssRScale 4.8
 sssGScale 2.1

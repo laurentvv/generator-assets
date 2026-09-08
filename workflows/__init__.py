@@ -36,6 +36,8 @@ from workflows.musique_adn import MusiqueAdnWorkflow
 from workflows.retrait_voix import RetraitVoixWorkflow
 from workflows.outfit import OutfitWorkflow
 from workflows.video import VideoWorkflow
+from workflows.makehuman_clothes import MakeHumanClothesWorkflow
+from workflows.character_makeup import CharacterMakeupWorkflow, Character3DWorkflow
 
 __all__ = [
     "BaseWorkflow",
@@ -72,7 +74,10 @@ __all__ = [
     "MusiqueAdnWorkflow",
     "RetraitVoixWorkflow",
     "OutfitWorkflow",
-    "VideoWorkflow"
+    "VideoWorkflow",
+    "MakeHumanClothesWorkflow",
+    "CharacterMakeupWorkflow",
+    "Character3DWorkflow"
 ]
 
 

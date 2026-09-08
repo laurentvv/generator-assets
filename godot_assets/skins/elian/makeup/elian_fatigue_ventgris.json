@@ -1,0 +1,54 @@
+{
+  "name": "Elian MakeUp Vent-Gris",
+  "focus": "fatigue_cernes",
+  "image_name": "elian_fatigue_ventgris.png",
+  "extraction": {
+    "portrait_source": "C:\\test\\L'HERITIER DU VIDE\\assets\\portraits\\elian_portrait.png",
+    "yunet_score": 0.913,
+    "delta_l_cernes": 70.6,
+    "ratios_bgr": {
+      "cerne": [
+        0.535,
+        0.529,
+        0.588
+      ],
+      "temple": [
+        0.418,
+        0.418,
+        0.417
+      ],
+      "lips": [
+        0.245,
+        0.228,
+        0.354
+      ]
+    },
+    "couleurs_3d_bgr": {
+      "cernes": [
+        65.8,
+        69.4,
+        84.3
+      ],
+      "cernes_core": [
+        67.1,
+        63.8,
+        86.0
+      ],
+      "temples": [
+        55.2,
+        58.8,
+        64.2
+      ],
+      "blush": [
+        132.0,
+        144.0,
+        189.0
+      ],
+      "lips": [
+        38.5,
+        38.3,
+        65.1
+      ]
+    }
+  }
+}

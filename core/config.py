@@ -101,6 +101,11 @@ DEFAULT_RIFE_MODEL = os.getenv(
     os.path.join(DEFAULT_MODEL_DIR, "onnx", "rife_fp32.onnx")
 )
 
+DEFAULT_YUNET_MODEL = os.getenv(
+    "YUNET_MODEL_PATH",
+    os.path.join(DEFAULT_MODEL_DIR, "onnx", "face_detection_yunet_2023mar.onnx")
+)
+
 # Paramètres de rendu
 DEFAULT_BACKEND = os.getenv("SD_BACKEND", "diffusion=vulkan0,te=cpu")
 DEFAULT_THREADS = int(os.getenv("SD_THREADS", "16"))
@@ -108,6 +113,14 @@ DEFAULT_OUTPUT_DIR = os.getenv("OUTPUT_DIR", "godot_assets")
 DEFAULT_MPFB_DATA_DIR = os.getenv(
     "MPFB_DATA_DIR",
     os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data")
+)
+DEFAULT_MPFB_INK_DIR = os.getenv(
+    "MPFB_INK_DIR",
+    os.path.join(DEFAULT_MPFB_DATA_DIR, "ink_layers")
+)
+DEFAULT_MPFB_EYES_DIR = os.getenv(
+    "MPFB_EYES_DIR",
+    os.path.join(DEFAULT_MPFB_DATA_DIR, "eyes", "materials")
 )
 TEMP_IMAGE = "temp_render.png"
 
@@ -425,6 +438,19 @@ def resoudre_gguf_acestep15(variante: str = "turbo") -> str:
         raise ValueError(f"Variante ACE-Step inconnue : {variante} (choix : {', '.join(ACESTEP15_VARIANTES)})")
     chemin_relatif, _ = ACESTEP15_VARIANTES[variante]
     return os.path.join(DEFAULT_ACESTEP15_DIR, chemin_relatif)
+
+
+def resoudre_yunet_model(chemin: Optional[str] = None) -> str:
+    """Résout le chemin vers le modèle ONNX YuNet pour la détection faciale."""
+    if chemin and os.path.exists(chemin):
+        return os.path.abspath(chemin)
+    if os.path.exists(DEFAULT_YUNET_MODEL):
+        return DEFAULT_YUNET_MODEL
+    for d in DEFAULT_ONNX_DIRS:
+        candidat = os.path.join(d, "face_detection_yunet_2023mar.onnx")
+        if os.path.exists(candidat):
+            return candidat
+    return DEFAULT_YUNET_MODEL
 
 
 def verifier_prerequis(config: dict) -> bool:

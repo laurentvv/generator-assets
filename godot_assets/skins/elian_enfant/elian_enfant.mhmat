@@ -1,0 +1,46 @@
+# Material file for MakeHuman / MPFB - Elian Enfant (Vent-Gris)
+# Character: Elian (4-5 years old, pale winter child of Vent-Gris)
+# Project: L'HERITIER DU VIDE
+
+name elian_enfant
+tag MakeHuman™
+tag young
+tag caucasian
+tag male
+tag child
+tag vent_gris
+
+ambientColor 0.30 0.28 0.29
+diffuseColor 1.0 1.0 1.0
+specularColor 0.02 0.02 0.02
+shininess 0.42
+emissiveColor 0.12 0.10 0.12
+opacity 1.0
+translucency 0.0
+shadeless False
+wireframe False
+transparent False
+alphaToCoverage True
+backfaceCull True
+depthless False
+castShadows True
+receiveShadows True
+
+diffuseTexture elian_enfant_diffuse.png
+normalmapTexture elian_enfant_normal.png
+sssEnabled True
+sssRScale 5.2
+sssGScale 2.3
+sssBScale 1.0
+
+shader data/shaders/glsl/litsphere
+shaderParam litsphereTexture data/litspheres/lit_standard_skin.png
+
+shaderConfig ambientOcclusion True
+shaderConfig normal True
+shaderConfig bump True
+shaderConfig displacement False
+shaderConfig vertexColors True
+shaderConfig spec True
+shaderConfig transparency False
+shaderConfig diffuse True

@@ -1,0 +1,49 @@
+{
+  "name": "Elian fatigue Vent-Gris",
+  "focus": "",
+  "image_name": "elian_fatigue_ventgris.png",
+  "extraction": {
+    "source": "C:\\test\\L'HERITIER DU VIDE\\assets\\portraits\\elian_portrait.png",
+    "yunet_score": 0.913,
+    "delta_lumiere_cernes": 70.6,
+    "ratio_cerne_bgr": [
+      0.535,
+      0.529,
+      0.588
+    ],
+    "couleurs_bgr": {
+      "cernes": [
+        68.6,
+        80.0,
+        110.9
+      ],
+      "cernes_core": [
+        69.9,
+        73.6,
+        113.1
+      ],
+      "temples": [
+        57.6,
+        67.8,
+        84.4
+      ],
+      "blush": [
+        137.6,
+        166.0,
+        248.5
+      ],
+      "lips": [
+        40.2,
+        44.2,
+        85.6
+      ]
+    },
+    "calques": [
+      "wide_penumbra",
+      "med_crescent",
+      "core_tear_trough",
+      "eyelid_crease",
+      "lips_soft"
+    ]
+  }
+}
