@@ -29,8 +29,10 @@ class SkyboxWorkflow(BaseWorkflow):
 
         nom_base = params.get("output") or f"{slugifier_texte(concept)}_sky"
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
-        largeur = int(params.get("width", 2048))
-        hauteur = int(params.get("height", 1024))
+        # `or` indispensable : via le CLI, main.py fournit désormais width/height
+        # à None quand les flags ne sont pas passés (même garde que pixelart).
+        largeur = int(params.get("width") or 2048)
+        hauteur = int(params.get("height") or 1024)
 
         os.makedirs(output_dir, exist_ok=True)
         self.log(f"Génération d'un panorama 360° pour '{concept}' ({largeur}x{hauteur})...")
