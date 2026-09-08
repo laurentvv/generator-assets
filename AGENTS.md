@@ -45,7 +45,7 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   `uv run python scripts/check_charge_systeme.py` — vérifie CPU/GPU/RAM/VRAM (exit 1 =
   machine occupée → attendre un créneau libre, jamais lancer sur une machine chargée ; cf.
   smoke test v0.7.3 du 2026-09-08 : RTF mesuré 3,3× trop lent à cause d'une contention GPU).
-  Seuils ajustables (`--seuil-cpu`, `--seuil-gpu`, `--seuil-ram`, `--seuil-vram`, `--duree`).
+  Seuils ajustables (`--cpu-threshold`, `--gpu-threshold`, `--ram-threshold`, `--vram-threshold`, `--duration`).
 - Code : docstrings et logs en français, identifiants en anglais, prompts modèles en anglais.
 - Gros téléchargements HF/ModelScope : `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).

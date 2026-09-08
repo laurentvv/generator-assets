@@ -24,7 +24,7 @@ from core.music_essence import DEFAULT_SCALE, generer_essence_sa3
 from core.separation import retirer_voix
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
-SEED_VALIDEE = 42  # loterie de graine démontrée à 0,5 — la recette validée fixe la graine
+VALIDATED_SEED = 42  # loterie de graine démontrée à 0,5 — la recette validée fixe la graine
 
 
 @WorkflowRegistry.register
@@ -46,7 +46,7 @@ class MusiqueEssenceWorkflow(BaseWorkflow):
 
         scale = float(params.get("scale") or DEFAULT_SCALE)
         seed = params.get("seed")
-        seed = int(seed) if seed is not None and int(seed) >= 0 else SEED_VALIDEE
+        seed = int(seed) if seed is not None and int(seed) >= 0 else VALIDATED_SEED
         duree = float(params.get("duration") or 0) or 30.0
         backend = params.get("music_backend") or "vulkan"
         keep_vocals = bool(params.get("keep_vocals"))
