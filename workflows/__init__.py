@@ -33,6 +33,7 @@ from workflows.music_bg import MusicBgWorkflow
 from workflows.voix_off import VoixOffWorkflow
 from workflows.chanson import ChansonWorkflow
 from workflows.musique_adn import MusiqueAdnWorkflow
+from workflows.musique_essence import MusiqueEssenceWorkflow
 from workflows.retrait_voix import RetraitVoixWorkflow
 from workflows.outfit import OutfitWorkflow
 from workflows.video import VideoWorkflow
@@ -72,6 +73,7 @@ __all__ = [
     "VoixOffWorkflow",
     "ChansonWorkflow",
     "MusiqueAdnWorkflow",
+    "MusiqueEssenceWorkflow",
     "RetraitVoixWorkflow",
     "OutfitWorkflow",
     "VideoWorkflow",
