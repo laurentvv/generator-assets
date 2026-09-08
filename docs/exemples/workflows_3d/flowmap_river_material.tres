@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://flowmap_river_water.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://flowmap_river_flowmap.png" id="2_flow"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/tint_color = Color(0.2, 0.55, 0.9, 0.9)
+shader_parameter/flow_speed = 0.4
+shader_parameter/flow_strength = 0.15
+shader_parameter/flowmap_texture = ExtResource("2_flow")

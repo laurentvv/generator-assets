@@ -29,8 +29,10 @@ class PixelArtWorkflow(BaseWorkflow):
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         palette = params.get("palette", "pico8").lower()
-        grid_size = int(params.get("grid_size", 64))
-        export_size = int(params.get("size", 512))
+        # `or` indispensable : via le workflow batch, main.py fournit des clés
+        # globales à valeur None (ex. size=None) que .get(valeur) renverrait.
+        grid_size = int(params.get("grid_size") or 64)
+        export_size = int(params.get("size") or 512)
         nom_sortie = params.get("output")
 
         os.makedirs(output_dir, exist_ok=True)

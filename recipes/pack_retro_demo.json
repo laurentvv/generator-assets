@@ -1,0 +1,40 @@
+{
+  "name": "Pack Démo Batch — Rétro & Procédural",
+  "description": "4 assets en une seule exécution : 2 pixel-art (palettes grid-size différents) + 2 flowmaps (types et angles différents). 100% procédural, quelques secondes au total.",
+  "assets": [
+    {
+      "workflow": "pixelart",
+      "prompt": "retro game helmet icon",
+      "input": "godot_assets/casque.png",
+      "palette": "gameboy",
+      "grid_size": 32,
+      "output": "batch_casque_gameboy"
+    },
+    {
+      "workflow": "pixelart",
+      "prompt": "retro game potion icon",
+      "input": "godot_assets/potion_diablo.png",
+      "palette": "pico8",
+      "grid_size": 48,
+      "output": "batch_potion_pico8"
+    },
+    {
+      "workflow": "flowmap",
+      "prompt": "molten volcanic lava river",
+      "flow_type": "river",
+      "angle": 45,
+      "turbulence": 0.5,
+      "size": 512,
+      "output": "batch_lave_riviere"
+    },
+    {
+      "workflow": "flowmap",
+      "prompt": "arcane portal vortex",
+      "flow_type": "vortex",
+      "angle": 0,
+      "turbulence": 0.6,
+      "size": 512,
+      "output": "batch_vortex_portal"
+    }
+  ]
+}

@@ -259,6 +259,14 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 * **Inputs**: `prompt` or `-i, --input`, `-s, --size` (512, 1024, 2048), `--pbr-engine` (`auto`, `deep`, `sobel`), `--normal-strength` (default: 3.5).
 * **Engines**: Flux.1 Dev GGUF, DeepBump ONNX, PIL, NumPy.
 * **Outputs**: `_albedo.png`, `_normal.png`, `_roughness.png`, `_height.png`, `_ao.png`, `_orm.png`, `_material.tres`, `_preview3x3.png`.
+
+##### 🖼️ Illustrations & Variations PBR
+| PBR Channel | Runic Stone Floor (`sol_runique`) | Ancient Worn Leather (`cuir_ancien`) | Weathered Planks (`old_cracked_wood`) | Seamless 3×3 Check |
+| :---: | :---: | :---: | :---: | :---: |
+| **Albedo** | <img src="godot_assets/sol_runique_albedo.png" width="130" /> | <img src="godot_assets/cuir_ancien_albedo.png" width="130" /> | <img src="godot_assets/old_cracked_wood_planks_albedo.png" width="130" /> | <img src="godot_assets/parchemin_ancien_preview3x3.png" width="130" /> |
+| **Normal Map (DeepBump)** | <img src="godot_assets/sol_runique_normal.png" width="130" /> | <img src="godot_assets/cuir_ancien_normal.png" width="130" /> | <img src="godot_assets/old_cracked_wood_planks_normal.png" width="130" /> | *Repeating Tile Verification* |
+| **Godot ORM** | <img src="godot_assets/sol_runique_orm.png" width="130" /> | <img src="godot_assets/cuir_ancien_orm.png" width="130" /> | <img src="godot_assets/old_cracked_wood_planks_orm.png" width="130" /> | *R=AO, G=Roughness, B=Metal* |
+
 * **Example**:
   ```bash
   uv run python main.py -w material3d "ancient gothic stone tile with purple runes and moss" -s 1024 -o runic_stone
@@ -274,6 +282,13 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 * **Inputs**: `prompt` or `-i, --input`, `--shape` (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`), `-s, --size`.
 * **Engines**: Flux.1 Dev GGUF, DeepBump ONNX, Blender 5.x CLI (`bpy`).
 * **Outputs**: `_3d_<shape>.glb` (self-contained with embedded textures), plus all underlying PBR map files.
+
+##### 🖼️ Variations Géométriques Paramétriques (`--shape`)
+| `--shape tile` (Dalle de Sol Biseautée) | `--shape pillar` (Pilier Octogonal) | `--shape card` (Standee 2.5D) | `--shape cutout` (Relief Extrudé) |
+| :---: | :---: | :---: | :---: |
+| <img src="godot_assets/sol_runique_3d_tile_albedo.png" width="150" /> | <img src="godot_assets/pilier_runique_3d_albedo.png" width="150" /> | <img src="godot_assets/potion_3d_card_albedo.png" width="150" /> | <img src="godot_assets/potion_3d_cutout_albedo.png" width="150" /> |
+| *Sol Runique (`sol_runique_3d_tile.glb`)* | *Pilier Donjon (`pilier_runique_3d.glb`)* | *Standee Potion (`potion_3d_card.glb`)* | *Potion Contour (`potion_3d_cutout.glb`)* |
+
 * **Example**:
   ```bash
   uv run python main.py -w mesh3d "ornate ancient iron wrought chest" --shape cube -o chest_3d
@@ -289,9 +304,16 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 * **Inputs**: `-i, --input` or `prompt`, `--grid-size` (e.g., 16, 32, 64), `--voxel-depth` (default: 4), `--voxel-scale` (default: 0.05).
 * **Engines**: PIL, NumPy 3D Volume Array, Blender Headless CLI (`bpy`).
 * **Outputs**: `_voxel.glb` with optimized vertex colors.
+
+##### 🖼️ Sprite 2D vers Modèle 3D Voxel (.GLB avec Vertex Colors)
+| Sprite 2D Source (`casque.png`) | Modèle Voxel 3D (`casque_voxel.glb`) | Sprite 2D Source (`potion_diablo.png`) | Modèle Voxel 3D (`potion_voxel.glb`) |
+| :---: | :---: | :---: | :---: |
+| <img src="godot_assets/casque.png" width="130" /> | <img src="docs/exemples/workflows_3d/casque_voxel_preview.png" width="160" /> | <img src="godot_assets/potion_diablo.png" width="130" /> | <img src="docs/exemples/workflows_3d/potion_voxel_preview.png" width="160" /> |
+| *Détourage Alpha Net* | *1013 voxels actifs, faces internes culled* | *Icône Potion Dark Fantasy* | *2381 voxels actifs, couleurs sRGB* |
+
 * **Example**:
   ```bash
-  uv run python main.py -w voxel3d -i godot_assets/cheval.png --grid-size 32 --voxel-depth 4 -o horse_voxel
+  uv run python main.py -w voxel3d -i godot_assets/casque.png --grid-size 32 --voxel-depth 4 -o helmet_voxel
   ```
 
 #### 1.4. `skybox` — 360° Equirectangular Panoramic Environments
@@ -303,6 +325,13 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 * **Inputs**: `prompt`, `-s, --size` / `--width` & `--height` (default: 2048×1024), `-l, --lora` (e.g., `360RedmondResized:1.0`).
 * **Engines**: Flux.1 Dev / SDXL Vulkan, Godot Resource Serializer.
 * **Outputs**: `_sky.png`, `_sky_env.tres`.
+
+##### 🖼️ Texture Panoramique Équirectangulaire 360° (Ratio 2:1 & IBL Godot 4)
+| Texture Sphérique Équirectangulaire 2048×1024 (`_sky.png`) |
+| :---: |
+| <img src="godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.png" width="100%" /> |
+| *Aube Froide Vent-Gris — Horizon bouclé à 360° sans couture, prêt pour `WorldEnvironment.tres` et l'éclairage ambiant (IBL)* |
+
 * **Example**:
   ```bash
   uv run python main.py -w skybox "purple cosmic galaxy nebula with glowing starlight" -o space_skybox
@@ -317,6 +346,13 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 * **Inputs**: `prompt`, `-s, --size` (default: 512 per view), `--seed`.
 * **Engines**: Flux.1 Dev / SDXL, PIL canvas compositing.
 * **Outputs**: `_front.png`, `_side.png`, `_model_sheet.png`.
+
+##### 🖼️ Fiche de Modélisation Orthogonale Calibrée avec Repères Horizontaux
+| Planche d'Alignement Face & Profil (`_model_sheet.png`) |
+| :---: |
+| <img src="docs/exemples/workflows_3d/turnaround_model_sheet.png" width="460" /> |
+| *Repères horizontaux calibrés (Crown, Eyes, Shoulders, Waist, Knees, Feet) pour importation directe dans le viewport Blender* |
+
 * **Example**:
   ```bash
   uv run python main.py -w turnaround3d "dwarven warrior with heavy runic plate armor" -o dwarf_sheet
@@ -332,6 +368,13 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 * **Inputs**: `prompt`, `--angle` (degrees, default: 90 = downwards), `--flow-type` (`river`, `vortex`, `radial`, `optical`), `--turbulence` (0.0 to 1.0), `--mode-2d`.
 * **Engines**: NumPy procedural vector field generator, Godot shader compiler.
 * **Outputs**: `_flowmap.png`, `_water.gdshader`, `_material.tres`.
+
+##### 🖼️ Variations de Flowmaps Vectorielles (`--flow-type`)
+| `--flow-type river` (Flux Directionnel) | `--flow-type vortex` (Tourbillon / Vortex) | `--flow-type radial` (Onde de Choc Radiale) |
+| :---: | :---: | :---: |
+| <img src="docs/exemples/workflows_3d/flowmap_river_flowmap.png" width="180" /> | <img src="docs/exemples/workflows_3d/flowmap_vortex_flowmap.png" width="180" /> | <img src="docs/exemples/workflows_3d/flowmap_radial_flowmap.png" width="180" /> |
+| *R=Vecteur X, G=Vecteur Y, B=Magnitude* | *Champ de vitesse centripète rotatif* | *Vecteurs d'expansion centrifuge* |
+
 * **Example**:
   ```bash
   uv run python main.py -w flowmap "molten volcanic lava river" --angle 45 --turbulence 0.4 -o lava_flow
@@ -350,6 +393,13 @@ The engine features **28+ modular workflows** organized into 5 functional catego
 * **Inputs**: `prompt` or `-i, --input`, `--res` (`512` = iteration ~11 min • `1024` = master ~55 min • `1536` = untested, default 512), `--faces-cible` (optional decimation target, e.g. 30000; default 0 = no reduction), `--seed`.
 * **Engines**: trellis.cpp v0.6.0 (Vulkan) + TRELLIS.2-4B GGUF f16 (10 files, ~16.4 GB, `C:\Modeles_LLM\trellis2-gguf`), Blender 5.x headless (decimation + control renders).
 * **Outputs** (`output/mesh_ia/<nom>/`): `<nom>_<res>.glb` (master, PBR atlas embedded), `<nom>_<res>_jeu.glb` (only with `--faces-cible`), `<nom>_<res>_base.png` (atlas preview), `<nom>_<res>_planche.png` (control sheet), `_vue0-3.png` (orbital renders), `.ply`, `<nom>_<res>_infos.json` (durations, face counts, paths, seed).
+
+##### 🖼️ Planches de Contrôle Multi-Vues TRELLIS.2 (Vues Orbitales & Atlas PBR)
+| TRELLIS.2 Res 512 (Itération Rapide ~10 min) | TRELLIS.2 Res 1024 (Master Haute Définition ~55 min) |
+| :---: | :---: |
+| <img src="docs/exemples/workflows_3d/casque_512_planche.png" width="380" /> | <img src="docs/exemples/workflows_3d/casque_1024_planche.png" width="380" /> |
+| *144k faces, atlas 1024², 4 vues de contrôle* | *293k faces, atlas 2048², micro-reliefs d'armure* |
+
 * **Measured generation durations (AMD RX 6950 XT, Vulkan, f16 GGUF)** :
 
   | Stage | res 512 | res 1024 |
@@ -448,6 +498,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` (clothing theme), `--parts` (`torso,pants,shoes`), `--mpfb-dir` (custom target path).
 * **Engines**: Flux.1 Dev, ESRGAN 4K, MakeHuman barycentric binding compiler, Blender 5.x.
 * **Outputs**: `.mhclo`, `.obj`, `.mhmat`, `.thumb` files per clothing item, plus test `.blend`.
+
+##### 🖼️ Garde-Robe Quads & Matériaux PBR Générés
+| Texture Tunique Albedo | Texture Chaussures Albedo | Avatar Habillé dans Blender (Cycles) |
+| :---: | :---: | :---: |
+| <img src="godot_assets/textures/marc_novice/top_rustic_medieval_beig_albedo.png" width="160" /> | <img src="godot_assets/textures/marc_novice/shoes_dark_worn_medieval_l_albedo.png" width="160" /> | <img src="godot_assets/marc_novice_render.png" width="160" /> |
+| *Burlap Tunic Albedo (PBR)* | *Cuir Vieilli Chaussures (PBR)* | *Avatar avec Robe et Chaussures (.mhclo)* |
+
 * **Example**:
   ```bash
   uv run python main.py -w makehuman_clothes "dark worn leather ranger armor" --parts "torso,pants,shoes" -o dark_ranger
@@ -463,6 +520,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `--character` (e.g. `marc_novice`), `--top` (description of top fabric), `--shoes` (description of footwear material).
 * **Engines**: Flux.1 Dev Vulkan, Blender Headless CLI (`bpy`), PBR texture synthesis.
 * **Outputs**: `godot_assets/textures/<character>/*`, updated `<character>.blend`, updated `<character>.glb`, `<character>_beauty_render.png`.
+
+##### 🖼️ Retexturation PBR sur Patrons UV Existants
+| Patron Albedo Retexturé | Carte de Normales Relief | Rendu de Contrôle Studio Cycles |
+| :---: | :---: | :---: |
+| <img src="godot_assets/textures/marc_novice/marc_peasant_worksuit_diffuse.png" width="160" /> | <img src="godot_assets/textures/marc_novice/marc_peasant_worksuit_normal.png" width="160" /> | <img src="godot_assets/marc_novice_beauty_render.png" width="160" /> |
+| *Patron UV préservant coutures et plis* | *Relief de tissage procédural* | *Rendu studio Marc Novice avec nouvelle tenue* |
+
 * **Example**:
   ```bash
   uv run python main.py -w outfit --character marc_novice --top "rough medieval beige burlap tunic" --shoes "dark worn leather boots"
@@ -479,6 +543,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt`, `--pose` (`idle`, `slash_attack`, `cast_spell`, `shield_block`, `jump`, `walk`), `-s, --size`.
 * **Engines**: OpenPose COCO 18-point mapper, Flux.1 / SDXL, Godot Scene Builder.
 * **Outputs**: `_openpose_skeleton.png`, `_character.png`, `_character.tscn`, `_rig.json`.
+
+##### 🖼️ Variations de Poses d'Armature COCO 18-Points (`--pose`)
+| `--pose idle` | `--pose slash_attack` | `--pose cast_spell` | `--pose shield_block` |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/exemples/workflows_2d/pose_idle_skeleton.png" width="140" /> | <img src="docs/exemples/workflows_2d/pose_slash_attack_skeleton.png" width="140" /> | <img src="docs/exemples/workflows_2d/pose_cast_spell_skeleton.png" width="140" /> | <img src="docs/exemples/workflows_2d/pose_shield_block_skeleton.png" width="140" /> |
+| *Pose d'attente neutre* | *Coup d'épée dynamique* | *Incantation magique* | *Posture défensive bouclier* |
+
 * **Example**:
   ```bash
   uv run python main.py -w pose_control "shadow knight with a glowing sword" --pose slash_attack -o knight_slash
@@ -494,6 +565,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
   6. Inputs: `prompt` or `-i, --input`, `--emotions` (default: `neutral,happy,angry,sad,hurt`), `-s, --size`.
 * **Engines**: Flux.1 / SDXL Vulkan, BiRefNet / RMBG ONNX, JSON Manifest Generator.
 * **Outputs**: individual emotion `.png` files, `_portrait_grid.png`, `_dialogue_manifest.json`.
+
+##### 🖼️ Planche de Dialogues Multi-Émotions RPG (`_portrait_grid.png`)
+| Galerie d'Expressions Cohérentes (Dialogic / Godot Dialogue Manager) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/rpg_portrait_grid.png" width="100%" /> |
+| *Déclinaisons d'expressions avec ancrage d'identité et étiquetage JSON pour le lip-sync et les embranchements narratifs* |
+
 * **Example**:
   ```bash
   uv run python main.py -w rpg_portrait "dark sorceress with golden eyes" --emotions "neutral,happy,angry,sad,hurt" -o sorceress
@@ -522,12 +600,18 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
   uv run python scripts/install_asset_packs.py
   ```
 
-#### 2.7. 🗺️ MakeHuman Skin Synthesis & Anatomical Calibration
+#### 2.8. 🗺️ MakeHuman Skin Synthesis & Anatomical Calibration
 * **Complete MPFB Skin Pack Pipeline**:
   - Generates 2048×2048 diffuse skin maps (`diffuse.png`), PBR normal maps (`normal.png`), MakeHuman material definitions (`.mhmat`) with calibrated Subsurface Scattering (SSS) parameters, and UI thumbnail previews (`.thumb`).
 * **Dedicated Scripts**:
   - `scripts/build_clean_marc_skin.py`: Generates seamless, homogeneous skin textures with dedicated colorimetry (e.g., cold winter complexion for Marc).
   - `scripts/align_marc_portrait_to_uv.py`: Projects 2D anatomical facial features (eyes, eyebrows, scars, lips) accurately onto standard MakeHuman hm08 UV layouts without seam tearing.
+
+##### 🖼️ Synthèse de Peau Canonique & Détail Anatomique
+| Gros Plan Visage Studio | Texture de Peau hm08 Diffuse (Marc) | Texture Peau Vent-Gris (Elian Enfant) |
+| :---: | :---: | :---: |
+| <img src="godot_assets/marc_novice_face_closeup.png" width="160" /> | <img src="godot_assets/skins/marc_novice/marc_novice_diffuse.png" width="160" /> | <img src="godot_assets/skins/elian_enfant/elian_enfant_diffuse.png" width="160" /> |
+| *Rendu Cycles avec Subsurface Scattering* | *Texture 2048² UV hm08 Marc Novice* | *Texture 2048² Teint froid Vent-Gris* |
 * **Deployment**:
   - Installs skin assets automatically into `%APPDATA%/Blender Foundation/Blender/5.2/mpfb/data/skins/<skin_name>/` and syncs them with Godot asset targets.
 
@@ -546,6 +630,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt`, `-t, --type` (`item`, `character`, `prop`, `tile`), `-i, --input` (Img2Img), `--upscale`, `-l, --lora`.
 * **Engines**: Flux.1 / SDXL, RMBG-1.4 / BiRefNet ONNX, Real-ESRGAN Vulkan.
 * **Outputs**: Clean isolated transparent `.png`.
+
+##### 🖼️ Assets 2D Isolés & Détourés (Items, Accessoires & UI)
+| Potion Dark Fantasy (`potion_diablo`) | Casque d'Armure (`casque`) | Sac d'Inventaire (`ico_sac`) | Mode Furtif (`ico_furtif`) |
+| :---: | :---: | :---: | :---: |
+| <img src="godot_assets/potion_diablo.png" width="140" /> | <img src="godot_assets/casque.png" width="140" /> | <img src="godot_assets/ico_sac.png" width="140" /> | <img src="godot_assets/ico_furtif.png" width="140" /> |
+| *LoRA Diablo + Détourage BiRefNet* | *Sprite d'équipement PBR source* | *Icône d'UI 128px centrée Godot* | *Icône de compétence transparente* |
+
 * **Example**:
   ```bash
   uv run python main.py -w generate "legendary royal gold shield with an engraved lion" --upscale
@@ -561,6 +652,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt`, `-s, --size` (cell size, default: 256), `--columns` (default: 4), `--tolerance`.
 * **Engines**: Flux.1 / SDXL, PIL grid compositor, JSON atlas generator.
 * **Outputs**: `_spritesheet.png`, individual angle `.png` files, `_atlas.json`.
+
+##### 🖼️ Planche Multi-Vues / Animation Alignée (`_spritesheet.png`)
+| Planche de Séquence de Vol & Orientations (Export JSON Frame Atlas Godot) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/dragon_spritesheet.png" width="100%" /> |
+| *Trames alignées avec coordonnées UV automatiques pour AnimatedSprite2D / SpriteFrames* |
+
 * **Example**:
   ```bash
   uv run python main.py -w spritesheet "undead skeleton warrior with rusted blade" --columns 4 -o skeleton_walk
@@ -575,6 +673,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `--biome-a` (prompt or image), `--biome-b` (prompt or image), `-s, --size` (tile resolution, e.g., 64, 128), `--columns` (default: 8).
 * **Engines**: Flux.1 Dev, NumPy / PIL bitmask synthesis, Godot TileSet compiler.
 * **Outputs**: `_atlas.png`, `_tileset.tres`.
+
+##### 🖼️ Atlas 47 Tuiles Wang / Minimal 3×3 & Ressource TileSet Godot 4
+| Atlas d'Autotile 47 Tuiles (`_atlas.png`) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/autotile_sol_vers_cuir_atlas.png" width="480" /> |
+| *Transition Sol Runique vers Cuir — 47 configurations (coins intérieurs/extérieurs, îlots, bordures) + `TileSet.tres` préconfiguré* |
+
 * **Example**:
   ```bash
   uv run python main.py -w autotile_pack --biome-a "lush green grass" --biome-b "dark cracked dirt" --size 64 -o grass_to_dirt
@@ -589,6 +694,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt`, `-s, --size` (default: 512), `--no-preview` (optional).
 * **Engines**: Flux.1 / SDXL with circular padding kernel, PIL 3x3 tiling verifier.
 * **Outputs**: `_tile.png`, `_preview3x3.png`.
+
+##### 🖼️ Textures Répétables Infinies & Grilles de Vérification 3×3
+| Texture Parchemin Ancien (3×3 Check) | Texture Sel & Toile de Jute (3×3 Check) |
+| :---: | :---: |
+| <img src="godot_assets/parchemin_ancien_preview3x3.png" width="280" /> | <img src="godot_assets/sel_jute_preview3x3.png" width="280" /> |
+| *Bords cycliques raccordés sans couture* | *Texture de tissu répétable sans artefact de bord* |
+
 * **Example**:
   ```bash
   uv run python main.py -w tileable "mossy dark dungeon cobblestone pattern" -s 512 -o mossy_cobblestone
@@ -603,6 +715,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `-i, --input` or `prompt`, `--palette` (`pico8`, `endesga32`, `gameboy`), `--grid-size` (default: 64), `-s, --size` (export display size).
 * **Engines**: PIL ImageOps, NumPy color quantization.
 * **Outputs**: `_pixelart_<palette>.png`.
+
+##### 🖼️ Variations de Palettes Matérielles Rétro (`--palette`)
+| Palette Pico-8 (16 Couleurs) | Palette Endesga-32 (32 Couleurs) | Palette GameBoy (4 Niveaux) |
+| :---: | :---: | :---: |
+| <img src="docs/exemples/workflows_2d/casque_pixel_pico8.png" width="170" /> | <img src="docs/exemples/workflows_2d/casque_pixel_endesga32.png" width="170" /> | <img src="docs/exemples/workflows_2d/casque_pixel_gameboy.png" width="170" /> |
+| *Quantification Lab 16 teintes vibrantes* | *Palette 32 teintes équilibrées* | *Esthétique rétro monochrome 4 teintes* |
+
 * **Example**:
   ```bash
   uv run python main.py -w pixelart -i godot_assets/casque.png --palette pico8 --grid-size 64 -o helmet_retro
@@ -617,6 +736,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` or `-i, --input`, `--themes` (comma-separated list, e.g. `fire,ice,poison,lightning`), `-s, --size`.
 * **Engines**: Flux.1 / SDXL Img2Img, RMBG segmentation.
 * **Outputs**: Individual variant `.png` files named `<base>_<theme>.png`.
+
+##### 🖼️ Déclinaisons Élémentaires Thématiques (`--themes`)
+| Variante Feu / Flammes | Variante Glace / Givre | Variante Poison / Toxique | Variante Vide / Arcanes |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/exemples/workflows_2d/potion_variante_feu.png" width="140" /> | <img src="docs/exemples/workflows_2d/potion_variante_glace.png" width="140" /> | <img src="docs/exemples/workflows_2d/potion_variante_poison.png" width="140" /> | <img src="docs/exemples/workflows_2d/potion_variante_vide.png" width="140" /> |
+| *Ambre et rouge incandescent* | *Cyan et bleu cristallin* | *Vert émeraude toxique* | *Violet et pourpre abyssal* |
+
 * **Example**:
   ```bash
   uv run python main.py -w variations -i godot_assets/potion_diablo.png --themes "fire,frost,poison,shadow" -o potion_elemental
@@ -632,6 +758,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` or `-i, --input`, `--margin` (default: 32), `--auto-margin`.
 * **Engines**: PIL 9-slice analyzer, Godot Resource Serializer.
 * **Outputs**: `.png`, `_stylebox.tres`, `_ninepatch.tscn`, `_preview_stretched.png`.
+
+##### 🖼️ Étirement Vectoriel 9-Patch sans Déformation des Coins
+| Cadre UI Carré Source | NinePatchRect Étiré (Ratio Panoramique 520×240) |
+| :---: | :---: |
+| <img src="godot_assets/cadre_portrait_combat.png" width="170" /> | <img src="docs/exemples/workflows_2d/ui_9slice_demo.png" width="480" /> |
+| *Texture 512² avec bordures sculptées* | *Coins 100% intacts, centre et tranches étirés selon `StyleBoxTexture.tres`* |
+
 * **Example**:
   ```bash
   uv run python main.py -w ui_9slice "ornate fantasy golden dialog box with ruby corners" --margin 32 -o gold_dialog
@@ -646,6 +779,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `-i, --input` (required), `--segmenter` (`birefnet`, `rmbg`), `-s, --size` (optional resize).
 * **Engines**: BiRefNet ONNX / RMBG-1.4 ONNX, NumPy, PIL.
 * **Outputs**: `_rembg.png`.
+
+##### 🖼️ Détourage Neural BiRefNet / RMBG-1.4 (Zéro Frange Blanche)
+| Comparatif Fond Brut vs Détourage Alpha Net (`_rembg.png`) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/rembg_comparatif.png" width="500" /> |
+| *Élimination intégrale du fond sans perte des pointes fines ni halo blanc résiduel* |
+
 * **Example**:
   ```bash
   uv run python main.py -w rembg -i godot_assets/cheval.png -o horse_transparent
@@ -664,6 +804,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` (sound category or concept), `--duration` (in seconds, default: 1.5).
 * **Engines**: NumPy audio synthesizer, SoundFile encoder.
 * **Outputs**: `_sfx.wav`, `_sfx.ogg`.
+
+##### 🖼️ Formes d'Ondes & Synthèse Procédurale (`_sfx.wav` / `_sfx.ogg`)
+| Synthèse Procédurale Multi-Oscillateurs (Potion de Soin) |
+| :---: |
+| <img src="docs/exemples/workflows_audio/sfx_potion_waveform.png" width="100%" /> |
+| *Bruitage 44.1 kHz 16-bit PCM sans clipping, enveloppe ADSR douce et conversion Vorbis OGG pour Godot* |
+
 * **Example**:
   ```bash
   uv run python main.py -w sfx "heavy sword slash metal impact" --duration 1.2 -o sword_strike
@@ -679,6 +826,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` (ambience preset or description), `--duration` (seconds, default: 8.0).
 * **Engines**: NumPy procedural audio synthesizer, SoundFile encoder, Godot bus serializer.
 * **Outputs**: `_ambience.wav`, `_ambience.ogg`, `_bus_layout.tres`, `_player.tscn`.
+
+##### 🖼️ Paysages Sonores Procéduraux en Boucle Parfaite (`_ambience.wav`)
+| Ambiance Donjon Souterrain (Boucle Infinie 8.0s) |
+| :---: |
+| <img src="docs/exemples/workflows_audio/ambience_donjon_waveform.png" width="100%" /> |
+| *Fond immersif sans couture de phase avec ressource `AudioBusLayout.tres` (reverb & filtres)* |
+
 * **Example**:
   ```bash
   uv run python main.py -w audio_ambience "dark subterranean dungeon with distant water drops" --duration 8.0 -o dungeon_ambience
@@ -695,6 +849,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` (English music description), `--moteur` (`acestep` default|`music3`), `--variante` (`turbo` default|`xl-turbo` 4B|`xl-sft` 4B+CFG, ACE-Step only), `--duration` (loop seconds, default 12), `--candidats` (default 3), `--lufs` (bed target, default −30), `--loop-mode` (`percussive`|`ambient`), `--music-backend` (`vulkan`|`cpu`), `--force-bpm`/`--tonalite`/`--mesure` (ACE-Step only), `--seed`, `--analyse` (Music Flamingo QA).
 * **Engines**: audio.cpp v0.7.2 (`audiocpp_cli`, Vulkan) + ACE-Step 1.5 Turbo bf16 GGUF (~9.4 Gio monolithic package incl. LM planner + text encoder + VAE, `C:\Modeles_LLM\ACE-Step1.5-GGUF`, ~42 s per 28 s generation on RX 6950 XT) or MiniMax-Music3-GGUF Q4_0/Q8_0 (~8.5 GB, `C:\Modeles_LLM\MiniMax-Music3-GGUF`, ~25 min per 23 s generation), NumPy/SciPy DSP, ffmpeg 9 (`C:\ffmpeg\dist\bin\ffmpeg.exe`), optional llama.cpp + Music Flamingo GGUF.
 * **Outputs** (`output/music_bg/`): `<name>_full.wav` (48 kHz PCM16 loop), `<name>_bed.wav` (−30 LUFS bed), `<name>.ogg`, `<name>_preview.mp3`, `recette_mixage_voix.txt` (ducking command), `candidats/` (every candidate: raw WAV + loop + bed + MP3), `ECOUTE_cand<N>_boucle_x3.mp3` (listening previews).
+
+##### 🖼️ Boucles Musicales IA — Formes d'Ondes & Énergie des Raccords
+| Formes d'Ondes Normalisées (Stéréo 48 kHz — Boucles Candidates) |
+| :---: |
+| <img src="docs/exemples/musique/waveforms_boucles_tech.png" width="100%" /> |
+| *Alignement aux zéros de phase (seam Δ0.1 à 0.4 dB), mixage voix-off −30 LUFS et ducking automatique ffmpeg* |
+
 * **Helpers**: `scripts/download_music3_gguf.py` (engine + models), `scripts/download_acestep15_gguf.py [turbo|xl-turbo|xl-sft|tout]` (ACE-Step 1.5, XL via ModelScope mirror), `scripts/telecharger_gros_fichier_parallele.py <url> <dest>` (parallel segmented downloader — bypasses HF CDN single-connection throttling, ~10× faster), `scripts/generer_chanson_acestep.py paroles.txt` (**full songs with lyrics**, 50+ languages, structure tags), `scripts/download_music_flamingo.py` (optional QA model), `scripts/generer_boucles_music_bg_batch.py N [moteur]` (**resilient batch** — one candidate per process, resumes from existing files, survives AMD GPU driver resets), `scripts/finaliser_boucles_music_bg.py` (re-finalize raw WAVs), `scripts/ecoute_candidat_music_bg.py N` (listening preview).
 * **Example**:
   ```bash
@@ -723,6 +884,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` (character name), `--emotions` (comma-separated), `--pitch` (fundamental pitch in Hz, default: 160.0).
 * **Engines**: Kokoro TTS / Python audio synthesizer, viseme alignment engine.
 * **Outputs**: `<emotion>.wav`, `<emotion>.ogg`, `_dialogue_manifest.json`.
+
+##### 🖼️ Synthèse Vocale & Alignement Phonétique des Visèmes (Lip-Sync)
+| Cartographie Temporelle des Visèmes (Export JSON pour Dialogic / Godot) |
+| :---: |
+| <img src="docs/exemples/workflows_audio/tts_dialogue_visemes.png" width="100%" /> |
+| *Synchronisation phonétique des visèmes sur la réplique audio avec hauteur de voix ajustable* |
+
 * **Example**:
   ```bash
   uv run python main.py -w tts_dialogue "dark_sorceress" --emotions "neutral,happy,angry,hurt" --pitch 180 -o sorceress_voice
@@ -738,6 +906,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt`, `--vfx-type` (`explosion`, `fire`, `lightning`, `portal`, `slash`, `aura`), `--mode-2d`.
 * **Engines**: Flux.1 Dev / SDXL, PIL grid compositor, Godot particle resource generator.
 * **Outputs**: `_flipbook.png`, `_vfx_material.tres`, `_particles_process.tres`, `_vfx.tscn`.
+
+##### 🖼️ Planches d'Animation de Particules 4×4 & Scènes Godot (.tscn)
+| VFX Slash Épée (`vfx_slash`) | VFX Aura Mystique (`vfx_aura`) | VFX Puits de Vide (`vfx_vide`) | VFX Friction (`vfx_friction`) |
+| :---: | :---: | :---: | :---: |
+| <img src="godot_assets/vfx_slash_flipbook.png" width="150" /> | <img src="godot_assets/vfx_aura_flipbook.png" width="150" /> | <img src="godot_assets/vfx_vide_flipbook.png" width="150" /> | <img src="godot_assets/vfx_friction_flipbook.png" width="150" /> |
+| *Grille 4×4 + GPUParticles3D* | *Aura magique évolutive* | *Vortex abyssal animé* | *Particules d'étincelles & friction* |
+
 * **Example**:
   ```bash
   uv run python main.py -w vfx_flipbook "purple arcane void explosion" --vfx-type explosion -o arcane_explosion
@@ -753,6 +928,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt`, `--frames` (default: 16), `--fps` (default: 12.0), `--columns` (default: 4), `--mode-2d`.
 * **Engines**: Periodic circular phase generator, PIL atlas builder, Godot shader writer.
 * **Outputs**: `_spritesheet.png`, `_loop.gdshader`, `_loop_material.tres`, `_animated_tex.tres`.
+
+##### 🖼️ Déphasage Temporel Circulaire Dual-Sample (Zéro Saccade)
+| Déphasage Cyclique 0° à 270° (Shader Godot 4 `.gdshader`) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/anim_loop_phases.png" width="100%" /> |
+| *Interpolation phase-shifted continue garantissant une boucle infinie sans réinitialisation visible* |
+
 * **Example**:
   ```bash
   uv run python main.py -w anim_loop "swirling cosmic void portal" --frames 16 --fps 12 -o void_portal
@@ -768,6 +950,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `-i, --input` (source spritesheet path), `--columns` (number of frames), `--factor` (2 or 4).
 * **Engines**: RIFE v4 ONNX optical flow model, PIL frame sequencer.
 * **Outputs**: `_rife_<factor>x.png`.
+
+##### 🖼️ Multiplication Temporelle de Trames par Flux Optique (RIFE v4 ONNX)
+| Interpolation 24 FPS vers 60 FPS (Trame Source N -> Intermédiaire RIFE -> Trame N+1) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/rife_interp_strip.png" width="100%" /> |
+| *Reconstruction de trames intermédiaires préservant l'alpha et la netteté des arêtes* |
+
 * **Example**:
   ```bash
   uv run python main.py -w rife_interp -i godot_assets/spritesheet.png --columns 4 --factor 2 -o anim_60fps
@@ -787,6 +976,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt`, `-i, --input` (init image), `--end-img` (final image), `--control-video` (frame directory), `--frames` (default: 33), `--fps` (default: 24), `--flow-shift` (default: 3.0), `-o, --output`.
 * **Engines**: stable-diffusion.cpp Vulkan (`-M vid_gen`), Wan 2.1 / Wan 2.2 / LTX-2.5 GGUF/Safetensors, libwebm.
 * **Outputs**: `_vid.webm`, `_player.tscn` (Godot 4 VideoStreamPlayer scene).
+
+##### 🖼️ Génération Vidéo SOTA & Rendu Maître 4K
+| Rendu Maître LTX-2.5 Distilled (Audio Natif) | Animation Wan 2.2 MoE I2V (Scène Nexus) | Comparatif Netteté CAS 0.75 |
+| :---: | :---: | :---: |
+| <img src="docs/exemples/videos/video_ltx25_dragon_audio.gif" width="230" /> | <img src="docs/exemples/videos/video_wan22_i2v_scene01_1080p.gif" width="230" /> | <img src="docs/exemples/videos/video_ltx25_comparatif_cas.png" width="230" /> |
+| *8 steps, 15B DiT + Audio Stéréo* | *Dual-DiT MoE, micro-dynamique fluide* | *Filtre CAS matériel AMF Lanczos* |
+
 * **Example**:
   ```bash
   # Text-to-Video (T2V)
@@ -891,6 +1087,12 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `prompt` (text or `.txt` path), `--voix-ref`, `--moteur` (`qwen3`|`voxcpm2`|`fish`; auto if omitted — qwen3 with a reference, voxcpm2 without), `--instruct` (qwen3 expression instruction), `--lufs-voix` (default −16), `--music-backend` (`vulkan`|`cpu`), `--seed`.
 * **Engines**: audio.cpp v0.7.2 (`audiocpp_cli`, Vulkan) + Qwen3-TTS-12Hz-1.7B-Base q8_0 (2.51 Gio) / VoxCPM2 q8_0 (2.75 Gio) / Fish-Audio-S2-Pro q8_0 (5.88 Gio) + Qwen3-ASR-0.6B q8_0 (1.07 Gio) — all in `C:\Modeles_LLM`, ffmpeg 9.
 * **Outputs** (`output/voix_off/<name>/`): `voix_off_brut.wav` (raw engine output), `voix_off_brut_final.wav` (−16 LUFS 48 kHz) + `voix_off_brut_final.mp3` (listening), prepared reference WAV + transcript cache (reused across runs).
+
+##### 🖼️ Comparatif des Moteurs GGUF Vulkan avec Clonage Vocal
+| Formes d'Ondes Normalisées à −16 LUFS (Qwen3-TTS vs VoxCPM2 vs Fish S2-Pro) |
+| :---: |
+| <img src="docs/exemples/workflows_audio/voix_off_comparatif_waveform.png" width="100%" /> |
+| *Testé et validé avec référence vocale française : respect strict des dynamiques et normalisation 2 passes YouTube* |
 * **Example**:
   ```bash
   # Cloned voice (reference = any recording) + expression instruction :
@@ -967,6 +1169,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `-i, --input` (reference image), `--items` (comma-separated list of items), `-s, --size`.
 * **Engines**: Style analysis extractor, Flux.1 / SDXL, Godot palette exporter.
 * **Outputs**: Item `.png` files, `_consistency_board.png`, `.tres`, `.gpl`, `.json`.
+
+##### 🖼️ Verrouillage de Style & Planche de Cohérence (Palettes Godot)
+| Référence de Style (Entrée `-i`) → 4 Objets Dérivés Conditionnés (`_consistency_board.png`) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/ip_adapter_consistency_board.png" width="560" /> |
+| *Casque, sac, parchemins et linceul dérivés de la potion de référence — la palette dominante est extraite et exportée en `.tres` / `.gpl` / `.json`* |
+
 * **Example**:
   ```bash
   uv run python main.py -w ip_adapter -i godot_assets/potion_diablo.png --items "sword,shield,ring,helmet" -o diablo_set
@@ -980,6 +1189,13 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `-i, --input` (source image), `--factor` (e.g., 2, 4), `--upscale-model` (`ultrasharp`, `anime`, `auto`).
 * **Engines**: Real-ESRGAN Vulkan (`4x-UltraSharp.pth`, `RealESRGAN_x4plus_anime_6B.pth`).
 * **Outputs**: `_upscaled_<WxH>.png`.
+
+##### 🖼️ Super-Résolution 4× sans Halo Alpha (Zoom sur les Micro-Détails)
+| Original Pixelisé (zoom ×4 nearest) vs 4x-UltraSharp Vulkan (`_upscaled_4096x4096.png`) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/upscale_comparatif_zoom.png" width="480" /> |
+| *Reconstruction nette des gravures du casque — le canal alpha est traité séparément puis recombiné (zéro corrosion de bord)* |
+
 * **Example**:
   ```bash
   uv run python main.py -w upscale -i godot_assets/casque.png --factor 4 --upscale-model ultrasharp
@@ -994,9 +1210,20 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Inputs**: `--file` / `--recipe` (JSON recipe path or newline-delimited text file).
 * **Engines**: WorkflowRegistry dispatcher, JSON recipe parser.
 * **Outputs**: Complete batch of generated game assets.
+
+##### 🖼️ Une Recette → Plusieurs Assets Hétérogènes en une Seule Exécution
+| Recette JSON (`recipes/pack_retro_demo.json`) + Sorties Réelles (2 palettes pixel-art + 2 flowmaps paramétrés) |
+| :---: |
+| <img src="docs/exemples/workflows_2d/batch_demo_montage.png" width="620" /> |
+| *4 tâches exécutées séquentiellement (4/4 OK) avec workflow et paramètres overrides par tâche ; VRAM libérée entre chaque job* |
+
 * **Example**:
   ```bash
-  uv run python main.py -w batch --file recipes/dungeon_pack.json
+  # Demo pack: 2 pixel-art (different palettes/grids) + 2 flowmaps (different types/angles) in one run:
+  uv run python main.py -w batch --file recipes/pack_retro_demo.json
+  # Diffusion packs shipped with the repo:
+  uv run python main.py -w batch --file recipes/dark_fantasy_armory.json
+  uv run python main.py -w batch --file recipes/dungeon_environment.json
   ```
 
 ---
