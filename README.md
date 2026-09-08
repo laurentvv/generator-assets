@@ -165,11 +165,11 @@ To ensure maximum productivity and avoid false expectations, here is a transpare
 ### 4. AI Music Loops Showcase (`music_bg`) — 🎧
 | Waveforms (seamless loops, 48 kHz stereo) |
 | :---: |
-| <img src="docs/exemples/musique/waveforms_boucles_tech.png" width="100%" alt="Waveforms des 3 boucles tech" /> |
+| <img src="docs/exemples/musique/waveforms_boucles_tech.png" width="100%" alt="Waveforms of the 3 tech loops" /> |
 
 > ℹ️ GitHub has no embedded audio player: the files are **downloadable** (×3 preview MP3s / waveform MP4s with sound / raw WAVs in [`docs/exemples/musique/`](docs/exemples/musique/) and [`docs/exemples/videos/`](docs/exemples/videos/)).
 
-| 🎵 Boucle tech n°1 — 95 BPM ⭐ | 🎵 Boucle tech n°2 — 78 BPM | 🎵 Boucle tech n°3 — 71 BPM |
+| 🎵 Tech loop #1 — 95 BPM ⭐ | 🎵 Tech loop #2 — 78 BPM | 🎵 Tech loop #3 — 71 BPM |
 | :---: | :---: | :---: |
 | [MP3 ×3](docs/exemples/musique/boucle_tech_cand1_95bpm.mp3) • [MP4 waveform](docs/exemples/videos/musique_cand1_95bpm_waveform.mp4) | [MP3 ×3](docs/exemples/musique/boucle_tech_cand2_78bpm.mp3) • [MP4 waveform](docs/exemples/videos/musique_cand2_78bpm_waveform.mp4) | [MP3 ×3](docs/exemples/musique/boucle_tech_cand3_71bpm.mp3) • [MP4 waveform](docs/exemples/videos/musique_cand3_71bpm_waveform.mp4) |
 | *Seam Δ0.1 dB — promoted as `tech_loop_minimal_bed.wav` (-30 LUFS voice-over bed)* | *Seam Δ0.3 dB — deeper, slower groove* | *Seam Δ11.7 dB — kept as raw material* |
@@ -186,7 +186,7 @@ All clips generated 100% locally on AMD RX 6950 XT (Vulkan/GGUF, no CUDA). **GIF
 | <img src="docs/exemples/videos/video_wan22_i2v_scene01_1080p.gif" width="100%" alt="Wan 2.2 I2V scene (GIF)" /> | <img src="docs/exemples/videos/video_comparatif_2.5d_vs_wan22.gif" width="100%" alt="Comparatif 2.5D vs Wan 2.2 (GIF)" /> |
 | *Wan 2.2 I2V A14B → Real-ESRGAN 4K + FidelityFX CAS • 4.9 s @ 30 fps — [MP4](docs/exemples/videos/video_wan22_i2v_scene01_1080p.mp4)* | *Static 2.5D parallax (left) vs true AI animation (right) • 5.5 s @ 30 fps — [MP4](docs/exemples/videos/video_comparatif_2.5d_vs_wan22.mp4)* |
 
-| 🎬 Cinematic 2-Plan Film + Audio Mix | 🎬 LTX-2.5 with Native Stereo Audio | 🎬 ESRGAN 4K Super-Resolution |
+| 🎬 Cinematic 2-Shot Film + Audio Mix | 🎬 LTX-2.5 with Native Stereo Audio | 🎬 ESRGAN 4K Super-Resolution |
 | :---: | :---: | :---: |
 | <img src="docs/exemples/videos/video_film_2plans_dragon_master.gif" width="100%" alt="Film 2 plans (GIF)" /> | <img src="docs/exemples/videos/video_ltx25_dragon_audio.gif" width="100%" alt="LTX-2.5 dragon (GIF)" /> | <img src="docs/exemples/videos/video_esrgan_4k_dragon.gif" width="100%" alt="ESRGAN 4K dragon (GIF)" /> |
 | *Two chained shots + RIFE 60 fps + procedural cinematic score — [MP4](docs/exemples/videos/video_film_2plans_dragon_master.mp4)* | *LTX-2.5 Distilled (8 steps) with native synchronized stereo sound — [MP4](docs/exemples/videos/video_ltx25_dragon_audio.mp4)* | *Real-ESRGAN + 4x-UltraSharp Vulkan upscaling to 4K — [MP4](docs/exemples/videos/video_esrgan_4k_dragon.mp4)* |
@@ -260,7 +260,7 @@ The engine features **36 modular workflows** organized into 5 functional categor
 * **Engines**: Flux.1 Dev GGUF, DeepBump ONNX, PIL, NumPy.
 * **Outputs**: `_albedo.png`, `_normal.png`, `_roughness.png`, `_height.png`, `_ao.png`, `_orm.png`, `_material.tres`, `_preview3x3.png`.
 
-##### 🖼️ Illustrations & Variations PBR
+##### 🖼️ PBR Illustrations & Variations
 | PBR Channel | Runic Stone Floor (`sol_runique`) | Ancient Worn Leather (`cuir_ancien`) | Weathered Planks (`old_cracked_wood`) | Seamless 3×3 Check |
 | :---: | :---: | :---: | :---: | :---: |
 | **Albedo** | <img src="godot_assets/sol_runique_albedo.png" width="130" /> | <img src="godot_assets/cuir_ancien_albedo.png" width="130" /> | <img src="godot_assets/old_cracked_wood_planks_albedo.png" width="130" /> | <img src="godot_assets/parchemin_ancien_preview3x3.png" width="130" /> |
@@ -283,11 +283,11 @@ The engine features **36 modular workflows** organized into 5 functional categor
 * **Engines**: Flux.1 Dev GGUF, DeepBump ONNX, Blender 5.x CLI (`bpy`).
 * **Outputs**: `_3d_<shape>.glb` (self-contained with embedded textures), plus all underlying PBR map files.
 
-##### 🖼️ Variations Géométriques Paramétriques (`--shape`)
-| `--shape tile` (Dalle de Sol Biseautée) | `--shape pillar` (Pilier Octogonal) | `--shape card` (Standee 2.5D) | `--shape cutout` (Relief Extrudé) |
+##### 🖼️ Parametric Geometry Variations (`--shape`)
+| `--shape tile` (Beveled Floor Slab) | `--shape pillar` (Octagonal Pillar) | `--shape card` (2.5D Standee) | `--shape cutout` (Extruded Relief) |
 | :---: | :---: | :---: | :---: |
 | <img src="godot_assets/sol_runique_3d_tile_albedo.png" width="150" /> | <img src="godot_assets/pilier_runique_3d_albedo.png" width="150" /> | <img src="godot_assets/potion_3d_card_albedo.png" width="150" /> | <img src="godot_assets/potion_3d_cutout_albedo.png" width="150" /> |
-| *Sol Runique (`sol_runique_3d_tile.glb`)* | *Pilier Donjon (`pilier_runique_3d.glb`)* | *Standee Potion (`potion_3d_card.glb`)* | *Potion Contour (`potion_3d_cutout.glb`)* |
+| *Runic floor (`sol_runique_3d_tile.glb`)* | *Dungeon pillar (`pilier_runique_3d.glb`)* | *Potion standee (`potion_3d_card.glb`)* | *Potion cutout (`potion_3d_cutout.glb`)* |
 
 * **Example**:
   ```bash
@@ -305,11 +305,11 @@ The engine features **36 modular workflows** organized into 5 functional categor
 * **Engines**: PIL, NumPy 3D Volume Array, Blender Headless CLI (`bpy`).
 * **Outputs**: `_voxel.glb` with optimized vertex colors.
 
-##### 🖼️ Sprite 2D vers Modèle 3D Voxel (.GLB avec Vertex Colors)
-| Sprite 2D Source (`casque.png`) | Modèle Voxel 3D (`casque_voxel.glb`) | Sprite 2D Source (`potion_diablo.png`) | Modèle Voxel 3D (`potion_voxel.glb`) |
+##### 🖼️ 2D Sprite to Voxel 3D Model (.GLB with Vertex Colors)
+| 2D Source Sprite (`casque.png`) | Voxel 3D Model (`casque_voxel.glb`) | 2D Source Sprite (`potion_diablo.png`) | Voxel 3D Model (`potion_voxel.glb`) |
 | :---: | :---: | :---: | :---: |
 | <img src="godot_assets/casque.png" width="130" /> | <img src="docs/exemples/workflows_3d/casque_voxel_preview.png" width="160" /> | <img src="godot_assets/potion_diablo.png" width="130" /> | <img src="docs/exemples/workflows_3d/potion_voxel_preview.png" width="160" /> |
-| *Détourage Alpha Net* | *1013 voxels actifs, faces internes culled* | *Icône Potion Dark Fantasy* | *2381 voxels actifs, couleurs sRGB* |
+| *Clean alpha cutout* | *1013 active voxels, interior faces culled* | *Dark fantasy potion icon* | *2381 active voxels, sRGB colors* |
 
 * **Example**:
   ```bash
@@ -326,11 +326,11 @@ The engine features **36 modular workflows** organized into 5 functional categor
 * **Engines**: Flux.1 Dev / SDXL Vulkan, Godot Resource Serializer.
 * **Outputs**: `_sky.png`, `_sky_env.tres`.
 
-##### 🖼️ Texture Panoramique Équirectangulaire 360° (Ratio 2:1 & IBL Godot 4)
-| Texture Sphérique Équirectangulaire 2048×1024 (`_sky.png`) |
+##### 🖼️ 360° Equirectangular Panoramic Texture (2:1 Ratio & Godot 4 IBL)
+| 2048×1024 Equirectangular Spherical Texture (`_sky.png`) |
 | :---: |
 | <img src="godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.png" width="100%" /> |
-| *Aube Froide Vent-Gris — Horizon bouclé à 360° sans couture, prêt pour `WorldEnvironment.tres` et l'éclairage ambiant (IBL)* |
+| *Cold grey-wind dawn — seamless 360° wrapped horizon, ready for `WorldEnvironment.tres` and ambient IBL* |
 
 * **Example**:
   ```bash
@@ -347,11 +347,11 @@ The engine features **36 modular workflows** organized into 5 functional categor
 * **Engines**: Flux.1 Dev / SDXL, PIL canvas compositing.
 * **Outputs**: `_front.png`, `_side.png`, `_model_sheet.png`.
 
-##### 🖼️ Fiche de Modélisation Orthogonale Calibrée avec Repères Horizontaux
-| Planche d'Alignement Face & Profil (`_model_sheet.png`) |
+##### 🖼️ Calibrated Orthogonal Modeling Sheet with Horizontal Guides
+| Front & Side Alignment Sheet (`_model_sheet.png`) |
 | :---: |
 | <img src="docs/exemples/workflows_3d/turnaround_model_sheet.png" width="460" /> |
-| *Repères horizontaux calibrés (Crown, Eyes, Shoulders, Waist, Knees, Feet) pour importation directe dans le viewport Blender* |
+| *Calibrated horizontal guides (Crown, Eyes, Shoulders, Waist, Knees, Feet) for direct Blender viewport import* |
 
 * **Example**:
   ```bash
@@ -369,11 +369,11 @@ The engine features **36 modular workflows** organized into 5 functional categor
 * **Engines**: NumPy procedural vector field generator, Godot shader compiler.
 * **Outputs**: `_flowmap.png`, `_water.gdshader`, `_material.tres`.
 
-##### 🖼️ Variations de Flowmaps Vectorielles (`--flow-type`)
-| `--flow-type river` (Flux Directionnel) | `--flow-type vortex` (Tourbillon / Vortex) | `--flow-type radial` (Onde de Choc Radiale) |
+##### 🖼️ Vector Flowmap Variations (`--flow-type`)
+| `--flow-type river` (Directional Flow) | `--flow-type vortex` (Whirlpool / Vortex) | `--flow-type radial` (Radial Shockwave) |
 | :---: | :---: | :---: |
 | <img src="docs/exemples/workflows_3d/flowmap_river_flowmap.png" width="180" /> | <img src="docs/exemples/workflows_3d/flowmap_vortex_flowmap.png" width="180" /> | <img src="docs/exemples/workflows_3d/flowmap_radial_flowmap.png" width="180" /> |
-| *R=Vecteur X, G=Vecteur Y, B=Magnitude* | *Champ de vitesse centripète rotatif* | *Vecteurs d'expansion centrifuge* |
+| *R=X vector, G=Y vector, B=magnitude* | *Rotating centripetal velocity field* | *Centrifugal expansion vectors* |
 
 * **Example**:
   ```bash
@@ -394,11 +394,11 @@ The engine features **36 modular workflows** organized into 5 functional categor
 * **Engines**: trellis.cpp v0.6.0 (Vulkan) + TRELLIS.2-4B GGUF f16 (10 files, ~16.4 GB, `C:\Modeles_LLM\trellis2-gguf`), Blender 5.x headless (decimation + control renders).
 * **Outputs** (`output/mesh_ia/<nom>/`): `<nom>_<res>.glb` (master, PBR atlas embedded), `<nom>_<res>_jeu.glb` (only with `--faces-cible`), `<nom>_<res>_base.png` (atlas preview), `<nom>_<res>_planche.png` (control sheet), `_vue0-3.png` (orbital renders), `.ply`, `<nom>_<res>_infos.json` (durations, face counts, paths, seed).
 
-##### 🖼️ Planches de Contrôle Multi-Vues TRELLIS.2 (Vues Orbitales & Atlas PBR)
-| TRELLIS.2 Res 512 (Itération Rapide ~10 min) | TRELLIS.2 Res 1024 (Master Haute Définition ~55 min) |
+##### 🖼️ TRELLIS.2 Multi-View Control Sheets (Orbital Views & PBR Atlas)
+| TRELLIS.2 Res 512 (Fast Iteration ~10 min) | TRELLIS.2 Res 1024 (High-Definition Master ~55 min) |
 | :---: | :---: |
 | <img src="docs/exemples/workflows_3d/casque_512_planche.png" width="380" /> | <img src="docs/exemples/workflows_3d/casque_1024_planche.png" width="380" /> |
-| *144k faces, atlas 1024², 4 vues de contrôle* | *293k faces, atlas 2048², micro-reliefs d'armure* |
+| *144k faces, 1024² atlas, 4 control views* | *293k faces, 2048² atlas, armor micro-relief* |
 
 * **Measured generation durations (AMD RX 6950 XT, Vulkan, f16 GGUF)** :
 
@@ -426,65 +426,65 @@ The engine features **36 modular workflows** organized into 5 functional categor
 
 ### 👤 2. Humanoid 3D Characters & Wardrobe (MakeHuman / MPFB2)
 
-#### 2.1. `character3d` / `character_makeup` — Pipeline 100 % Automatique Portrait IA → Corps 3D Blender (.blend, .glb, MakeUp, Shaders, Rendus Cycles)
+#### 2.1. `character3d` / `character_makeup` — 100% Automatic Pipeline: AI Portrait → Blender 3D Body (.blend, .glb, MakeUp, Shaders, Cycles Renders)
 
-Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un portrait 2D en un personnage 3D complet pour Godot 4 et Blender. Il applique la règle fondamentale du projet : **ne jamais coller le portrait 2D sur le maillage**, mais extraire par vision IA les caractéristiques anatomiques et signature de l'avatar pour les peindre sur un calque d'encre vectoriel étagé et composer un corps MPFB2 natif, habillé, gréé et rendu.
+This workflow turns a 2D portrait into a complete 3D character for Godot 4 and Blender **automatically, with zero manual retouching**. It enforces the project's fundamental rule: **never paste the 2D portrait onto the mesh** — instead, AI vision extracts the anatomical features and signature of the avatar, paints them onto a layered vector ink layer, then assembles a native MPFB2 body, dressed, rigged and rendered.
 
-##### 🖼️ Résultat Visuel Produit par le Workflow (Cas d'usage : Elian)
+##### 🖼️ Visual Output Produced by the Workflow (Use Case: Elian)
 
-| 1. Portrait 2D Source | 2. MakeUp UV hm08 (2048²) | 3. Tête Face (Cycles 85mm) | 4. Corps Plein Pied (Cycles 55mm) |
+| 1. Source 2D Portrait | 2. hm08 UV MakeUp (2048²) | 3. Head Front (Cycles 85mm) | 4. Full Body (Cycles 55mm) |
 | :---: | :---: | :---: | :---: |
 | <img src="docs/exemples/character_3d/elian_portrait.png" width="220" /> | <img src="docs/exemples/character_3d/elian_makeup_ink.png" width="220" /> | <img src="docs/exemples/character_3d/elian_tete_face.png" width="220" /> | <img src="docs/exemples/character_3d/elian_perso_face.png" width="220" /> |
-| *Portrait de référence IA (YuNet)* | *Calque vectoriel multi-couches SSS* | *Rendu studio sans bug de mâchoire* | *Corps complet + Robe + Rig Mixamo* |
+| *AI reference portrait (YuNet)* | *Multi-layer SSS vector ink layer* | *Studio render, no jaw bug* | *Full body + Robe + Mixamo rig* |
 
-| 5. Contrôle Tête 3/4 (Cycles 85mm) | 6. Contrôle Plein Pied 3/4 (Cycles 55mm) |
+| 5. Head 3/4 Check (Cycles 85mm) | 6. Full Body 3/4 Check (Cycles 55mm) |
 | :---: | :---: |
 | <img src="docs/exemples/character_3d/elian_tete_tiers.png" width="280" /> | <img src="docs/exemples/character_3d/elian_perso_tiers.png" width="280" /> |
-| *Détail orbites, arête nasale, tempes* | *Silhouette 3D drapée & chaussures paysannes* |
+| *Orbit, nose-bridge and temple detail* | *Draped 3D silhouette & peasant shoes* |
 
-##### 🔬 Étapes Détaillées du Pipeline (Haute Précision)
+##### 🔬 Detailed Pipeline Steps (High Precision)
 
-1. **Extraction Anatomique & Colorimétrique Vision (YuNet ONNX)** :
-   * Détecte les repères faciaux clés (pupilles, coins des yeux, arête et pointe du nez, commissures des lèvres, boîte englobante).
-   * Calcule la distance inter-pupillaire (IPD) pour calibrer l'échantillonnage adaptatif.
-   * Mesure le contraste de fatigue sous-orbitaire ($\Delta L^* = 70.6$), le ratio BGR cernes/joues, le creux des tempes et la teinte labiale.
-2. **Transfert vers le Gamut Peau 3D & Compensation SSS** :
-   * La diffusion sous-surfacique (*Subsurface Scattering*) de Cycles diffuse la composante rouge ~5× plus loin que le vert/bleu. Pour éviter un rendu « écorché » ou rougeoyant, les ombres sont refroidies et assombries (facteur 0.82) avec un cœur violacé/anthracite subtil.
-3. **Peinture Vectorielle Multi-Calques sur Carte UV hm08 (2048×2048 RGBA)** :
-   * Peinture sur l'îlot facial droit ($X \in [1450..2000], Y \in [800..1300]$, symétrie axiale à $Y = 1058$) :
-     - *Calque 1 (Pénombre diffuse)* : orbites, tempes creuses, arête nasale, flush de pommettes (flou gaussien $\sigma = 14$).
-     - *Calque 2 (Croissant orbitaire)* : délimitation sous-palpébrale intermédiaire ($\sigma = 8$).
-     - *Calque 3 (Cœur de fatigue)* : vallée des larmes et centre orbitaire profond ($\sigma = 5$).
-     - *Calque 4 (Creux supérieur)* : ombre sous arcade palpébrale ($\sigma = 5$).
-     - *Calque 5 (Lèvres)* : teinte naturelle douce ($\sigma = 6$).
-   * Génération automatique du manifeste officiel MPFB2 (`.json`) et du calque (`.png`) dans le projet et dans `%APPDATA%/.../mpfb/data/data/ink_layers/`.
-4. **Personnalisation Shaders & Textures Yeux** :
-   * Ajustement de l'iris (ex: cyan / turquoise luminescent, limbe net, émission 0.06) vers `%APPDATA%/.../mpfb/data/data/eyes/materials/`.
-5. **Assemblage Automatique du Corps 3D dans Blender (Headless `bpy`)** :
-   * Instanciation du basemesh MPFB2 avec macro-paramètres canoniques (`--age` et `--gender` exposés en CLI ; `height`, `weight`, `muscle` paramétrables via recette JSON batch).
-   * Application du skin `MAKESKIN` et greffe immédiate du calque d'encre MakeUp.
-   * **Greffe préalable de l'armature standard Mixamo (`HumanService.add_builtin_rig(human, "mixamo")`)** : étape impérative *avant* les vêtements pour que MPFB détecte le squelette et génère automatiquement les modificateurs `Armature` et les groupes de sommets pondérés sur chaque pièce d'équipement.
-   * Attachement des assets quads officiels (`HumanService.add_mhclo_asset`) : yeux `low-poly.mhclo`, sourcils `eyebrow001.mhclo`, langue, dents, cheveux courts sombres `short01.mhclo`, robe moniale et chaussures paysannes (héritent automatiquement des 52 os Mixamo sans déchirure).
-   * Shaders PBR : micro-relief procédural de peau (bruit scale 180 + bump normal 0.15), sourcils/cheveux noir-charbon `(0.015, 0.015, 0.018)`, yeux humides roughness 0.03.
-   * Export simultané de la scène native **`.blend`** (humain 100% paramétrique et éditable) et du fichier optimisé pour le jeu **`.glb`** (compatible 100% avec les 49 animations Mixamo de Godot).
-6. **Rendus de Contrôle Studio Cycles (4 Vues Automatisées)** :
-   * Éclairage 3 points calibré (Key, Fill, Rim) avec contraintes **`TRACK_TO`** orientées automatiquement vers la cible.
-   * Cadrage tête 85mm avec **désactivation préventive des modificateurs MASK de vêtements** (supprime le bug de mâchoire/menton tronqué).
-   * Cadrage plein pied 55mm avec **calcul trigonométrique exact du recul caméra** selon le capteur vertical en ratio portrait 896×1536 ($dist = (H \times 1.28) / (2 \tan \theta)$).
-   * Débruitage Cycles activé (`use_denoising = True`).
+1. **Anatomical & Colorimetric Vision Extraction (YuNet ONNX)**:
+   * Detects key facial landmarks (pupils, eye corners, nose bridge and tip, lip corners, bounding box).
+   * Computes the inter-pupillary distance (IPD) to calibrate adaptive sampling.
+   * Measures under-eye fatigue contrast ($\Delta L^* = 70.6$), the dark-circle/cheek BGR ratio, temple hollowness and lip tint.
+2. **Transfer to the 3D Skin Gamut & SSS Compensation**:
+   * Cycles' *Subsurface Scattering* spreads the red component ~5× farther than green/blue. To avoid a flayed or flushed render, shadows are cooled and darkened (factor 0.82) with a subtle violaceous/anthracite core.
+3. **Multi-Layer Vector Painting on the hm08 UV Map (2048×2048 RGBA)**:
+   * Painting on the right facial island ($X \in [1450..2000], Y \in [800..1300]$, axial symmetry at $Y = 1058$):
+     - *Layer 1 (Diffuse penumbra)*: orbits, hollow temples, nose bridge, cheek flush (Gaussian blur $\sigma = 14$).
+     - *Layer 2 (Orbital crescent)*: intermediate sub-palpebral delineation ($\sigma = 8$).
+     - *Layer 3 (Fatigue core)*: tear valley and deep orbital center ($\sigma = 5$).
+     - *Layer 4 (Upper hollow)*: shadow under the palpebral arch ($\sigma = 5$).
+     - *Layer 5 (Lips)*: soft natural tint ($\sigma = 6$).
+   * Automatic generation of the official MPFB2 manifest (`.json`) and ink layer (`.png`) into the project and `%APPDATA%/.../mpfb/data/data/ink_layers/`.
+4. **Shader & Eye Texture Customization**:
+   * Iris adjustment (e.g. luminescent cyan/turquoise, sharp limbus, 0.06 emission) into `%APPDATA%/.../mpfb/data/data/eyes/materials/`.
+5. **Automatic 3D Body Assembly in Blender (Headless `bpy`)**:
+   * Instanciates the MPFB2 basemesh with canonical macro-parameters (`--age` and `--gender` exposed on the CLI; `height`, `weight`, `muscle` settable via batch JSON recipe).
+   * Applies the `MAKESKIN` skin and immediately grafts the MakeUp ink layer.
+   * **Prior grafting of the standard Mixamo armature (`HumanService.add_builtin_rig(human, "mixamo")`)**: mandatory step *before* clothing so MPFB detects the skeleton and automatically generates the `Armature` modifiers and weighted vertex groups on every garment piece.
+   * Attaches the official quad assets (`HumanService.add_mhclo_asset`): eyes `low-poly.mhclo`, eyebrows `eyebrow001.mhclo`, tongue, teeth, dark short hair `short01.mhclo`, monk robe and peasant shoes (they automatically inherit the 52 Mixamo bones without tearing).
+   * PBR shaders: procedural skin micro-relief (noise scale 180 + bump normal 0.15), charcoal-black eyebrows/hair `(0.015, 0.015, 0.018)`, wet eyes roughness 0.03.
+   * Simultaneous export of the native **`.blend`** scene (100% parametric, editable human) and the game-optimized **`.glb`** (100% compatible with Godot's 49 Mixamo animations).
+6. **Cycles Studio Check Renders (4 Automated Views)**:
+   * Calibrated 3-point lighting (Key, Fill, Rim) with **`TRACK_TO`** constraints automatically aimed at the target.
+   * 85mm head framing with **preventive disabling of garment MASK modifiers** (removes the truncated jaw/chin bug).
+   * 55mm full-body framing with **exact trigonometric camera setback** from the vertical sensor in 896×1536 portrait ratio ($dist = (H \times 1.28) / (2 \tan \theta)$).
+   * Cycles denoising enabled (`use_denoising = True`).
 
-* **Entrées** : `--portrait` (ou `-i, --input`), `--character` (nom), `--age` (défaut 0.12), `--gender` (défaut 0.0), `--eye-color` (`cyan`), `--samples` (défaut 48).
-* **Moteurs** : OpenCV YuNet ONNX, NumPy / PIL multi-layer raster, MakeHuman / MPFB2, Blender 5.2 Cycles headless.
-* **Sorties** : `<character>_mpfb2.blend`, `<character>_mpfb2.glb`, `makeup/<character>_fatigue_ventgris.{png,json}`, `<character>_cyan_eye.png`, 4 rendus `.png` (`tete_face`, `tete_tiers`, `perso_face`, `perso_tiers`).
+* **Inputs**: `--portrait` (or `-i, --input`), `--character` (name), `--age` (default 0.12), `--gender` (default 0.0), `--eye-color` (`cyan`), `--samples` (default 48).
+* **Engines**: OpenCV YuNet ONNX, NumPy / PIL multi-layer raster, MakeHuman / MPFB2, Blender 5.2 Cycles headless.
+* **Outputs**: `<character>_mpfb2.blend`, `<character>_mpfb2.glb`, `makeup/<character>_fatigue_ventgris.{png,json}`, `<character>_cyan_eye.png`, 4 `.png` renders (`tete_face`, `tete_tiers`, `perso_face`, `perso_tiers`).
 * **Commandes CLI** :
   ```bash
-  # 🚀 Génération 100% automatique : du portrait 2D au corps 3D complet + 4 rendus studio :
+  # 🚀 100% automatic generation: from 2D portrait to complete 3D body + 4 studio renders:
   uv run python main.py -w character3d --portrait "assets/portraits/elian_portrait.png" --character elian
 
-  # Variante : génération rapide avec 16 samples Cycles :
+  # Variant: fast generation with 16 Cycles samples:
   uv run python main.py -w character3d --portrait "assets/portraits/elian_portrait.png" --character elian --samples 16
 
-  # Variante : génération du calque d'encre MakeUp seul sans reconstruire le corps :
+  # Variant: generate the MakeUp ink layer only, without rebuilding the body:
   uv run python main.py -w character_makeup --portrait "assets/portraits/elian_portrait.png" --character elian --makeup-only
   ```
 
@@ -499,11 +499,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 Dev, ESRGAN 4K, MakeHuman barycentric binding compiler, Blender 5.x.
 * **Outputs**: `.mhclo`, `.obj`, `.mhmat`, `.thumb` files per clothing item, plus test `.blend`.
 
-##### 🖼️ Garde-Robe Quads & Matériaux PBR Générés
-| Texture Tunique Albedo | Texture Chaussures Albedo | Avatar Habillé dans Blender (Cycles) |
+##### 🖼️ Generated Quad Wardrobe & PBR Materials
+| Tunic Albedo Texture | Shoes Albedo Texture | Dressed Avatar in Blender (Cycles) |
 | :---: | :---: | :---: |
 | <img src="godot_assets/textures/marc_novice/top_rustic_medieval_beig_albedo.png" width="160" /> | <img src="godot_assets/textures/marc_novice/shoes_dark_worn_medieval_l_albedo.png" width="160" /> | <img src="godot_assets/marc_novice_render.png" width="160" /> |
-| *Burlap Tunic Albedo (PBR)* | *Cuir Vieilli Chaussures (PBR)* | *Avatar avec Robe et Chaussures (.mhclo)* |
+| *Burlap tunic albedo (PBR)* | *Worn leather shoes (PBR)* | *Avatar wearing robe & shoes (.mhclo)* |
 
 * **Example**:
   ```bash
@@ -521,11 +521,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 Dev Vulkan, Blender Headless CLI (`bpy`), PBR texture synthesis.
 * **Outputs**: `godot_assets/textures/<character>/*`, updated `<character>.blend`, updated `<character>.glb`, `<character>_beauty_render.png`.
 
-##### 🖼️ Retexturation PBR sur Patrons UV Existants
-| Patron Albedo Retexturé | Carte de Normales Relief | Rendu de Contrôle Studio Cycles |
+##### 🖼️ PBR Retexturing on Existing UV Patterns
+| Retextured Albedo Pattern | Relief Normal Map | Cycles Studio Check Render |
 | :---: | :---: | :---: |
 | <img src="godot_assets/textures/marc_novice/marc_peasant_worksuit_diffuse.png" width="160" /> | <img src="godot_assets/textures/marc_novice/marc_peasant_worksuit_normal.png" width="160" /> | <img src="godot_assets/marc_novice_beauty_render.png" width="160" /> |
-| *Patron UV préservant coutures et plis* | *Relief de tissage procédural* | *Rendu studio Marc Novice avec nouvelle tenue* |
+| *UV pattern preserving seams and folds* | *Procedural weave relief* | *Marc Novice studio render with the new outfit* |
 
 * **Example**:
   ```bash
@@ -544,11 +544,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: OpenPose COCO 18-point mapper, Flux.1 / SDXL, Godot Scene Builder.
 * **Outputs**: `_openpose_skeleton.png`, `_character.png`, `_character.tscn`, `_rig.json`.
 
-##### 🖼️ Variations de Poses d'Armature COCO 18-Points (`--pose`)
+##### 🖼️ COCO 18-Point Skeleton Pose Variations (`--pose`)
 | `--pose idle` | `--pose slash_attack` | `--pose cast_spell` | `--pose shield_block` |
 | :---: | :---: | :---: | :---: |
 | <img src="docs/exemples/workflows_2d/pose_idle_skeleton.png" width="140" /> | <img src="docs/exemples/workflows_2d/pose_slash_attack_skeleton.png" width="140" /> | <img src="docs/exemples/workflows_2d/pose_cast_spell_skeleton.png" width="140" /> | <img src="docs/exemples/workflows_2d/pose_shield_block_skeleton.png" width="140" /> |
-| *Pose d'attente neutre* | *Coup d'épée dynamique* | *Incantation magique* | *Posture défensive bouclier* |
+| *Neutral idle pose* | *Dynamic sword slash* | *Magic spellcasting* | *Defensive shield stance* |
 
 * **Example**:
   ```bash
@@ -566,11 +566,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 / SDXL Vulkan, BiRefNet / RMBG ONNX, JSON Manifest Generator.
 * **Outputs**: individual emotion `.png` files, `_portrait_grid.png`, `_dialogue_manifest.json`.
 
-##### 🖼️ Planche de Dialogues Multi-Émotions RPG (`_portrait_grid.png`)
-| Galerie d'Expressions Cohérentes (Dialogic / Godot Dialogue Manager) |
+##### 🖼️ RPG Multi-Emotion Dialogue Sheet (`_portrait_grid.png`)
+| Consistent Expression Gallery (Dialogic / Godot Dialogue Manager) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/rpg_portrait_grid.png" width="100%" /> |
-| *Déclinaisons d'expressions avec ancrage d'identité et étiquetage JSON pour le lip-sync et les embranchements narratifs* |
+| *Expression variants with identity anchoring and JSON tagging for lip-sync and narrative branching* |
 
 * **Example**:
   ```bash
@@ -607,11 +607,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
   - `scripts/build_clean_marc_skin.py`: Generates seamless, homogeneous skin textures with dedicated colorimetry (e.g., cold winter complexion for Marc).
   - `scripts/align_marc_portrait_to_uv.py`: Projects 2D anatomical facial features (eyes, eyebrows, scars, lips) accurately onto standard MakeHuman hm08 UV layouts without seam tearing.
 
-##### 🖼️ Synthèse de Peau Canonique & Détail Anatomique
-| Gros Plan Visage Studio | Texture de Peau hm08 Diffuse (Marc) | Texture Peau Vent-Gris (Elian Enfant) |
+##### 🖼️ Canonical Skin Synthesis & Anatomical Detail
+| Studio Face Close-Up | hm08 Diffuse Skin Texture (Marc) | Grey-Wind Skin Texture (Elian Child) |
 | :---: | :---: | :---: |
 | <img src="godot_assets/marc_novice_face_closeup.png" width="160" /> | <img src="godot_assets/skins/marc_novice/marc_novice_diffuse.png" width="160" /> | <img src="godot_assets/skins/elian_enfant/elian_enfant_diffuse.png" width="160" /> |
-| *Rendu Cycles avec Subsurface Scattering* | *Texture 2048² UV hm08 Marc Novice* | *Texture 2048² Teint froid Vent-Gris* |
+| *Cycles render with Subsurface Scattering* | *Marc Novice 2048² hm08 UV texture* | *2048² cold grey-wind complexion texture* |
 * **Deployment**:
   - Installs skin assets automatically into `%APPDATA%/Blender Foundation/Blender/5.2/mpfb/data/skins/<skin_name>/` and syncs them with Godot asset targets.
 
@@ -631,11 +631,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 / SDXL, RMBG-1.4 / BiRefNet ONNX, Real-ESRGAN Vulkan.
 * **Outputs**: Clean isolated transparent `.png`.
 
-##### 🖼️ Assets 2D Isolés & Détourés (Items, Accessoires & UI)
-| Potion Dark Fantasy (`potion_diablo`) | Casque d'Armure (`casque`) | Sac d'Inventaire (`ico_sac`) | Mode Furtif (`ico_furtif`) |
+##### 🖼️ Isolated & Cut-Out 2D Assets (Items, Accessories & UI)
+| Dark Fantasy Potion (`potion_diablo`) | Armor Helmet (`casque`) | Inventory Bag (`ico_sac`) | Stealth Mode (`ico_furtif`) |
 | :---: | :---: | :---: | :---: |
 | <img src="godot_assets/potion_diablo.png" width="140" /> | <img src="godot_assets/casque.png" width="140" /> | <img src="godot_assets/ico_sac.png" width="140" /> | <img src="godot_assets/ico_furtif.png" width="140" /> |
-| *LoRA Diablo + Détourage BiRefNet* | *Sprite d'équipement PBR source* | *Icône d'UI 128px centrée Godot* | *Icône de compétence transparente* |
+| *Diablo LoRA + BiRefNet cutout* | *Source PBR equipment sprite* | *128px Godot-centered UI icon* | *Transparent skill icon* |
 
 * **Example**:
   ```bash
@@ -653,11 +653,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 / SDXL, PIL grid compositor, JSON atlas generator.
 * **Outputs**: `_spritesheet.png`, individual angle `.png` files, `_atlas.json`.
 
-##### 🖼️ Planche Multi-Vues / Animation Alignée (`_spritesheet.png`)
-| Planche de Séquence de Vol & Orientations (Export JSON Frame Atlas Godot) |
+##### 🖼️ Multi-Angle / Aligned Animation Sheet (`_spritesheet.png`)
+| Flight Sequence & Orientations Sheet (Godot JSON Frame Atlas Export) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/dragon_spritesheet.png" width="100%" /> |
-| *Trames alignées avec coordonnées UV automatiques pour AnimatedSprite2D / SpriteFrames* |
+| *Aligned frames with automatic UV coordinates for AnimatedSprite2D / SpriteFrames* |
 
 * **Example**:
   ```bash
@@ -674,11 +674,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 Dev, NumPy / PIL bitmask synthesis, Godot TileSet compiler.
 * **Outputs**: `_atlas.png`, `_tileset.tres`.
 
-##### 🖼️ Atlas 47 Tuiles Wang / Minimal 3×3 & Ressource TileSet Godot 4
-| Atlas d'Autotile 47 Tuiles (`_atlas.png`) |
+##### 🖼️ 47-Tile Wang / Minimal 3×3 Autotile Atlas & Godot 4 TileSet Resource
+| 47-Tile Autotile Atlas (`_atlas.png`) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/autotile_sol_vers_cuir_atlas.png" width="480" /> |
-| *Transition Sol Runique vers Cuir — 47 configurations (coins intérieurs/extérieurs, îlots, bordures) + `TileSet.tres` préconfiguré* |
+| *Runic floor to leather transition — 47 configurations (inner/outer corners, islands, borders) + preconfigured `TileSet.tres`* |
 
 * **Example**:
   ```bash
@@ -695,11 +695,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 / SDXL with circular padding kernel, PIL 3x3 tiling verifier.
 * **Outputs**: `_tile.png`, `_preview3x3.png`.
 
-##### 🖼️ Textures Répétables Infinies & Grilles de Vérification 3×3
-| Texture Parchemin Ancien (3×3 Check) | Texture Sel & Toile de Jute (3×3 Check) |
+##### 🖼️ Infinite Seamless Textures & 3×3 Verification Grids
+| Ancient Parchment Texture (3×3 check) | Salt & Burlap Cloth Texture (3×3 check) |
 | :---: | :---: |
 | <img src="godot_assets/parchemin_ancien_preview3x3.png" width="280" /> | <img src="godot_assets/sel_jute_preview3x3.png" width="280" /> |
-| *Bords cycliques raccordés sans couture* | *Texture de tissu répétable sans artefact de bord* |
+| *Cyclic edges matched seamlessly* | *Repeating cloth texture without border artifacts* |
 
 * **Example**:
   ```bash
@@ -716,11 +716,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: PIL ImageOps, NumPy color quantization.
 * **Outputs**: `_pixelart_<palette>.png`.
 
-##### 🖼️ Variations de Palettes Matérielles Rétro (`--palette`)
-| Palette Pico-8 (16 Couleurs) | Palette Endesga-32 (32 Couleurs) | Palette GameBoy (4 Niveaux) |
+##### 🖼️ Retro Hardware Palette Variations (`--palette`)
+| Pico-8 Palette (16 Colors) | Endesga-32 Palette (32 Colors) | GameBoy Palette (4 Shades) |
 | :---: | :---: | :---: |
 | <img src="docs/exemples/workflows_2d/casque_pixel_pico8.png" width="170" /> | <img src="docs/exemples/workflows_2d/casque_pixel_endesga32.png" width="170" /> | <img src="docs/exemples/workflows_2d/casque_pixel_gameboy.png" width="170" /> |
-| *Quantification Lab 16 teintes vibrantes* | *Palette 32 teintes équilibrées* | *Esthétique rétro monochrome 4 teintes* |
+| *Lab quantization, 16 vibrant tones* | *Balanced 32-tone palette* | *4-tone monochrome retro aesthetic* |
 
 * **Example**:
   ```bash
@@ -737,11 +737,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 / SDXL Img2Img, RMBG segmentation.
 * **Outputs**: Individual variant `.png` files named `<base>_<theme>.png`.
 
-##### 🖼️ Déclinaisons Élémentaires Thématiques (`--themes`)
-| Variante Feu / Flammes | Variante Glace / Givre | Variante Poison / Toxique | Variante Vide / Arcanes |
+##### 🖼️ Thematic Elemental Variations (`--themes`)
+| Fire / Flames Variant | Ice / Frost Variant | Poison / Toxic Variant | Void / Arcane Variant |
 | :---: | :---: | :---: | :---: |
 | <img src="docs/exemples/workflows_2d/potion_variante_feu.png" width="140" /> | <img src="docs/exemples/workflows_2d/potion_variante_glace.png" width="140" /> | <img src="docs/exemples/workflows_2d/potion_variante_poison.png" width="140" /> | <img src="docs/exemples/workflows_2d/potion_variante_vide.png" width="140" /> |
-| *Ambre et rouge incandescent* | *Cyan et bleu cristallin* | *Vert émeraude toxique* | *Violet et pourpre abyssal* |
+| *Incandescent amber and red* | *Crystalline cyan and blue* | *Toxic emerald green* | *Abyssal violet and purple* |
 
 * **Example**:
   ```bash
@@ -759,11 +759,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: PIL 9-slice analyzer, Godot Resource Serializer.
 * **Outputs**: `.png`, `_stylebox.tres`, `_ninepatch.tscn`, `_preview_stretched.png`.
 
-##### 🖼️ Étirement Vectoriel 9-Patch sans Déformation des Coins
-| Cadre UI Carré Source | NinePatchRect Étiré (Ratio Panoramique 520×240) |
+##### 🖼️ 9-Patch Vector Stretch without Corner Distortion
+| Square UI Frame Source | Stretched NinePatchRect (520×240 Panoramic Ratio) |
 | :---: | :---: |
 | <img src="godot_assets/cadre_portrait_combat.png" width="170" /> | <img src="docs/exemples/workflows_2d/ui_9slice_demo.png" width="480" /> |
-| *Texture 512² avec bordures sculptées* | *Coins 100% intacts, centre et tranches étirés selon `StyleBoxTexture.tres`* |
+| *512² texture with sculpted borders* | *100% intact corners, stretched center & slices per `StyleBoxTexture.tres`* |
 
 * **Example**:
   ```bash
@@ -780,11 +780,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: BiRefNet ONNX / RMBG-1.4 ONNX, NumPy, PIL.
 * **Outputs**: `_rembg.png`.
 
-##### 🖼️ Détourage Neural BiRefNet / RMBG-1.4 (Zéro Frange Blanche)
-| Comparatif Fond Brut vs Détourage Alpha Net (`_rembg.png`) |
+##### 🖼️ BiRefNet / RMBG-1.4 Neural Cutout (Zero White Fringe)
+| Raw Background vs Clean Alpha Cutout Comparison (`_rembg.png`) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/rembg_comparatif.png" width="500" /> |
-| *Élimination intégrale du fond sans perte des pointes fines ni halo blanc résiduel* |
+| *Complete background removal without losing fine tips or leaving residual white halos* |
 
 * **Example**:
   ```bash
@@ -805,11 +805,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: NumPy audio synthesizer, SoundFile encoder.
 * **Outputs**: `_sfx.wav`, `_sfx.ogg`.
 
-##### 🖼️ Formes d'Ondes & Synthèse Procédurale (`_sfx.wav` / `_sfx.ogg`)
-| Synthèse Procédurale Multi-Oscillateurs (Potion de Soin) |
+##### 🖼️ Waveforms & Procedural Synthesis (`_sfx.wav` / `_sfx.ogg`)
+| Multi-Oscillator Procedural Synthesis (Healing Potion) |
 | :---: |
 | <img src="docs/exemples/workflows_audio/sfx_potion_waveform.png" width="100%" /> |
-| *Bruitage 44.1 kHz 16-bit PCM sans clipping, enveloppe ADSR douce et conversion Vorbis OGG pour Godot* |
+| *44.1 kHz 16-bit PCM sfx without clipping, soft ADSR envelope and OGG Vorbis conversion for Godot* |
 
 * **Example**:
   ```bash
@@ -827,11 +827,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: NumPy procedural audio synthesizer, SoundFile encoder, Godot bus serializer.
 * **Outputs**: `_ambience.wav`, `_ambience.ogg`, `_bus_layout.tres`, `_player.tscn`.
 
-##### 🖼️ Paysages Sonores Procéduraux en Boucle Parfaite (`_ambience.wav`)
-| Ambiance Donjon Souterrain (Boucle Infinie 8.0s) |
+##### 🖼️ Procedural Perfect-Loop Soundscapes (`_ambience.wav`)
+| Underground Dungeon Ambience (8.0s Infinite Loop) |
 | :---: |
 | <img src="docs/exemples/workflows_audio/ambience_donjon_waveform.png" width="100%" /> |
-| *Fond immersif sans couture de phase avec ressource `AudioBusLayout.tres` (reverb & filtres)* |
+| *Immersive bed with zero phase seam, shipped with an `AudioBusLayout.tres` resource (reverb & filters)* |
 
 * **Example**:
   ```bash
@@ -850,11 +850,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: audio.cpp v0.7.2 (`audiocpp_cli`, Vulkan) + ACE-Step 1.5 Turbo bf16 GGUF (~9.4 Gio monolithic package incl. LM planner + text encoder + VAE, `C:\Modeles_LLM\ACE-Step1.5-GGUF`, ~42 s per 28 s generation on RX 6950 XT) or MiniMax-Music3-GGUF Q4_0/Q8_0 (~8.5 GB, `C:\Modeles_LLM\MiniMax-Music3-GGUF`, ~25 min per 23 s generation), NumPy/SciPy DSP, ffmpeg 9 (`C:\ffmpeg\dist\bin\ffmpeg.exe`), optional llama.cpp + Music Flamingo GGUF.
 * **Outputs** (`output/music_bg/`): `<name>_full.wav` (48 kHz PCM16 loop), `<name>_bed.wav` (−30 LUFS bed), `<name>.ogg`, `<name>_preview.mp3`, `recette_mixage_voix.txt` (ducking command), `candidats/` (every candidate: raw WAV + loop + bed + MP3), `ECOUTE_cand<N>_boucle_x3.mp3` (listening previews).
 
-##### 🖼️ Boucles Musicales IA — Formes d'Ondes & Énergie des Raccords
-| Formes d'Ondes Normalisées (Stéréo 48 kHz — Boucles Candidates) |
+##### 🖼️ AI Music Loops — Waveforms & Seam Energy
+| Normalized Waveforms (48 kHz Stereo — Candidate Loops) |
 | :---: |
 | <img src="docs/exemples/musique/waveforms_boucles_tech.png" width="100%" /> |
-| *Alignement aux zéros de phase (seam Δ0.1 à 0.4 dB), mixage voix-off −30 LUFS et ducking automatique ffmpeg* |
+| *Zero-crossing alignment (seam Δ0.1–0.4 dB), −30 LUFS voice-over mix and automatic ffmpeg ducking* |
 
 * **Helpers**: `scripts/download_music3_gguf.py` (engine + models), `scripts/download_acestep15_gguf.py [turbo|xl-turbo|xl-sft|tout]` (ACE-Step 1.5, XL via ModelScope mirror), `scripts/telecharger_gros_fichier_parallele.py <url> <dest>` (parallel segmented downloader — bypasses HF CDN single-connection throttling, ~10× faster), `scripts/generer_chanson_acestep.py paroles.txt` (**full songs with lyrics**, 50+ languages, structure tags), `scripts/download_music_flamingo.py` (optional QA model), `scripts/generer_boucles_music_bg_batch.py N [moteur]` (**resilient batch** — one candidate per process, resumes from existing files, survives AMD GPU driver resets), `scripts/finaliser_boucles_music_bg.py` (re-finalize raw WAVs), `scripts/ecoute_candidat_music_bg.py N` (listening preview).
 * **Example**:
@@ -885,11 +885,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Kokoro TTS / Python audio synthesizer, viseme alignment engine.
 * **Outputs**: `<emotion>.wav`, `<emotion>.ogg`, `_dialogue_manifest.json`.
 
-##### 🖼️ Synthèse Vocale & Alignement Phonétique des Visèmes (Lip-Sync)
-| Cartographie Temporelle des Visèmes (Export JSON pour Dialogic / Godot) |
+##### 🖼️ Voice Synthesis & Phonetic Viseme Alignment (Lip-Sync)
+| Viseme Time Mapping (JSON Export for Dialogic / Godot) |
 | :---: |
 | <img src="docs/exemples/workflows_audio/tts_dialogue_visemes.png" width="100%" /> |
-| *Synchronisation phonétique des visèmes sur la réplique audio avec hauteur de voix ajustable* |
+| *Phonetic viseme sync over the audio line with adjustable voice pitch* |
 
 * **Example**:
   ```bash
@@ -907,11 +907,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Flux.1 Dev / SDXL, PIL grid compositor, Godot particle resource generator.
 * **Outputs**: `_flipbook.png`, `_vfx_material.tres`, `_particles_process.tres`, `_vfx.tscn`.
 
-##### 🖼️ Planches d'Animation de Particules 4×4 & Scènes Godot (.tscn)
-| VFX Slash Épée (`vfx_slash`) | VFX Aura Mystique (`vfx_aura`) | VFX Puits de Vide (`vfx_vide`) | VFX Friction (`vfx_friction`) |
+##### 🖼️ 4×4 Particle Animation Sheets & Godot Scenes (.tscn)
+| Sword Slash VFX (`vfx_slash`) | Mystic Aura VFX (`vfx_aura`) | Void Well VFX (`vfx_vide`) | Friction VFX (`vfx_friction`) |
 | :---: | :---: | :---: | :---: |
 | <img src="godot_assets/vfx_slash_flipbook.png" width="150" /> | <img src="godot_assets/vfx_aura_flipbook.png" width="150" /> | <img src="godot_assets/vfx_vide_flipbook.png" width="150" /> | <img src="godot_assets/vfx_friction_flipbook.png" width="150" /> |
-| *Grille 4×4 + GPUParticles3D* | *Aura magique évolutive* | *Vortex abyssal animé* | *Particules d'étincelles & friction* |
+| *4×4 grid + GPUParticles3D* | *Evolving magic aura* | *Animated abyssal vortex* | *Spark & friction particles* |
 
 * **Example**:
   ```bash
@@ -929,11 +929,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Periodic circular phase generator, PIL atlas builder, Godot shader writer.
 * **Outputs**: `_spritesheet.png`, `_loop.gdshader`, `_loop_material.tres`, `_animated_tex.tres`.
 
-##### 🖼️ Déphasage Temporel Circulaire Dual-Sample (Zéro Saccade)
-| Déphasage Cyclique 0° à 270° (Shader Godot 4 `.gdshader`) |
+##### 🖼️ Circular Dual-Sample Time Offset (Zero Stutter)
+| Cyclic Phase Shift 0° to 270° (Godot 4 `.gdshader`) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/anim_loop_phases.png" width="100%" /> |
-| *Interpolation phase-shifted continue garantissant une boucle infinie sans réinitialisation visible* |
+| *Continuous phase-shifted interpolation guaranteeing an infinite loop without visible reset* |
 
 * **Example**:
   ```bash
@@ -951,11 +951,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: RIFE v4 ONNX optical flow model, PIL frame sequencer.
 * **Outputs**: `_rife_<factor>x.png`.
 
-##### 🖼️ Multiplication Temporelle de Trames par Flux Optique (RIFE v4 ONNX)
-| Interpolation 24 FPS vers 60 FPS (Trame Source N -> Intermédiaire RIFE -> Trame N+1) |
+##### 🖼️ Frame Multiplication by Optical Flow (RIFE v4 ONNX)
+| 24 FPS to 60 FPS Interpolation (Source Frame N -> RIFE Intermediate -> Frame N+1) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/rife_interp_strip.png" width="100%" /> |
-| *Reconstruction de trames intermédiaires préservant l'alpha et la netteté des arêtes* |
+| *Intermediate frame reconstruction preserving alpha and edge sharpness* |
 
 * **Example**:
   ```bash
@@ -977,11 +977,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: stable-diffusion.cpp Vulkan (`-M vid_gen`), Wan 2.1 / Wan 2.2 / LTX-2.5 GGUF/Safetensors, libwebm.
 * **Outputs**: `_vid.webm`, `_player.tscn` (Godot 4 VideoStreamPlayer scene).
 
-##### 🖼️ Génération Vidéo SOTA & Rendu Maître 4K
-| Rendu Maître LTX-2.5 Distilled (Audio Natif) | Animation Wan 2.2 MoE I2V (Scène Nexus) | Comparatif Netteté CAS 0.75 |
+##### 🖼️ SOTA Video Generation & 4K Master Rendering
+| LTX-2.5 Distilled Master Render (Native Audio) | Wan 2.2 MoE I2V Animation (Nexus Scene) | CAS 0.75 Sharpness Comparison |
 | :---: | :---: | :---: |
 | <img src="docs/exemples/videos/video_ltx25_dragon_audio.gif" width="230" /> | <img src="docs/exemples/videos/video_wan22_i2v_scene01_1080p.gif" width="230" /> | <img src="docs/exemples/videos/video_ltx25_comparatif_cas.png" width="230" /> |
-| *8 steps, 15B DiT + Audio Stéréo* | *Dual-DiT MoE, micro-dynamique fluide* | *Filtre CAS matériel AMF Lanczos* |
+| *8 steps, 15B DiT + stereo audio* | *Dual-DiT MoE, fluid micro-dynamics* | *AMF hardware CAS filter, Lanczos* |
 
 * **Example**:
   ```bash
@@ -1090,11 +1090,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: audio.cpp v0.7.2 (`audiocpp_cli`, Vulkan) + Qwen3-TTS-12Hz-1.7B-Base q8_0 (2.51 Gio) / VoxCPM2 q8_0 (2.75 Gio) / Fish-Audio-S2-Pro q8_0 (5.88 Gio) + Qwen3-ASR-0.6B q8_0 (1.07 Gio) — all in `C:\Modeles_LLM`, ffmpeg 9.
 * **Outputs** (`output/voix_off/<name>/`): `voix_off_brut.wav` (raw engine output), `voix_off_brut_final.wav` (−16 LUFS 48 kHz) + `voix_off_brut_final.mp3` (listening), prepared reference WAV + transcript cache (reused across runs).
 
-##### 🖼️ Comparatif des Moteurs GGUF Vulkan avec Clonage Vocal
-| Formes d'Ondes Normalisées à −16 LUFS (Qwen3-TTS vs VoxCPM2 vs Fish S2-Pro) |
+##### 🖼️ GGUF Vulkan Engine Comparison with Voice Cloning
+| Normalized Waveforms at −16 LUFS (Qwen3-TTS vs VoxCPM2 vs Fish S2-Pro) |
 | :---: |
 | <img src="docs/exemples/workflows_audio/voix_off_comparatif_waveform.png" width="100%" /> |
-| *Testé et validé avec référence vocale française : respect strict des dynamiques et normalisation 2 passes YouTube* |
+| *Tested and validated with a French voice reference: strict dynamics preservation and 2-pass YouTube normalization* |
 * **Example**:
   ```bash
   # Cloned voice (reference = any recording) + expression instruction :
@@ -1172,11 +1172,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Style analysis extractor, Flux.1 / SDXL, Godot palette exporter.
 * **Outputs**: Item `.png` files, `_consistency_board.png`, `.tres`, `.gpl`, `.json`.
 
-##### 🖼️ Verrouillage de Style & Planche de Cohérence (Palettes Godot)
-| Référence de Style (Entrée `-i`) → 4 Objets Dérivés Conditionnés (`_consistency_board.png`) |
+##### 🖼️ Style Locking & Consistency Board (Godot Palettes)
+| Style Reference (`-i` Input) → 4 Conditioned Derived Items (`_consistency_board.png`) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/ip_adapter_consistency_board.png" width="560" /> |
-| *Casque, sac, parchemins et linceul dérivés de la potion de référence — la palette dominante est extraite et exportée en `.tres` / `.gpl` / `.json`* |
+| *Helmet, bag, scrolls and shroud derived from the reference potion — dominant palette extracted and exported to `.tres` / `.gpl` / `.json`* |
 
 * **Example**:
   ```bash
@@ -1192,11 +1192,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: Real-ESRGAN Vulkan (`4x-UltraSharp.pth`, `RealESRGAN_x4plus_anime_6B.pth`).
 * **Outputs**: `_upscaled_<WxH>.png`.
 
-##### 🖼️ Super-Résolution 4× sans Halo Alpha (Zoom sur les Micro-Détails)
-| Original Pixelisé (zoom ×4 nearest) vs 4x-UltraSharp Vulkan (`_upscaled_4096x4096.png`) |
+##### 🖼️ 4× Super-Resolution without Alpha Halo (Micro-Detail Zoom)
+| Pixelized Original (×4 nearest zoom) vs 4x-UltraSharp Vulkan (`_upscaled_4096x4096.png`) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/upscale_comparatif_zoom.png" width="480" /> |
-| *Reconstruction nette des gravures du casque — le canal alpha est traité séparément puis recombiné (zéro corrosion de bord)* |
+| *Sharp reconstruction of the helmet engravings — alpha channel processed separately then recombined (zero edge corrosion)* |
 
 * **Example**:
   ```bash
@@ -1213,11 +1213,11 @@ Ce workflow transforme **automatiquement et sans aucune retouche manuelle** un p
 * **Engines**: WorkflowRegistry dispatcher, JSON recipe parser.
 * **Outputs**: Complete batch of generated game assets.
 
-##### 🖼️ Une Recette → Plusieurs Assets Hétérogènes en une Seule Exécution
-| Recette JSON (`recipes/pack_retro_demo.json`) + Sorties Réelles (2 palettes pixel-art + 2 flowmaps paramétrés) |
+##### 🖼️ One Recipe → Multiple Heterogeneous Assets in a Single Run
+| JSON Recipe (`recipes/pack_retro_demo.json`) + Real Outputs (2 pixel-art palettes + 2 parametrized flowmaps) |
 | :---: |
 | <img src="docs/exemples/workflows_2d/batch_demo_montage.png" width="620" /> |
-| *4 tâches exécutées séquentiellement (4/4 OK) avec workflow et paramètres overrides par tâche ; VRAM libérée entre chaque job* |
+| *4 tasks executed sequentially (4/4 OK) with per-task workflow & parameter overrides; VRAM freed between jobs* |
 
 * **Example**:
   ```bash
