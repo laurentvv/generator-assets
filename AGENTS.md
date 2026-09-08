@@ -41,6 +41,11 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
 - Environnement : `uv` (Python 3.11+), Windows, Git Bash. Commandes : `uv run python main.py -w <workflow>`.
 - Philosophie : **moteurs C++ Vulkan + GGUF, zéro PyTorch** (sd-cli, llama.cpp, audio.cpp).
 - GPU : AMD RX 6950 XT 16 Go (RDNA2, pas de CUDA) — tout nouveau moteur doit tourner en Vulkan/CPU.
+- **Avant tout lancement de génération lourde** (audio.cpp, sd-cli, trellis.cpp) :
+  `uv run python scripts/check_charge_systeme.py` — vérifie CPU/GPU/RAM/VRAM (exit 1 =
+  machine occupée → attendre un créneau libre, jamais lancer sur une machine chargée ; cf.
+  smoke test v0.7.3 du 2026-09-08 : RTF mesuré 3,3× trop lent à cause d'une contention GPU).
+  Seuils ajustables (`--seuil-cpu`, `--seuil-gpu`, `--seuil-ram`, `--seuil-vram`, `--duree`).
 - Code : docstrings et logs en français, identifiants en anglais, prompts modèles en anglais.
 - Gros téléchargements HF/ModelScope : `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).
