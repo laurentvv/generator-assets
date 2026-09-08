@@ -80,7 +80,10 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   « testé, non validé » — jamais de workflow avant validation, cf. règle ci-dessus).
   Contexte : plafond réalisme instrumental rock d'ACE-Step (§1.11) ; objectif = un moteur
   musical GGUF Vulkan rendant basse/batterie/guitares crédibles.
-- 🛡️ **Modèles : vérifier la retéléchargeabilité AVANT toute suppression dans `C:\Modeles_LLM`.**
+- 🛡️ **Modèles : vérifier la retéléchargeabilité AVANT toute suppression dans `C:\Modeles_LLM`,
+  et si l'accord utilisateur n'est pas 100 % explicite (ambiguïté possible), REFORMULER la liste
+  validée avant d'exécuter** (incident 2026-09-08 : consigne mal interprétée → 4 modèles supprimés
+  au lieu de 0, heureusement restaurés depuis HF).
   Lister tous les repos de l'org, pas seulement le repo principal — certains modèles vivent dans
   des repos dédiés hors `audio.cpp-gguf` (ex. `audio-cpp/MiniMax-Music3-GGUF`,
   `audio-cpp/VibeVoice-7B-GGUF`) :
