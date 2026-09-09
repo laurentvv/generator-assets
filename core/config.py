@@ -61,6 +61,12 @@ DEFAULT_H3_AUDIO_VAE = os.getenv(
 DEFAULT_H3_LLM = os.getenv(
     "H3_LLM_PATH", os.path.join(DEFAULT_MODEL_DIR, "qwen3vl_32b_minimax_h3-Q2_K_M.gguf")
 )
+# LoRA turbo Ref2VA (distillation 20→8 steps, HF lightx2v/Minimax-h3-Turbo — prendre la
+# variante NON `_comfyui_`). Recette VALIDÉE utilisateur le 2026-09-09 : sampling −64 %,
+# total −46 %, qualité et raccord référence ≥ baseline (nom sans extension .safetensors).
+DEFAULT_H3_REF2VA_TURBO_LORA = os.getenv(
+    "H3_REF2VA_TURBO_LORA", "minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16"
+)
 
 # Modèles Musique (MiniMax-Music3 GGUF via audio.cpp + Music Flamingo via llama.cpp)
 DEFAULT_MUSIC3_DIR = os.getenv("MUSIC3_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "MiniMax-Music3-GGUF"))

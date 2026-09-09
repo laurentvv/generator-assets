@@ -1016,16 +1016,17 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   1. Extracts the **reference tail** from a source video (last N frames @ 24 fps + paired WAV, via FFmpeg) — or accepts a raw frame directory directly.
   2. Runs MiniMax-H3 **Ref2VA** through sd-cli Vulkan: the reference conditions the DiT as `<Video 1>` / `<Audio 1>` (mention them in the prompt), producing a new chunk that continues character, scene **and sound**.
   3. Mandatory memory placement on 16 GB VRAM / 32 GB RAM: DiT on GPU capped by `--max-vram` (graph-cut), Qwen3-VL 32B and video VAE on CPU.
-* **Inputs**: `-i <source video | frame dir>` (required), `prompt` (describe the continuation), `--ref-frames` (default 12), `--ref-audio`, `--frames` (H3 grid 17k+5 → 22/39/56, default 22), `--steps` (default 20), `--max-vram` (default 10), `-o`.
-* **Engines**: sd-cli Vulkan `-M vid_gen` (MiniMax-H3 ref2va DiT Q4_K_M + video/audio VAEs + Qwen3-VL 32B Q2), FFmpeg.
+* **Inputs**: `-i <source video | frame dir>` (required), `prompt` (describe the continuation), `--ref-frames` (default 12), `--ref-audio`, `--frames` (H3 grid 17k+5 → 22/39/56, default 22), `--steps` (default 20, or 8 with `--turbo`), `--turbo` (distilled LoRA 8 steps — validated 2026-09-09, ~2× faster, quality & reference continuity ≥ baseline), `--max-vram` (default 10), `-o`.
+* **Engines**: sd-cli Vulkan `-M vid_gen` (MiniMax-H3 ref2va DiT Q4_K_M + video/audio VAEs + Qwen3-VL 32B Q2, turbo LoRA `lightx2v/Minimax-h3-Turbo` with `--turbo`), FFmpeg.
 * **Outputs**: `.webm` (VP8 + PCM 32 kHz stereo — **generated audio track included**), `<name>_ref/` (extracted reference).
-* ⚠️ **Heavy**: ~70 min for 22 frames @ 864×480 on RX 6950 XT (VAE/Qwen on CPU); system-load pre-check refuses to start on a busy machine. Single chunk only — multi-chunk endless looping not validated yet.
+* ⚠️ **Heavy**: ~70 min for 22 frames @ 864×480 on RX 6950 XT (VAE/Qwen on CPU), **~38 min with `--turbo`**; system-load pre-check refuses to start on a busy machine. Single chunk only — multi-chunk endless looping not validated yet.
 
   ```bash
   # Continue a dragon video: same dragon breathes fire toward the camera, sound carries over
+  # (--turbo = validated distilled LoRA, 8 steps: ~38 min instead of ~70)
   uv run python main.py -w h3_ref2va -i output/overnight/esrgan_4k/01_ltx25_dragon_4k_ultrasharp.mp4 \
     -p "Use the dragon from <Video 1> and the roar from <Audio 1> as the opening state. The dragon breathes a jet of orange fire toward the camera." \
-    -o dragon_continuation
+    --turbo -o dragon_continuation
   ```
 
 * **🔍 Recommended Workflow: Fast 480p/512p Preview ➔ AI 4K Super-Resolution Master** :
