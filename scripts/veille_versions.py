@@ -4,9 +4,10 @@
 Veille des versions de la stack locale : audio.cpp, sd-cli (stable-diffusion.cpp),
 trellis.cpp (image → 3D, workflow mesh_ia) + GGUF TRELLIS.2 sur HF, FFmpeg,
 Python + paquets uv, paquets GGUF de modèles (ACE-Step 1.5…), org audio-cpp
-sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, llama.cpp),
-écosystème ComfyUI (releases du cœur, commits de repos clés, nouveaux repos
-topic:comfyui — source d'idées de workflows, cf. docs/recherche_comfyui_2026-09-09.md).
+sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, sa3.cpp —
+port C++/GGML de Stable Audio 3, commits en source info, llama.cpp), écosystème ComfyUI
+(releases du cœur, commits de repos clés, nouveaux repos topic:comfyui — source
+d'idées de workflows, cf. docs/recherche_comfyui_2026-09-09.md).
 
 Chaque source est comparée à l'état mémorisé (output/veille/etat.json) : seules
 les NOUVEAUTÉS sont signalées (🆕), avec les notes de release complètes archivées
@@ -423,6 +424,35 @@ def veille() -> tuple:
         etat["acestep_repo"] = {"derniere_vue": derniere["tag"]}
     except Exception as e:
         rapport.ajouter("⚠️", "ace-step", f"vérification impossible : {e}")
+
+    # ---------------------------------------------------------------- sa3.cpp
+    # Port C++/GGML alternatif de Stable Audio 3 (CPU/CUDA/Vulkan/Metal, zéro
+    # PyTorch), découvert le 2026-09-09 via les GGUF multi-fichiers thepatch —
+    # la famille stable_audio est VALIDÉE sur ce poste via audio.cpp (workflow
+    # sfx, MEMORY_BANK §1.11) : un moteur dédié plus rapide/riche serait un
+    # candidat direct. Source info : pas installé localement, à évaluer au
+    # besoin. Repo SANS releases ni tags (404 sur /releases/latest) →
+    # surveillance au commit près, même mécanique que les repos ComfyUI.
+    try:
+        r = requests.get(
+            "https://api.github.com/repos/betweentwomidnights/sa3.cpp/commits?per_page=1",
+            timeout=30)
+        r.raise_for_status()
+        commit = r.json()[0]
+        sha, sujet = commit["sha"][:7], (commit["commit"]["message"] or "").split("\n")[0][:90]
+        deja_vu = etat.get("sa3.cpp", {}).get("dernier_commit")
+        if deja_vu and sha != deja_vu:
+            rapport.ajouter("🆕", "sa3.cpp", f"nouveaux commits sur betweentwomidnights/sa3.cpp : "
+                            f"{sujet} — port C++/GGML de Stable Audio 3 (Vulkan, zéro PyTorch ; famille "
+                            f"stable_audio déjà validée via audio.cpp, workflow sfx) — pas installé "
+                            f"localement : à évaluer si besoin SFX/musique")
+        elif deja_vu:
+            rapport.ajouter("✅", "sa3.cpp", f"sa3.cpp : aucun nouveau commit ({sha})")
+        else:
+            rapport.ajouter("✅", "sa3.cpp", f"baseline enregistrée : sa3.cpp ({sha}) — pas installé, source info")
+        etat["sa3.cpp"] = {"dernier_commit": sha}
+    except Exception as e:
+        rapport.ajouter("⚠️", "sa3.cpp", f"vérification impossible : {e}")
 
     # ------------------------------------------------------------- llama.cpp
     try:
