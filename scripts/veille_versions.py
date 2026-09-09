@@ -246,7 +246,7 @@ def veille() -> tuple:
         if derniere != deja_vue:
             rapport.ajouter("🆕", "ffmpeg",
                             f"nouvelle version {derniere} (build local : {installee}) → "
-                            f"MSYSTEM=UCRT64 /c/ffmpeg/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh' — "
+                            f"MSYSTEM=UCRT64 /c/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh' — "
                             f"nouveautés : https://ffmpeg.org/index.html#news")
         else:
             rapport.ajouter("✅", "ffmpeg", f"à jour (build local {installee})")
