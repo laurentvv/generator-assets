@@ -8,6 +8,12 @@
 > raccord référence supérieur ; MEMORY_BANK §1.16). **La boucle elle-même n'a jamais été jugée** : les raccords
 > chunk→chunk sont le point non validé. Ne deviendra un workflow qu'après
 > validation utilisateur du résultat (règle AGENTS.md).
+>
+> **Leviers intégrés (2026-09-09, défauts = recette validée — à sonder, pas à déployer)** :
+> `--ref-audio-sec` (fenêtre audio « qui remonte » découpée dans la timeline complète —
+> leçon Motion-Context) • `--ref-frames` (5 = trames de réf exactement sur le raccord,
+> cf. troncature sd-cli 12→5 premières trames) • `--ref-scale` (downscale réf, actif
+> seulement sous la taille nominale sd-cli 768×432). Détail : MEMORY_BANK §1.16.
 
 ## 📏 Ce que ça produit (estimations mesurées, RX 6950 XT / 16 Go / 31,8 Go RAM, mode turbo)
 
@@ -25,7 +31,15 @@ MEMORY_BANK §1.16 pour l'A/B.)
 de base (frame 1 quasi identique à la dernière frame de la réf — le point critique
 d'un chaînage chunk→chunk). Le risque n° 1 du proto en est réduit.
 
-**Leviers restants** (non validés) : résolution ÷2 → ~45-60 s/24 h •
+**Leviers intégrés au proto (options, non validés — A/B à faire sur 2 chunks avant généralisation)** :
+
+| Option | Défaut (= recette validée) | Variante à sonder | Effet attendu |
+|---|---|---|---|
+| `--ref-audio-sec` | 0.5 | 4-6 | Fenêtre audio finissant au raccord, découpée dans la timeline (source + chunks joués) → le modèle « continue la piste » au lieu d'en écrire une qui ressemble (leçon Motion-Context). Continuité musicale chunk→chunk. |
+| `--ref-frames` | 12 | 5 | sd-cli n'encode que les 5 PREMIÈRES trames du dossier (troncature 17k+5) : en fournir exactement 5 les met sur le raccord + encodage VAE réf ÷ ~2,4 (chunk ~30 min). |
+| `--ref-scale` | 1.0 | 0.15 (4K) / 0.85 (864-wide) | Downscale réf aligné 32 px — n'a d'effet QUE sous la taille nominale interne sd-cli (768×432) : latent réf plus petit → attention moins chère (équivalent `video_continuation_res`). Réf plus douce. |
+
+**Leviers restants hors proto** : résolution de sortie ÷2 → ~45-60 s/24 h •
 **RAM 64 Go = le vrai déblocage** (fin du swap VAE + DiT résident GPU
 → chunk ~10-15 min → **1,5-2,5 min/24 h**). Comparaison : Wan 2.2 sur 24 h ≈ 6-9 min
 mais plans indépendants, sans continuité ni audio.
@@ -44,7 +58,9 @@ nohup uv run python scripts/proto_endless_h3.py --output-dir output/endless_drag
 
 Le script (`scripts/proto_endless_h3.py`) : storyboard de 18 prompts éditable en tête
 de fichier (marche → feu → envol → lac → falaises → grotte → trésor → sommeil),
-reprise automatique au premier chunk manquant, 3 essais/chunk espacés de 15 min
+pré-extraction de la référence de chaque chunk (trames + WAV via ffmpeg, passés au
+workflow en dossier de trames + `--ref-audio`), reprise automatique au premier chunk
+manquant, 3 essais/chunk espacés de 15 min
 (absorbe un check_charge refusant), fenêtre 23 h (`--deadline-min`), concat finale
 automatique (`endless_final.webm`, `-c copy`).
 
@@ -59,6 +75,10 @@ ls output/endless_dragon_24h/chunk_*.webm         # avancement (1 chunk ≈ 38 m
 la première du chunk_02 — si le dragon mute ou saute franchement, arrêter (inutile de
 brûler 11 h sur une dérive). Micro-sauts possibles : Ref2VA en CLI n'a pas de boundary
 keyframe (incompatible `--init-img`), la référence seule porte la continuité.
+**Protocole suggéré** : sonder les 3 variantes du tableau ci-dessus sur 2 chunks chacune
+(3 × ~1 h 15) — configs : (a) défaut, (b) `--ref-audio-sec 5`, (c) `--ref-frames 5
+--ref-audio-sec 5` — juger les raccords (œil + oreille) et ne lancer les 18 chunks
+qu'avec la config gagnante.
 
 **Arrêt d'urgence** (tout ce qui est généré est conservé) :
 ```bash

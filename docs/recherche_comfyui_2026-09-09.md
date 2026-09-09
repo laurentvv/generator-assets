@@ -65,6 +65,14 @@ transposables à notre boucle 18 chunks (commit 89a82ff, non lancée) :
   aligné 32 px → re-encode) pour économiser la VRAM d'attention référence et permettre des
   chunks plus grands ; l'audio et la keyframe frontière restent pleine résolution. → Chez nous :
   downscaler les frames de `--ref-video` via ffmpeg (`scale=` aligné 32) avant de les passer.
+  **⚠️ Précision après lecture des sources sd-cli (2026-09-09)** : sd-cli redimensionne déjà la
+  réf vers une nominale 768 px de base (plafond 768×1344, aligné 32) et ne garde la taille
+  source QUE si plus petite — le downscale préalable ne réduit donc le latent réf que
+  **sous** cette nominale (ex. 4K × 0,15 → 576×320). Implémenté en option `--ref-scale`
+  du proto endless ; un flag `--ref-video-res` côté sd-cli serait plus propre (brouillon
+  `docs/brouillons_issues_sdcli.md`). Autre découverte source : le dossier réf est tronqué
+  17k+5 (12 → 5) et **seules les 5 premières trames sont encodées** → `--ref-frames 5` au proto
+  met les trames de réf exactement sur le raccord (encode ÷ ~2,4).
 - **Keyframe frontière automatique** : les 5 dernières frames du chunk précédent servent de
   petite keyframe de raccord (interne au latent H3 — non reproducible en CLI tant que sd-cli
   n'expose pas d'ancrage, cf. §1.3).
@@ -219,16 +227,31 @@ HDR/AV1/mkv/webm ; « taeh3 » (mini-VAE preview H3). Les releases du cœur = bo
 
 ## 8. Actions proposées (ordre suggéré)
 
+> **Point d'avancement au 2026-09-09 (soir)** : actions 1, 2(a+b) et 3 faites ;
+> 2(c) et 5 restent ; 4 = brouillons prêts (`docs/brouillons_issues_sdcli.md`),
+> publication sur accord utilisateur.
+
 1. **Test turbo LoRA ref2v 8 steps** (règle AGENTS : jamais de workflow avant validation) —
    recette : télécharger `minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16.safetensors` (downloader
    parallèle si gros), A/B même seed/params que §1.16 avec `<lora:…:1.0>` + steps 8 + CFG bas,
    soumettre à l'utilisateur.
+   ✅ **FAIT — validé utilisateur (« très bonne qualité, son très bien ») → flag `--turbo` du
+   workflow `h3_ref2va` (38 min vs 70 ; MEMORY_BANK §1.16).**
 2. Boucle endless : intégrer (a) réf downscalée alignée 32 px, (b) fenêtre audio « qui remonte »,
    (c) prompts par chunk par VLM local (ou Prompt-Rewriter-LoRA) avant le go/no-go 18 chunks.
+   ✅ **(a)+(b) FAITS** — options `--ref-scale` / `--ref-frames` / `--ref-audio-sec` de
+   `scripts/proto_endless_h3.py` (défauts = recette validée ; protocole de sonde 3 × 2 chunks
+   dans `docs/proto_endless_h3.md`). ⏳ **(c) restant** (VLM local ou Prompt-Rewriter-LoRA —
+   la grammaire officielle distillée en §1.16 est le complément direct).
 3. Lire la galerie awesome-H3-cases (634 prompts) et en distiller une mini-guide prompt H3
    (FR → grammaire EN) dans MEMORY_BANK §1.16.
+   ✅ **FAIT** — grammaire officielle complète distillée des guides du Prompt-Writer duckyshell
+   (base + full-reference) : mini-guide en MEMORY_BANK §1.16 (la galerie web elle-même ne
+   livre pas la grammaire en clair, ce sont les guides du repo qui la portent).
 4. Feature requests leejet (sd-cli) : latent carry-over Ref2VA (tranchage queue), images
    sémantiques dans le prompt Qwen H3, VACE Wan 2.2.
+   ✍️ **BROUILLONS PRÊTS** (`docs/brouillons_issues_sdcli.md`, enrichis des découvertes
+   sources) — publication sur accord utilisateur.
 5. Moyen terme : FaceRefine CLI ; portrait_serie (inspiration Photoshoot) ;
    production.json (inspiration short-drama) pour la chaîne.
 
