@@ -12,6 +12,10 @@ from typing import List, Optional, Tuple, Union
 from PIL import Image
 from core.config import (
     DEFAULT_CLIP_L,
+    DEFAULT_H3_AUDIO_VAE,
+    DEFAULT_H3_LLM,
+    DEFAULT_H3_REF2VA_MODEL,
+    DEFAULT_H3_VIDEO_VAE,
     DEFAULT_LORA_DIRS,
     DEFAULT_SD_CLI,
     DEFAULT_SD_MODEL,
@@ -274,5 +278,125 @@ def generer_video_vulkan(
         return output_path
     except Exception as e:
         print(f"❌ Erreur lors de la génération vidéo via sd-cli : {e}")
+        raise
+
+
+def arrondir_grille_h3(video_frames: int) -> int:
+    """Arrondit un nombre de trames à la grille MiniMax-H3 « 5 + 17k » (minimum 5).
+
+    H3 n'accepte que les comptes de trames 5, 22, 39, 56… ; sd-cli arrondit
+    lui-même à la hausse, on le fait ici pour que les logs et sorties soient exacts.
+    """
+    if video_frames <= 5:
+        return 5
+    return 5 + 17 * ((video_frames - 5 + 16) // 17)
+
+
+def generer_video_ref2va_h3(
+    prompt: str,
+    sd_cli: str = DEFAULT_SD_CLI,
+    model_path: Optional[str] = None,
+    vae_path: Optional[str] = None,
+    audio_vae_path: Optional[str] = None,
+    llm_path: Optional[str] = None,
+    ref_video_dir: Optional[str] = None,
+    ref_audio_path: Optional[str] = None,
+    video_frames: int = 22,
+    fps: int = 24,
+    width: int = 864,
+    height: int = 480,
+    steps: int = 20,
+    cfg_scale: float = 1.0,
+    seed: int = 42,
+    max_vram: int = 10,
+    backend: str = "diffusion=vulkan0,te=cpu,vae=cpu",
+    threads: int = DEFAULT_THREADS,
+    output_path: str = "output/h3_ref2va.webm",
+    dry_run: bool = False,
+    log_fn=print
+) -> str:
+    """
+    Génère une vidéo AVEC audio via MiniMax-H3 Ref2VA : une vidéo de référence
+    (dossier de trames à 24 fps) + son WAV appairé conditionnent le DiT (balises
+    <Video 1> / <Audio 1> dans le prompt). Recette validée le 2026-09-09
+    (RX 6950 XT 16 Go / 31,8 Go RAM) — cf. MEMORY_BANK §1.16 :
+      • placement mémoire obligatoire : DiT sur GPU plafonné (--max-vram, sinon
+        device lost), Qwen3-VL 32B et VAE vidéo sur CPU (sinon OOM VRAM) ;
+      • grille de trames « 5 + 17k » (22/39/56…), 24 fps imposé par le modèle ;
+      • Ref2VA incompatible avec --init-img/--end-img (la référence porte la
+        continuité) ; flow-shift géré en interne par H3 (ne pas l'imposer).
+    """
+    modele = model_path or DEFAULT_H3_REF2VA_MODEL
+    vae = vae_path or DEFAULT_H3_VIDEO_VAE
+    audio_vae = audio_vae_path or DEFAULT_H3_AUDIO_VAE
+    llm = llm_path or DEFAULT_H3_LLM
+
+    manquants = [p for p in (modele, vae, audio_vae, llm) if not os.path.exists(p)]
+    if manquants:
+        raise FileNotFoundError(
+            "Modèles MiniMax-H3 Ref2VA manquants : " + "; ".join(manquants)
+            + " — téléchargement : repo HF leejet/MiniMax-H3-GGUF (DiT ref2va) et Comfy-Org/MiniMax-H3 (VAEs)"
+        )
+    if not ref_video_dir or not os.path.isdir(ref_video_dir):
+        raise ValueError(f"Dossier de trames de référence invalide : {ref_video_dir}")
+    if ref_audio_path and not os.path.exists(ref_audio_path):
+        raise FileNotFoundError(f"WAV de référence introuvable : {ref_audio_path}")
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+
+    # Grille 5+17k et canevas aligné 32 px (H3 arrondit sinon à la hausse)
+    frames_grille = arrondir_grille_h3(video_frames)
+    w_aligne = max(32, (width + 31) // 32 * 32)
+    h_aligne = max(32, (height + 31) // 32 * 32)
+
+    n_ref = len([f for f in os.listdir(ref_video_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))])
+    log_fn(
+        f"[H3 Ref2VA] {w_aligne}x{h_aligne}, {frames_grille} trames @ 24 fps, "
+        f"steps={steps}, cfg={cfg_scale}, seed={seed}, réf={n_ref} trames"
+        + (f" + audio {os.path.basename(ref_audio_path)}" if ref_audio_path else "")
+    )
+
+    commande = [
+        sd_cli,
+        "-M", "vid_gen",
+        "--diffusion-model", modele,
+        "--vae", vae,
+        "--audio-vae", audio_vae,
+        "--llm", llm,
+        "-p", prompt,
+        "--ref-video", ref_video_dir,
+        "-W", str(w_aligne),
+        "-H", str(h_aligne),
+        "--video-frames", str(frames_grille),
+        "--fps", str(fps),
+        "--steps", str(steps),
+        "--cfg-scale", str(cfg_scale),
+        "--sampling-method", "euler",
+        "--diffusion-fa",
+        "--offload-to-cpu",
+        "--rng", "cpu",
+        "--max-vram", str(max_vram),
+        "-s", str(seed),
+        "-o", output_path,
+        "-t", str(threads),
+        "--backend", backend,
+        "-v"
+    ]
+    if ref_audio_path:
+        commande.extend(["--ref-video-audio", ref_audio_path])
+
+    if dry_run:
+        log_fn(f"[H3 Ref2VA] DRY-RUN — commande construite ({len(commande)} args), non exécutée :")
+        log_fn("  " + " ".join(f'"{c}"' if " " in c else c for c in commande))
+        return output_path
+
+    try:
+        subprocess.run(commande, check=True)
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"La vidéo de sortie {output_path} n'a pas été produite.")
+        log_fn(f"✅ Vidéo H3 Ref2VA générée : {output_path}")
+        return output_path
+    except Exception as e:
+        log_fn(f"❌ Erreur lors de la génération H3 Ref2VA via sd-cli : {e}")
         raise
 
