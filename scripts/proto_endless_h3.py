@@ -7,16 +7,18 @@ n'ont jamais été jugés à l'œil ; ce script n'est PAS un workflow (règle AG
 un workflow n'encapsule que du validé utilisateur — cf. docs/proto_endless_h3.md
 pour la procédure complète, les estimations et le critère go/no-go du 1er raccord).
 
-Chaque chunk = un appel au workflow VALIDÉ `h3_ref2va` (recette MEMORY_BANK §1.16) :
-la queue du chunk N (12 dernières trames @ 24 fps + WAV appairé, extraite par le
-workflow lui-même) devient la référence Ref2VA du chunk N+1. Idempotent : reprend
-au premier chunk manquant. Fenêtre temps par défaut 23 h, marge 75 min/chunk,
-3 tentatives par chunk espacées de 15 min (absorbe un check_charge refusant parce
-que la machine est momentanément occupée). Concatène tout à la fin (-c copy).
+Chaque chunk = un appel au workflow VALIDÉ `h3_ref2va` en mode `--turbo` (LoRA
+distillé 8 steps, validé utilisateur le 2026-09-09 — ~38 min/chunk au lieu de ~70,
+raccord référence ≥ baseline ; MEMORY_BANK §1.16) : la queue du chunk N (12 dernières
+trames @ 24 fps + WAV appairé, extraite par le workflow lui-même) devient la
+référence Ref2VA du chunk N+1. Idempotent : reprend au premier chunk manquant.
+Fenêtre temps par défaut 23 h, marge 50 min/chunk, 3 tentatives par chunk espacées
+de 15 min (absorbe un check_charge refusant parce que la machine est momentanément
+occupée). Concatène tout à la fin (-c copy).
 
 Usage (depuis la racine du dépôt, machine LIBRE — cf. check_charge_systeme) :
   uv run python scripts/proto_endless_h3.py --output-dir output/endless_dragon_24h
-Options : --source <vidéo initiale> --deadline-min 1380 --chunk-min 75 --max-essais 3
+Options : --source <vidéo initiale> --deadline-min 1380 --chunk-min 50 --max-essais 3
 """
 
 import argparse
@@ -32,8 +34,9 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PREFIX = ("Use the dragon from <Video 1> and the roar from <Audio 1> as the "
           "opening state. ")
 
-# Storyboard par défaut : 18 chunks ≈ 16 s — progression narrative continue du
-# dragon (marche → feu → envol → lac → falaises → grotte → trésor → sommeil).
+# Storyboard par défaut : 18 chunks ≈ 16 s de vidéo (~11,5 h de rendu en turbo,
+# ~21 h en recette de base) — progression narrative continue du dragon
+# (marche → feu → envol → lac → falaises → grotte → trésor → sommeil).
 # Modifiable librement avant lancement (un prompt = un chunk ; garder PREFIX).
 STORYBOARD = [
     "The same dragon walks forward on dark stone ground, head low, wings half folded, embers drifting in the air, cinematic lighting.",
@@ -68,7 +71,7 @@ def main() -> None:
         "output", "overnight", "esrgan_4k", "01_ltx25_dragon_4k_ultrasharp.mp4"),
         help="vidéo initiale (sa queue référence le chunk 1)")
     ap.add_argument("--deadline-min", type=int, default=1380, help="fenêtre totale en min (défaut 1380 = 23 h)")
-    ap.add_argument("--chunk-min", type=int, default=75, help="marge de temps min pour entamer un chunk (défaut 75)")
+    ap.add_argument("--chunk-min", type=int, default=50, help="marge de temps min pour entamer un chunk (défaut 50 = chunk turbo ~38 min + marge)")
     ap.add_argument("--max-essais", type=int, default=3, help="tentatives par chunk (défaut 3, délai 15 min)")
     args = ap.parse_args()
 
@@ -100,7 +103,7 @@ def main() -> None:
             debut = time.time()
             cmd = [sys.executable, "main.py", "-w", "h3_ref2va",
                    "-i", src, "-p", PREFIX + suite,
-                   "-o", nom, "--output-dir", out, "--seed", "42"]
+                   "-o", nom, "--output-dir", out, "--seed", "42", "--turbo"]
             r = subprocess.run(cmd, cwd=REPO)
             dt = (time.time() - debut) / 60.0
             if r.returncode == 0 and os.path.exists(webm) and os.path.getsize(webm) > 100_000:
