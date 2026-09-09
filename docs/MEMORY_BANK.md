@@ -213,6 +213,32 @@
   ⑤ **Ordre d'assemblage MPFB critique : Rig Mixamo AVANT les assets .mhclo (vêtements, chaussures, cheveux)** : `HumanService.add_builtin_rig(human, "mixamo")` DOIT impérativement être appelé AVANT `HumanService.add_mhclo_asset(...)`. Si le rig est créé après, MPFB génère les vêtements et cheveux sans groupes de sommets (0 vertex groups) et sans modificateur Armature, laissant la tenue figée en l'air en pose en A pendant que le corps s'anime dans Godot. En créant le rig en premier, MPFB détecte l'armature existante sur le corps, injecte automatiquement le modificateur `Armature` (`Human.rig`) et transfère par coordonnées barycentriques les poids de déformation des 52 os Mixamo sur chaque vêtement et cheveu (validé avec 49 animations dans `elian_mixamo_viewer.tscn`).
 * **🚀 Workflow CLI 100% Automatique intégré (2026-09-08)** : `main.py -w character3d --portrait <img.png> [--character nom] [--age 0.12] [--gender 0.0] [--eye-color cyan] [--samples 48]`. Encapsule 100% de la chaîne de bout en bout : détection YuNet ONNX, échantillonnage et transfert de gamut 3D avec compensation SSS, peinture vectorielle 5 calques UV hm08 (2048²), manifeste JSON MPFB2, personnalisation des yeux, **assemblage automatique du corps 3D MPFB2 dans Blender (MakeSkin + MakeUp + rig Mixamo préalable + vêtements/cheveux pondérés automatiquement + export .blend et .glb)** et 4 rendus studio Cycles avec contraintes TRACK_TO et correction de masques. Code : `core/mpfb_ops.py` (`creer_corps_personnage_mpfb`, `rendre_personnage_blender`) + `workflows/character_makeup.py` (`character3d`, `character_makeup`).
 
+### 🐉 1.16. MiniMax-H3 Ref2VA (vidéo de référence → vidéo+audio) : TESTÉ mécanique OK le 2026-09-09 — validation utilisateur EN ATTENTE
+
+* **Contexte** : analyse de `hradec/ComfyUI-HR-Endless-Sampler` (génération de vidéos longues H3 par chunks avec continuation Ref2VA — la queue du chunk N devient la référence `<Video 1>`/`<Audio 1>` du chunk N+1, nœud ComfyUI/PyTorch inutilisable ici). But du test = valider que le mécanisme Ref2VA fonctionne en CLI sd-cli Vulkan (1 seul chunk, 22 frames).
+* **Modèle requis SPÉCIFIQUE** : `minimax_h3_ref2va_pruned-Q4_K_M.gguf` (10,64 Gio, source `leejet/MiniMax-H3-GGUF` — le repo `MiniMax-AI/MiniMax-H3-GGUF` du guide est gated/401) — **distinct** du `minimax_h3_fl2va_pruned` (T2VA/I2VA/FL2VA). DiT ref2va ≠ DiT fl2va.
+* **Recette gagnante (essai 4, sortie `output/test_h3_ref2va/ref2va_test_22f.webm`)** :
+  ```bash
+  sd-cli.exe -M vid_gen \
+    --diffusion-model C:/Modeles_LLM/minimax_h3_ref2va_pruned-Q4_K_M.gguf \
+    --vae C:/Modeles_LLM/minimax_h3_video_vae_fp16.safetensors \
+    --audio-vae C:/Modeles_LLM/minimax_h3_audio_vae_fp32.safetensors \
+    --llm C:/Modeles_LLM/qwen3vl_32b_minimax_h3-Q2_K_M.gguf \
+    -p "Use the dragon from <Video 1> and the roar from <Audio 1> as the opening state. ..." \
+    --ref-video <dossier frames 24 fps> --ref-video-audio <wav appairé> \
+    --cfg-scale 1.0 -W 864 -H 480 --diffusion-fa --offload-to-cpu --rng cpu \
+    --fps 24 --video-frames 22 --seed 42 --max-vram 10 \
+    --backend "diffusion=vulkan0,te=cpu,vae=cpu" -t 16
+  ```
+* **⚠️ Placement mémoire OBLIGATOIRE sur 16 Go VRAM / 31,8 Go RAM (3 crashes avant la solution)** :
+  ① `--backend te=cpu` : le Qwen3-VL 32B Q2 (13,1 Go) **déborde la VRAM à lui seul** (graphe + fragments → `ErrorOutOfDeviceMemory` puis exit 127 silencieux) → tout sur CPU.
+  ② `--backend vae=cpu` : le VAE vidéo réserve un compute buffer de ~5 Go en VRAM avant le Qwen → conflit ; sur CPU le buffer passe à 9,8 Go **en RAM** (swap massif, ~31 s/tile).
+  ③ `--max-vram 10` : sans plafond, sd-cli charge les 11 Go de poids DiT + 4 Go de compute d'un bloc (15,4/16 Go) → **device lost au premier submit** (driver AMD). Avec le plafond, graph-cut en 2 segments (8,5 Go + 1,7 Go), stable.
+* **Timings mesurés (RX 6950 XT, réf 12 frames, 22 frames générées, 20 steps Euler)** : encode VAE réf **869 s** • encode audio VAE 0,45 s • Qwen3-VL condition **98 s** • sampling **2 983 s (149 s/step, GPU)** • decode audio 6 s • decode vidéo **251 s** • **total ~70 min pour 0,875 s de vidéo → RTF ≈ 4 800×**. Référence communauté : ~16,9 s/step (tout résident) → facteur ~9 dû au re-staging des poids à chaque step (graph-cut).
+* **Résultat** : webm VP8 864×480 + **audio PCM 32 kHz stéréo généré** (max −12 dB). Frames inspectées : dragon cohérent avec la référence LTX (face caméra, ailes déployées), souffle de feu orange vers caméra en formation au milieu de séquence, décor raccord (pierre sombre, contre-jour chaud) → continuité personnage+décor plausible. **Verdict œil/oreille utilisateur EN ATTENTE.**
+* **Conclusion opérationnelle** : mécanisme Ref2VA **fonctionne en CLI Vulkan** (condition préalable au workflow « endless » type ComfyUI-HR-Endless-Sampler). Mais RTF rédhibitoire en l'état pour la chaîne — leviers identifiés : ① RAM 64 Go (tuerait le swap du VAE CPU ~31 s/tile → probablement ×5-10), ② continuation à résolution réduite (option `video_continuation_res` du nœud ComfyUI — divise l'encode réf par 4-8), ③ chunks plus longs (39-56 frames) pour amortir l'encode, ④ grille frames `17k+5` (22/39/56…), 24 fps imposé, Ref2VA **incompatible avec `--init-img`/`--end-img`** (pas de keyframe de raccord en CLI — la référence porte seule la continuité).
+* **Statut : TESTÉ, non validé — aucun workflow avant validation utilisateur** (cf. règle AGENTS.md).
+
 ## 🎬 2. Masters et Fichiers de Production Validés
 
 
