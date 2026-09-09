@@ -796,14 +796,14 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 
 ### 🔊 4. Audio, Voice & VFX
 
-#### 4.1. `sfx` — Procedural Sound Effects Synthesis
+#### 4.1. `sfx` — AI & Procedural Sound Effects Synthesis
 * **Process**:
-  1. Accepts a sound effect category or description (`sword_slash`, `magic_potion`, `explosion`, `coin_pickup`, `spell_cast`).
-  2. Synthesizes multi-oscillator audio waveforms (sine, saw, noise bursts, resonant low-pass filter sweeps, pitch envelopes) at 44.1 kHz 16-bit PCM.
-  3. Applies dynamic range compression, normalization, and smooth attack/release envelopes to eliminate clipping and pop artifacts.
-  4. Exports both lossless WAV and compressed OGG Vorbis formats optimized for Godot's `AudioStreamPlayer`.
-* **Inputs**: `prompt` (sound category or concept), `--duration` (in seconds, default: 1.5).
-* **Engines**: NumPy audio synthesizer, SoundFile encoder.
+  1. Accepts a sound effect description — free English prompt for the AI engine (`heavy rain on window glass, distant thunder rumble`), or a fixed category for the procedural engine (`sword_slash`, `magic_potion`, `explosion`, `coin_pickup`, `spell_cast`).
+  2. **AI engine (default, validated 2026-09-09)**: Stable Audio 3 Small SFX via audio.cpp (Vulkan, RTF ~0.2 — fastest audio engine on this machine), 44.1 kHz stereo, peak-normalized to −0.9 dBFS (source output can sit 8 dB low on ambience-type prompts).
+  3. **Procedural engine** (`--sfx-engine procedural`): multi-oscillator audio waveforms (sine, saw, noise bursts, resonant low-pass filter sweeps, pitch envelopes), 44.1 kHz 16-bit PCM, dynamic range compression and smooth attack/release envelopes.
+  4. Exports both lossless WAV (PCM 16-bit) and compressed OGG Vorbis (via ffmpeg) formats optimized for Godot's `AudioStreamPlayer`.
+* **Inputs**: `prompt` (sound description or category), `--duration` (in seconds), `--seed`, `--sfx-engine` (`ia` default | `procedural`).
+* **Engines**: Stable Audio 3 Small SFX GGUF (audio.cpp, `core/sfx_ia.py`) | NumPy synthesizer (legacy).
 * **Outputs**: `_sfx.wav`, `_sfx.ogg`.
 
 ##### 🖼️ Waveforms & Procedural Synthesis (`_sfx.wav` / `_sfx.ogg`)
@@ -814,7 +814,10 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 
 * **Example**:
   ```bash
+  # AI engine (default) — free English prompt:
   uv run python main.py -w sfx "heavy sword slash metal impact" --duration 1.2 -o sword_strike
+  # Legacy procedural synthesis:
+  uv run python main.py -w sfx sword_slash --duration 1.2 --sfx-engine procedural -o sword_strike
   ```
 
 #### 4.2. `audio_ambience` — Procedural Seamless Looping Ambient Soundscapes

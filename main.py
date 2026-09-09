@@ -623,6 +623,7 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--vfx-type", default="explosion", choices=["explosion", "fire", "lightning", "portal", "slash", "aura"], help="Type d'effet pour vfx_flipbook.")
     groupe_wf.add_argument("--emotions", default="neutral,happy,angry,sad,hurt", help="Liste des émotions séparées par des virgules pour rpg_portrait et tts_dialogue.")
     groupe_wf.add_argument("--duration", type=float, default=2.0, help="Durée en secondes pour sfx ou audio_ambience.")
+    groupe_wf.add_argument("--sfx-engine", dest="sfx_engine", choices=["ia", "procedural"], default="ia", help="Moteur du workflow sfx : ia = Stable Audio 3 Small SFX via audio.cpp (validé 2026-09-09, normalisation de crête incluse, prompt EN libre) | procedural = synthèse numpy (types figés sword/coin/explosion…).")
     groupe_wf.add_argument("--mode-2d", action="store_true", help="Génère un shader ou setup orienté Godot 2D au lieu de 3D.")
     groupe_wf.add_argument("--pose", choices=["idle", "slash_attack", "cast_spell", "shield_block", "jump", "walk"], default="idle", help="Pose OpenPose pour pose_control.")
     groupe_wf.add_argument("--pitch", type=float, default=160.0, help="Pitch vocal fondamental pour tts_dialogue (défaut: 160Hz).")
@@ -925,6 +926,7 @@ Exemples de Workflows 3D & 2D :
         "vfx_type": args.vfx_type,
         "emotions": args.emotions,
         "duration": args.duration,
+        "sfx_engine": args.sfx_engine,
         "mode_2d": args.mode_2d,
         "pose": args.pose,
         "pitch": args.pitch,
