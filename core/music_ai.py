@@ -568,10 +568,15 @@ def normaliser_pic(audio: np.ndarray, pic_dbfs: float = -1.0) -> np.ndarray:
 # Mesure LUFS & exports via ffmpeg
 # ==============================================================================
 
-def mesurer_lufs(chemin: str) -> Dict[str, float]:
-    """Mesure l'intensité intégrée (LUFS) et paramètres loudnorm via ffmpeg."""
+def mesurer_lufs(chemin: str, filtre_amont: Optional[str] = None) -> Dict[str, float]:
+    """Mesure l'intensité intégrée (LUFS) et paramètres loudnorm via ffmpeg.
+
+    `filtre_amont` (ex. un limiteur) est appliqué AVANT la mesure — permet de mesurer
+    le signal tel qu'il entrera dans l'étape de normalisation.
+    """
     ffmpeg = resoudre_ffmpeg()
-    cmd = [ffmpeg, "-hide_banner", "-i", chemin, "-af", "loudnorm=print_format=json", "-f", "null", "-"]
+    chaine = f"{filtre_amont},loudnorm=print_format=json" if filtre_amont else "loudnorm=print_format=json"
+    cmd = [ffmpeg, "-hide_banner", "-i", chemin, "-af", chaine, "-f", "null", "-"]
     resultat = subprocess.run(
         cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
     )
