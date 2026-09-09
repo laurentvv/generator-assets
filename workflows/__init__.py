@@ -37,6 +37,7 @@ from workflows.musique_essence import MusiqueEssenceWorkflow
 from workflows.retrait_voix import RetraitVoixWorkflow
 from workflows.outfit import OutfitWorkflow
 from workflows.video import VideoWorkflow
+from workflows.h3_ref2va import H3Ref2VAWorkflow
 from workflows.makehuman_clothes import MakeHumanClothesWorkflow
 from workflows.character_makeup import CharacterMakeupWorkflow, Character3DWorkflow
 
@@ -77,6 +78,7 @@ __all__ = [
     "RetraitVoixWorkflow",
     "OutfitWorkflow",
     "VideoWorkflow",
+    "H3Ref2VAWorkflow",
     "MakeHumanClothesWorkflow",
     "CharacterMakeupWorkflow",
     "Character3DWorkflow"

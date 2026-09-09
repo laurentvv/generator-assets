@@ -45,6 +45,23 @@ DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, 
 DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))
 DEFAULT_WAN_T5XXL = os.getenv("WAN_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q8_0.gguf"))
 
+# Modèles vidéo MiniMax-H3 Ref2VA (référence vidéo+audio → vidéo générée, sortie webm avec audio).
+# ⚠️ Le DiT ref2va est DISTINCT du fl2va (T2VA/I2VA) — source : leejet/MiniMax-H3-GGUF
+# (le repo MiniMax-AI/MiniMax-H3-GGUF est gated). Recette validée : MEMORY_BANK §1.16.
+DEFAULT_H3_REF2VA_MODEL = os.getenv(
+    "H3_REF2VA_MODEL_PATH",
+    os.path.join(DEFAULT_MODEL_DIR, "minimax_h3_ref2va_pruned-Q4_K_M.gguf"),
+)
+DEFAULT_H3_VIDEO_VAE = os.getenv(
+    "H3_VIDEO_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "minimax_h3_video_vae_fp16.safetensors")
+)
+DEFAULT_H3_AUDIO_VAE = os.getenv(
+    "H3_AUDIO_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "minimax_h3_audio_vae_fp32.safetensors")
+)
+DEFAULT_H3_LLM = os.getenv(
+    "H3_LLM_PATH", os.path.join(DEFAULT_MODEL_DIR, "qwen3vl_32b_minimax_h3-Q2_K_M.gguf")
+)
+
 # Modèles Musique (MiniMax-Music3 GGUF via audio.cpp + Music Flamingo via llama.cpp)
 DEFAULT_MUSIC3_DIR = os.getenv("MUSIC3_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "MiniMax-Music3-GGUF"))
 DEFAULT_MUSIC3_LM = os.getenv("MUSIC3_LM_PATH", os.path.join(DEFAULT_MUSIC3_DIR, "language_model_q4_0.gguf"))

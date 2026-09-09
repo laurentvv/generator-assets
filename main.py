@@ -667,6 +667,10 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--end-img", help="Image clé de fin pour l'interpolation vidéo FLF2V (workflow video).")
     groupe_wf.add_argument("--control-video", help="Dossier de trames de guidage vidéo V2V (workflow video).")
     groupe_wf.add_argument("--flow-shift", type=float, default=3.0, help="Facteur de shift flow-matching pour modèles Wan/SD3 (défaut: 3.0).")
+    groupe_wf.add_argument("--ref-frames", type=int, default=12, help="h3_ref2va : trames de queue extraites de la vidéo source comme référence (défaut: 12).")
+    groupe_wf.add_argument("--ref-audio", help="h3_ref2va : WAV de référence Ref2VA (extrait automatiquement de la source si omis).")
+    groupe_wf.add_argument("--max-vram", type=int, default=10, help="h3_ref2va : budget VRAM Gio du DiT via graph-cut sd-cli (défaut: 10, obligatoire sur 16 Go).")
+    groupe_wf.add_argument("--dry-run", action="store_true", default=False, help="Construit la commande (extraction + sd-cli) sans exécuter la génération.")
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
@@ -936,6 +940,10 @@ Exemples de Workflows 3D & 2D :
         "end_img": args.end_img,
         "control_video": args.control_video,
         "flow_shift": args.flow_shift,
+        "ref_frames": args.ref_frames,
+        "ref_audio": args.ref_audio,
+        "max_vram": args.max_vram,
+        "dry_run": args.dry_run,
         "lufs": args.lufs,
         "loop_mode": args.loop_mode,
         "music_backend": args.music_backend,
