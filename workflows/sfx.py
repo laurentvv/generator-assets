@@ -46,9 +46,11 @@ class SFXWorkflow(BaseWorkflow):
             res = generer_sfx_ia(prompt, duree=duree, seed=graine)
             audio_data, sr = res["audio"], res["sr"]
             if res["niveau_mode"] == "nappe":
-                self.log(f"Nappe détectée ({res['lufs_source']:.1f} LUFS) : pic limité + corps remonté vers −16 LUFS.")
+                self.log(f"Nappe détectée ({res['lufs_source']:.1f} LUFS) : +{res['gain_db']} dB vers −16 LUFS (crêtes plafonnées), texture intacte.")
             else:
                 self.log(f"Génération OK (RTF {res['rtf']:.2f}, crête source {20 * np.log10(max(res['pic_source'], 1e-9)):.1f} dBFS → normalisée).")
+            if res["rognage_pct"] > 0.01:
+                self.log(f"Silences d'entrée/sortie rognés : −{res['rognage_pct']} % de durée.")
         else:
             self.log(f"Synthèse procédurale de l'effet sonore pour '{prompt}' (Durée: {duree:.1f}s, 44.1kHz)...")
             audio_data, sr = synthetiser_sfx(sfx_type=prompt, duree=duree, sr=44100), 44100

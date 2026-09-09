@@ -7,20 +7,26 @@ Moteur validé par l'utilisateur le 2026-09-09 (4/5 échantillons « ok » : ép
 gravier, porte, whoosh) sur les SFX du cas d'usage jeu Godot — RTF ~0,2 Vulkan,
 le plus rapide du poste.
 
-Deux traitements de niveau selon la nature de la sortie (retour utilisateur :
-« son trop faible » sur la pluie/orage, même après normalisation de crête) :
-- SFX transitoire (I >= seuil) : simple normalisation de crête (comportement
-  historique, ne change pas le caractère des échantillons validés) ;
-- texture « nappe » (I < seuil, ex. pluie) : le modèle sort un corps très bas
-  (mesuré −35 LUFS) surmonté d'un pic isolé qui occupe toute la dynamique
-  (TP 19 LU au-dessus du corps, LRA 3,4) → la crête seule ne remonte rien.
-  Chaîne validée en prototype : limiteur (écrase le pic) puis loudnorm 2 passes
-  linéaire (remonte le corps vers la cible). Mesuré : −27,7 → −17,4 LUFS,
-  TP tenue à −1,5 dBTP — zone des échantillons « ok » (épée −15,1, whoosh −18,2).
+Traitements intégrés (issus des itérations d'écoute sur le sample pluie/orage) :
+- **Sélection du prompt = 1er levier de qualité.** Le modèle peut sortir des textures
+  déséquilibrées : « heavy rain on window glass, distant thunder rumble » produit un
+  grondement 50-250 Hz à +18 dB avec le crépitement HF à −17..−28 dB (« assourdie »,
+  verdict utilisateur) ; « heavy rain falling on glass, dense patter with natural
+  splashes » est spectralement équilibré (HF/LF ≈ −2 dB). Nommer LE CONTENU (patter,
+  splashes) plutôt que l'ambiance (thunder rumble) oriente le spectre.
+- **Rognage des silences d'entrée/sortie** : SA3 fondu la fin (jusqu'à plusieurs
+  secondes muettes) — rognage automatique des bords sous −45 dBFS (garde-fou :
+  jamais plus de 50 % du fichier).
+- **Deux traitements de niveau** (le volume ne suffit pas, verdict « son trop faible ») :
+  texture « nappe » (I < seuil) = gain vers la cible LUFS + limiteur de plafond
+  (alimiter — ne touche QUE les crêtes qui dépassent, préserve le crépitement ; la
+  1re version avec acompressor seuil −20 dB écrasait la modulation de la texture
+  et l'assourdissait davantage) ; SFX transitoire = simple normalisation de crête
+  (comportement historique, échantillons validés inchangés).
 
 Écueils intégrés :
 - sortie SA3 = 44,1 kHz stéréo (le workflow sfx historique était mono procédural ;
-  l'export Godot WAV/OGG accepte les deux) — loudnorm rééchantillonne à 44,1 kHz
+  l'export Godot WAV/OGG accepte les deux)
 - OGG interdit via soundfile (stack overflow libsndfile, règle §1.10) — l'export
   final passe par exporter_sfx_godot (ffmpeg), ce module ne fait que le WAV intermédiaire
 """
@@ -29,7 +35,7 @@ import os
 import re
 import subprocess
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import numpy as np
 import soundfile as sf
@@ -48,27 +54,49 @@ MODELE_SA3_SFX = os.getenv(
 # Normalisation de crête (~ -0,9 dBFS) : même convention que la synthèse procédurale (0,9).
 PIC_CIBLE = 0.9
 
-# Texture « nappe » : seuil de détection et cible loudness du corps.
+# Texture « nappe » : seuil de détection, cible loudness du corps et plafond de crête.
 SEUIL_NAPPE_LUFS = -20.0
 LUFS_CIBLE_NAPPE = -16.0
-TP_CIBLE_DB = -1.5
-# Limiteur : ratio 20 = quasi-brickwall sur le pic isolé, corps (bien plus bas) intact.
-LIMITEUR_PIC = "acompressor=threshold=-20dB:ratio=20:attack=0.5:release=80:knee=3"
+PLAFOND_DBFS = -1.5
+
+# Rognage des silences d'entrée/sortie (fondu structurel SA3).
+SEUIL_ROGNAGE_DB = -45.0
+MARGE_ROGNAGE_S = 0.05
+MAX_ROGNAGE_FRAC = 0.5
 
 
-def _traiter_loudness_nappe(chemin_wav: str) -> None:
-    """Limite le pic isolé puis remonte le corps du signal vers LUFS_CIBLE_NAPPE (in place).
+def _rogner_silences(audio: np.ndarray, sr: int) -> np.ndarray:
+    """Coupe les bords silencieux (env. RMS 20 ms sous SEUIL_ROGNAGE_DB, marge conservée).
 
-    2 passes loudnorm (mesure du signal limité, puis gain linéaire — pas de dynamique
-    ajoutée sur la texture, seul le pic est écrasé par le limiteur amont).
+    Garde-fou : aucun rognage si plus de MAX_ROGNAGE_FRAC du fichier disparaîtrait
+    (génération dégénérée — on la laisse telle quelle).
+    """
+    mono = audio.mean(axis=1) if audio.ndim > 1 else audio
+    w = max(int(sr * 0.02), 1)
+    env = np.sqrt(np.convolve(mono.astype(np.float64) ** 2, np.ones(w) / w, mode="same"))
+    db = 20 * np.log10(env + 1e-12)
+    actifs = np.where(db > SEUIL_ROGNAGE_DB)[0]
+    if actifs.size == 0:
+        return audio
+    marge = int(MARGE_ROGNAGE_S * sr)
+    i0 = max(0, int(actifs[0]) - marge)
+    i1 = min(len(audio), int(actifs[-1]) + 1 + marge)
+    if (i1 - i0) < int(len(audio) * MAX_ROGNAGE_FRAC):
+        return audio
+    return audio[i0:i1]
+
+
+def _traiter_loudness_nappe(chemin_wav: str, gain_db: float) -> None:
+    """Remonte le corps du signal vers LUFS_CIBLE_NAPPE et plafonne les crêtes (in place).
+
+    Gain linéaire puis alimiter : le limiteur ne touche que les crêtes qui dépassent
+    le plafond — la texture (modulation du crépitement) reste intacte. Une version
+    antérieure avec acompressor seuil fixe écrasait la texture elle-même (rendu sourd).
     """
     ffmpeg = resoudre_ffmpeg()
-    m2 = mesurer_lufs(chemin_wav, filtre_amont=LIMITEUR_PIC)
-    lra = max(m2["LRA"], 7.0)
     chaine = (
-        f"{LIMITEUR_PIC},loudnorm=I={LUFS_CIBLE_NAPPE}:TP={TP_CIBLE_DB}:LRA={lra}:"
-        f"measured_I={m2['I']}:measured_TP={m2['TP']}:measured_LRA={m2['LRA']}:"
-        f"measured_thresh={m2['thresh']}:offset={m2['offset']}:linear=true"
+        f"volume={gain_db:.2f}dB,"
+        f"alimiter=limit={10 ** (PLAFOND_DBFS / 20):.4f}:attack=2:release=50:level=disabled"
     )
     tmp = chemin_wav + ".lufs.wav"
     try:
@@ -92,7 +120,8 @@ def generer_sfx_ia(
     """
     Génère un effet sonore par IA (stable_audio, texte → audio).
     Retourne {"audio": float32 (stéréo), "sr": 44100, "rtf": float|None,
-    "pic_source": float, "niveau_mode": "crete"|"nappe", "lufs_source": float|None}.
+    "pic_source": float, "niveau_mode": "crete"|"nappe", "lufs_source": float|None,
+    "rognage_pct": float}.
     Graine < 0 = laisser le défaut du runtime (déterministe).
     """
     if not os.path.exists(MODELE_SA3_SFX):
@@ -127,18 +156,29 @@ def generer_sfx_ia(
         if m:
             rtf = float(m.group(1))
 
-        lufs_source: Optional[float] = None
+        audio, sr = sf.read(wav_brut, always_2d=False, dtype="float32")
+
+        # Rognage des fondu/silences structurels d'entrée/sortie.
+        taille_avant = len(audio)
+        audio = _rogner_silences(audio, sr)
+        rognage_pct = 100.0 * (1.0 - len(audio) / max(taille_avant, 1))
+        if rognage_pct > 0.01:
+            sf.write(wav_brut, audio, sr, subtype="PCM_16", format="WAV")
+
+        # Traitement de niveau : nappe (gain + plafond) ou crête simple.
+        lufs_source = None
         niveau_mode = "crete"
+        gain_db = 0.0
         try:
             mesures = mesurer_lufs(wav_brut)
             lufs_source = mesures["I"]
         except RuntimeError:
             mesures = None
         if mesures and mesures["I"] < SEUIL_NAPPE_LUFS:
-            _traiter_loudness_nappe(wav_brut)
             niveau_mode = "nappe"
-
-        audio, sr = sf.read(wav_brut, always_2d=False, dtype="float32")
+            gain_db = LUFS_CIBLE_NAPPE - mesures["I"]
+            _traiter_loudness_nappe(wav_brut, gain_db)
+            audio, sr = sf.read(wav_brut, always_2d=False, dtype="float32")
     finally:
         if os.path.exists(wav_brut):
             os.remove(wav_brut)
@@ -150,4 +190,5 @@ def generer_sfx_ia(
     return {
         "audio": audio.astype(np.float32), "sr": int(sr), "rtf": rtf,
         "pic_source": pic, "niveau_mode": niveau_mode, "lufs_source": lufs_source,
+        "gain_db": round(gain_db, 1), "rognage_pct": round(rognage_pct, 1),
     }
