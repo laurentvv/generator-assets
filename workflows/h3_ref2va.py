@@ -9,8 +9,9 @@ référence Ref2VA <Video 1>/<Audio 1> du DiT H3. Brique validée le 2026-09-09
 (MEMORY_BANK §1.16) — mécanisme du nœud ComfyUI « HR Endless Sampler » reproduit
 en CLI, ici pour UN chunk (la boucle multi-chunks reste à valider séparément).
 
-⚠️ Lourd : ~70 min pour 22 trames sur RX 6950 XT (encodes VAE et Qwen3-VL sur CPU,
-sampling DiT sur GPU). Le pré-contrôle de charge système bloque si la machine est occupée.
+⚠️ Lourd : ~70 min pour 22 trames sur RX 6950 XT en recette de base, ~38 min avec le
+mode turbo (LoRA distillé 8 steps, validé le 2026-09-09 — `--turbo`). Le pré-contrôle
+de charge système bloque si la machine est occupée.
 """
 
 import json
@@ -21,7 +22,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from core.config import DEFAULT_FFMPEG, DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.config import (
+    DEFAULT_FFMPEG,
+    DEFAULT_H3_REF2VA_TURBO_LORA,
+    DEFAULT_OUTPUT_DIR,
+    slugifier_texte,
+)
 from core.diffusion import generer_video_ref2va_h3
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
@@ -128,12 +134,23 @@ class H3Ref2VAWorkflow(BaseWorkflow):
                 self.log("Source sans piste audio → référence vidéo seule (prompt sans <Audio 1>).", emoji="⚠️")
 
         # --- Génération (recette validée §1.16 : te=cpu, vae=cpu, max-vram 10, cfg 1.0, rng cpu)
+        # Mode turbo (validé 2026-09-09) : LoRA distillé + 8 steps → ~38 min au lieu de ~70.
+        turbo = bool(params.get("turbo"))
+        lora = DEFAULT_H3_REF2VA_TURBO_LORA if turbo else None
         steps_demandes = params.get("steps")
-        steps = 20 if steps_demandes in (None, 25) else int(steps_demandes)
-        if steps_demandes == 25:
-            self.log("steps=25 (défaut CLI global) → recette H3 validée = 20 steps, ajusté.", emoji="ℹ️")
+        if steps_demandes in (None, 25):
+            steps = 8 if turbo else 20
+            if steps_demandes == 25:
+                self.log(
+                    f"steps=25 (défaut CLI global) → recette H3 validée = {steps} steps"
+                    + (" (turbo)" if turbo else "") + ", ajusté.", emoji="ℹ️"
+                )
+        else:
+            steps = int(steps_demandes)
+        if turbo:
+            self.log("Mode turbo : LoRA distillé 8 steps (recette validée 2026-09-09, MEMORY_BANK §1.16)...")
 
-        self.log("Génération H3 Ref2VA (compter ~1 h pour 22 trames sur ce poste)...")
+        self.log(f"Génération H3 Ref2VA (compter ~{38 if turbo else 70} min pour 22 trames sur ce poste)...")
         debut = time.time()
         generer_video_ref2va_h3(
             prompt=prompt,
@@ -148,6 +165,8 @@ class H3Ref2VAWorkflow(BaseWorkflow):
             cfg_scale=float(params.get("cfg_scale") or 1.0),
             seed=int(params.get("seed", -1)),
             max_vram=int(params.get("max_vram") or 10),
+            lora=lora,
+            lora_dir=params.get("lora_dir"),
             threads=int(self.config.get("threads", 16)),
             output_path=video_output_path,
             dry_run=dry_run,

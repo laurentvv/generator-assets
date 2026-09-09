@@ -309,6 +309,8 @@ def generer_video_ref2va_h3(
     cfg_scale: float = 1.0,
     seed: int = 42,
     max_vram: int = 10,
+    lora: Optional[str] = None,
+    lora_dir: Optional[str] = None,
     backend: str = "diffusion=vulkan0,te=cpu,vae=cpu",
     threads: int = DEFAULT_THREADS,
     output_path: str = "output/h3_ref2va.webm",
@@ -325,6 +327,9 @@ def generer_video_ref2va_h3(
       • grille de trames « 5 + 17k » (22/39/56…), 24 fps imposé par le modèle ;
       • Ref2VA incompatible avec --init-img/--end-img (la référence porte la
         continuité) ; flow-shift géré en interne par H3 (ne pas l'imposer).
+      • `lora` = LoRA à charger en at_runtime (format « nom[:poids] », résolu dans
+        lora_dir ou DEFAULT_LORA_DIRS) — ex. le turbo distillé 8 steps validé
+        (sampling −64 %, total −46 %, qualité/raccord ≥ baseline, §1.16).
     """
     modele = model_path or DEFAULT_H3_REF2VA_MODEL
     vae = vae_path or DEFAULT_H3_VIDEO_VAE
@@ -354,7 +359,10 @@ def generer_video_ref2va_h3(
         f"[H3 Ref2VA] {w_aligne}x{h_aligne}, {frames_grille} trames @ 24 fps, "
         f"steps={steps}, cfg={cfg_scale}, seed={seed}, réf={n_ref} trames"
         + (f" + audio {os.path.basename(ref_audio_path)}" if ref_audio_path else "")
+        + (f" + LoRA {lora}" if lora else "")
     )
+
+    prompt_final = formater_prompt_avec_loras(prompt, [lora]) if lora else prompt
 
     commande = [
         sd_cli,
@@ -363,7 +371,7 @@ def generer_video_ref2va_h3(
         "--vae", vae,
         "--audio-vae", audio_vae,
         "--llm", llm,
-        "-p", prompt,
+        "-p", prompt_final,
         "--ref-video", ref_video_dir,
         "-W", str(w_aligne),
         "-H", str(h_aligne),
@@ -384,6 +392,12 @@ def generer_video_ref2va_h3(
     ]
     if ref_audio_path:
         commande.extend(["--ref-video-audio", ref_audio_path])
+
+    if lora:
+        dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
+        if not os.path.isdir(dossier_lora_effectif):
+            raise FileNotFoundError(f"Dossier de LoRAs introuvable : {dossier_lora_effectif}")
+        commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
 
     if dry_run:
         log_fn(f"[H3 Ref2VA] DRY-RUN — commande construite ({len(commande)} args), non exécutée :")

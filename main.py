@@ -670,6 +670,7 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--ref-frames", type=int, default=12, help="h3_ref2va : trames de queue extraites de la vidéo source comme référence (défaut: 12).")
     groupe_wf.add_argument("--ref-audio", help="h3_ref2va : WAV de référence Ref2VA (extrait automatiquement de la source si omis).")
     groupe_wf.add_argument("--max-vram", type=int, default=10, help="h3_ref2va : budget VRAM Gio du DiT via graph-cut sd-cli (défaut: 10, obligatoire sur 16 Go).")
+    groupe_wf.add_argument("--turbo", action="store_true", help="h3_ref2va : LoRA turbo distillé 8 steps (recette VALIDÉE 2026-09-09 — ~2x plus rapide, qualité et raccord référence >= baseline ; MEMORY_BANK §1.16).")
     groupe_wf.add_argument("--dry-run", action="store_true", default=False, help="Construit la commande (extraction + sd-cli) sans exécuter la génération.")
 
     # Paramètres généraux de rendu
@@ -943,6 +944,7 @@ Exemples de Workflows 3D & 2D :
         "ref_frames": args.ref_frames,
         "ref_audio": args.ref_audio,
         "max_vram": args.max_vram,
+        "turbo": args.turbo,
         "dry_run": args.dry_run,
         "lufs": args.lufs,
         "loop_mode": args.loop_mode,
