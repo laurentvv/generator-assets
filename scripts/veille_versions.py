@@ -4,7 +4,9 @@
 Veille des versions de la stack locale : audio.cpp, sd-cli (stable-diffusion.cpp),
 trellis.cpp (image → 3D, workflow mesh_ia) + GGUF TRELLIS.2 sur HF, FFmpeg,
 Python + paquets uv, paquets GGUF de modèles (ACE-Step 1.5…), org audio-cpp
-sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, llama.cpp).
+sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, llama.cpp),
+écosystème ComfyUI (releases du cœur, commits de repos clés, nouveaux repos
+topic:comfyui — source d'idées de workflows, cf. docs/recherche_comfyui_2026-09-09.md).
 
 Chaque source est comparée à l'état mémorisé (output/veille/etat.json) : seules
 les NOUVEAUTÉS sont signalées (🆕), avec les notes de release complètes archivées
@@ -21,7 +23,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 for f in (sys.stdout, sys.stderr):
     if hasattr(f, "reconfigure"):
@@ -37,6 +39,15 @@ CHEMIN_LOG = os.path.join(DOSSIER_ETAT, "rapports.log")
 CHEMIN_MAJ = os.path.join(DOSSIER_ETAT, "maj_en_attente.json")
 
 VERSION_AUDIOCPP_INSTALLEE = "v0.7.2"  # fallback si version.json illisible
+
+# Repos ComfyUI surveillés au commit près (veille idées de workflows vidéo/3D ;
+# libellé court → source « comfyui-<libellé> » dans le rapport)
+COMFYUI_REPOS_SURVEILLES = [
+    ("hr-endless", "hradec/ComfyUI-HR-Endless-Sampler"),       # base du workflow h3_ref2va
+    ("h3-motion-context", "NikoDemon80/ComfyUI-H3-Motion-Context"),  # chaînage clips H3
+    ("exemples", "comfyanonymous/ComfyUI_examples"),           # workflows d'exemple officiels
+    ("ltxvideo", "Lightricks/ComfyUI-LTXVideo"),               # workflows LTX-2 (IC-LoRA…)
+]
 
 
 def _github_derniere_release(repo: str) -> dict:
@@ -129,7 +140,7 @@ def veille() -> tuple:
         installee = VERSION_AUDIOCPP_INSTALLEE
         chemin_vj = r"C:\audio-cpp\version.json"
         if os.path.exists(chemin_vj):
-            with open(chemin_vj, encoding="utf-8") as f:
+            with open(chemin_vj, encoding="utf-8-sig") as f:
                 installee = json.load(f).get("version", installee)
         derniere = _github_derniere_release("0xShug0/audio.cpp")
         deja_vue = etat.get("audio.cpp", {}).get("derniere_vue", installee)
@@ -179,7 +190,7 @@ def veille() -> tuple:
         installee = "inconnue"
         chemin_vj = r"C:\trellis\version.json"
         if os.path.exists(chemin_vj):
-            with open(chemin_vj, encoding="utf-8") as f:
+            with open(chemin_vj, encoding="utf-8-sig") as f:
                 installee = json.load(f).get("version", installee)
         derniere = _github_derniere_release("pwilkin/trellis.cpp")
         deja_vue = etat.get("trellis.cpp", {}).get("derniere_vue", installee)
@@ -426,6 +437,77 @@ def veille() -> tuple:
         etat["llama.cpp"] = {"derniere_vue": derniere["tag"]}
     except Exception as e:
         rapport.ajouter("⚠️", "llama.cpp", f"vérification impossible : {e}")
+
+    # ---------------------------------- Écosystème ComfyUI (idées de workflows)
+    # ComfyUI est la source d'inspiration structurante des workflows vidéo
+    # (h3_ref2va reproduit le « HR Endless Sampler » en CLI). Trois volets :
+    # releases du cœur (nouvelles familles/nœuds — TRELLIS2, Wan 3.0, masques
+    # H3… — bon prédicteur des évolutions sd-cli), derniers commits d'une
+    # liste curatée de repos clés, et apparition de nouveaux repos
+    # topic:comfyui à forte croissance (diff du top créé sur les 45 derniers
+    # jours ; premier run = baseline, même mécanique que hf-modeles-gguf).
+    try:
+        derniere = _github_derniere_release("comfyanonymous/ComfyUI")
+        deja_vue = etat.get("comfyui_core", {}).get("derniere_vue", derniere["tag"])
+        if derniere["tag"] != deja_vue:
+            chemin_notes = _archiver_notes("comfyui-core", derniere)
+            rapport.ajouter("🆕", "comfyui-core",
+                            f"release ComfyUI {derniere['tag']} « {derniere['nom']} » ({derniere['date']}) — "
+                            f"info idées : nouvelles familles/nœuds souvent un signe de ce que sd-cli "
+                            f"ajoutera — notes : {chemin_notes}", notes=chemin_notes)
+        else:
+            rapport.ajouter("✅", "comfyui-core", f"dernière release ComfyUI : {derniere['tag']}")
+        etat["comfyui_core"] = {"derniere_vue": derniere["tag"]}
+    except Exception as e:
+        rapport.ajouter("⚠️", "comfyui-core", f"vérification impossible : {e}")
+
+    for nom_court, repo_comfy in COMFYUI_REPOS_SURVEILLES:
+        try:
+            r = requests.get(f"https://api.github.com/repos/{repo_comfy}/commits?per_page=1", timeout=30)
+            r.raise_for_status()
+            commit = r.json()[0]
+            sha, sujet = commit["sha"][:7], (commit["commit"]["message"] or "").split("\n")[0][:90]
+            deja_vu = etat.get("comfyui_repos", {}).get(repo_comfy)
+            if deja_vu and sha != deja_vu:
+                rapport.ajouter("🆕", f"comfyui-{nom_court}",
+                                f"nouveaux commits sur {repo_comfy} : {sujet} — info : technique "
+                                f"potentiellement adaptable aux workflows CLI "
+                                f"(cf. docs/recherche_comfyui_2026-09-09.md)")
+            elif deja_vu:
+                rapport.ajouter("✅", f"comfyui-{nom_court}", f"{repo_comfy} : aucun nouveau commit")
+            else:
+                rapport.ajouter("✅", f"comfyui-{nom_court}", f"baseline enregistrée : {repo_comfy}")
+            etat.setdefault("comfyui_repos", {})[repo_comfy] = sha
+        except Exception as e:
+            rapport.ajouter("⚠️", f"comfyui-{nom_court}", f"vérification impossible : {e}")
+
+    try:
+        fenetre = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
+        r = requests.get("https://api.github.com/search/repositories",
+                         params={"q": f"topic:comfyui created:>{fenetre}",
+                                 "sort": "stars", "order": "desc", "per_page": 20},
+                         timeout=30)
+        r.raise_for_status()
+        top = r.json().get("items", [])
+        deja_vus = etat.get("comfyui_nouveaux_repos", {}).get("repos")
+        if deja_vus:
+            nouveaux = [x for x in top
+                        if x["full_name"] not in set(deja_vus) and x.get("stargazers_count", 0) >= 20]
+            if nouveaux:
+                details = ", ".join(f"{x['full_name']} ({x['stargazers_count']}★)" for x in nouveaux[:5])
+                rapport.ajouter("🆕", "comfyui-nouveaux-repos",
+                                f"{len(nouveaux)} nouveau(x) repo(s) comfyui en croissance : {details}"
+                                f"{'…' if len(nouveaux) > 5 else ''} — info : idée(s) de workflow à "
+                                f"évaluer (cf. docs/recherche_comfyui_2026-09-09.md)")
+            else:
+                rapport.ajouter("✅", "comfyui-nouveaux-repos",
+                                f"top {len(top)} repos comfyui récents stable (fenêtre 45 j)")
+        else:
+            rapport.ajouter("✅", "comfyui-nouveaux-repos",
+                            f"baseline enregistrée : top {len(top)} repos comfyui créés après {fenetre}")
+        etat["comfyui_nouveaux_repos"] = {"repos": [x["full_name"] for x in top]}
+    except Exception as e:
+        rapport.ajouter("⚠️", "comfyui-nouveaux-repos", f"vérification impossible : {e}")
 
     # ------------------------------------------------------------- journalisation
     os.makedirs(DOSSIER_ETAT, exist_ok=True)

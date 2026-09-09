@@ -51,7 +51,10 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).
 - Veille versions (audio.cpp, sd-cli, trellis.cpp + GGUF TRELLIS.2 sur HF, FFmpeg, Python,
   paquets, modèles GGUF + org audio-cpp sur HF, **nouveaux modèles LLM/VLM GGUF tendance
-  sur HF** (top trending en diff, baseline 2026-09-07), llama.cpp) : `uv run python scripts/veille_versions.py` — état dans
+  sur HF** (top trending en diff, baseline 2026-09-07), llama.cpp, **écosystème ComfyUI**
+  (releases du cœur + commits de repos clés H3/LTX + nouveaux repos topic:comfyui en diff,
+  baseline 2026-09-09 — source d'idées de workflows, rapport de recherche :
+  `docs/recherche_comfyui_2026-09-09.md`)) : `uv run python scripts/veille_versions.py` — état dans
   `output/veille/`, rapport uniquement (jamais de mise à jour automatique). Déclenchement
   **automatique à l'ouverture de session** (pas de cron) : le hook SessionStart relance la
   veille en arrière-plan si la dernière date de plus de 20 h (fraîcheur lue sur la date de
