@@ -99,6 +99,12 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   commande CLI ad hoc. Réciproque : **ne PAS créer de workflow pour un test non validé** —
   le consigner d'abord dans MEMORY_BANK (statut « testé, non validé ») et attendre la
   validation utilisateur (ex. essence SA3 / cover ACE-Step, en attente le 2026-09-06).
+- ⚡ **`h3_ref2va` : TOUJOURS utiliser/proposer le mode `--turbo`** (LoRA distillé 8 steps,
+  VALIDÉ utilisateur le 2026-09-09 — « très bonne qualité, son très bien » : ~38 min vs
+  ~70 min pour 22 frames, sampling −64 %, raccord référence ≥ baseline ; MEMORY_BANK §1.16).
+  La recette de base 20 steps (sans `--turbo`) ne sert qu'en A/B qualité ou sur demande
+  explicite. `scripts/proto_endless_h3.py` (boucle 18 chunks, NON validée) l'utilise déjà :
+  ~11,5 h au lieu de ~21 h, et le raccord chunk→chunk est le point critique à juger en premier.
 
 ## 🔄 Process de mise à jour (à exécuter quand la veille signale une nouveauté)
 

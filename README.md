@@ -66,6 +66,7 @@ Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with *
 | 👗 **MakeHuman / MPFB2 Character Suite** | Canonical humanoid 3D pipeline: seamless facial UV projections, barycentric garment retargeting (`.mhclo`), and studio Cycles validation renders. |
 | 🌌 **Equirectangular 360° Skyboxes** | 2:1 panoramic skies with automated Godot 4 `WorldEnvironment` and Image-Based Lighting (IBL) configuration. |
 | 🎬 **Native AI Video (.webm)** | Direct hardware-accelerated video rendering (Wan 2.1, Wan 2.2, LTX-2.3/2.5) with WebM container export and Godot 4 `VideoStreamPlayer` scenes. |
+| 🐉 **Video+Audio Continuation ×2 Turbo** 🏆 | `h3_ref2va` continues any video — character, scene **and sound** — via MiniMax-H3 Ref2VA (webm with generated audio). The validated **turbo distilled LoRA** (`--turbo`, 8 steps) cuts render time nearly in half: **~38 min instead of ~70 min** for 22 frames @ 864×480 (sampling −64 %, zero per-step cost), with reference continuity **≥ baseline** and richer audio. This is the enabler for long multi-chunk sequences (18-chunk loop: **~11.5 h instead of ~21 h**). |
 | 🔄 **Automated sd.cpp Vulkan Compiler** | 1-click update tool: fetches official GitHub Vulkan binaries or compiles native master sources via CMake + MSVC with automatic rollback backups. |
 | ⚡ **Direct by Default & Zero VRAM Spikes** | Direct, verbatim prompt execution by default for instantaneous generation. When optional LLM prompt enrichment is enabled (`--use-llm`), the LLM terminates and frees 100% of VRAM before diffusion launches. |
 
@@ -1012,6 +1013,9 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   > ```
 
 #### 4.9. `h3_ref2va` — Video+Audio Continuation via MiniMax-H3 Ref2VA (webm with sound)
+
+> 🏆 **Jackpot speed (validated 2026-09-09)**: the turbo distilled LoRA (`--turbo`) renders a 22-frame chunk in **~38 min instead of ~70 min** (sampling −64 %), with reference continuity and audio quality **≥ the validated baseline** — judged "très bonne qualité, son très bien" by the user. Same seed + same recipe otherwise, so A/B is trivial.
+
 * **Process** (validated 2026-09-09, recipe in [`docs/MEMORY_BANK.md`](docs/MEMORY_BANK.md) §1.16 — CLI counterpart of ComfyUI's *HR Endless Sampler* chunk mechanism):
   1. Extracts the **reference tail** from a source video (last N frames @ 24 fps + paired WAV, via FFmpeg) — or accepts a raw frame directory directly.
   2. Runs MiniMax-H3 **Ref2VA** through sd-cli Vulkan: the reference conditions the DiT as `<Video 1>` / `<Audio 1>` (mention them in the prompt), producing a new chunk that continues character, scene **and sound**.
