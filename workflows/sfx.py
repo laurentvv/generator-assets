@@ -5,6 +5,12 @@ Workflow SFX : Génération de Bruitages et Effets Sonores pour Assets de Jeu (G
 Produit :
 - Fichier audio WAV (PCM 16-bit)
 - Fichier audio OGG Vorbis (Stream optimisé Godot)
+
+Moteurs (param `sfx_engine`) :
+- `ia` (défaut) : Stable Audio 3 Small SFX via audio.cpp — validé utilisateur le
+  2026-09-09 (4/5 « ok », normalisation de crête intégrée suite au rejet « faible
+  volume » du sample pluie). N'importe quel prompt EN descriptif est possible.
+- `procedural` : synthèse numpy historique (types figés : sword, coin, explosion…).
 """
 
 import os
@@ -14,6 +20,7 @@ import numpy as np
 
 from core.audio_ops import exporter_sfx_godot, synthetiser_sfx
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.sfx_ia import generer_sfx_ia
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
@@ -22,22 +29,29 @@ class SFXWorkflow(BaseWorkflow):
     """Génération d'effets sonores et bruitages (SFX) pour Godot 4."""
 
     name = "sfx"
-    description = "Effets sonores & bruitages de jeux vidéo (.wav / .ogg) pour Godot AudioStreamPlayer"
+    description = "Effets sonores & bruitages de jeux vidéo (.wav / .ogg) — moteur IA (SA3 small SFX) ou synthèse procédurale"
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "sword_slash"
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         duree = float(params.get("duration", 1.5))
+        graine = int(params.get("seed", 42))
+        moteur = params.get("sfx_engine") or "ia"
         nom_base = params.get("output") or f"{slugifier_texte(prompt)}_sfx"
 
         os.makedirs(output_dir, exist_ok=True)
 
-        self.log(f"Synthèse de l'effet sonore pour '{prompt}' (Durée: {duree:.1f}s, 44.1kHz)...")
-
-        audio_data = synthetiser_sfx(sfx_type=prompt, duree=duree, sr=44100)
+        if moteur == "ia":
+            self.log(f"Synthèse IA (SA3 small SFX, graine {graine}) pour '{prompt}' (Durée: {duree:.1f}s, 44.1kHz stéréo)...")
+            res = generer_sfx_ia(prompt, duree=duree, seed=graine)
+            audio_data, sr = res["audio"], res["sr"]
+            self.log(f"Génération OK (RTF {res['rtf']:.2f}, crête source {20 * np.log10(max(res['pic_source'], 1e-9)):.1f} dBFS → normalisée).")
+        else:
+            self.log(f"Synthèse procédurale de l'effet sonore pour '{prompt}' (Durée: {duree:.1f}s, 44.1kHz)...")
+            audio_data, sr = synthetiser_sfx(sfx_type=prompt, duree=duree, sr=44100), 44100
 
         self.log("Export des formats audio Godot 4 (.wav, .ogg)...")
-        chemin_wav, chemin_ogg = exporter_sfx_godot(nom_base, output_dir, audio_data, sr=44100)
+        chemin_wav, chemin_ogg = exporter_sfx_godot(nom_base, output_dir, audio_data, sr)
 
         self.log(f"Effet sonore exporté avec succès dans '{output_dir}/' :", emoji="🎉")
         self.log(f"  • Format WAV : {chemin_wav} (PCM 16-bit)")
@@ -47,5 +61,6 @@ class SFXWorkflow(BaseWorkflow):
             "wav": chemin_wav,
             "ogg": chemin_ogg,
             "duration": duree,
+            "engine": moteur,
             "files": [chemin_wav, chemin_ogg]
         }

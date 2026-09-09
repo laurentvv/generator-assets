@@ -447,13 +447,17 @@ def exporter_sfx_godot(
     sr: int = 44100
 ) -> Tuple[str, str]:
     """Exporte les fichiers audio .wav et .ogg prêts pour Godot 4 AudioStreamPlayer."""
+    from core.music_ai import convertir_ogg
+
     os.makedirs(output_dir, exist_ok=True)
     chemin_wav = os.path.join(output_dir, f"{nom_base}.wav")
     chemin_ogg = os.path.join(output_dir, f"{nom_base}.ogg")
 
     sf.write(chemin_wav, audio_data, sr, subtype='PCM_16', format='WAV')
     try:
-        sf.write(chemin_ogg, audio_data, sr, format='OGG')
+        # OGG toujours via ffmpeg : le libsndfile fait un stack overflow C (exit 127
+        # silencieux) au-delà de quelques secondes — règle §1.10 MEMORY_BANK.
+        convertir_ogg(chemin_wav, chemin_ogg)
     except Exception:
         chemin_ogg = chemin_wav
 
