@@ -227,9 +227,8 @@ HDR/AV1/mkv/webm ; « taeh3 » (mini-VAE preview H3). Les releases du cœur = bo
 
 ## 8. Actions proposées (ordre suggéré)
 
-> **Point d'avancement au 2026-09-09 (soir)** : actions 1, 2(a+b) et 3 faites ;
-> 2(c) et 5 restent ; 4 = brouillons prêts (`docs/brouillons_issues_sdcli.md`),
-> publication sur accord utilisateur.
+> **Point d'avancement au 2026-09-09 (soir)** : actions 1, 2(a+b), 3 et 4 faites ;
+> restent 2(c) (prompts par VLM) et 5 (moyen terme).
 
 1. **Test turbo LoRA ref2v 8 steps** (règle AGENTS : jamais de workflow avant validation) —
    recette : télécharger `minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16.safetensors` (downloader
@@ -250,8 +249,11 @@ HDR/AV1/mkv/webm ; « taeh3 » (mini-VAE preview H3). Les releases du cœur = bo
    livre pas la grammaire en clair, ce sont les guides du repo qui la portent).
 4. Feature requests leejet (sd-cli) : latent carry-over Ref2VA (tranchage queue), images
    sémantiques dans le prompt Qwen H3, VACE Wan 2.2.
-   ✍️ **BROUILLONS PRÊTS** (`docs/brouillons_issues_sdcli.md`, enrichis des découvertes
-   sources) — publication sur accord utilisateur.
+   ✅ **PUBLIÉES le 2026-09-09** (après vérification zéro doublon) :
+   [#1951](https://github.com/leejet/stable-diffusion.cpp/issues/1951) (résolution réf +
+   carry-over latent), [#1952](https://github.com/leejet/stable-diffusion.cpp/issues/1952)
+   (images sémantiques Qwen TE), [#1953](https://github.com/leejet/stable-diffusion.cpp/issues/1953)
+   (VACE Wan 2.2) — corps archivés dans `docs/brouillons_issues_sdcli.md`.
 5. Moyen terme : FaceRefine CLI ; portrait_serie (inspiration Photoshoot) ;
    production.json (inspiration short-drama) pour la chaîne.
 

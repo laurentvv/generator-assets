@@ -1,14 +1,18 @@
-# Brouillons de feature requests — leejet/stable-diffusion.cpp
+# Feature requests sd-cli — PUBLIÉES le 2026-09-09 (compte laurentvv)
 
-**Statut : BROUILLONS — ne PAS publier sans accord explicite de l'utilisateur**
-(publication = action externe). Cible : `leejet/stable-diffusion.cpp` (issues).
-Issus de `docs/recherche_comfyui_2026-09-09.md` §8 (action 4) + lecture des sources
-sd-cli (comportement Ref2VA, cf. MEMORY_BANK §1.16).
+| Issue | Titre | Lien |
+|---|---|---|
+| **#1951** | MiniMax-H3 Ref2VA: expose reference video resolution (+ long-term: latent tail carry-over for chunk chaining) | https://github.com/leejet/stable-diffusion.cpp/issues/1951 |
+| **#1952** | MiniMax-H3: feed reference images to the Qwen text encoder (semantic/timed `<Picture N>`) | https://github.com/leejet/stable-diffusion.cpp/issues/1952 |
+| **#1953** | Wan 2.2 VACE support in vid_gen (reference-to-video / video editing) | https://github.com/leejet/stable-diffusion.cpp/issues/1953 |
 
-⚠️ Avant publication : la version installée ici est `master-841` (rollback de la
-régression #1946, coupable `462d675` isolé par bisect le 2026-09-08) — mettre à jour
-les mentions de version le jour où une release corrigée est installée, et vérifier
-que les points n'ont pas déjà été traités entre-temps.
+**Suivi** : pas de surveillance automatique dédiée — la veille « écosystème ComfyUI » et les
+sessions vérifieront les réponses au besoin (même mécanique que le suivi de l'issue #1946
+du hook SessionStart, à envisager si une réponse arrive).
+
+---
+
+## Archives des corps publiés (inchangés ci-dessous, hors préambule)
 
 ---
 
@@ -50,8 +54,7 @@ Would VACE weights be in scope for `vid_gen` (GGUF quants of the VACE-enabled Wa
 
 ---
 
-### Rappel process (une fois publiées)
+### Rappel process (après publication)
 
-- Référencer les issues ouvertes dans `docs/recherche_comfyui_2026-09-09.md` §8 et
-  `docs/MEMORY_BANK.md` §1.16 (liens + numéros) ; suivre les réponses via la veille
-  (mécanique issue sd-cli #1946 du hook SessionStart si pertinent).
+- ✅ Fait le 2026-09-09 : référencées dans `docs/recherche_comfyui_2026-09-09.md` §8 et
+  `docs/MEMORY_BANK.md` §1.16 (liens + numéros).
