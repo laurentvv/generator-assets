@@ -8,6 +8,10 @@ la source (N dernières trames + WAV appairé, extraits par ffmpeg) devient la
 référence Ref2VA <Video 1>/<Audio 1> du DiT H3. Brique validée le 2026-09-09
 (MEMORY_BANK §1.16) — mécanisme du nœud ComfyUI « HR Endless Sampler » reproduit
 en CLI, ici pour UN chunk (la boucle multi-chunks reste à valider séparément).
+Fenêtre de référence = recette validée (12 trames + 0,5 s audio finissant au
+raccord) ; les leviers de raccord « endless » (fenêtre audio qui remonte, 5 trames
+de réf sur le raccord, downscale réf) sont testés en amont par
+`scripts/proto_endless_h3.py` et ne remonteront ici qu'une fois validés.
 
 ⚠️ Lourd : ~70 min pour 22 trames sur RX 6950 XT en recette de base, ~38 min avec le
 mode turbo (LoRA distillé 8 steps, validé le 2026-09-09 — `--turbo`). Le pré-contrôle
