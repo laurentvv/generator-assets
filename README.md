@@ -234,14 +234,14 @@ python main.py --list-upscalers
 <span id="workflows"></span>
 ## 📦 Complete Workflow Catalog
 
-The engine features **36 modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
+The engine features **37 modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
 
 ```text
 📋 Quick Category Map:
   • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, monoplan_ia
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -1036,6 +1036,23 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
     --turbo -o dragon_continuation
   ```
 
+#### 4.10. `monoplan_ia` — Single-Take Cinematic Shot from a Still Image (LTX-2.5 + slow-motion + designed zoom) 🏆
+* **Validation utilisateur 2026-09-10** (« c'est parfait résultat magnifique » — intro Château du Vent-Gris, jeu *L'HÉRITIER DU VIDE*).
+* **Process** (the anti-jitter recipe, MEMORY_BANK §1.17 — I2V chaining rejected after v1-v5 iterations: content seams at every cut, tracker-based stabilization injects noise):
+  1. Conforms the source image to 16:9 832×480 (Lanczos crop) as the first frame.
+  2. Generates ONE single LTX-2.5 Distilled I2V shot (65 frames default = stable GPU ceiling, 8 steps euler_a, cfg 1.0, seed) — no cuts by construction.
+  3. Slows it to the target duration with motion-compensated interpolation (`minterpolate` mci/aobmc/vsbmc) + 1080p lanczos — slow-motion divides the model's camera breathing by the stretch factor.
+  4. Applies a DESIGNED pure zoom ramp (smootherstep 1.10→1.32 around a fixed anchor, `--zoom-debut/--zoom-fin`) — no tracking measurement in the warp, so it mathematically cannot jitter — plus AMD FidelityFX CAS 0.75.
+  5. Optional AI sound bed (`--ambiance "EN prompt"`, SA3 Small SFX) muxed to a listening copy.
+* **Inputs**: `prompt` (camera move + scene), `-i` image (required unless `--monoplan-source plan.webm` for resumable runs), `--monoplan-frames` (default 65, max ~81), `--monoplan-duration` (default 10.0 s), `--zoom-debut/--zoom-fin` (1.10/1.32), `--ambiance`, `--seed`, `-o`.
+* **Engines**: sd-cli Vulkan LTX-2.5 Distilled (DiT Q4_K_M + video VAE + Gemma4 on CPU), FFmpeg minterpolate, OpenCV warp (WARP_INVERSE_MAP), SA3 Small SFX (audio.cpp).
+* **Outputs**: `<nom>_<durée>s_1080p.mp4` (mute master), `_avec_ambiance.mp4`, `_brut.webm`, `_ralenti.mp4`, `_ambiance.wav`.
+* **Perf (RX 6950 XT)**: ~15 min generation (65 f, 8 steps) + ~2 min slow-mo + ~1 min zoom. ⚠️ LTX GPU ceiling ≈ 81 frames @ 832×480 (internal `ltxav` module eats ~29 MB VRAM/frame); after cascaded Vulkan device-lost errors, reboot before blaming the recipe.
+
+```bash
+uv run python main.py -w monoplan_ia "Slow cinematic dolly-in toward a medieval fortress on a storm cliff, drifting storm clouds, crashing waves." -i scene.png --monoplan-duration 10 --ambiance "violent coastal storm, gusting wind over sea cliffs, heavy waves" -o intro_vent_gris
+```
+
 * **🔍 Recommended Workflow: Fast 480p/512p Preview ➔ AI 4K Super-Resolution Master** :
   To combine iteration speed with surgical broadcast-level sharpness, the production pipeline splits into 2 steps:
   1. **Ultra-Fast Native Preview**: generate natively at 768×512 (LTX-2.5) or 832×480 (Wan 2.1) to validate motion, framing and aesthetics in 1-3 minutes.
@@ -1194,7 +1211,8 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 * **Outputs** (`output/musique_essence/<name>/`): `brut.wav`/`brut.mp3` (raw, with possible vocal bleed) + `instrumental.wav`/`instrumental.mp3` + `stems/` (drums, bass, other, vocals).
 * **Example**:
   ```bash
-  uv run python main.py -w musique_essence "German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass, chiming chorus guitars"       -i "C:\musiqueeference.wav" --duration 30 --scale 0.45 --seed 42
+  uv run python main.py -w musique_essence "German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass, chiming chorus guitars"       -i "C:\musique
+eference.wav" --duration 30 --scale 0.45 --seed 42
   ```
 * **Status (2026-09-09)**: ✅ **User-validated** (*« c bien »* on the LLB reference, scales 0.40/0.45 with 30 s or 60 s references). Context: SA3 Medium **text-only** was rejected ("toujours pop") and the whole ACE-Step anti-pop text campaign is closed (all rejected — `docs/MEMORY_BANK.md` §1.11); SA3 Small is superseded by Medium.
 
