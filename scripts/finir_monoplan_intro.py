@@ -71,10 +71,12 @@ def etape_2_ralenti() -> None:
         return
     log(f"⏱️ 2/4 Ralenti ×{FACTEUR_LENT} + interpolation 24 fps → 10,0 s…")
     t0 = time.time()
+    # 1080p dés l'étape 2 : l'étape 3 (zoom pur) travaille en coordonnées 1920×1080
     ok = subprocess.run(
         [FFMPEG, "-y", "-v", "error", "-i", MONOPLAN, "-vf",
          f"setpts={FACTEUR_LENT}*PTS,"
-         "minterpolate=fps=24:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1",
+         "minterpolate=fps=24:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,"
+         "scale=1920:1080:flags=lanczos",
          "-an", "-c:v", "libx264", "-crf", "12", "-preset", "slow",
          "-pix_fmt", "yuv420p", RALENTI],
         capture_output=True,
