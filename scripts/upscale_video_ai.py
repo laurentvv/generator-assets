@@ -20,7 +20,11 @@ for f in (sys.stdout, sys.stderr):
         f.reconfigure(encoding="utf-8", errors="replace")
 
 SD_CLI = r"C:\SD\sd-cli.exe"
-FFMPEG = r"C:\Program Files\Amuse\ffmpeg.exe"
+# ffmpeg 9.0.1 custom prioritaire (règle §1.10 MEMORY_BANK) ; l'ancien build
+# Amuse 7.1.1 a disparu avec la migration MSYS2 du 2026-09-09.
+FFMPEG = r"C:\ffmpeg\dist\bin\ffmpeg.exe"
+if not os.path.exists(FFMPEG):
+    FFMPEG = r"C:\Program Files\Amuse\ffmpeg.exe"
 DEFAULT_MODEL = r"C:\Modeles_LLM\upscalers\4x-UltraSharp.pth"
 
 def get_video_info(video_path):
@@ -82,7 +86,8 @@ def upscale_video_ai(
     print("\n📸 1. Extraction des trames sources...")
     cmd_extract = [
         FFMPEG, "-y", "-i", input_video,
-        "-vsync", "0", "-q:v", "2",
+        # -vsync retiré en ffmpeg 9.0 → -fps_mode (build custom 9.0.1)
+        "-fps_mode", "passthrough", "-q:v", "2",
         os.path.join(raw_frames, "frame_%04d.png")
     ]
     subprocess.run(cmd_extract, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
