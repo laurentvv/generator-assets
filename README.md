@@ -1044,13 +1044,17 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   3. Slows it to the target duration with motion-compensated interpolation (`minterpolate` mci/aobmc/vsbmc) + 1080p lanczos — slow-motion divides the model's camera breathing by the stretch factor.
   4. Applies a DESIGNED pure zoom ramp (smootherstep 1.10→1.32 around a fixed anchor, `--zoom-debut/--zoom-fin`) — no tracking measurement in the warp, so it mathematically cannot jitter — plus AMD FidelityFX CAS 0.75.
   5. Optional AI sound bed (`--ambiance "EN prompt"`, SA3 Small SFX) muxed to a listening copy.
-* **Inputs**: `prompt` (camera move + scene), `-i` image (required unless `--monoplan-source plan.webm` for resumable runs), `--monoplan-frames` (default 65, max ~81), `--monoplan-duration` (default 10.0 s), `--zoom-debut/--zoom-fin` (1.10/1.32), `--ambiance`, `--seed`, `-o`.
-* **Engines**: sd-cli Vulkan LTX-2.5 Distilled (DiT Q4_K_M + video VAE + Gemma4 on CPU), FFmpeg minterpolate, OpenCV warp (WARP_INVERSE_MAP), SA3 Small SFX (audio.cpp).
-* **Outputs**: `<nom>_<durée>s_1080p.mp4` (mute master), `_avec_ambiance.mp4`, `_brut.webm`, `_ralenti.mp4`, `_ambiance.wav`.
+  6. Optional end title card (`--carton-titre`, VALIDATED 2026-09-10 on the Vent-Gris intro): freezes the last frame, keeps the zoom ramp going (1.32→1.36 by default), and reveals an animated cinematic title — Pillow multi-layer rendering (ivory→gold gradient, chiseled bevel, warm glow, deep drop shadow, contrast scrim, line+diamond ornament in Felix Titling) with fade-in + left-to-right letter stagger + tracking expansion (0.12→0.22 em). Sound bed extends over the card with a 2.5 s fade-out; everything assembled in one ffmpeg pass. `|` splits title lines (`"L'HÉRITIER|DU VIDE"`), `--carton-duree` (default 6 s), `--carton-zoom-fin` (default 1.36).
+* **Inputs**: `prompt` (camera move + scene), `-i` image (required unless `--monoplan-source plan.webm` for resumable runs), `--monoplan-frames` (default 65, max ~81), `--monoplan-duration` (default 10.0 s), `--zoom-debut/--zoom-fin` (1.10/1.32), `--ambiance`, `--carton-titre/--carton-duree/--carton-zoom-fin`, `--seed`, `-o`.
+* **Engines**: sd-cli Vulkan LTX-2.5 Distilled (DiT Q4_K_M + video VAE + Gemma4 on CPU), FFmpeg minterpolate, OpenCV warp (WARP_INVERSE_MAP), Pillow title rendering, SA3 Small SFX (audio.cpp).
+* **Outputs**: `<nom>_<durée>s_1080p.mp4` (mute master), `_avec_ambiance.mp4`, `_brut.webm`, `_ralenti.mp4`, `_ambiance.wav`, and with `--carton-titre`: `_derniere_trame.png`, `_carton.mp4`, `_final_titre.mp4` (validated deliverable).
 * **Perf (RX 6950 XT)**: ~15 min generation (65 f, 8 steps) + ~2 min slow-mo + ~1 min zoom. ⚠️ LTX GPU ceiling ≈ 81 frames @ 832×480 (internal `ltxav` module eats ~29 MB VRAM/frame); after cascaded Vulkan device-lost errors, reboot before blaming the recipe.
 
 ```bash
 uv run python main.py -w monoplan_ia "Slow cinematic dolly-in toward a medieval fortress on a storm cliff, drifting storm clouds, crashing waves." -i scene.png --monoplan-duration 10 --ambiance "violent coastal storm, gusting wind over sea cliffs, heavy waves" -o intro_vent_gris
+
+# With the end title card (freeze frame + animated cinematic title + sound bed to the end):
+uv run python main.py -w monoplan_ia "Slow cinematic dolly-in toward a medieval fortress on a storm cliff." -i scene.png --monoplan-duration 10 --ambiance "violent coastal storm" --carton-titre "L'HÉRITIER|DU VIDE" -o intro_vent_gris
 ```
 
 * **🔍 Recommended Workflow: Fast 480p/512p Preview ➔ AI 4K Super-Resolution Master** :

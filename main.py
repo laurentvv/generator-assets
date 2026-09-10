@@ -679,6 +679,9 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--zoom-fin", type=float, default=1.32, help="monoplan_ia : zoom final de la rampe conçue (défaut: 1.32).")
     groupe_wf.add_argument("--ambiance", help="monoplan_ia : prompt EN du lit sonore IA optionnel (SA3 Small SFX, normalisation incluse) muxé au master.")
     groupe_wf.add_argument("--monoplan-source", help="monoplan_ia : webm monoplan déjà généré à réutiliser (reprise, saute la génération GPU).")
+    groupe_wf.add_argument("--carton-titre", help="monoplan_ia : titre du carton de fin (image figée + titre haute couture animé). « | » sépare les lignes, ex. \"L'HÉRITIER|DU VIDE\".")
+    groupe_wf.add_argument("--carton-duree", type=float, default=6.0, help="monoplan_ia : durée du carton de titre en secondes (défaut: 6.0).")
+    groupe_wf.add_argument("--carton-zoom-fin", type=float, default=1.36, help="monoplan_ia : zoom final du carton, poursuit la rampe du plan (défaut: 1.36).")
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
@@ -959,6 +962,9 @@ Exemples de Workflows 3D & 2D :
         "zoom_fin": args.zoom_fin,
         "ambiance": args.ambiance,
         "monoplan_source": args.monoplan_source,
+        "carton_titre": args.carton_titre,
+        "carton_duree": args.carton_duree,
+        "carton_zoom_fin": args.carton_zoom_fin,
         "dry_run": args.dry_run,
         "lufs": args.lufs,
         "loop_mode": args.loop_mode,
