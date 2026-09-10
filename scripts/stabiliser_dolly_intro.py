@@ -79,18 +79,17 @@ def main() -> None:
     log(f"   trajectoire mesurée : début={echelles[0]:.3f} fin={echelles[-1]:.3f} | "
         f"reculs={reculs} | plus grand saut={sauts.max():.3f} à la trame {int(np.argmax(sauts))+1}")
 
-    # Cible CONÇUE : rampe monotone avec easing (le travelling ne suit pas la courbe
-    # mesurée — il l'oblige) + marge de recadrage 10 % intégrée à la cible de départ
-    # (les corrections descendantes ne révèlent donc jamais de bords).
+    # v5 : AUCUNE mesure dans le rendu (le traceur injectait son bruit en
+    # translation). Le warp = zoom pur suivant la rampe conçue, autour d'une
+    # ancre fixe = position moyenne du donjon (640×360). Incapable de trembler
+    # par construction ; l'animation du contenu (vagues/nuages/brume) est intacte.
     n = len(echelles)
     u = np.linspace(0.0, 1.0, n)
     ease = u * u * u * (u * (u * 6.0 - 15.0) + 10.0)   # smootherstep
     cible = 1.10 + (1.32 - 1.10) * ease                # push-in +20 % sur 10 s
-    correction = np.clip(cible / echelles, 0.80, 1.40)
-    pos_liss = np.column_stack([moyenne_glissante(positions[:, 0]),
-                                moyenne_glissante(positions[:, 1])])
-    log(f"   cible : 1.10 → 1.32 (smootherstep) ; correction zoom : "
-        f"min={correction.min():.3f} max={correction.max():.3f}")
+    pc = np.array([(PATCH[0] + PATCH[2]) / 2, (PATCH[1] + PATCH[3]) / 2])
+    ancre = positions.mean(axis=0) + (pc - np.array([PATCH[0], PATCH[1]]))
+    log(f"   v5 : zoom pur 1.10 → 1.32 autour de l'ancre {ancre.round(1)} (640×360)")
 
     # Re-rendu 1080p : chaque trame re-warpée sur la cible
     log("🎨 Re-rendu stabilisé 1080p…")
@@ -107,23 +106,17 @@ def main() -> None:
     W, HH = 1920, 1080
     for i, nom in enumerate(pngs[:len(echelles)]):
             img = cv2.imread(os.path.join(tmp, nom))
-            s = echelles[i] * correction[i]          # échelle FINALE appliquée
-            # centre du donjon : contenu localisé en positions[i] (coin, coords 640)
-            # + demi-patch à l'échelle du contenu ; cible = même formule, lissée
-            c_src = (positions[i] + demi * echelles[i]) * fx
-            c_dst = (pos_liss[i] + demi * echelles[i]) * fx
-            k = 1.0 / s
-            tx = c_dst[0] - k * c_src[0]
-            ty = c_dst[1] - k * c_src[1]
+            k = 1.0 / cible[i]                          # zoom pur : la rampe conçue
+            c = ancre * fx                              # ancre fixe (pleine résolution)
+            tx = c[0] - k * c[0]
+            ty = c[1] - k * c[1]
             # clamp dans la fenêtre de couverture → jamais de bord noir
             tx = min(max(tx, min(0.0, W * (1 - k))), max(0.0, W * (1 - k)))
             ty = min(max(ty, min(0.0, HH * (1 - k))), max(0.0, HH * (1 - k)))
             M = np.array([[k, 0.0, tx],
                           [0.0, k, ty]], dtype=np.float64)
             if i in (0, 12, 120):
-                log(f"   DEBUG trame {i}: e={echelles[i]:.3f} corr={correction[i]:.3f} "
-                    f"s={s:.3f} k={k:.3f} c_src={c_src.round(1)} c_dst={c_dst.round(1)} "
-                    f"tx={tx:.1f} ty={ty:.1f}")
+                log(f"   DEBUG trame {i}: k={k:.4f} tx={tx:.1f} ty={ty:.1f}")
             corr = cv2.warpAffine(img, M, (img.shape[1], img.shape[0]),
                                   flags=cv2.INTER_CUBIC | cv2.WARP_INVERSE_MAP)
             sortie = os.path.join(tmp, f"s_{i+1:04d}.png")
