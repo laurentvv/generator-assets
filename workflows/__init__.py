@@ -38,6 +38,7 @@ from workflows.retrait_voix import RetraitVoixWorkflow
 from workflows.outfit import OutfitWorkflow
 from workflows.video import VideoWorkflow
 from workflows.h3_ref2va import H3Ref2VAWorkflow
+from workflows.monoplan_ia import MonoplanIaWorkflow
 from workflows.makehuman_clothes import MakeHumanClothesWorkflow
 from workflows.character_makeup import CharacterMakeupWorkflow, Character3DWorkflow
 
@@ -79,6 +80,7 @@ __all__ = [
     "OutfitWorkflow",
     "VideoWorkflow",
     "H3Ref2VAWorkflow",
+    "MonoplanIaWorkflow",
     "MakeHumanClothesWorkflow",
     "CharacterMakeupWorkflow",
     "Character3DWorkflow"
