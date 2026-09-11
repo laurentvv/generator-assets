@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script de téléchargement automatique des modèles d'Upscaling (ESRGAN),
-ONNX (RMBG, DeepBump, RIFE), LoRAs et Modèles Vidéo DiT (Wan 2.1 1.3B / 14B).
+Script de téléchargement automatique des modèles : socle image (Flux.1 Dev,
+encodeurs CLIP-L/T5-XXL, VAE, LLM LFM2.5), Upscaling (ESRGAN), ONNX (RMBG,
+DeepBump, RIFE) et Modèles Vidéo DiT (Wan 2.1 1.3B / 14B).
+
+Les chemins cibles correspondent aux valeurs par défaut de core/config.py
+(racine de MODEL_DIR, surchargeable via la variable d'environnement MODEL_DIR).
 """
 
 import argparse
@@ -21,6 +25,19 @@ DOSSIER_MODELES = os.getenv("MODEL_DIR", r"C:\Modeles_LLM")
 DOSSIER_UPSCALERS = os.path.join(DOSSIER_MODELES, "upscalers")
 DOSSIER_ONNX = os.path.join(DOSSIER_MODELES, "onnx")
 DOSSIER_LORAS = os.path.join(DOSSIER_MODELES, "loras")
+
+# Socle image 2D : moteur par défaut (Flux.1 Dev Q6_K) + encodeurs + VAE + LLM
+# directeur artistique. Le dépôt officiel BFL FLUX.1-dev est gated : on passe
+# par les miroirs non gated usuels (city96 / comfyanonymous) — ae.safetensors
+# (VAE fp16, ~335 Mo) est identique entre FLUX.1-schnell et dev (Apache/MIT).
+# SDXL Juggernaut (Civitai, login requis) reste un téléchargement manuel.
+IMAGE_BASE_URLS = {
+    "flux1-dev-Q6_K.gguf": "https://huggingface.co/city96/FLUX.1-dev-gguf/resolve/main/flux1-dev-Q6_K.gguf",
+    "clip_l.safetensors": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors",
+    "t5xxl_fp16.safetensors": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors",
+    "ae.safetensors": "https://huggingface.co/alisher123/Flux1-dev-vae/resolve/main/ae.safetensors",
+    "LFM2.5-8B-A1B-Q6_K.gguf": "https://huggingface.co/LiquidAI/LFM2.5-8B-A1B-GGUF/resolve/main/LFM2.5-8B-A1B-Q6_K.gguf",
+}
 
 UPSCALERS_URLS = {
     "RealESRGAN_x4plus_anime_6B.pth": "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth",
@@ -99,9 +116,9 @@ def main():
     parser = argparse.ArgumentParser(description="Gestionnaire de téléchargement des modèles IA pour generator-assets.")
     parser.add_argument(
         "--pack",
-        choices=["all", "onnx", "upscalers", "video", "video-1.3b", "video-14b", "video-vae"],
-        default="video",
-        help="Pack de modèles à télécharger (défaut : video / 1.3B léger)."
+        choices=["all", "base", "onnx", "upscalers", "video", "video-1.3b", "video-14b", "video-vae"],
+        default="base",
+        help="Pack de modèles à télécharger (défaut : base / socle image Flux.1)."
     )
     parser.add_argument("--force", action="store_true", help="Force le re-téléchargement même si le fichier existe.")
     args = parser.parse_args()
@@ -112,9 +129,15 @@ def main():
     os.makedirs(DOSSIER_LORAS, exist_ok=True)
 
     print("=" * 70)
-    print(" 🚀 Gestionnaire de Modèles IA (Vidéos Wan 2.1, ONNX, Upscalers)")
+    print(" 🚀 Gestionnaire de Modèles IA (Flux.1, Vidéos Wan 2.1, ONNX, Upscalers)")
     print(f" 📂 Emplacement cible : {DOSSIER_MODELES}")
     print("=" * 70)
+
+    if args.pack in ("all", "base"):
+        print("\n--- Socle Image 2D : Flux.1 Dev Q6_K + encodeurs + VAE + LLM (~10 Go) ---")
+        for nom, url in IMAGE_BASE_URLS.items():
+            dest = os.path.join(DOSSIER_MODELES, nom)
+            telecharger_avec_progression(url, dest, force=args.force)
 
     if args.pack in ("video", "video-1.3b", "all"):
         print("\n--- Pack Vidéo Wan 2.1 (1.3B Rapide & Léger ~5.2 Go total) ---")

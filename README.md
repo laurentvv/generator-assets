@@ -22,15 +22,16 @@
 
 <p align="center">
   <a href="#about">About</a> •
+  <a href="#installation">Installation & Models</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#capabilities">Capabilities</a> •
-  <a href="#sd-cpp-update">stable-diffusion.cpp Vulkan Updater</a> •
-  <a href="#video-generation">stable-diffusion.cpp Video Engine</a> •
+  <a href="#models">Models</a> •
   <a href="#workflows">Workflows</a> •
   <a href="#cli">CLI Reference</a> •
   <a href="#godot">Godot 4 Guide</a> •
   <a href="#agents">AI Agents (MCP)</a> •
-  <a href="#installation">Installation</a>
+  <a href="#sd-cpp-update">stable-diffusion.cpp Vulkan Updater</a> •
+  <a href="#video-generation">Video Engine</a>
 </p>
 
 </div>
@@ -53,6 +54,92 @@ gguf, text-to-video, ai-music, music-generation, audio-generation
 `generator-assets` is a lightweight, local, and fully headless CLI pipeline orchestrator designed to transform natural language descriptions into **engine-ready 2D and 3D assets for Godot 4 and Blender**. 
 
 Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with **zero Electron or web server overhead**, executes tasks sequentially with **strict VRAM management** (auto-unloading LLMs before launching diffusion models), and directly exports native engine formats: `.tres` materials, `.glb` models with embedded PBR textures, `.gdshader` files, 360° environment skies, and `.wav`/`.ogg` audio streams.
+
+---
+
+<span id="installation"></span>
+## ⚡ Installation & Quickstart
+
+### 1. Prerequisites
+* **Windows 10/11** with **Git Bash** and [**uv**](https://docs.astral.sh/uv/) (Python ≥ 3.12 is pulled automatically by `uv sync`).
+* A **Vulkan-capable GPU** — validated on an AMD RX 6950 XT 16 GB; there is **no CUDA dependency anywhere** (the whole AI stack runs through C++/GGML Vulkan engines).
+* The **C++/GGUF engines**, installed outside the repository (standalone executables, not pip packages — every path is overridable via environment variables such as `SD_CLI_PATH`, `LLAMA_CLI_PATH`, `AUDIOCPP_PATH`, `FFMPEG_PATH`):
+
+| Engine | Default Location | Role |
+| :--- | :--- | :--- |
+| [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) | `C:\SD\sd-cli.exe` | Image & video diffusion (Flux.1, SDXL, Wan 2.1/2.2, LTX-2.5, MiniMax-H3) |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | `C:\llama.cpp\llama-cli.exe` | Local LLM Art Director (`--use-llm`), Music Flamingo QA |
+| audio.cpp | `C:\audio-cpp\audiocpp_cli.exe` | Music & SFX generation (MiniMax-Music3, ACE-Step 1.5, Stable Audio 3) |
+| trellis.cpp | `C:\trellis\` | AI image→3D volumetric meshes (TRELLIS.2, workflow `mesh_ia`) |
+| FFmpeg (custom build) | `C:\ffmpeg\dist\bin\ffmpeg.exe` | Audio conform, loudnorm, OGG/WebM muxing |
+| Blender 5.x | standard install | Headless meshing, decimation, control renders (`bpy`) |
+
+> Each of these tools has a **custom local README** on the workstation (`C:\SD\README.md`, `C:\audio-cpp\README.md`, `C:\ffmpeg\README.md`, `C:\trellis\README.md`) documenting installed versions, validated commands and pitfalls. `sd-cli` can be installed/updated in one command via the [built-in Vulkan updater](#sd-cpp-update).
+
+---
+
+### 2. Clone & Setup the Virtual Environment
+This project is optimized for [**uv**](https://docs.astral.sh/uv/) for near-instant package installation:
+
+```bash
+git clone https://github.com/votre-compte/generator-assets.git
+cd generator-assets
+
+# Synchronize dependencies with uv:
+uv sync
+```
+
+*(Alternatively, standard pip — dependencies are declared in [`pyproject.toml`](pyproject.toml): `python -m venv .venv && .venv\Scripts\activate && pip install -e .`)*
+
+---
+
+### 3. Download the AI Models
+
+All model weights live **outside the repository**, in a single folder: `C:\Modeles_LLM` (override it with the `MODEL_DIR` environment variable).
+
+> 🧭 **Where are model paths configured?** In a single Python module — [`core/config.py`](core/config.py) — not in a JSON/YAML file. Every model path is a constant with its own environment-variable override (`SD_MODEL_PATH`, `WAN_MODEL_PATH`, `H3_REF2VA_MODEL_PATH`, `MUSIC3_MODEL_DIR`, `ACESTEP15_MODEL_DIR`, …). The download scripts below write exactly to these default locations, so a fresh install works out of the box.
+
+**📦 Download manager** (skips files already present, resumes partial downloads via curl):
+
+```bash
+uv run python scripts/download_models.py --pack base       # Image core: Flux.1 Dev Q6_K + CLIP-L + T5-XXL + VAE + LFM2.5 LLM (~10 GB)
+uv run python scripts/download_models.py --pack onnx       # Light ONNX models: RMBG-1.4, DeepBump, RIFE
+uv run python scripts/download_models.py --pack upscalers  # ESRGAN upscalers (4x-UltraSharp, RealESRGAN ×2)
+uv run python scripts/download_models.py --pack video      # Wan 2.1 1.3B light video pack (~5 GB)
+uv run python scripts/download_models.py --pack video-14b  # Wan 2.1 14B studio video pack (~25 GB)
+uv run python scripts/download_models.py --pack all        # Everything above
+```
+
+**Per-family packs** (each family has its dedicated script):
+
+| Domain | Models | Download |
+| :--- | :--- | :--- |
+| Image 2D core | Flux.1 Dev Q6_K, CLIP-L, T5-XXL, VAE `ae.safetensors`, LFM2.5-8B | `scripts/download_models.py --pack base` |
+| Video DiT | Wan 2.2 MoE, MiniMax-H3 (FL2VA + Ref2VA), LTX-2.5 | `scripts/download_wan22*.py`, `scripts/download_minimax_h3.py`, `scripts/download_ltx25*.py` |
+| Music & SFX | MiniMax-Music3, ACE-Step 1.5 | `scripts/download_music3_gguf.py`, `scripts/download_acestep15_gguf.py <variante>` |
+| Image→3D | TRELLIS.2 GGUF (10 files, ~16.4 GB → `C:\Modeles_LLM\trellis2-gguf`) | manual — procedure in `C:\trellis\README.md` |
+| SDXL styles | `juggernautXL_ragnarok.safetensors` | manual — Civitai (account required) |
+| LoRAs | Diablo, Dungeon, 360°, space… | manual — see [`loras/`](loras/) / `C:\Modeles_LLM\loras` |
+
+> 💡 **Large downloads**: Hugging Face / ModelScope throttle single connections — use the parallel downloader (~10× faster): `uv run python scripts/telecharger_gros_fichier_parallele.py <url> <destination>`.
+>
+> ⚠️ **Licensing**: the Flux.1 Dev Q6_K GGUF is fetched from the `city96` mirror but remains under the [FLUX.1-dev Non-Commercial License](https://huggingface.co/black-forest-labs/FLUX.1-dev) (the official repository is gated).
+
+---
+
+### 4. Verify System Requirements & Paths
+Check that your local executables (`sd-cli.exe`, `llama-cli.exe`, Blender) and model checkpoints are detected:
+
+```bash
+uv run python main.py --check
+```
+
+---
+
+### 5. Launch the Interactive Console
+```bash
+uv run python main.py --interactive
+```
 
 ---
 
@@ -198,6 +285,8 @@ All clips generated 100% locally on AMD RX 6950 XT (Vulkan/GGUF, no CUDA). **GIF
 ## 🤖 AI Models & LoRA Library
 
 The architecture manages model execution dynamically without memory fragmentation:
+
+> 📥 **Getting these models?** See [Installation — Download the AI Models](#installation): download manager (`scripts/download_models.py --pack base|onnx|upscalers|video…`), per-family scripts, and the single source of truth for every path: [`core/config.py`](core/config.py) (each path overridable via environment variables).
 
 ### 1. Base Model Suite
 
@@ -1440,40 +1529,6 @@ flowchart TD
    - Use `execute_blender_code` to extrude symmetrical quad geometry (`Mirror Modifier`) and hook up PBR maps in `Principled BSDF`.
 3. **Engine Placement** :
    - Call `scene_open` and `scene_create_node` from the Godot MCP toolkit to instantiate the resulting `.glb` without requiring manual user intervention.
-
----
-
-<span id="installation"></span>
-## ⚡ Installation & Quickstart
-
-### 1. Clone & Setup Virtual Environment
-This project is optimized for [**uv**](https://docs.astral.sh/uv/) for near-instant package installation:
-
-```bash
-git clone https://github.com/votre-compte/generator-assets.git
-cd generator-assets
-
-# Synchronize dependencies with uv:
-uv sync
-```
-
-*(Alternatively, standard pip: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`)*
-
----
-
-### 2. Verify System Requirements & Paths
-Check that your local executables (`sd-cli.exe`, `llama-cli.exe`, Blender) and model checkpoints are detected:
-
-```bash
-python main.py --check
-```
-
----
-
-### 3. Launch the Interactive Console
-```bash
-python main.py --interactive
-```
 
 ---
 
