@@ -118,7 +118,13 @@ mettre à jour les README d'outils (voir §Documentation) • commit/push des fi
 📝 **Suivi des majs en attente** (`output/veille/maj_en_attente.json`) : fichier maintenu par
 le script de veille (`_sauver_maj_en_attente`) — une nouveauté y entre au moment de sa
 détection et disparaît automatiquement quand la version installée rattrape la dernière vue ;
-l'agent peut aussi y retirer une entrée refusée par l'utilisateur. Lisible à chaque session
+l'agent peut aussi y retirer une entrée refusée, appliquée ou devenue obsolète.
+**Instruction permanente (2026-09-11) : dès qu'une maj listée est appliquée en session
+(ou devient obsolète), retirer IMMÉDIATEMENT son entrée de ce fichier** — sinon le hook
+SessionStart la resignale à chaque session et redemande à l'utilisateur une maj déjà
+faite — **et consigner l'application dans `docs/veille_journal.md` avec les infos de
+version complètes** (avant→après, commit, résultat de la vérification post-maj).
+Lisible à chaque session
 via le hook SessionStart, qui le signale à l'agent ; cela ne change rien à la règle :
 **jamais de mise à jour sans accord explicite**. Quand une session y voit des nouveautés
 absentes de `docs/veille_journal.md`, les y ajouter (format journal, avec détail du
