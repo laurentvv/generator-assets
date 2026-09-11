@@ -10,6 +10,7 @@
          (versions epinglees connues-bonnes lues dans scripts/engines_manifest.json) :
          sd-cli, llama.cpp, audio.cpp, trellis.cpp + build FFmpeg standard BtbN.
          Idempotent : un moteur deja present est ignore sauf -Force.
+         (Linux et macOS : voir scripts/install_unix.sh)
       4. Packs de modeles via scripts/download_models.py (defaut : base,onnx,upscalers).
       5. Verification finale : uv run python main.py --check.
 
@@ -89,33 +90,32 @@ function Get-ReleasesGitHub {
     return Invoke-RestMethod -Uri $uri -Headers @{ "User-Agent" = "generator-assets-installer/1.0" }
 }
 
-# Resout l'URL de l'asset d'un moteur a partir de sa fiche du manifeste.
+# Resout l'URL de l'asset d'un moteur a partir de sa fiche plateforme du manifeste.
 function Resolve-UrlMoteur {
-    param([psobject]$Spec)
+    param([string]$Repo, [psobject]$Spec)
     if ($Spec.url) {
         return @{ url = $Spec.url; label = Split-Path $Spec.url -Leaf }
     }
-    $repo = $Spec.repo
     if ($Spec.epingle -and $Spec.asset) {
         return @{
-            url   = "https://github.com/$repo/releases/download/$($Spec.epingle)/$($Spec.asset)"
+            url   = "https://github.com/$Repo/releases/download/$($Spec.epingle)/$($Spec.asset)"
             label = "$($Spec.asset) (epingle $($Spec.epingle))"
         }
     }
     if ($Spec.release -eq "latest") {
-        Write-Info "Recherche de la derniere release $repo..."
-        $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest" `
+        Write-Info "Recherche de la derniere release $Repo..."
+        $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" `
                                  -Headers @{ "User-Agent" = "generator-assets-installer/1.0" }
         foreach ($a in $rel.assets) {
             if ($a.name -like $Spec.asset_pattern) {
                 return @{ url = $a.browser_download_url; label = "$($a.name) ($($rel.tag_name))" }
             }
         }
-        throw "Aucun asset '$($Spec.asset_pattern)' dans la release $($rel.tag_name) de $repo"
+        throw "Aucun asset '$($Spec.asset_pattern)' dans la release $($rel.tag_name) de $Repo"
     }
     if ($Spec.scan_releases) {
-        Write-Info "Scan des $($Spec.scan_releases) dernieres releases $repo..."
-        $rels = Get-ReleasesGitHub -Repo $repo -ParPage $Spec.scan_releases
+        Write-Info "Scan des $($Spec.scan_releases) dernieres releases $Repo..."
+        $rels = Get-ReleasesGitHub -Repo $Repo -ParPage $Spec.scan_releases
         foreach ($rel in $rels) {
             foreach ($a in $rel.assets) {
                 if ($a.name -like $Spec.asset_pattern) {
@@ -123,15 +123,15 @@ function Resolve-UrlMoteur {
                 }
             }
         }
-        throw "Aucun asset '$($Spec.asset_pattern)' trouve dans les dernieres releases de $repo"
+        throw "Aucun asset '$($Spec.asset_pattern)' trouve dans les dernieres releases de $Repo"
     }
-    throw "Fiche moteur incomplete dans engines_manifest.json (ni url, ni epingle, ni release/scan_releases)"
+    throw "Fiche plateforme incomplete dans engines_manifest.json (ni url, ni epingle, ni release/scan_releases)"
 }
 
 # Installe un moteur : telecharge l'asset epingle/resolu, extrait, deplace l'exe
 # (et ses DLL voisines) vers le dossier cible. Idempotent sauf -Force.
 function Install-Moteur {
-    param([string]$Nom, [psobject]$Spec)
+    param([string]$Nom, [psobject]$Moteur, [psobject]$Spec)
     Write-Etape "Moteur $Nom"
     $dir = [System.IO.Path]::GetFullPath((Join-Path $Prefix $Spec.sous_dossier))
     $exe = Join-Path $dir $Spec.exe
@@ -141,7 +141,7 @@ function Install-Moteur {
         return
     }
 
-    $resolu = Resolve-UrlMoteur -Spec $Spec
+    $resolu = Resolve-UrlMoteur -Repo $Moteur.repo -Spec $Spec
     Write-Info "Asset : $($resolu.label)"
     if ($DryRun) { Write-Alerte "DRYRUN : telechargement/extraction simules vers $dir"; return }
 
@@ -233,9 +233,11 @@ if ($SkipUvSync) {
 
 $choisies = $Engines -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ }
 foreach ($nom in $choisies) {
-    $spec = $Manifest.moteurs.$nom
-    if (-not $spec) { throw "Moteur '$nom' inconnu dans engines_manifest.json (disponibles : $($Manifest.moteurs.PSObject.Properties.Name -join ', '))" }
-    Install-Moteur -Nom $nom -Spec $spec
+    $moteur = $Manifest.moteurs.$nom
+    if (-not $moteur) { throw "Moteur '$nom' inconnu dans engines_manifest.json (disponibles : $($Manifest.moteurs.PSObject.Properties.Name -join ', '))" }
+    $plat = $moteur.plateformes.windows
+    if (-not $plat) { Write-Alerte "Moteur $nom : pas de binaire Windows publie en amont -> ignore"; continue }
+    Install-Moteur -Nom $nom -Moteur $moteur -Spec $plat
 }
 
 if (Test-Path $TempRoot) { Remove-Item $TempRoot -Recurse -Force -ErrorAction SilentlyContinue }

@@ -60,32 +60,58 @@ Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with *
 <span id="installation"></span>
 ## ⚡ Installation & Quickstart
 
-### 🚀 One-Command Install (Windows 10/11)
+### 🚀 One-Command Install
 
-[`scripts/install_windows.ps1`](scripts/install_windows.ps1) provisions a fresh machine end-to-end: Python environment, the five C++/Vulkan engines (downloaded from their **official upstream releases** at pinned known-good versions), a standard FFmpeg build, the base model packs — then verifies everything.
+One script per OS family, same behavior: `uv sync` • the five C++ engines from their **official upstream releases** at pinned known-good versions • a standard FFmpeg build • model packs `base,onnx,upscalers` (~11 GB) • final `main.py --check`.
 
-```powershell
+| OS | Command | GPU backend |
+| :--- | :--- | :--- |
+| **Windows 10/11** | `powershell -ExecutionPolicy Bypass -File scripts\install_windows.ps1` | Vulkan |
+| **Linux x64** | `bash scripts/install_unix.sh` | Vulkan (Mesa/RADV drivers for AMD) |
+| **macOS** | `bash scripts/install_unix.sh` | Metal — no Vulkan needed |
+
+```bash
 git clone https://github.com/votre-compte/generator-assets.git
 cd generator-assets
+
+# Windows (PowerShell) :
 powershell -ExecutionPolicy Bypass -File scripts\install_windows.ps1
+# Linux / macOS (bash) :
+bash scripts/install_unix.sh
 ```
 
-| Option | Effect |
-| :--- | :--- |
-| *(default)* | `uv sync` • 5 engines into `C:\SD`, `C:\llama.cpp`, `C:\audio-cpp`, `C:\trellis`, `C:\ffmpeg` • model packs `base,onnx,upscalers` (~11 GB) • `main.py --check` |
-| `-DryRun` | Resolves every download URL (GitHub API) and installs nothing — safe preview |
-| `-Engines "sd-cli,ffmpeg"` | Install only the listed engines |
-| `-Packs "video"` / `-SkipModels` | Pick your [model packs](#3-download-the-ai-models) or skip them |
-| `-Force` | Re-download engines even if already installed |
-| `-Prefix "D:\"` | Install under another drive (then set `SD_CLI_PATH`, `LLAMA_CLI_PATH`, `AUDIOCPP_PATH`, `FFMPEG_PATH`) |
+Options are the same on both scripts (`-Flag` on Windows, `--flag` on Unix): `-DryRun`/`--dry-run` resolves every download URL via the GitHub API and installs nothing • `-Engines`/`--engines "sd-cli,ffmpeg"` • `-Packs`/`--packs "video"` or `-SkipModels`/`--skip-models` (pick your [model packs](#3-download-the-ai-models)) • `-Force`/`--force` re-installs existing engines • `-Prefix "D:\"`/`--prefix ~/ga` moves the engines root. On Linux/macOS the installer symlinks the CLIs into `~/.local/bin` and writes `<prefix>/env.sh` — source it in your `~/.bashrc`/`~/.zshrc` (it sets `SD_CLI_PATH`, `LLAMA_CLI_PATH`, `AUDIOCPP_PATH`, `TRELLIS_CLI_PATH`, `FFMPEG_PATH`, `MODEL_DIR`, the same variables [core/config.py](core/config.py) reads on Windows defaults).
 
-Engine versions live in [`scripts/engines_manifest.json`](scripts/engines_manifest.json) — the repo publishes **pinned version references, not binaries**. `sd-cli` is deliberately pinned to `master-841-6b3edaa`: later masters ship an unresolved VRAM-management regression ([#1946](https://github.com/leejet/stable-diffusion.cpp/issues/1946), fix PR still unmerged).
+Support matrix (every binary is the upstream project's own official release; versions pinned in [`scripts/engines_manifest.json`](scripts/engines_manifest.json) — the repo publishes **pinned version references, not binaries**):
+
+| Engine | Windows | Linux | macOS |
+| :--- | :---: | :---: | :--- |
+| sd-cli — stable-diffusion.cpp | ✅ Vulkan | ✅ Vulkan | ✅ arm64 (Metal) |
+| llama.cpp | ✅ Vulkan | ✅ Vulkan | ✅ arm64 & x64 (Metal) |
+| audio.cpp | ✅ Vulkan | ✅ Vulkan | ✅ arm64 & x64 (Metal) |
+| trellis.cpp | ✅ Vulkan | ✅ Vulkan | ❌ no official build — compile from source |
+| FFmpeg | [BtbN](https://github.com/BtbN/FFmpeg-Builds/releases) build | [BtbN](https://github.com/BtbN/FFmpeg-Builds/releases) build | Homebrew |
+
+`sd-cli` is deliberately pinned to `master-841-6b3edaa`: later masters ship an unresolved VRAM-management regression ([#1946](https://github.com/leejet/stable-diffusion.cpp/issues/1946), fix PR still unmerged).
+
+### 🧰 Provisioning & Maintenance Scripts
+
+| Script | Purpose |
+| :--- | :--- |
+| [`scripts/install_windows.ps1`](scripts/install_windows.ps1) / [`scripts/install_unix.sh`](scripts/install_unix.sh) | One-command installers (above) |
+| [`scripts/engines_manifest.json`](scripts/engines_manifest.json) | Pinned known-good engine versions — single source of truth for both installers |
+| `scripts/update_sd_cpp.ps1` (+`.py`) | sd-cli Vulkan updater: latest official binaries or native CMake build, with backups & rollback (see [dedicated section](#sd-cpp-update)) |
+| `scripts/update_llama_cpp.ps1` (+`.py`) | llama.cpp updater (same check/download/build/rollback pattern) |
+| `scripts/update_vulkan_stack.ps1` (+`.py`) | Updates both engines in one go |
+| [`scripts/download_models.py`](scripts/download_models.py) | Model pack downloader (`--pack base,onnx,upscalers,video,video-14b,all`) |
+| [`scripts/telecharger_gros_fichier_parallele.py`](scripts/telecharger_gros_fichier_parallele.py) | Parallel downloader for throttled HF/ModelScope files (~10× faster) |
+| [`scripts/check_charge_systeme.py`](scripts/check_charge_systeme.py) | CPU/GPU/RAM/VRAM load gate to run before heavy generations |
 
 ---
 
 ### 1. Prerequisites
-* **Windows 10/11** with **Git Bash** and [**uv**](https://docs.astral.sh/uv/) (Python ≥ 3.12 is pulled automatically by `uv sync`; both are auto-installed by the script above).
-* A **Vulkan-capable GPU** — validated on an AMD RX 6950 XT 16 GB; there is **no CUDA dependency anywhere** (the whole AI stack runs through C++/GGML Vulkan engines). 16 GB VRAM comfortably covers Flux + video workflows; 8-12 GB cards should stick to the light packs (SDXL, Wan 2.1 1.3B).
+* **Windows 10/11, Linux x64 or macOS** (Apple Silicon recommended) — bash on Linux/macOS, Git Bash on Windows; [**uv**](https://docs.astral.sh/uv/) is auto-installed by the scripts above and Python ≥ 3.12 is pulled automatically by `uv sync`.
+* A **GPU with Vulkan** (Windows/Linux) or **Metal** (macOS) — validated on an AMD RX 6950 XT 16 GB; there is **no CUDA dependency anywhere** (the whole AI stack runs through C++/GGML engines). 16 GB VRAM comfortably covers Flux + video workflows; 8-12 GB cards should stick to the light packs (SDXL, Wan 2.1 1.3B).
 * The **C++/GGUF engines**, installed outside the repository (standalone executables, not pip packages — every path is overridable via environment variables such as `SD_CLI_PATH`, `LLAMA_CLI_PATH`, `AUDIOCPP_PATH`, `FFMPEG_PATH`). The installer fetches each one from its official release:
 
 | Engine | Default Location | Role |
@@ -104,7 +130,7 @@ Engine versions live in [`scripts/engines_manifest.json`](scripts/engines_manife
 ---
 
 ### 2. Clone & Setup the Virtual Environment
-*Manual route — the [one-command installer](#-one-command-install-windows-1011) above already does this.*
+*Manual route — the [one-command installer](#-one-command-install) above already does this.*
 
 This project is optimized for [**uv**](https://docs.astral.sh/uv/) for near-instant package installation:
 
