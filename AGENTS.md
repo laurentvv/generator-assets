@@ -136,6 +136,7 @@ changelog depuis les notes archivées) puis commit/push (docs uniquement).
 
 Après TOUTE mise à jour : mettre à jour `C:\audio-cpp\README.md` / `C:\ffmpeg\README.md` /
 `C:\SD\README.md` (section version + notes de release), `docs/MEMORY_BANK.md` si un écueil
-ou une perf change, **`scripts/engines_manifest.json`** (épinglage de l'installateur
-`scripts/install_windows.ps1` : nouvelle version épinglée ou retour à `latest` selon le cas),
+ou une perf change, **`scripts/engines_manifest.json`** (épinglage des installateurs
+`scripts/install_windows.ps1` et `scripts/install_unix.sh` : nouvelle version épinglée ou
+retour à `latest` selon le cas, par plateforme),
 puis commit/push côté dépôt.
