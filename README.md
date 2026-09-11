@@ -60,25 +60,52 @@ Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with *
 <span id="installation"></span>
 ## ⚡ Installation & Quickstart
 
+### 🚀 One-Command Install (Windows 10/11)
+
+[`scripts/install_windows.ps1`](scripts/install_windows.ps1) provisions a fresh machine end-to-end: Python environment, the five C++/Vulkan engines (downloaded from their **official upstream releases** at pinned known-good versions), a standard FFmpeg build, the base model packs — then verifies everything.
+
+```powershell
+git clone https://github.com/votre-compte/generator-assets.git
+cd generator-assets
+powershell -ExecutionPolicy Bypass -File scripts\install_windows.ps1
+```
+
+| Option | Effect |
+| :--- | :--- |
+| *(default)* | `uv sync` • 5 engines into `C:\SD`, `C:\llama.cpp`, `C:\audio-cpp`, `C:\trellis`, `C:\ffmpeg` • model packs `base,onnx,upscalers` (~11 GB) • `main.py --check` |
+| `-DryRun` | Resolves every download URL (GitHub API) and installs nothing — safe preview |
+| `-Engines "sd-cli,ffmpeg"` | Install only the listed engines |
+| `-Packs "video"` / `-SkipModels` | Pick your [model packs](#3-download-the-ai-models) or skip them |
+| `-Force` | Re-download engines even if already installed |
+| `-Prefix "D:\"` | Install under another drive (then set `SD_CLI_PATH`, `LLAMA_CLI_PATH`, `AUDIOCPP_PATH`, `FFMPEG_PATH`) |
+
+Engine versions live in [`scripts/engines_manifest.json`](scripts/engines_manifest.json) — the repo publishes **pinned version references, not binaries**. `sd-cli` is deliberately pinned to `master-841-6b3edaa`: later masters ship an unresolved VRAM-management regression ([#1946](https://github.com/leejet/stable-diffusion.cpp/issues/1946), fix PR still unmerged).
+
+---
+
 ### 1. Prerequisites
-* **Windows 10/11** with **Git Bash** and [**uv**](https://docs.astral.sh/uv/) (Python ≥ 3.12 is pulled automatically by `uv sync`).
-* A **Vulkan-capable GPU** — validated on an AMD RX 6950 XT 16 GB; there is **no CUDA dependency anywhere** (the whole AI stack runs through C++/GGML Vulkan engines).
-* The **C++/GGUF engines**, installed outside the repository (standalone executables, not pip packages — every path is overridable via environment variables such as `SD_CLI_PATH`, `LLAMA_CLI_PATH`, `AUDIOCPP_PATH`, `FFMPEG_PATH`):
+* **Windows 10/11** with **Git Bash** and [**uv**](https://docs.astral.sh/uv/) (Python ≥ 3.12 is pulled automatically by `uv sync`; both are auto-installed by the script above).
+* A **Vulkan-capable GPU** — validated on an AMD RX 6950 XT 16 GB; there is **no CUDA dependency anywhere** (the whole AI stack runs through C++/GGML Vulkan engines). 16 GB VRAM comfortably covers Flux + video workflows; 8-12 GB cards should stick to the light packs (SDXL, Wan 2.1 1.3B).
+* The **C++/GGUF engines**, installed outside the repository (standalone executables, not pip packages — every path is overridable via environment variables such as `SD_CLI_PATH`, `LLAMA_CLI_PATH`, `AUDIOCPP_PATH`, `FFMPEG_PATH`). The installer fetches each one from its official release:
 
 | Engine | Default Location | Role |
 | :--- | :--- | :--- |
 | [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) | `C:\SD\sd-cli.exe` | Image & video diffusion (Flux.1, SDXL, Wan 2.1/2.2, LTX-2.5, MiniMax-H3) |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | `C:\llama.cpp\llama-cli.exe` | Local LLM Art Director (`--use-llm`), Music Flamingo QA |
-| audio.cpp | `C:\audio-cpp\audiocpp_cli.exe` | Music & SFX generation (MiniMax-Music3, ACE-Step 1.5, Stable Audio 3) |
-| trellis.cpp | `C:\trellis\` | AI image→3D volumetric meshes (TRELLIS.2, workflow `mesh_ia`) |
-| FFmpeg (custom build) | `C:\ffmpeg\dist\bin\ffmpeg.exe` | Audio conform, loudnorm, OGG/WebM muxing |
-| Blender 5.x | standard install | Headless meshing, decimation, control renders (`bpy`) |
+| [audio.cpp](https://github.com/0xShug0/audio.cpp) | `C:\audio-cpp\audiocpp_cli.exe` | Music & SFX generation (MiniMax-Music3, ACE-Step 1.5, Stable Audio 3) |
+| [trellis.cpp](https://github.com/pwilkin/trellis.cpp) | `C:\trellis\` | AI image→3D volumetric meshes (TRELLIS.2, workflow `mesh_ia`) |
+| FFmpeg ([standard BtbN build](https://github.com/BtbN/FFmpeg-Builds/releases)) | `C:\ffmpeg\dist\bin\ffmpeg.exe` | Audio conform, loudnorm, ducking, OGG/WebM muxing |
+| [Blender 5.x](https://www.blender.org/download/) | standard install | Headless meshing, decimation, control renders (`bpy`) — install manually |
 
-> Each of these tools has a **custom local README** on the workstation (`C:\SD\README.md`, `C:\audio-cpp\README.md`, `C:\ffmpeg\README.md`, `C:\trellis\README.md`) documenting installed versions, validated commands and pitfalls. `sd-cli` can be installed/updated in one command via the [built-in Vulkan updater](#sd-cpp-update).
+> 🔒 **Why doesn't this repo publish its own binaries?** Every engine above ships official Vulkan binaries that work on any Windows x64 machine with an AMD/NVIDIA/Intel GPU — the installer simply pins known-good versions. The one binary compiled locally on the dev workstation, the custom FFmpeg build, **cannot and should not be redistributed**: it enables `libfdk-aac`, which makes it *nonfree* under the FFmpeg license, and it is tuned for one machine (`--cpu=native`, AMD AMF for RDNA2). A **standard build covers 100 % of this repository's recipes** (loudnorm 2-pass, `sidechaincompress` ducking, OGG Vorbis, x264 — verified in the codebase); only optional GPU-accelerated *video encoding* (AMF/NVENC) would justify a local source build via MSYS2 (recipe documented on the dev workstation in `C:\ffmpeg\README.md`).
+>
+> Each of these tools also has a **custom local README** on the workstation (`C:\SD\README.md`, `C:\audio-cpp\README.md`, `C:\ffmpeg\README.md`, `C:\trellis\README.md`) documenting installed versions, validated commands and pitfalls. `sd-cli` can be installed/updated in one command via the [built-in Vulkan updater](#sd-cpp-update).
 
 ---
 
 ### 2. Clone & Setup the Virtual Environment
+*Manual route — the [one-command installer](#-one-command-install-windows-1011) above already does this.*
+
 This project is optimized for [**uv**](https://docs.astral.sh/uv/) for near-instant package installation:
 
 ```bash
