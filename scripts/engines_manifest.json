@@ -1,0 +1,42 @@
+{
+  "_lisez_moi": "Versions connues-bonnes des moteurs C++ Vulkan, lues par scripts/install_windows.ps1. Maintenu par la veille (scripts/veille_versions.py) et les mises a jour validees (cf. process AGENTS.md). Les champs 'epingle' fixent une version precise quand les releases plus recentes posent probleme ; sinon 'release': 'latest' ou 'scan_releases' prend la derniere publication upstream. Le binaire FFmpeg publie par BtbN est un build STANDARD (couvre 100 % des recettes du depot) ; le build custom de la station (AMF, libfdk-aac, cpu=native) est machine-specifique et nonfree donc NON redistribuable.",
+  "moteurs": {
+    "sd-cli": {
+      "repo": "leejet/stable-diffusion.cpp",
+      "epingle": "master-841-6b3edaa",
+      "asset": "sd-master-6b3edaa-bin-win-vulkan-x64.zip",
+      "sous_dossier": "SD",
+      "exe": "sd-cli.exe",
+      "raison_epinglage": "Regression OOM/gestion memoire #1946 dans les masters 848+ (PR #1958 non fusionnee au 2026-09-11). Ne passer a 'latest' qu'apres une release contenant le fix, avec smoke test image Flux 4 steps."
+    },
+    "llama.cpp": {
+      "repo": "ggml-org/llama.cpp",
+      "scan_releases": 8,
+      "asset_pattern": "llama-*-bin-win-vulkan-x64.zip",
+      "sous_dossier": "llama.cpp",
+      "exe": "llama-cli.exe",
+      "note": "Les releases 'latest' semver (ex. v0.4.0) ne portent pas de binaires : il faut scanner les tags nocturnes b* et prendre le premier asset bin-win-vulkan-x64.zip."
+    },
+    "audio.cpp": {
+      "repo": "0xShug0/audio.cpp",
+      "release": "latest",
+      "asset_pattern": "audio-*-bin-windows-x64-vulkan.zip",
+      "sous_dossier": "audio-cpp",
+      "exe": "audiocpp_cli.exe"
+    },
+    "trellis.cpp": {
+      "repo": "pwilkin/trellis.cpp",
+      "epingle": "v0.6.0",
+      "asset": "trellis-vulkan-windows-x64.zip",
+      "sous_dossier": "trellis",
+      "exe": "trellis-cli.exe",
+      "raison_epinglage": "Version validee en production (workflow mesh_ia, MEMORY_BANK §1.14) ; miroirs GGUF TRELLIS.2 documentes dans C:\\trellis\\README.md."
+    },
+    "ffmpeg": {
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip",
+      "sous_dossier": "ffmpeg/dist/bin",
+      "exe": "ffmpeg.exe",
+      "note": "Build GPL standard (libvorbis, libx264, filtres loudnorm/sidechaincompress inclus) : couvre toutes les recettes du depot (music_bg, conform YouTube, OGG). Pour l'encodage GPU AMF ou libfdk-aac : build MSYS2 machine-specifique, voir C:\\ffmpeg\\README.md sur la station (non redistribuable : build nonfree)."
+    }
+  }
+}
