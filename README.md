@@ -34,6 +34,17 @@
   <a href="#video-generation">Video Engine</a>
 </p>
 
+<!-- Intégration complète (pour tout site acceptant les iframes) :
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AkIu3s0KQv0?si=MHvVNCEeSsSa60Gp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+-->
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=AkIu3s0KQv0">
+    <img src="https://img.youtube.com/vi/AkIu3s0KQv0/hqdefault.jpg" alt="Generator Assets: The 100% Local Vulkan AI Pipeline for Godot 4 &amp; Blender — video demo" width="560" /><br/>
+    <b>▶️ Watch the test in action</b> — Generator Assets: The 100% Local Vulkan AI Pipeline for Godot 4 &amp; Blender
+  </a>
+</p>
+
 </div>
 
 ---
