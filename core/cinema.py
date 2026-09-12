@@ -45,6 +45,16 @@ NEGATIF_DEFAUT = (
 # position du sujet principal légèrement à gauche du centre)
 ANCRE_X, ANCRE_Y = 0.656, 0.472
 
+# Chemin 4K UHD « Hero Hooks » (spéc ai-doc2video, intégrée le 2026-09-12) :
+# upscale IA 4x des SEULES trames brutes 480p (§1.17 — jamais depuis un master
+# interpolé), ralenti + zoom en 3328×1920 (sortie native 4x-UltraSharp), puis
+# conform finale 3840×2160 @ 30 fps en h264_amf + CAS.
+TAILLE_UPSCALE_4X = (3328, 1920)   # 832×480 × 4 — sortie native de 4x-UltraSharp
+TAILLE_MASTER_4K = (3840, 2160)    # 4K UHD broadcast YouTube
+FPS_SORTIE_4K = 30                 # cadence Hero Hooks (165 trames / 5,5 s)
+BITRATE_MASTER_4K = "45M"          # bande 45-50 Mbps de la spéc broadcast
+CAS_MASTER_4K = 0.75               # FidelityFX, même valeur que le zoom 1080p validé
+
 
 def conformer_amorce_16_9(source: str, destination: str, largeur: int = 832,
                           hauteur: int = 480) -> str:
@@ -110,10 +120,13 @@ def generer_monoplan_ltx(
     return sortie
 
 
-def ralentir_interp_1080p(webm: str, sortie: str, duree_cible: float,
-                          fps: int = 24) -> Tuple[str, int]:
-    """Ralenti temporel vers la durée cible + interpolation motion-compensée 24→24
-    + upscale lanczos 1080p (l'étape zoom travaille en coordonnées 1920×1080)."""
+def ralentir_interp(webm: str, sortie: str, duree_cible: float, fps: int = 24,
+                    taille: Optional[Tuple[int, int]] = (1920, 1080)) -> Tuple[str, int]:
+    """Ralenti temporel vers la durée cible + interpolation motion-compensée
+    + mise à l'échelle lanczos vers `taille` (l'étape zoom travaille ensuite en
+    ces coordonnées). taille=None conserve la résolution source : c'est la voie
+    4K, où l'entrée est déjà le master upscale IA 3328×1920 (aucun lanczos
+    logiciel avant le zoom — le piqué UltraSharp doit rester intact)."""
     info = subprocess.run(
         [FFMPEG_PATH, "-i", webm], capture_output=True, text=True, encoding="utf-8",
         errors="replace",
@@ -124,11 +137,12 @@ def ralentir_interp_1080p(webm: str, sortie: str, duree_cible: float,
         raise RuntimeError(f"Durée illisible : {webm}")
     duree_src = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
     facteur = duree_cible / max(duree_src, 0.1)
+    filtre = (f"setpts={facteur:.4f}*PTS,"
+              f"minterpolate=fps={fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1")
+    if taille:
+        filtre += f",scale={taille[0]}:{taille[1]}:flags=lanczos"
     ok = subprocess.run(
-        [FFMPEG_PATH, "-y", "-v", "error", "-i", webm, "-vf",
-         f"setpts={facteur:.4f}*PTS,"
-         f"minterpolate=fps={fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,"
-         "scale=1920:1080:flags=lanczos",
+        [FFMPEG_PATH, "-y", "-v", "error", "-i", webm, "-vf", filtre,
          "-an", "-c:v", "libx264", "-crf", "12", "-preset", "slow",
          "-pix_fmt", "yuv420p", sortie],
         capture_output=True,
@@ -138,23 +152,32 @@ def ralentir_interp_1080p(webm: str, sortie: str, duree_cible: float,
     return sortie, facteur
 
 
-def zoom_pur(video_1080p: str, sortie: str, zoom_debut: float = 1.10,
+# Alias rétro-compatible (scripts de production §1.17/§1.18 : finir_monoplan_intro,
+# faire_boucle_menu_vent_gris, lancement_nuit_intro_vent_gris)
+ralentir_interp_1080p = ralentir_interp
+
+
+def zoom_pur(video: str, sortie: str, zoom_debut: float = 1.10,
              zoom_fin: float = 1.32, ancre: Tuple[float, float] = (ANCRE_X, ANCRE_Y),
-             cas: float = 0.75) -> str:
+             cas: float = 0.75, taille: Tuple[int, int] = (1920, 1080),
+             fps: int = 24) -> str:
     """Rampe de zoom CONÇUE (smootherstep) autour d'une ancre fixe — aucune mesure
-    de suivi dans le warp : le rendu est incapable de vibrer par construction."""
+    de suivi dans le warp : le rendu est incapable de vibrer par construction.
+    `taille`/`fps` suivent la résolution de travail (1920×1080/24 par défaut ;
+    3328×1920/30 en chemin 4K). `cas=0` reporte la netteté FidelityFX à la
+    conform finale (évite un double sharpening avant le lanczos 3840×2160)."""
     import cv2
     import numpy as np
 
     tmp = tempfile.mkdtemp(prefix="cinema_zoom_")
     try:
         subprocess.run(
-            [FFMPEG_PATH, "-y", "-v", "error", "-i", video_1080p, "-fps_mode", "passthrough",
+            [FFMPEG_PATH, "-y", "-v", "error", "-i", video, "-fps_mode", "passthrough",
              "-q:v", "2", os.path.join(tmp, "f_%04d.png")], capture_output=True, check=True,
         )
         pngs = sorted(f for f in os.listdir(tmp) if f.startswith("f_"))
         n = len(pngs)
-        W, H = 1920, 1080
+        W, H = taille
         centre = (ancre[0] * W, ancre[1] * H)
         u = np.linspace(0.0, 1.0, n)
         ease = u * u * u * (u * (u * 6.0 - 15.0) + 10.0)  # smootherstep
@@ -172,7 +195,7 @@ def zoom_pur(video_1080p: str, sortie: str, zoom_debut: float = 1.10,
                         [cv2.IMWRITE_PNG_COMPRESSION, 3])
         filtre_cas = f",cas={cas}" if cas else ""
         subprocess.run(
-            [FFMPEG_PATH, "-y", "-v", "error", "-framerate", "24", "-start_number", "1",
+            [FFMPEG_PATH, "-y", "-v", "error", "-framerate", str(fps), "-start_number", "1",
              "-i", os.path.join(tmp, "s_%04d.png"), "-frames:v", str(n),
              "-vf", "format=yuv420p" + filtre_cas,
              "-c:v", "libx264", "-crf", "16", sortie],
@@ -180,6 +203,65 @@ def zoom_pur(video_1080p: str, sortie: str, zoom_debut: float = 1.10,
         )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    return sortie
+
+
+def master_brut_4k(webm: str, sortie: str, modele: Optional[str] = None,
+                   bitrate: str = "50M",
+                   log_fn: Callable[[str], None] = print) -> str:
+    """Master brut super-résolution IA 4x (chaîne scripts/upscale_video_ai.py) :
+    extraction des trames brutes 480p → 4x-UltraSharp trame par trame sur Vulkan
+    (sd-cli, ~6,9 s/trame mesurées sur RX 6950 XT) → réassemblage à la résolution
+    native 4x (832×480 → 3328×1920), piste audio préservée.
+
+    Règle §1.17 : l'upscale IA se fait TOUJOURS sur le brut 480p, JAMAIS sur un
+    master interpolé (65 trames ≈ 7-8 min GPU ici, vs ~43 s/trame et 3 h si
+    sourcé 1080p — le budget pixels du réseau est calibré 480p)."""
+    import cv2
+    from scripts.upscale_video_ai import DEFAULT_MODEL as MODELE_UPSCALE_DEFAUT
+    from scripts.upscale_video_ai import upscale_video_ai
+    from core.config import resoudre_upscaler
+
+    if not os.path.exists(webm):
+        raise FileNotFoundError(f"Monoplan brut introuvable : {webm}")
+    cap = cv2.VideoCapture(webm)
+    if not cap.isOpened():
+        raise RuntimeError(f"Impossible d'ouvrir le monoplan brut : {webm}")
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    cap.release()
+    if (w, h) != (832, 480):
+        log_fn(f"[cinéma] Source {w}×{h} (recette validée : 832×480) — cible 4x : {w * 4}×{h * 4}.")
+    modele = modele or resoudre_upscaler("4x-UltraSharp") or MODELE_UPSCALE_DEFAUT
+    return upscale_video_ai(
+        input_video=webm,
+        output_video=sortie,
+        upscaler_model=modele,
+        target_res=f"{w * 4}:{h * 4}",
+        bitrate=bitrate,
+        cas_strength=0.0,  # netteté appliquée une seule fois, à la conform 4K
+    )
+
+
+def conformer_master_4k(source: str, sortie: str, fps: int = FPS_SORTIE_4K,
+                        bitrate: str = BITRATE_MASTER_4K, cas: float = CAS_MASTER_4K,
+                        taille: Tuple[int, int] = TAILLE_MASTER_4K) -> str:
+    """Conformation master 4K UHD broadcast (spéc Hero Hooks ai-doc2video) :
+    lanczos vers 3840×2160 + FidelityFX CAS, encodage matériel AMD AMF (h264_amf)
+    — le master 4K force le profil VP09/AV01 haut débit de YouTube même en
+    lecture 1080p (§4.10 du README)."""
+    os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
+    filtre = f"scale={taille[0]}:{taille[1]}:flags=lanczos"
+    if cas:
+        filtre += f",cas={cas}"
+    ok = subprocess.run(
+        [FFMPEG_PATH, "-y", "-v", "error", "-i", source, "-vf", filtre,
+         "-c:v", "h264_amf", "-b:v", bitrate, "-pix_fmt", "yuv420p",
+         "-r", str(fps), "-movflags", "+faststart", sortie],
+        capture_output=True,
+    ).returncode == 0
+    if not ok or not os.path.exists(sortie):
+        raise RuntimeError(f"Conformation master 4K échouée : {sortie}")
     return sortie
 
 
@@ -338,10 +420,14 @@ class _BlocTitre:
     """
 
     def __init__(self, lignes, chemin_police: str, largeur_max: int = 1575,
-                 hauteur: int = 1080):
+                 hauteur: int = 1080, largeur: int = 1920):
         from PIL import ImageFont
 
         self.lignes = [l.upper() for l in lignes]
+        self.largeur = largeur
+        # facteur d'échelle des métriques fixes (traits d'ornement, vignette) :
+        # 1.0 en 1080p (rendu validé inchangé), 2.0 en 4K
+        self.facteur = largeur / 1920.0
         # taille auto : la ligne la plus large doit tenir à l'interlettrage FINAL
         taille_test = 200
         font_test = ImageFont.truetype(chemin_police, taille_test)
@@ -382,20 +468,21 @@ class _BlocTitre:
         # visuelle entre la ligne large et la ligne étroite — QA 2026-09-10)
         if len(self.avances) > 1:
             largeur_l2 = sum(self.avances[-1]) + _TRACK_FIN_EM * self.em * max(0, len(self.avances[-1]) - 1)
-            self.demi_filet = int(min(max(largeur_l2 / 2 * 1.05, self.em * 0.6), 900))
+            self.demi_filet = int(min(max(largeur_l2 / 2 * 1.05, self.em * 0.6), 900 * self.facteur))
         else:
             self.demi_filet = int(self.em * 1.35)
         self.demi_losange = max(6, int(self.em * 0.085))
 
         # vignette de contraste derrière le bloc (assombrissement radial doux)
         import numpy as np
-        yy, xx = np.mgrid[0:hauteur, 0:1920].astype(np.float32)
-        d = np.sqrt(((xx - 960) / 1150.0) ** 2 + ((yy - cy) / 330.0) ** 2)
+        yy, xx = np.mgrid[0:hauteur, 0:largeur].astype(np.float32)
+        d = np.sqrt(((xx - largeur / 2) / (1150.0 * self.facteur)) ** 2
+                    + ((yy - cy) / (330.0 * self.facteur)) ** 2)
         alpha = np.clip(1.0 - d, 0.0, 1.0) ** 2.0 * 88.0
         self.vignette = np.dstack([
-            np.full((hauteur, 1920), TITRE_VIGNETTE[0], np.uint8),
-            np.full((hauteur, 1920), TITRE_VIGNETTE[1], np.uint8),
-            np.full((hauteur, 1920), TITRE_VIGNETTE[2], np.uint8),
+            np.full((hauteur, largeur), TITRE_VIGNETTE[0], np.uint8),
+            np.full((hauteur, largeur), TITRE_VIGNETTE[1], np.uint8),
+            np.full((hauteur, largeur), TITRE_VIGNETTE[2], np.uint8),
             alpha.astype(np.uint8)])
 
     def _largeur(self, font, ligne: str, track_em: float, em: int) -> float:
@@ -406,7 +493,7 @@ class _BlocTitre:
         """Positions x (bord gauche) et y (haut de tuile) de chaque glyphe."""
         avances = self.avances[i_ligne]
         largeur = sum(avances) + track_px * max(0, len(avances) - 1)
-        x = (1920 - largeur) / 2
+        x = (self.largeur - largeur) / 2
         y = self.y_ligne1 if i_ligne == 0 else self.y_ligne2
         pos = []
         for j, avance in enumerate(avances):
@@ -419,7 +506,7 @@ class _BlocTitre:
         from PIL import Image, ImageDraw
 
         a_global = _smooth((t - _T_FADE_DEBUT) / (_T_FADE_FIN - _T_FADE_DEBUT))
-        canvas = Image.new("RGBA", (1920, self.hauteur), (0, 0, 0, 0))
+        canvas = Image.new("RGBA", (self.largeur, self.hauteur), (0, 0, 0, 0))
         if a_global <= 0.001:
             return canvas
 
@@ -452,21 +539,22 @@ class _BlocTitre:
         # ornement : filets qui se déploient depuis le centre + losange
         a_orn = a_global * _smooth((t - _T_ORN_DEBUT) / (_T_ORN_ALPHA_FIN - _T_ORN_DEBUT))
         if a_orn > 0.003:
+            e = max(1, int(round(self.facteur)))  # épaisseur des traits (1 px en 1080p)
             longueur = self.demi_filet * _smooth((t - _T_ORN_DEBUT) / (_T_ORN_CROISSANCE_FIN - _T_ORN_DEBUT))
-            cx, cy_orn = 960, int(self.y_ornement + dy_monte)
+            cx, cy_orn = self.largeur // 2, int(self.y_ornement + dy_monte)
             dessin = ImageDraw.Draw(canvas)
             iv = int(255 * a_orn)
             ombre_a = int(110 * a_orn)
             for signe in (-1, 1):
-                xa = int(cx + signe * (self.demi_losange + 4))
+                xa = int(cx + signe * (self.demi_losange + 4 * e))
                 xb = int(cx + signe * longueur)
                 x1, x2 = min(xa, xb), max(xa, xb)
                 # ombre du filet puis filet or avec cœur ivoire
-                dessin.rectangle((x1, cy_orn + 3, x2, cy_orn + 5), fill=TITRE_OMBRE + (ombre_a,))
-                dessin.rectangle((x1, cy_orn - 1, x2, cy_orn + 1), fill=TITRE_ORNEMENT_OR + (iv,))
-                dessin.rectangle((x1, cy_orn, x2, cy_orn), fill=TITRE_ORNEMENT_IVOIRE + (iv,))
+                dessin.rectangle((x1, cy_orn + 3 * e, x2, cy_orn + 5 * e), fill=TITRE_OMBRE + (ombre_a,))
+                dessin.rectangle((x1, cy_orn - e, x2, cy_orn + e), fill=TITRE_ORNEMENT_OR + (iv,))
+                dessin.rectangle((x1, cy_orn - e + 1, x2, cy_orn + e - 1), fill=TITRE_ORNEMENT_IVOIRE + (iv,))
                 # point doré au bout du filet
-                dessin.rectangle((xb - 2, cy_orn - 2, xb + 2, cy_orn + 2),
+                dessin.rectangle((xb - 2 * e, cy_orn - 2 * e, xb + 2 * e, cy_orn + 2 * e),
                                  fill=TITRE_ORNEMENT_OR + (iv,))
             d = self.demi_losange
             dessin.polygon([(cx, cy_orn - d), (cx + d, cy_orn), (cx, cy_orn + d), (cx - d, cy_orn)],
@@ -480,7 +568,9 @@ def rendre_titre_beau(fond_png: str, lignes, sortie_png: str,
     from PIL import Image
 
     fond = Image.open(fond_png).convert("RGBA")
-    bloc = _BlocTitre(lignes, chemin_police)
+    largeur_cadre, hauteur_cadre = fond.size
+    bloc = _BlocTitre(lignes, chemin_police, largeur_max=int(1575 * largeur_cadre / 1920),
+                      hauteur=hauteur_cadre, largeur=largeur_cadre)
     fond = Image.alpha_composite(fond, bloc.composer(t=1e9))
     fond.convert("RGB").save(sortie_png, quality=100)
     return sortie_png
@@ -522,9 +612,20 @@ def construire_carton_titre(
     import numpy as np
     from PIL import Image
 
+    fond = cv2.imread(image_png)
+    if fond is None:
+        raise FileNotFoundError(f"Image introuvable : {image_png}")
+    H, W = fond.shape[:2]
+    centre = (ancre[0] * W, ancre[1] * H)
+
+    # le bloc titre s'adapte au cadre de la trame figée (1920×1080 validé,
+    # 3840×2160 en chemin 4K — métriques ×2 : em, vignette, traits d'ornement)
+    facteur_cadre = W / 1920.0
     for candidat_police in (chemin_police, POLICE_REPLI_TITRE):
         try:
-            bloc = _BlocTitre(lignes, candidat_police)
+            bloc = _BlocTitre(lignes, candidat_police,
+                              largeur_max=int(1575 * facteur_cadre),
+                              hauteur=H, largeur=W)
             if candidat_police != chemin_police:
                 log_fn(f"[cinéma] Police de repli utilisée : {candidat_police}")
             break
@@ -533,12 +634,6 @@ def construire_carton_titre(
             bloc = None
     if bloc is None:
         raise RuntimeError("Aucune police utilisable pour le titre (accents manquants).")
-
-    fond = cv2.imread(image_png)
-    if fond is None:
-        raise FileNotFoundError(f"Image introuvable : {image_png}")
-    H, W = fond.shape[:2]
-    centre = (ancre[0] * W, ancre[1] * H)
 
     n = int(round(duree * fps))
     rapport = zoom_abs_fin / zoom_abs_debut  # warp relatif sur la trame figée

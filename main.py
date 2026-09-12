@@ -682,6 +682,7 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--carton-titre", help="monoplan_ia : titre du carton de fin (image figée + titre haute couture animé). « | » sépare les lignes, ex. \"L'HÉRITIER|DU VIDE\".")
     groupe_wf.add_argument("--carton-duree", type=float, default=6.0, help="monoplan_ia : durée du carton de titre en secondes (défaut: 6.0).")
     groupe_wf.add_argument("--carton-zoom-fin", type=float, default=1.36, help="monoplan_ia : zoom final du carton, poursuit la rampe du plan (défaut: 1.36).")
+    groupe_wf.add_argument("--4k", "--upscale-ia", dest="upscale_4k", action="store_true", help="monoplan_ia : chemin 4K UHD natif — super-résolution IA 4x-UltraSharp des trames brutes 480p (sd-cli Vulkan, ~7 min/65 trames) AVANT ralenti + zoom (3328×1920 @ 30 fps), conform 3840×2160 h264_amf 45M + FidelityFX CAS 0.75 (spéc Hero Hooks ai-doc2video).")
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")
@@ -965,6 +966,7 @@ Exemples de Workflows 3D & 2D :
         "carton_titre": args.carton_titre,
         "carton_duree": args.carton_duree,
         "carton_zoom_fin": args.carton_zoom_fin,
+        "upscale_4k": args.upscale_4k,
         "dry_run": args.dry_run,
         "lufs": args.lufs,
         "loop_mode": args.loop_mode,
