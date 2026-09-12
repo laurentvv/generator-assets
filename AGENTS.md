@@ -23,7 +23,10 @@ benchmark mesuré) :
 | `C:\trellis\README.md` | trellis.cpp (Vulkan) | Version installée (`version.json`, lu par la veille), GGUF TRELLIS.2 requis (10 fichiers, 16,4 Go, `C:\Modeles_LLM\trellis2-gguf`), commandes validées (image → GLB PBR, workflow `mesh_ia`), perfs mesurées (512 = ~11 min, 1024 = ~55 min), procédure maj + rollback |
 
 Ne pas confondre avec les README de dépôts clonés (ex. `C:\llama.cpp\README.md` = README GitHub,
-ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_LLM` (modèles GGUF).
+ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_LLM` (modèles GGUF),
+`C:\IA\qwentts.cpp` (qwen-tts — **clone géré mais jamais modifié** : aucun README personnalisé
+dedans, doc et apprentissages dans `docs/MEMORY_BANK.md` §1.20 ; maj via ses propres scripts
+`update.cmd` + `buildvulkan.cmd`).
 
 ## 🗂️ Documentation du dépôt
 
@@ -53,7 +56,10 @@ ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_L
   paquets, modèles GGUF + org audio-cpp sur HF, **nouveaux modèles LLM/VLM GGUF tendance
   sur HF** (top trending en diff, baseline 2026-09-07), llama.cpp, **sa3.cpp** (port C++/GGML
   de Stable Audio 3 — Vulkan, zéro PyTorch — releases en info, pas installé ; famille
-  stable_audio déjà couverte par audio.cpp), **écosystème ComfyUI**
+  stable_audio déjà couverte par audio.cpp), **qwentts.cpp** (port C++/GGML de Qwen3-TTS
+  12 Hz — TTS clonage de voix, speakers nommés, serveur OpenAI-compatible — installé
+  `C:\IA\qwentts.cpp`, commits amont comparés au HEAD local, clone jamais modifié à la
+  main), **écosystème ComfyUI**
   (releases du cœur + commits de repos clés H3/LTX + nouveaux repos topic:comfyui en diff,
   baseline 2026-09-09 — source d'idées de workflows, rapport de recherche :
   `docs/recherche_comfyui_2026-09-09.md`)) : `uv run python scripts/veille_versions.py` — état dans
@@ -134,6 +140,7 @@ changelog depuis les notes archivées) puis commit/push (docs uniquement).
 |---|---|---|---|
 | **audio.cpp** | 1) Lire les notes archivées (`output/veille/notes/audio-cpp_<tag>.md`) — repérer nouvelles familles de modèles et correctifs `ace_step`. 2) `C:\audio-cpp\update.ps1` (sauvegarde auto + test `--list-devices` intégré). 3) `ls C:\audio-cpp\model_specs` → nouvelles familles ? | Smoke test : 1 génération 12 s `--family ace_step` turbo (`--model` = chemin du .gguf) ; comparer RTF | `C:\audio-cpp\backups\backup_<version>_<date>/` (3 dernières conservées) |
 | **sd-cli** | 1) Lire les notes archivées (`output/veille/notes/sd-cli_<tag>.md`). 2) Télécharger l'asset `sd-master-<sha>-bin-win-vulkan-x64.zip` de la release GitHub. 3) Sauvegarder `.exe`/`.dll` dans `C:\SD\backups\` puis extraire par-dessus `C:\SD\`. | Smoke test : 1 image Flux steps 4 + `sd-cli.exe --version` (nouveau commit) | `C:\SD\backups\backup_<date>/` |
+| **qwentts.cpp** | 1) `C:\IA\qwentts.cpp\update.cmd` (git pull --rebase du repo + sous-module ggml). 2) `buildvulkan.cmd` (rebuild Release Vulkan). Jamais d'édition manuelle des fichiers du clone. | Smoke test : 1 synthèse courte `build\Release\qwen-tts.exe` (speaker nommé) comparée avant/après ; noter le sha dans MEMORY_BANK §1.20 | `git -C C:\IA\qwentts.cpp checkout <sha_précédent>` + rebuild |
 | **FFmpeg** | `MSYSTEM=UCRT64 /c/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh'` (détecte, rebuild, teste AMF tout seul ; MSYS2 déplacé de `C:\ffmpeg\msys64` vers `C:\msys64` le 2026-09-09, `C:\msys64\ucrt64\bin` au PATH utilisateur) | `ffmpeg -version` + une mesure `loudnorm` rapide (pipeline music_bg) | `C:\ffmpeg\dist.bak/` |
 | **Paquets Python** | 1) `uv pip list --outdated` (revue rapide : rien de cassant ?). 2) `uv lock --upgrade && uv sync` | `uv run python -c "import core, workflows"` + `main.py --help` | `git checkout -- uv.lock && uv sync` |
 | **Modèles GGUF (ACE-Step…)** | `uv run python scripts/download_acestep15_gguf.py <variante>` (si bridage CDN → `scripts/telecharger_gros_fichier_parallele.py`) | Smoke test 1 génération de la variante ; consigner taille/RTF dans MEMORY_BANK | Supprimer le .gguf (les autres variantes sont indépendantes) |
