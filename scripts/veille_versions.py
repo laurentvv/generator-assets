@@ -5,7 +5,9 @@ Veille des versions de la stack locale : audio.cpp, sd-cli (stable-diffusion.cpp
 trellis.cpp (image → 3D, workflow mesh_ia) + GGUF TRELLIS.2 sur HF, FFmpeg,
 Python + paquets uv, paquets GGUF de modèles (ACE-Step 1.5…), org audio-cpp
 sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, sa3.cpp —
-port C++/GGML de Stable Audio 3, commits en source info, llama.cpp), écosystème ComfyUI
+port C++/GGML de Stable Audio 3, commits en source info, llama.cpp, qwentts.cpp —
+port C++/GGML de Qwen3-TTS installé dans C:\\IA\\qwentts.cpp, commits comparés au
+HEAD local), écosystème ComfyUI
 (releases du cœur, commits de repos clés, nouveaux repos topic:comfyui — source
 d'idées de workflows, cf. docs/recherche_comfyui_2026-09-09.md).
 
@@ -454,9 +456,57 @@ def veille() -> tuple:
     except Exception as e:
         rapport.ajouter("⚠️", "sa3.cpp", f"vérification impossible : {e}")
 
-    # qwentts.cpp (C:\IA\qwentts.cpp, TTS Qwen3-TTS) : gestion (maj + modèles)
-    # transférée au projet C:\GIT\ai-doc2video le 2026-09-12 (factory.py
-    # qwentts-check|backup|update|rollback) — plus suivie ici, cf. MEMORY_BANK §1.20.
+    # ------------------------------------------------------------ qwentts.cpp
+    # Moteur TTS C++17/GGML (port de Qwen3-TTS 12 Hz : speakers nommés, clonage
+    # de voix zero-shot, voice design, streaming, serveur OpenAI-compatible ;
+    # build Vulkan sur ce poste), installé dans C:\IA\qwentts.cpp (clone
+    # ServeurpersoCom/qwentts.cpp) — candidat voix off de la chaîne YouTube.
+    # Règle de gestion (accord utilisateur 2026-09-12) : le clone n'est JAMAIS
+    # modifié à la main (aucun README custom dedans, doc dans le dépôt) ; la
+    # gestion (maj + modèles) a été récupérée du projet ai-doc2video le soir
+    # même : scripts/manage_qwentts.py. Repo SANS releases → surveillance au
+    # commit près, comparée au HEAD local.
+    try:
+        r = requests.get(
+            "https://api.github.com/repos/ServeurpersoCom/qwentts.cpp/commits?per_page=1",
+            timeout=30)
+        r.raise_for_status()
+        commit_amont = r.json()[0]
+        sha = commit_amont["sha"][:7]
+        local = None
+        try:
+            g = subprocess.run(
+                ["git", "-C", r"C:\IA\qwentts.cpp", "log", "-1", "--format=%h %cs"],
+                capture_output=True, text=True, timeout=30)
+            if g.returncode == 0 and g.stdout.strip():
+                local = g.stdout.strip()  # ex. « 779c7cb 2026-09-11 »
+        except Exception:
+            pass
+        if local:
+            sha_local = local.split()[0]
+            if sha == sha_local:
+                rapport.ajouter("✅", "qwentts.cpp", f"à jour (amont {sha} = installé)")
+            else:
+                rapport.ajouter("🆕", "qwentts.cpp", f"nouveaux commits amont sur "
+                                f"ServeurpersoCom/qwentts.cpp (amont {sha} vs installé {local}) — "
+                                f"moteur TTS Qwen3-TTS (clonage de voix, speakers nommés, serveur "
+                                f"OpenAI) — procédure : `uv run python scripts/manage_qwentts.py "
+                                f"--update` (sauvegarde binaire + git pull + build Vulkan + smoke "
+                                f"test + rollback auto) ; ne jamais éditer les fichiers du clone "
+                                f"à la main (doc dans le dépôt, MEMORY_BANK §1.20)")
+        else:
+            deja_vu = etat.get("qwentts.cpp", {}).get("dernier_commit")
+            if deja_vu and sha != deja_vu:
+                rapport.ajouter("🆕", "qwentts.cpp", f"nouveaux commits sur "
+                                f"ServeurpersoCom/qwentts.cpp ({sha}) — pas de clone local détecté")
+            elif not deja_vu:
+                rapport.ajouter("✅", "qwentts.cpp", f"baseline enregistrée : qwentts.cpp ({sha}) "
+                                f"— pas de clone local détecté")
+            else:
+                rapport.ajouter("✅", "qwentts.cpp", f"qwentts.cpp : aucun nouveau commit ({sha})")
+        etat["qwentts.cpp"] = {"dernier_commit": sha}
+    except Exception as e:
+        rapport.ajouter("⚠️", "qwentts.cpp", f"vérification impossible : {e}")
 
     # ------------------------------------------------------------- llama.cpp
     try:
