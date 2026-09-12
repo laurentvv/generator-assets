@@ -64,13 +64,37 @@ def _github_derniere_release(repo: str) -> dict:
             "date": donnees.get("published_at", "")[:10], "notes": donnees.get("body", "") or ""}
 
 
-def _archiver_notes(source: str, release: dict):
-    """Archive les notes de release d'une nouveauté → output/veille/notes/."""
+def _commits_entre(repo: str, ref_avant: str, ref_apres: str, limite: int = 40) -> str:
+    """Liste les commits entre deux refs (API compare GitHub) — section de notes
+    de repli quand une release amont n'a pas de corps (snapshots master sd-cli)."""
+    try:
+        r = requests.get(f"https://api.github.com/repos/{repo}/compare/{ref_avant}...{ref_apres}",
+                         timeout=30)
+        r.raise_for_status()
+        commits = r.json().get("commits", [])
+        lignes = [f"- {c['sha'][:7]} {c['commit']['message'].splitlines()[0]}"
+                  for c in commits[-limite:]]
+        if lignes:
+            return (f"\n## Commits {ref_avant} → {ref_apres} ({len(commits)} au total)\n"
+                    + "\n".join(lignes) + "\n")
+    except Exception:
+        pass  # pas bloquant : des notes vides restent acceptables
+    return ""
+
+
+def _archiver_notes(source: str, release: dict, repo: str = "", ref_avant: str = ""):
+    """Archive les notes de release d'une nouveauté → output/veille/notes/.
+    Si la release amont n'a pas de notes (ex. snapshots master de sd-cli) et que
+    repo+ref_avant sont fournis, complète avec la liste des commits entre la
+    dernière version vue et celle-ci (sinon le savoir amont est perdu)."""
     dossier = os.path.join(DOSSIER_ETAT, "notes")
     os.makedirs(dossier, exist_ok=True)
+    corps = release.get("notes") or ""
+    if not corps.strip() and repo and ref_avant:
+        corps = _commits_entre(repo, ref_avant, release["tag"])
     chemin = os.path.join(dossier, f"{source}_{release['tag']}.md")
     with open(chemin, "w", encoding="utf-8") as f:
-        f.write(f"# {source} {release['tag']} — {release['nom']} ({release['date']})\n\n{release['notes']}\n")
+        f.write(f"# {source} {release['tag']} — {release['nom']} ({release['date']})\n\n{corps}\n")
     return chemin
 
 
@@ -248,7 +272,11 @@ def veille() -> tuple:
         commit_dernier = m2.group(1)[:7] if m2 else derniere["tag"]
         deja_vue = etat.get("sd_cli", {}).get("derniere_vue", commit_dernier)
         if commit_dernier != deja_vue:
-            chemin_notes = _archiver_notes("sd-cli", derniere)
+            # snapshots master SANS changelog amont → notes complétées par le
+            # compare commits entre la version déjà vue et la nouvelle
+            chemin_notes = _archiver_notes("sd-cli", derniere,
+                                           repo="leejet/stable-diffusion.cpp",
+                                           ref_avant=deja_vue)
             rapport.ajouter("🆕", "sd-cli",
                             f"nouvelle release {derniere['tag']} (installé : commit {installe}, le {derniere['date']}) — "
                             f"asset : sd-master-<sha>-bin-win-vulkan-x64.zip ; sauvegarder C:\\SD\\*.exe/*.dll dans "

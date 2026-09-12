@@ -127,6 +127,11 @@ mettre à jour les README d'outils (voir §Documentation) • commit/push des fi
 le script de veille (`_sauver_maj_en_attente`) — une nouveauté y entre au moment de sa
 détection et disparaît automatiquement quand la version installée rattrape la dernière vue ;
 l'agent peut aussi y retirer une entrée refusée, appliquée ou devenue obsolète.
+Retrait DURABLE (décision utilisateur « on attend cette version », ex. sd-cli
+master-859 le 2026-09-12) : purger l'entrée suffit — le 🆕 ne se déclenche qu'une
+fois par version amont (`derniere_vue` dans l'état de la veille), la mention ne
+reprendra que si une version POSTÉRIEURE apparaît ; consigner la décision (et le
+contenu réel de la version ignorée) dans `docs/veille_journal.md`.
 **Instruction permanente (2026-09-11) : dès qu'une maj listée est appliquée en session
 (ou devient obsolète), retirer IMMÉDIATEMENT son entrée de ce fichier** — sinon le hook
 SessionStart la resignale à chaque session et redemande à l'utilisateur une maj déjà
@@ -141,7 +146,7 @@ changelog depuis les notes archivées) puis commit/push (docs uniquement).
 | Composant | Procédure | Vérification post-maj | Rollback |
 |---|---|---|---|
 | **audio.cpp** | 1) Lire les notes archivées (`output/veille/notes/audio-cpp_<tag>.md`) — repérer nouvelles familles de modèles et correctifs `ace_step`. 2) `C:\audio-cpp\update.ps1` (sauvegarde auto + test `--list-devices` intégré). 3) `ls C:\audio-cpp\model_specs` → nouvelles familles ? | Smoke test : 1 génération 12 s `--family ace_step` turbo (`--model` = chemin du .gguf) ; comparer RTF | `C:\audio-cpp\backups\backup_<version>_<date>/` (3 dernières conservées) |
-| **sd-cli** | 1) Lire les notes archivées (`output/veille/notes/sd-cli_<tag>.md`). 2) Télécharger l'asset `sd-master-<sha>-bin-win-vulkan-x64.zip` de la release GitHub. 3) Sauvegarder `.exe`/`.dll` dans `C:\SD\backups\` puis extraire par-dessus `C:\SD\`. | Smoke test : 1 image Flux steps 4 + `sd-cli.exe --version` (nouveau commit) | `C:\SD\backups\backup_<date>/` |
+| **sd-cli** | 1) Lire les notes archivées (`output/veille/notes/sd-cli_<tag>.md`) — depuis le 2026-09-12 elles sont auto-complétées par la liste des commits entre versions quand la release amont n'a pas de changelog (cas des snapshots master de leejet ; les notes antérieures peuvent être vides, le compare se refait à la main via `gh api repos/leejet/stable-diffusion.cpp/compare/<ancien>...<nouveau>`). 2) Télécharger l'asset `sd-master-<sha>-bin-win-vulkan-x64.zip` de la release GitHub. 3) Sauvegarder `.exe`/`.dll` dans `C:\SD\backups\` puis extraire par-dessus `C:\SD\`. | Smoke test : 1 image Flux steps 4 + `sd-cli.exe --version` (nouveau commit) | `C:\SD\backups\backup_<date>/` |
 | **FFmpeg** | `MSYSTEM=UCRT64 /c/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh'` (détecte, rebuild, teste AMF tout seul ; MSYS2 déplacé de `C:\ffmpeg\msys64` vers `C:\msys64` le 2026-09-09, `C:\msys64\ucrt64\bin` au PATH utilisateur) | `ffmpeg -version` + une mesure `loudnorm` rapide (pipeline music_bg) | `C:\ffmpeg\dist.bak/` |
 | **Paquets Python** | 1) `uv pip list --outdated` (revue rapide : rien de cassant ?). 2) `uv lock --upgrade && uv sync` | `uv run python -c "import core, workflows"` + `main.py --help` | `git checkout -- uv.lock && uv sync` |
 | **Modèles GGUF (ACE-Step…)** | `uv run python scripts/download_acestep15_gguf.py <variante>` (si bridage CDN → `scripts/telecharger_gros_fichier_parallele.py`) | Smoke test 1 génération de la variante ; consigner taille/RTF dans MEMORY_BANK | Supprimer le .gguf (les autres variantes sont indépendantes) |
