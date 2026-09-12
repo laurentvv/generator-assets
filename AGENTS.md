@@ -57,7 +57,11 @@ ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
   paquets, modèles GGUF + org audio-cpp sur HF, **nouveaux modèles LLM/VLM GGUF tendance
   sur HF** (top trending en diff, baseline 2026-09-07), llama.cpp, **sa3.cpp** (port C++/GGML
   de Stable Audio 3 — Vulkan, zéro PyTorch — releases en info, pas installé ; famille
-  stable_audio déjà couverte par audio.cpp), **écosystème ComfyUI**
+  stable_audio déjà couverte par audio.cpp), **outils système versionnés**
+  (SDK Vulkan LunarG — prérequis de tous les builds natifs, détection via
+  sdk.lunarg.com ; Blender — pipeline skins MPFB ; Godot — moteur du jeu ;
+  uv ; CMake — alertes info une seule fois par version amont, jamais de maj
+  automatique), **écosystème ComfyUI**
   (releases du cœur + commits de repos clés H3/LTX + nouveaux repos topic:comfyui en diff,
   baseline 2026-09-09 — source d'idées de workflows, rapport de recherche :
   `docs/recherche_comfyui_2026-09-09.md`)) : `uv run python scripts/veille_versions.py` — état dans

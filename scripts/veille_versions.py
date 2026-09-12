@@ -9,7 +9,9 @@ port C++/GGML de Stable Audio 3, commits en source info, llama.cpp, qwentts.cpp 
 port C++/GGML de Qwen3-TTS installé dans C:\\IA\\qwentts.cpp, commits comparés au
 HEAD local), écosystème ComfyUI
 (releases du cœur, commits de repos clés, nouveaux repos topic:comfyui — source
-d'idées de workflows, cf. docs/recherche_comfyui_2026-09-09.md).
+d'idées de workflows, cf. docs/recherche_comfyui_2026-09-09.md), outils système
+versionnés (SDK Vulkan LunarG — prérequis des builds natifs ; Blender — skins
+MPFB ; Godot — moteur du jeu ; uv ; CMake).
 
 Chaque source est comparée à l'état mémorisé (output/veille/etat.json) : seules
 les NOUVEAUTÉS sont signalées (🆕), avec les notes de release complètes archivées
@@ -70,6 +72,78 @@ def _archiver_notes(source: str, release: dict):
     with open(chemin, "w", encoding="utf-8") as f:
         f.write(f"# {source} {release['tag']} — {release['nom']} ({release['date']})\n\n{release['notes']}\n")
     return chemin
+
+
+def _version_normale(v: str) -> str:
+    """« v5.2.1 » / « 4.7.2-stable » → « 5.2.1 » / « 4.7.2 » (comparaison souple)."""
+    v = (v or "").strip().lstrip("v")
+    return v.split("-")[0].split("+")[0]
+
+
+def _derniere_version_lunarg_sdk():
+    """Dernière version du SDK Vulkan LunarG (Windows) via l'URL « latest »
+    officielle : la version se lit dans l'en-tête Content-Disposition du
+    téléchargement (pas de flux JSON public, pas de releases GitHub)."""
+    try:
+        r = requests.head("https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.zip",
+                          timeout=30, allow_redirects=True)
+        m = re.search(r"vulkansdk-windows-X64-([\d.]+)\.exe",
+                      r.headers.get("Content-Disposition", ""))
+        return m.group(1) if m else None
+    except Exception:
+        return None
+
+
+def _github_dernier_tag(repo: str):
+    """Dernier tag d'un repo GitHub (projets sans « releases », ex. Blender)."""
+    try:
+        r = requests.get(f"https://api.github.com/repos/{repo}/tags?per_page=1", timeout=30)
+        r.raise_for_status()
+        donnees = r.json()
+        return donnees[0]["name"] if donnees else None
+    except Exception:
+        return None
+
+
+def _version_exe(commande: list, motif: str):
+    """Version installée d'un exécutable (regex sur la sortie de --version)."""
+    try:
+        r = subprocess.run(commande, capture_output=True, text=True, timeout=60)
+        m = re.search(motif, (r.stdout or "") + (r.stderr or ""))
+        return m.group(1) if m else None
+    except Exception:
+        return None
+
+
+def _dernier_sous_dossier(parent: str, motif: str):
+    """Sous-dossier de plus haute version sous `parent` (ex. C:/VulkanSDK/1.4.304.1,
+    « Blender 5.2 ») — détection de la version installée sans lancer l'outil."""
+    try:
+        candidats = [d for d in os.listdir(parent) if re.fullmatch(motif, d)]
+        if not candidats:
+            return None
+        return max(candidats, key=lambda v: [int(x) for x in re.findall(r"\d+", v)])
+    except Exception:
+        return None
+
+
+def _veille_version_outil(etat, rapport, cle, version_amont, version_installee, contexte):
+    """Source générique « outil système versionné » : alerte une seule fois par
+    version amont nouvelle, en affichant toujours la version installée. Pure
+    info : aucune maj automatique (process AGENTS.md + accord utilisateur)."""
+    deja_vue = etat.get(cle, {}).get("derniere_vue")
+    if not version_amont:
+        rapport.ajouter("⚠️", cle, "vérification impossible : version amont indisponible")
+        return
+    if version_amont != deja_vue and _version_normale(version_amont) != _version_normale(version_installee or ""):
+        rapport.ajouter("🆕", cle, f"nouvelle version disponible : {version_amont} "
+                        f"(installé : {version_installee or '?'}) — {contexte}")
+    elif version_amont != deja_vue:
+        rapport.ajouter("✅", cle, f"dernière version : {version_amont} (installé identique)")
+    else:
+        rapport.ajouter("✅", cle, f"aucune nouvelle version ({version_amont}) — "
+                        f"installé : {version_installee or '?'}")
+    etat[cle] = {"derniere_vue": version_amont}
 
 
 def _charger_etat() -> dict:
@@ -521,6 +595,60 @@ def veille() -> tuple:
         etat["llama.cpp"] = {"derniere_vue": derniere["tag"]}
     except Exception as e:
         rapport.ajouter("⚠️", "llama.cpp", f"vérification impossible : {e}")
+
+    # -------------------- Outils système versionnés (SDK, builds, moteur jeu)
+    # Composants locaux hors « moteurs média » : SDK Vulkan LunarG (prérequis de
+    # tous les builds natifs : sd-cli CMake, qwentts.cpp, builds audio.cpp),
+    # Blender (pipeline skins MPFB §1.15), Godot (moteur du jeu, consommateur
+    # des assets), uv (gestionnaire d'env Python du dépôt) et CMake. Sources
+    # info : aucune maj automatique — on ne monte une version que si un
+    # moteur/workflow l'exige (process « mise à jour » + accord utilisateur).
+    try:
+        _veille_version_outil(etat, rapport, "vulkan-sdk", _derniere_version_lunarg_sdk(),
+                              _dernier_sous_dossier(r"C:\VulkanSDK", r"\d+\.\d+\.\d+\.\d+"),
+                              "SDK requis pour les builds natifs Vulkan (installateur "
+                              "LunarG depuis vulkan.lunarg.com, pas de maj auto)")
+    except Exception as e:
+        rapport.ajouter("⚠️", "vulkan-sdk", f"vérification impossible : {e}")
+
+    try:
+        blender_dossier = _dernier_sous_dossier(r"C:\Program Files\Blender Foundation",
+                                                r"Blender \d+\.\d+")
+        blender_exe = os.path.join(r"C:\Program Files\Blender Foundation",
+                                   blender_dossier or "", "blender.exe")
+        _veille_version_outil(etat, rapport, "blender", _github_dernier_tag("Blender/Blender"),
+                              _version_exe([blender_exe, "--version"],
+                                           r"Blender (\d+\.\d+[\d.]*)"),
+                              "pipeline skins MPFB (§1.15) — maj via installateur blender.org")
+    except Exception as e:
+        rapport.ajouter("⚠️", "blender", f"vérification impossible : {e}")
+
+    try:
+        _veille_version_outil(etat, rapport, "godot",
+                              _github_derniere_release("godotengine/godot")["tag"],
+                              _version_exe([r"C:\Godot\godot_console.exe", "--version"],
+                                           r"(\d+\.\d+(?:\.\d+)?)"),
+                              "moteur du jeu, consommateur des assets — maj via godotengine.org")
+    except Exception as e:
+        rapport.ajouter("⚠️", "godot", f"vérification impossible : {e}")
+
+    try:
+        _veille_version_outil(etat, rapport, "uv",
+                              _github_derniere_release("astral-sh/uv")["tag"],
+                              _version_exe(["uv", "--version"], r"uv (\d+\.\d+\.\d+)"),
+                              "gestionnaire d'environnement Python du dépôt (maj : uv self update)")
+    except Exception as e:
+        rapport.ajouter("⚠️", "uv", f"vérification impossible : {e}")
+
+    try:
+        _veille_version_outil(etat, rapport, "cmake",
+                              _github_derniere_release("Kitware/CMake")["tag"],
+                              _version_exe(["cmake", "--version"],
+                                           r"cmake version (\d+\.\d+\.\d+)"),
+                              "builds natifs (qwentts.cpp, audio.cpp, sd-cli) — maj via "
+                              "installateur Kitware")
+    except Exception as e:
+        rapport.ajouter("⚠️", "cmake", f"vérification impossible : {e}")
 
     # ---------------------------------- Écosystème ComfyUI (idées de workflows)
     # ComfyUI est la source d'inspiration structurante des workflows vidéo
