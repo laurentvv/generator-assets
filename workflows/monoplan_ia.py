@@ -23,6 +23,7 @@ from core.cinema import (
     FPS_SORTIE_4K,
     TAILLE_UPSCALE_4X,
     assembler_finale,
+    conformer_amorce_16_9,
     conformer_master_4k,
     construire_carton_titre,
     etendre_ambiance,
