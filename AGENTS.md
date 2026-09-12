@@ -24,10 +24,10 @@ benchmark mesuré) :
 
 Ne pas confondre avec les README de dépôts clonés (ex. `C:\llama.cpp\README.md` = README GitHub,
 ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_LLM` (modèles GGUF),
-`C:\IA\qwentts.cpp` (qwen-tts — **géré par le projet `C:\GIT\ai-doc2video`**, pas par ce dépôt :
-maj + modèles via `python factory.py qwentts-check|backup|update|rollback` (sauvegardes
-`C:\IA\qwentts_backups`, build Vulkan, smoke test, rollback auto) ; ne jamais modifier le clone
-à la main ; notes dans MEMORY_BANK §1.20).
+`C:\IA\qwentts.cpp` (qwen-tts — **géré par CE dépôt** (récupéré d'`ai-doc2video` le 2026-09-12 soir) :
+`uv run python scripts/manage_qwentts.py --check|--models|--update|--backup|--rollback` — maj git,
+sauvegardes `C:\IA\qwentts_backups` (5 conservées), build Vulkan, smoke test, rollback auto ;
+ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
 
 ## 🗂️ Documentation du dépôt
 
@@ -141,6 +141,7 @@ changelog depuis les notes archivées) puis commit/push (docs uniquement).
 | **FFmpeg** | `MSYSTEM=UCRT64 /c/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh'` (détecte, rebuild, teste AMF tout seul ; MSYS2 déplacé de `C:\ffmpeg\msys64` vers `C:\msys64` le 2026-09-09, `C:\msys64\ucrt64\bin` au PATH utilisateur) | `ffmpeg -version` + une mesure `loudnorm` rapide (pipeline music_bg) | `C:\ffmpeg\dist.bak/` |
 | **Paquets Python** | 1) `uv pip list --outdated` (revue rapide : rien de cassant ?). 2) `uv lock --upgrade && uv sync` | `uv run python -c "import core, workflows"` + `main.py --help` | `git checkout -- uv.lock && uv sync` |
 | **Modèles GGUF (ACE-Step…)** | `uv run python scripts/download_acestep15_gguf.py <variante>` (si bridage CDN → `scripts/telecharger_gros_fichier_parallele.py`) | Smoke test 1 génération de la variante ; consigner taille/RTF dans MEMORY_BANK | Supprimer le .gguf (les autres variantes sont indépendantes) |
+| **qwentts.cpp** | Veille commits amont (source `qwentts.cpp`) → sur 🆕 et accord utilisateur : `uv run python scripts/manage_qwentts.py --update` (backup binaire + git pull + build Vulkan + smoke test + rollback auto intégrés). Modèles : `--models` / `--download-model <fichier> [--force]` (catalogue HF `Serveurperso/Qwen3-TTS-GGUF`) | `uv run python scripts/manage_qwentts.py --check` (git/binaires/modèles/sauvegardes) ; `--models --verify-hash` si modèles touchés | `uv run python scripts/manage_qwentts.py --rollback [nom]` (sauvegardes `C:\IA\qwentts_backups`, 5 conservées) |
 | **Python (interpréteur)** | Uniquement sur besoin explicite : `uv python install 3.12.x` puis mettre à jour `.python-version` | `uv sync` complet + import tests | Ancien interpréteur conservé par uv |
 | **llama.cpp / autres** | Selon l'outil (repo dédié) ; même logique : notes → maj → smoke test → README | — | — |
 

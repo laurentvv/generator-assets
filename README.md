@@ -114,6 +114,7 @@ Support matrix (every binary is the upstream project's own official release; ver
 | `scripts/update_sd_cpp.ps1` (+`.py`) | sd-cli Vulkan updater: latest official binaries or native CMake build, with backups & rollback (see [dedicated section](#sd-cpp-update)) |
 | `scripts/update_llama_cpp.ps1` (+`.py`) | llama.cpp updater (same check/download/build/rollback pattern) |
 | `scripts/update_vulkan_stack.ps1` (+`.py`) | Updates both engines in one go |
+| [`scripts/manage_qwentts.py`](scripts/manage_qwentts.py) | qwentts.cpp TTS engine manager (`C:\IA\qwentts.cpp`): safe git update (backup → pull → Vulkan build → smoke test → auto-rollback), binary backups (rotation 5) & GGUF model integrity vs HuggingFace (`--check`, `--models`, `--update`, `--backup`, `--rollback`) |
 | [`scripts/download_models.py`](scripts/download_models.py) | Model pack downloader (`--pack base,onnx,upscalers,video,video-14b,all`) |
 | [`scripts/telecharger_gros_fichier_parallele.py`](scripts/telecharger_gros_fichier_parallele.py) | Parallel downloader for throttled HF/ModelScope files (~10× faster) |
 | [`scripts/check_charge_systeme.py`](scripts/check_charge_systeme.py) | CPU/GPU/RAM/VRAM load gate to run before heavy generations |
