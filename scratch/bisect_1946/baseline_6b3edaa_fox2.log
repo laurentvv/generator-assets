@@ -1,0 +1,46 @@
+ggml_vulkan: Found 1 Vulkan devices:
+ggml_vulkan: 0 = AMD Radeon RX 6950 XT (AMD proprietary driver) | uma: 0 | fp16: 1 | bf16: 0 | fp4: 0 | warp size: 32 | shared memory: 32768 | int dot: 1 | matrix cores: none
+load_backend: loaded Vulkan backend from C:\SD\ggml-vulkan.dll
+load_backend: loaded CPU backend from C:\SD\ggml-cpu-alderlake.dll
+stable-diffusion.cpp:721  - loading diffusion model from 'C:/Modeles_LLM/flux1-schnell-Q6_K.gguf'
+[INFO ] model_loader.cpp:176  - load C:/Modeles_LLM/flux1-schnell-Q6_K.gguf using gguf format
+[INFO ] stable-diffusion.cpp:742  - loading clip_l from 'C:/Modeles_LLM/clip_l.safetensors'
+[INFO ] model_loader.cpp:182  - load C:/Modeles_LLM/clip_l.safetensors using safetensors format
+[INFO ] stable-diffusion.cpp:763  - loading t5xxl from 'C:/Modeles_LLM/t5xxl_fp16.safetensors'
+[INFO ] model_loader.cpp:182  - load C:/Modeles_LLM/t5xxl_fp16.safetensors using safetensors format
+[INFO ] stable-diffusion.cpp:792  - loading vae from 'C:/Modeles_LLM/ae.safetensors'
+[INFO ] model_loader.cpp:182  - load C:/Modeles_LLM/ae.safetensors using safetensors format
+[INFO ] stable-diffusion.cpp:909  - Version: Flux 
+[INFO ] stable-diffusion.cpp:960  - Weight type stat:                      f32: 712  |     f16: 419  |    q6_K: 304  
+[INFO ] stable-diffusion.cpp:961  - Conditioner weight type stat:          f16: 415  
+[INFO ] stable-diffusion.cpp:962  - Diffusion model weight type stat:      f32: 468  |     f16: 4    |    q6_K: 304  
+[INFO ] stable-diffusion.cpp:963  - VAE weight type stat:                  f32: 244  
+[INFO ] stable-diffusion.cpp:1513 - using VAE for encoding / decoding
+[INFO ] auto_encoder_kl.hpp:527  - vae decoder: ch = 128
+[INFO ] stable-diffusion.cpp:1761 - total params memory size = 18858.13MB (VRAM 18858.13MB, RAM 0.00MB): text_encoders 9318.83MB(VRAM), diffusion_model 9379.29MB(VRAM), vae 160.00MB(VRAM), controlnet 0.00MB(N/A), extensions 0.00MB(N/A)
+[INFO ] stable-diffusion.cpp:1874 - running in Flux FLOW mode
+[INFO ] stable-diffusion.cpp:5649 - generate_image 512x512
+[INFO ] stable-diffusion.cpp:3185 - Using 'flux_kontext' preset for reference images
+[INFO ] denoiser.hpp:1123 - get_sigmas with Flux scheduler
+[INFO ] stable-diffusion.cpp:4397 - sampling using Euler method
+[INFO ]   |##################################################| 196/196 - 1.10GB/s[K
+model_loader.cpp:1243 - loading tensors completed, taking 0.21s (read: 0.10s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+[INFO ]   |######                                            | 26/219 - 630.75MB/s[K  |########                                          | 35/219 - 1.31GB/s[K  |###########                                       | 45/219 - 1.35GB/s[K  |#############                                     | 53/219 - 1.42GB/s[K  |###############                                   | 62/219 - 1.53GB/s[K  |#################                                 | 71/219 - 1.49GB/s[K  |###################                               | 81/219 - 1.58GB/s[K  |####################                              | 84/219 - 1.45GB/s[K  |######################                            | 95/219 - 1.52GB/s[K  |########################                          | 104/219 - 1.55GB/s[K  |##########################                        | 111/219 - 1.52GB/s[K  |############################                      | 120/219 - 1.52GB/s[K  |##############################                    | 129/219 - 1.56GB/s[K  |################################                  | 138/219 - 1.57GB/s[K  |##################################                | 147/219 - 1.58GB/s[K  |###################################               | 153/219 - 1.55GB/s[K  |######################################            | 166/219 - 1.63GB/s[K  |########################################          | 175/219 - 1.63GB/s[K  |#########################################         | 179/219 - 1.57GB/s[K  |############################################      | 189/219 - 1.60GB/s[K  |##############################################    | 201/219 - 1.64GB/s[K  |################################################  | 210/219 - 1.66GB/s[K  |##################################################| 219/219 - 1.71GB/s[K
+model_loader.cpp:1243 - loading tensors completed, taking 5.18s (read: 4.76s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.07s)
+[INFO ] stable-diffusion.cpp:5317 - get_learned_condition completed, taking 6.04s
+[INFO ] stable-diffusion.cpp:5700 - generating image: 1/1 - seed 42
+[INFO ]   |####                                              | 48/776 - 146.79MB/s[K  |######                                            | 82/776 - 1.01GB/s[K  |########                                          | 112/776 - 1.21GB/s[K  |##########                                        | 150/776 - 1.36GB/s[K  |#############                                     | 192/776 - 1.58GB/s[K  |###############                                   | 226/776 - 1.61GB/s[K  |##################                                | 272/776 - 1.74GB/s[K  |####################                              | 304/776 - 1.73GB/s[K  |######################                            | 332/776 - 1.69GB/s[K  |########################                          | 370/776 - 1.73GB/s[K  |###########################                       | 412/776 - 1.79GB/s[K  |#############################                     | 448/776 - 1.77GB/s[K  |###############################                   | 480/776 - 1.76GB/s[K  |#################################                 | 506/776 - 1.77GB/s[K  |####################################              | 548/776 - 1.82GB/s[K  |#####################################             | 570/776 - 1.79GB/s[K  |#######################################           | 594/776 - 1.79GB/s[K  |#########################################         | 624/776 - 1.80GB/s[K  |###########################################       | 652/776 - 1.80GB/s[K  |#############################################     | 690/776 - 1.83GB/s[K  |###############################################   | 714/776 - 1.82GB/s[K  |################################################  | 736/776 - 1.80GB/s[K  |##################################################| 772/776 - 1.83GB/s[K  |##################################################| 776/776 - 1.88GB/s[K
+model_loader.cpp:1243 - loading tensors completed, taking 4.88s (read: 4.56s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.09s)
+[INFO ]   |============>                                     | 1/4 - 32.96s/it[K  |=========================>                        | 2/4 - 25.76s/it[K  |=====================================>            | 3/4 - 25.95s/it[K  |==================================================| 4/4 - 25.74s/it[K
+stable-diffusion.cpp:5733 - sampling completed, taking 110.44s
+[INFO ] stable-diffusion.cpp:5747 - generating 1 latent images completed, taking 110.44s
+[INFO ] stable-diffusion.cpp:5342 - decoding 1 latents
+[INFO ]   |#                                                 | 1/138 - 0.00MB/s[K  |##################################################| 138/138 - 931.04MB/s[K
+model_loader.cpp:1243 - loading tensors completed, taking 0.20s (read: 0.07s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+[INFO ]   |=====>                                            | 1/9 - 2.82s/it[K  |===========>                                      | 2/9 - 2.69s/it[K  |================>                                 | 3/9 - 2.54s/it[K  |======================>                           | 4/9 - 2.55s/it[K  |===========================>                      | 5/9 - 2.52s/it[K  |=================================>                | 6/9 - 2.56s/it[K  |======================================>           | 7/9 - 2.54s/it[K  |============================================>     | 8/9 - 2.51s/it[K  |==================================================| 9/9 - 2.51s/it[K
+stable-diffusion.cpp:5408 - latent 1 decoded, taking 23.26s
+[INFO ] stable-diffusion.cpp:5412 - decode_first_stage completed, taking 23.26s
+[INFO ] stable-diffusion.cpp:5884 - generate_image completed in 139.75s
+[INFO ] main.cpp:504  - save result image 0 to 'baseline_6b3edaa_fox.png' (success)
+[INFO ] main.cpp:576  - 1/1 images saved
+[INFO ] 

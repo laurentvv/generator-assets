@@ -1,0 +1,57 @@
+ggml_vulkan: Found 1 Vulkan devices:
+ggml_vulkan: 0 = AMD Radeon RX 6950 XT (AMD proprietary driver) | uma: 0 | fp16: 1 | bf16: 0 | fp4: 0 | warp size: 32 | shared memory: 32768 | int dot: 1 | matrix cores: none
+[INFO   ] diffusion_engine.cpp:704  - loading diffusion model from 'C:/Modeles_LLM/flux1-schnell-Q6_K.gguf'
+[INFO   ] model_loader.cpp:202  - load C:/Modeles_LLM/flux1-schnell-Q6_K.gguf using gguf format
+[INFO   ] diffusion_engine.cpp:725  - loading clip_l from 'C:/Modeles_LLM/clip_l.safetensors'
+[INFO   ] model_loader.cpp:208  - load C:/Modeles_LLM/clip_l.safetensors using safetensors format
+[INFO   ] diffusion_engine.cpp:746  - loading t5xxl from 'C:/Modeles_LLM/t5xxl_fp16.safetensors'
+[INFO   ] model_loader.cpp:208  - load C:/Modeles_LLM/t5xxl_fp16.safetensors using safetensors format
+[INFO   ] diffusion_engine.cpp:775  - loading vae from 'C:/Modeles_LLM/ae.safetensors'
+[INFO   ] model_loader.cpp:208  - load C:/Modeles_LLM/ae.safetensors using safetensors format
+[INFO   ] diffusion_engine.cpp:903  - Version: Flux 
+[INFO   ] backend_fit.cpp:323  - auto-fit plan:
+[INFO   ] backend_fit.cpp:324  -   devices:
+[INFO   ] backend_fit.cpp:326  -     Vulkan0      AMD Radeon RX 6950 XT            free  15569 MiB, budget  15057 MiB
+[INFO   ] backend_fit.cpp:333  -     RAM          free  17892 MiB, params budget  15844 MiB
+[INFO   ] backend_fit.cpp:336  -   compute-device weight cache priority: diffusion > te > vae
+[INFO   ] backend_fit.cpp:337  -   components (params: compute device -> RAM -> other GPU -> disk):
+[INFO   ] backend_fit.cpp:346  -     DiT          params   9379 MiB, compute reserve  2048 MiB -> compute Vulkan0, params Vulkan0
+[INFO   ] backend_fit.cpp:346  -     Conditioner  params   9318 MiB, compute reserve  2048 MiB -> compute Vulkan0, params cpu
+[INFO   ] backend_fit.cpp:346  -     VAE          params    319 MiB, compute reserve  1024 MiB -> compute Vulkan0, params cpu
+[INFO   ] backend_fit.cpp:474  - auto-fit: --backend "vulkan" --params-backend "te=cpu,vae=cpu"
+[INFO   ] diffusion_engine.cpp:1403 - Weight type stat:                      f32: 712  |     f16: 419  |    q6_K: 304  
+[INFO   ] diffusion_engine.cpp:1404 - Conditioner weight type stat:          f16: 415  
+[INFO   ] diffusion_engine.cpp:1405 - Diffusion model weight type stat:      f32: 468  |     f16: 4    |    q6_K: 304  
+[INFO   ] diffusion_engine.cpp:1406 - VAE weight type stat:                  f32: 244  
+[INFO   ] model_builders.cpp:527  - using VAE for encoding / decoding
+[INFO   ] auto_encoder_kl.hpp:529  - vae decoder: ch = 128
+[INFO   ] diffusion_engine.cpp:1216 - total params memory size = 18858.13MB (VRAM 9379.29MB, RAM 9478.83MB): text_encoders 9318.83MB(RAM), diffusion_model 9379.29MB(VRAM), vae 160.00MB(RAM), controlnet 0.00MB(N/A), extensions 0.00MB(N/A)
+[INFO   ] diffusion_engine.cpp:1353 - running in Flux FLOW mode
+[INFO   ] image.cpp:801  - generate_image 512x512
+[INFO   ] diffusion_engine.cpp:2743 - Using 'flux_kontext' preset for reference images
+[INFO   ] denoiser.hpp:1125 - get_sigmas with Flux scheduler
+[INFO   ] request.cpp:415  - sampling using Euler method
+[INFO   ] ggml_graph_cut.cpp:975  - clip build cached graph cut plan done (taking 1 ms)
+  |#                                                 | 3/196 - 0.00MB/s[K  |##################################################| 196/196 - 1.12GB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 0.20s (read: 0.05s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+[INFO   ] ggml_graph_cut.cpp:975  - t5 build cached graph cut plan done (taking 1 ms)
+  |#                                                 | 3/219 - 0.00MB/s[K  |#########                                         | 37/219 - 2.89GB/s[K  |##################                                | 76/219 - 4.94GB/s[K  |######################                            | 93/219 - 4.27GB/s[K  |###########################                       | 114/219 - 4.27GB/s[K  |###############################                   | 135/219 - 4.37GB/s[K  |#########################################         | 176/219 - 4.49GB/s[K  |#############################################     | 196/219 - 4.35GB/s[K  |##################################################| 219/219 - 4.48GB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 1.98s (read: 1.84s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+[INFO   ] image.cpp:516  - get_learned_condition completed, taking 3.97s
+[INFO   ] image.cpp:853  - generating image: 1/1 - seed 42
+[INFO   ] ggml_graph_cut.cpp:975  - flux build cached graph cut plan done (taking 5 ms)
+  |#                                                 | 3/776 - 0.00MB/s[K  |######                                            | 80/776 - 1.53GB/s[K  |#########                                         | 136/776 - 2.81GB/s[K  |################                                  | 235/776 - 3.28GB/s[K  |#####################                             | 313/776 - 3.65GB/s[K  |###########################                       | 409/776 - 3.73GB/s[K  |################################                  | 492/776 - 3.94GB/s[K  |#####################################             | 560/776 - 3.97GB/s[K  |#########################################         | 632/776 - 4.06GB/s[K  |###############################################   | 720/776 - 4.19GB/s[K  |##################################################| 761/776 - 4.06GB/s[K  |##################################################| 776/776 - 4.01GB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 2.28s (read: 1.56s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.40s)
+  |============>                                     | 1/4 - 3.91s/it[K  |=========================>                        | 2/4 - 1.31s/it[K  |=====================================>            | 3/4 - 1.31s/it[K  |==================================================| 4/4 - 1.31s/it[K
+[INFO   ] image.cpp:886  - sampling completed, taking 7.88s
+[INFO   ] image.cpp:898  - generating 1 latent images completed, taking 7.89s
+[INFO   ] image.cpp:541  - decoding 1 latents
+[INFO   ] ggml_graph_cut.cpp:975  - vae build cached graph cut plan done (taking 0 ms)
+  |###                                               | 8/138 - 1.96MB/s[K  |##################################################| 138/138 - 940.30MB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 0.20s (read: 0.02s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+  |=====>                                            | 1/9 - 2.92it/s[K  |===========>                                      | 2/9 - 9.43it/s[K  |================>                                 | 3/9 - 9.17it/s[K  |======================>                           | 4/9 - 9.26it/s[K  |===========================>                      | 5/9 - 9.35it/s[K  |=================================>                | 6/9 - 9.17it/s[K  |======================================>           | 7/9 - 9.09it/s[K  |============================================>     | 8/9 - 8.93it/s[K  |==================================================| 9/9 - 9.17it/s[K
+[INFO   ] image.cpp:607  - latent 1 decoded, taking 1.22s
+[INFO   ] image.cpp:611  - decode_first_stage completed, taking 1.22s
+[INFO   ] image.cpp:1037 - generate_image completed in 13.14s
+[INFO   ] main.cpp:503  - save result image 0 to 'pr1958_head2_test.png' (success)
+[INFO   ] main.cpp:575  - 1/1 images saved

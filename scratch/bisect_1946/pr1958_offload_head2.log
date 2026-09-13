@@ -1,0 +1,240 @@
+[VERBOSE] main.cpp:700  - version: stable-diffusion.cpp version unknown, commit unknown
+ggml_vulkan: Found 1 Vulkan devices:
+ggml_vulkan: 0 = AMD Radeon RX 6950 XT (AMD proprietary driver) | uma: 0 | fp16: 1 | bf16: 0 | fp4: 0 | warp size: 32 | shared memory: 32768 | int dot: 1 | matrix cores: none
+[VERBOSE] main.cpp:701  - System Info: 
+   SSE3 = 1 |    OPENMP = 1 |    REPACK = 1 | 
+[VERBOSE] main.cpp:702  - SDCliParams {
+  mode: img_gen,
+  output_path: "pr1958_offload_head2.png",
+  image_path: "",
+  metadata_format: "text",
+  log_level: debug,
+  color: false,
+  canny_preprocess: false,
+  convert_name: false,
+  preview_method: none,
+  preview_interval: 1,
+  preview_path: "preview.png",
+  preview_fps: 16,
+  taesd_preview: false,
+  preview_noisy: false,
+  imatrix_out: "",
+  metadata_raw: false,
+  metadata_brief: false,
+  metadata_all: false
+}
+[VERBOSE] main.cpp:703  - SDContextParams {
+  n_threads: 12,
+  model_path: "",
+  clip_l_path: "C:/Modeles_LLM/clip_l.safetensors",
+  clip_g_path: "",
+  clip_vision_path: "",
+  t5xxl_path: "C:/Modeles_LLM/t5xxl_fp16.safetensors",
+  llm_path: "",
+  llm_vision_path: "",
+  diffusion_model_path: "C:/Modeles_LLM/flux1-schnell-Q6_K.gguf",
+  high_noise_diffusion_model_path: "",
+  uncond_diffusion_model_path: "",
+  embeddings_connectors_path: "",
+  vae_path: "C:/Modeles_LLM/ae.safetensors",
+  vae_format: "auto",
+  audio_vae_path: "",
+  taesd_path: "",
+  esrgan_path: "",
+  control_net_path: "",
+  embedding_dir: "",
+  embeddings: {
+  }
+  wtype: NONE,
+  tensor_type_rules: "",
+  lora_model_dir: ".",
+  hires_upscalers_dir: "",
+  photo_maker_path: "",
+  rng_type: cuda,
+  sampler_rng_type: NONE,
+  offload_params_to_cpu: true,
+  max_vram: "0",
+  disable_prefetch: false,
+  disable_segmented_compute: false,
+  eager_load: false,
+  backend: "vulkan",
+  params_backend: "",
+  split_mode: "",
+  model_args: "",
+  auto_fit: true,
+  enable_mmap: false,
+  control_net_cpu: false,
+  clip_on_cpu: false,
+  vae_on_cpu: false,
+  flash_attn: false,
+  diffusion_flash_attn: false,
+  linear_scale: 0,
+  attn_scale: 0,
+  diffusion_conv_direct: false,
+  vae_conv_direct: false,
+  prediction: NONE,
+  lora_apply_mode: auto,
+  force_sdxl_vae_conv_scale: false
+}
+[VERBOSE] main.cpp:704  - SDGenerationParams {
+  loras: "{
+  }",
+  high_noise_loras: "{
+  }",
+  prompt: "a red apple on a wooden table, photo",
+  negative_prompt: "",
+  ad_model_path: "",
+  ad_prompt: "",
+  ad_negative_prompt: "",
+  extra_ad_args: "",
+  clip_skip: -1,
+  width: 512,
+  height: 512,
+  batch_count: 1,
+  qwen_image_layers: 3,
+  init_image_path: "",
+  end_image_path: "",
+  mask_image_path: "",
+  control_image_path: "",
+  ref_image_paths: [],
+  ref_video_paths: [],
+  ref_video_audio_paths: [],
+  ref_audio_paths: [],
+  control_video_path: "",
+  auto_resize_ref_image: true,
+  increase_ref_index: false,
+  pm_id_images_dir: "",
+  pm_id_embed_path: "",
+  pm_style_strength: 20,
+  skip_layers: [7, 8, 9],
+  sample_params: (txt_cfg: 1.00, img_cfg: 1.00, distilled_guidance: 3.50, slg.layer_count: 0, slg.layer_start: 0.01, slg.layer_end: 0.20, slg.scale: 0.00, scheduler: NONE, sample_method: euler, sample_steps: 4, eta: inf, shifted_timestep: 0, flow_shift: inf, extra_sample_args: ),
+  high_noise_skip_layers: [7, 8, 9],
+  high_noise_sample_params: (txt_cfg: 7.00, img_cfg: 7.00, distilled_guidance: 3.50, slg.layer_count: 0, slg.layer_start: 0.01, slg.layer_end: 0.20, slg.scale: 0.00, scheduler: NONE, sample_method: NONE, sample_steps: 20, eta: inf, shifted_timestep: 0, flow_shift: inf, extra_sample_args: ),
+  custom_sigmas: [],
+  cache_mode: "",
+  cache_option: "",
+  cache: disabled (threshold=inf, start=0.15, end=0.95),
+  moe_boundary: 0.875,
+  video_frames: 1,
+  fps: 16,
+  vace_strength: 1,
+  strength: 0.75,
+  control_strength: 0.9,
+  seed: 42,
+  upscale_repeats: 1,
+  upscale_tile_size: 128,
+  hires: { enabled: false, upscaler: "Latent", model_path: "", scale: 2, target_width: 0, target_height: 0, steps: 0, denoising_strength: 0.7, custom_sigmas: [], upscale_tile_size: 128 },
+  vae_tiling_params: { 1, 0, 0, 0, 0.5, 0, 0, "" },
+}
+[VERBOSE] model_loader.cpp:176  - using 12 threads for model loading
+[INFO   ] diffusion_engine.cpp:704  - loading diffusion model from 'C:/Modeles_LLM/flux1-schnell-Q6_K.gguf'
+[INFO   ] model_loader.cpp:202  - load C:/Modeles_LLM/flux1-schnell-Q6_K.gguf using gguf format
+[VERBOSE] model_loader.cpp:248  - init from 'C:/Modeles_LLM/flux1-schnell-Q6_K.gguf'
+[INFO   ] diffusion_engine.cpp:725  - loading clip_l from 'C:/Modeles_LLM/clip_l.safetensors'
+[INFO   ] model_loader.cpp:208  - load C:/Modeles_LLM/clip_l.safetensors using safetensors format
+[VERBOSE] model_loader.cpp:276  - init from 'C:/Modeles_LLM/clip_l.safetensors', prefix = 'clip_l.'
+[INFO   ] diffusion_engine.cpp:746  - loading t5xxl from 'C:/Modeles_LLM/t5xxl_fp16.safetensors'
+[INFO   ] model_loader.cpp:208  - load C:/Modeles_LLM/t5xxl_fp16.safetensors using safetensors format
+[VERBOSE] model_loader.cpp:276  - init from 'C:/Modeles_LLM/t5xxl_fp16.safetensors', prefix = 'text_encoders.t5xxl.transformer.'
+[INFO   ] diffusion_engine.cpp:775  - loading vae from 'C:/Modeles_LLM/ae.safetensors'
+[INFO   ] model_loader.cpp:208  - load C:/Modeles_LLM/ae.safetensors using safetensors format
+[VERBOSE] model_loader.cpp:276  - init from 'C:/Modeles_LLM/ae.safetensors', prefix = 'vae.'
+[INFO   ] diffusion_engine.cpp:903  - Version: Flux 
+[VERBOSE] ggml_extend_backend.cpp:395  - Initializing backend: Vulkan0
+[VERBOSE] ggml_extend_backend.cpp:395  - Initializing backend: CPU
+[VERBOSE] model_loader.cpp:176  - using 12 threads for model loading
+[INFO   ] diffusion_engine.cpp:1403 - Weight type stat:                      f32: 712  |     f16: 419  |    q6_K: 304  
+[INFO   ] diffusion_engine.cpp:1404 - Conditioner weight type stat:          f16: 415  
+[INFO   ] diffusion_engine.cpp:1405 - Diffusion model weight type stat:      f32: 468  |     f16: 4    |    q6_K: 304  
+[INFO   ] diffusion_engine.cpp:1406 - VAE weight type stat:                  f32: 244  
+[VERBOSE] diffusion_engine.cpp:1408 - ggml tensor size = 432 bytes
+[VERBOSE] clip_tokenizer.cpp:66   - vocab size: 49408
+[VERBOSE] flux.hpp:185  - flux: depth = 19, depth_single_blocks = 38, guidance_embed = false, context_in_dim = 4096, hidden_size = 3072, num_heads = 24
+[INFO   ] model_builders.cpp:527  - using VAE for encoding / decoding
+[INFO   ] auto_encoder_kl.hpp:529  - vae decoder: ch = 128
+[VERBOSE] diffusion_engine.cpp:1111 - validating model metadata
+[VERBOSE] diffusion_engine.cpp:1170 - model metadata validated; weights will be prepared lazily
+[INFO   ] diffusion_engine.cpp:1216 - total params memory size = 18858.13MB (VRAM 0.00MB, RAM 18858.13MB): text_encoders 9318.83MB(RAM), diffusion_model 9379.29MB(RAM), vae 160.00MB(RAM), controlnet 0.00MB(N/A), extensions 0.00MB(N/A)
+[INFO   ] diffusion_engine.cpp:1353 - running in Flux FLOW mode
+[INFO   ] image.cpp:801  - generate_image 512x512
+[VERBOSE] model_loader.cpp:176  - using 12 threads for model loading
+[INFO   ] diffusion_engine.cpp:2743 - Using 'flux_kontext' preset for reference images
+[INFO   ] denoiser.hpp:1125 - get_sigmas with Flux scheduler
+[VERBOSE] denoiser.hpp:765  - Flux scheduler: image_seq_len=4096, steps=4, mu=1.150
+[INFO   ] request.cpp:415  - sampling using Euler method
+[VERBOSE] conditioner.hpp:1169 - parse 'a red apple on a wooden table, photo' to [['a red apple on a wooden table, photo', 1], ]
+[VERBOSE] bpe_tokenizer.cpp:208  - split prompt "a red apple on a wooden table, photo" to 9 tokens ["a</w>", "red</w>", "apple</w>", "on</w>", "a</w>", "wooden</w>", "table</w>", ",</w>", "photo</w>", ]
+[VERBOSE] t5_unigram_tokenizer.cpp:336  - split prompt "a red apple on a wooden table, photo" to tokens ["▁", "a", "▁red", "▁apple", "▁on", "▁", "a", "▁wooden", "▁table", ",", "▁photo", ]
+[VERBOSE] clip.hpp:330  - identity projection
+[INFO   ] ggml_graph_cut.cpp:975  - clip build cached graph cut plan done (taking 0 ms)
+[VERBOSE] model_loader.cpp:1035 - loading 196/196 tensors from C:/Modeles_LLM/clip_l.safetensors
+  |##################################################| 196/196 - 1.07GB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 0.22s (read: 0.05s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+[VERBOSE] model_manager.cpp:488  - model manager prepared params backend buffers (235.06 MB, 196 tensors, 1 blocks, RAM) on Vulkan_Host
+[VERBOSE] model_manager.cpp:614  - model manager staged compute params (235.06 MB, 196 tensors, 1 blocks) to Vulkan0, taking 0.03s
+[DEBUG  ] ggml_runner.cpp:947  - clip executing segment 1/1: graph
+[VERBOSE] ggml_runner.cpp:975  - clip compute buffer size: 1.42 MB(VRAM) on Vulkan0 (peak across 1 segment)
+[INFO   ] ggml_graph_cut.cpp:975  - t5 build cached graph cut plan done (taking 1 ms)
+[VERBOSE] model_loader.cpp:1035 - loading 219/219 tensors from C:/Modeles_LLM/t5xxl_fp16.safetensors
+  |#######                                           | 29/219 - 2.07GB/s[K  |##############                                    | 58/219 - 3.99GB/s[K  |##################                                | 76/219 - 3.47GB/s[K  |######################                            | 96/219 - 3.89GB/s[K  |###########################                       | 118/219 - 4.04GB/s[K  |#################################                 | 142/219 - 3.98GB/s[K  |#########################################         | 176/219 - 4.43GB/s[K  |##############################################    | 198/219 - 4.35GB/s[K  |##################################################| 219/219 - 4.61GB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 1.92s (read: 1.84s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+[VERBOSE] model_manager.cpp:488  - model manager prepared params backend buffers (9083.77 MB, 219 tensors, 10 blocks, RAM) on Vulkan_Host
+[VERBOSE] model_manager.cpp:614  - model manager staged compute params (9083.77 MB, 219 tensors, 10 blocks) to Vulkan0, taking 0.75s
+[DEBUG  ] ggml_runner.cpp:947  - t5 executing segment 1/1: graph
+[VERBOSE] ggml_runner.cpp:975  - t5 compute buffer size: 68.25 MB(VRAM) on Vulkan0 (peak across 1 segment)
+[VERBOSE] conditioner.hpp:1292 - computing condition graph completed, taking 4068 ms
+[INFO   ] image.cpp:516  - get_learned_condition completed, taking 4.07s
+[DEBUG  ] model_manager.cpp:1089 - model manager released compute params (235.06 MB, 196 tensors, 1 blocks) from Vulkan0
+[DEBUG  ] model_manager.cpp:1089 - model manager released compute params (9083.77 MB, 219 tensors, 10 blocks) from Vulkan0
+[INFO   ] image.cpp:853  - generating image: 1/1 - seed 42
+[INFO   ] ggml_graph_cut.cpp:975  - flux build cached graph cut plan done (taking 5 ms)
+[WARN   ] util.cpp:631  - ggml_vulkan: Failed to allocate pinned memory (vk::Device::allocateMemory: ErrorOutOfDeviceMemory)
+[WARN   ] util.cpp:631  - ggml_vulkan: Failed to allocate pinned memory (vk::Device::allocateMemory: ErrorOutOfDeviceMemory)
+[WARN   ] util.cpp:631  - ggml_vulkan: Failed to allocate pinned memory (vk::Device::allocateMemory: ErrorOutOfDeviceMemory)
+[WARN   ] util.cpp:631  - ggml_vulkan: Failed to allocate pinned memory (vk::Device::allocateMemory: ErrorOutOfDeviceMemory)
+[VERBOSE] model_loader.cpp:1035 - loading 776/776 tensors from C:/Modeles_LLM/flux1-schnell-Q6_K.gguf
+  |#####                                             | 75/776 - 2.80GB/s[K  |############                                      | 177/776 - 3.96GB/s[K  |####################                              | 295/776 - 4.59GB/s[K  |##########################                        | 391/776 - 4.72GB/s[K  |################################                  | 490/776 - 4.79GB/s[K  |##################################                | 514/776 - 4.25GB/s[K  |##################################                | 520/776 - 3.70GB/s[K  |####################################              | 552/776 - 3.53GB/s[K  |#######################################           | 595/776 - 3.46GB/s[K  |#########################################         | 624/776 - 3.28GB/s[K  |#########################################         | 636/776 - 3.06GB/s[K  |##########################################        | 646/776 - 2.88GB/s[K  |#############################################     | 684/776 - 2.84GB/s[K  |#############################################     | 692/776 - 2.66GB/s[K  |##############################################    | 706/776 - 2.54GB/s[K  |###############################################   | 716/776 - 2.42GB/s[K  |################################################  | 730/776 - 2.32GB/s[K  |################################################# | 746/776 - 2.25GB/s[K  |##################################################| 764/776 - 2.18GB/s[K  |##################################################| 776/776 - 2.17GB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 4.21s (read: 4.15s, memcpy: 0.00s, convert: 0.00s, copy_to_backend: 0.00s)
+[VERBOSE] model_manager.cpp:488  - model manager prepared params backend buffers (6054.02 MB, 534 tensors, 6 blocks, RAM) on Vulkan_Host
+[VERBOSE] model_manager.cpp:488  - model manager prepared params backend buffers (3325.27 MB, 242 tensors, 4 blocks, RAM) on CPU
+[VERBOSE] model_manager.cpp:614  - model manager staged compute params (9379.29 MB, 776 tensors, 10 blocks) to Vulkan0, taking 1.28s
+[DEBUG  ] ggml_runner.cpp:947  - flux executing segment 1/1: graph
+[VERBOSE] ggml_runner.cpp:975  - flux compute buffer size: 341.50 MB(VRAM) on Vulkan0 (peak across 1 segment)
+  |============>                                     | 1/4 - 7.63s/it[K[DEBUG  ] ggml_runner.cpp:947  - flux executing segment 1/1: graph
+  |=========================>                        | 2/4 - 1.31s/it[K[DEBUG  ] ggml_runner.cpp:947  - flux executing segment 1/1: graph
+  |=====================================>            | 3/4 - 1.31s/it[K[DEBUG  ] ggml_runner.cpp:947  - flux executing segment 1/1: graph
+  |==================================================| 4/4 - 1.31s/it[K
+[DEBUG  ] model_manager.cpp:1089 - model manager released compute params (9379.29 MB, 776 tensors, 10 blocks) from Vulkan0
+[INFO   ] image.cpp:886  - sampling completed, taking 11.64s
+[INFO   ] image.cpp:898  - generating 1 latent images completed, taking 11.64s
+[INFO   ] image.cpp:541  - decoding 1 latents
+[VERBOSE] vae.hpp:285  - VAE Tile size: 32x32
+[VERBOSE] tiling.cpp:201  - num tiles : 3, 3 
+[VERBOSE] tiling.cpp:202  - optimal overlap : 0.500000, 0.500000 (targeting 0.500000)
+[VERBOSE] tiling.cpp:203  - processing 9 tiles
+[INFO   ] ggml_graph_cut.cpp:975  - vae build cached graph cut plan done (taking 0 ms)
+[VERBOSE] model_loader.cpp:1035 - loading 138/244 tensors from C:/Modeles_LLM/ae.safetensors
+  |##################################################| 138/138 - 940.30MB/s[K
+[INFO   ] model_loader.cpp:1293 - loading tensors completed, taking 0.20s (read: 0.04s, memcpy: 0.00s, convert: 0.01s, copy_to_backend: 0.00s)
+[VERBOSE] model_manager.cpp:488  - model manager prepared params backend buffers ( 94.57 MB, 138 tensors, 1 blocks, RAM) on Vulkan_Host
+[VERBOSE] model_manager.cpp:614  - model manager staged compute params ( 94.57 MB, 138 tensors, 1 blocks) to Vulkan0, taking 0.26s
+[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+[VERBOSE] ggml_runner.cpp:975  - vae compute buffer size: 416.06 MB(VRAM) on Vulkan0 (peak across 1 segment)
+  |=====>                                            | 1/9 - 1.62it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |===========>                                      | 2/9 - 7.87it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |================>                                 | 3/9 - 8.00it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |======================>                           | 4/9 - 7.75it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |===========================>                      | 5/9 - 7.87it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |=================================>                | 6/9 - 7.87it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |======================================>           | 7/9 - 7.63it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |============================================>     | 8/9 - 7.75it/s[K[DEBUG  ] ggml_runner.cpp:947  - vae executing segment 1/1: graph
+  |==================================================| 9/9 - 8.00it/s[K
+[DEBUG  ] model_manager.cpp:1089 - model manager released compute params ( 94.57 MB, 138 tensors, 1 blocks) from Vulkan0
+[VERBOSE] vae.hpp:319  - computing vae decode graph completed, taking 1.64s
+[INFO   ] image.cpp:607  - latent 1 decoded, taking 1.64s
+[INFO   ] image.cpp:611  - decode_first_stage completed, taking 1.64s
+[INFO   ] image.cpp:1037 - generate_image completed in 17.41s
+[VERBOSE] model_manager.cpp:1159 - model manager released params backend buffers (15467.43 MB, 1087 tensors, 18 blocks, RAM) from Vulkan_Host
+[VERBOSE] model_manager.cpp:1159 - model manager released params backend buffers (3325.27 MB, 242 tensors, 4 blocks, RAM) from CPU
+[INFO   ] main.cpp:503  - save result image 0 to 'pr1958_offload_head2.png' (success)
+[INFO   ] main.cpp:575  - 1/1 images saved
