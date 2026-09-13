@@ -74,14 +74,12 @@ ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
 - Hook SessionStart ZCode (`.zcode/config.json` → `scripts/hook_session_start.py`) : à chaque
   nouvelle session du projet, les entrées des 7 derniers jours de `docs/veille_journal.md`
   sont injectées automatiquement dans le contexte, ainsi que les mises à jour en attente
-  lues dans `output/veille/maj_en_attente.json` (voir 🔄 Process de mise à jour) et le
-  **statut de l'issue sd-cli [#1946](https://github.com/leejet/stable-diffusion.cpp/issues/1946)**
-  (régression master-848 rollbackée le 2026-09-07 — un appel API GitHub léger par session,
-  alerte uniquement si réponses/changement d'état ; état vu : `output/veille/issue_sdcli_1946.json`).
+  lues dans `output/veille/maj_en_attente.json` (voir 🔄 Process de mise à jour) et 
   Validé en session réelle le 2026-09-07 ; premier usage : approuver le hook via la bannière
   « Review » (gate de confiance des hooks de scope projet). Test manuel :
-  `uv run python scripts/hook_session_start.py`. À supprimer une fois une release sd-cli
-  corrigée installée (fonction `bloc_issue_sdcli` + état + cette mention).
+  `uv run python scripts/hook_session_start.py`. (Le bloc de surveillance de l'issue sd-cli
+  #1946 y a été retiré le 2026-09-13 : régression corrigée par PR #1958, release master-864
+  installée et validée — cf. MEMORY_BANK §1.19.)
 - 🎯 **Instruction permanente (2026-09-07) : dès que la veille signale un NOUVEAU modèle de
   musique/audio potentiellement compatible, lancer le test sans attendre d'accord** (sources :
   section veille `hf-modeles-gguf` pipeline `text-to-audio`, nouvelles familles dans audio.cpp,

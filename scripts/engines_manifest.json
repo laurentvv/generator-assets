@@ -3,17 +3,17 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "Regression OOM/gestion memoire #1946 dans les masters 848+ (PR #1958 non fusionnee au 2026-09-11). Ne passer a 'latest' qu'apres une release contenant le fix, avec smoke test image Flux 4 steps.",
+      "raison_epinglage": "master-864-ca37fad = 1re release contenant le fix #1946 (PR #1958 merge 9a97738, 2026-09-13). Installee et validee le 2026-09-13 (smoke Flux 4 steps OK). Si nouvelle version : veille + smoke test Flux + test Wan 2.2 T2V 17 trames (cf. MEMORY_BANK 1.17/1.19).",
       "plateformes": {
         "windows": {
-          "epingle": "master-841-6b3edaa",
-          "asset": "sd-master-6b3edaa-bin-win-vulkan-x64.zip",
+          "epingle": "master-864-ca37fad",
+          "asset": "sd-master-ca37fad-bin-win-vulkan-x64.zip",
           "sous_dossier": "SD",
           "exe": "sd-cli.exe"
         },
         "linux": {
           "epingle": "master-841-6b3edaa",
-          "asset": "sd-master-6b3edaa-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+          "asset": "sd-master-ca37fad-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
