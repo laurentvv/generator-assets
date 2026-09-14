@@ -3,7 +3,7 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "master-864-ca37fad = 1re release contenant le fix #1946 (PR #1958 merge 9a97738, 2026-09-13). Installee et validee le 2026-09-13 (smoke Flux 4 steps OK). Si nouvelle version : veille + smoke test Flux + test Wan 2.2 T2V 17 trames (cf. MEMORY_BANK 1.17/1.19).",
+      "raison_epinglage": "master-864-ca37fad = 1re release avec le fix #1946 (PR #1958), recette Wan 2.2 T2V 17 trames validee. master-866-42d6c0a TESTEE et REJETEE le 2026-09-14 : regression Wan 2.2 T2V (graph-cut 42 segments vs 1 resident en 864, echec weight preparation step 5/8, suspect #1967 auto-fit) — NE PAS INSTALLER tant qu'une release corrective n'existe pas. Si release posterieure a 866 : veille + smoke test Flux + test Wan 2.2 T2V 17 trames (cf. MEMORY_BANK 1.17/1.19).",
       "plateformes": {
         "windows": {
           "epingle": "master-864-ca37fad",
@@ -12,14 +12,14 @@
           "exe": "sd-cli.exe"
         },
         "linux": {
-          "epingle": "master-841-6b3edaa",
+          "epingle": "master-864-ca37fad",
           "asset": "sd-master-ca37fad-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
         "macos-arm64": {
-          "epingle": "master-841-6b3edaa",
-          "asset": "sd-master-6b3edaa-bin-Darwin-macOS-26.5.2-arm64.zip",
+          "epingle": "master-864-ca37fad",
+          "asset": "sd-master-ca37fad-bin-Darwin-macOS-26.6.2-arm64.zip",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         }
