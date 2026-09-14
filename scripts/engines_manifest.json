@@ -3,7 +3,7 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "master-864-ca37fad = 1re release avec le fix #1946 (PR #1958), recette Wan 2.2 T2V 17 trames validee. master-866-42d6c0a TESTEE et REJETEE le 2026-09-14 : regression Wan 2.2 T2V (graph-cut 42 segments vs 1 resident en 864, echec weight preparation step 5/8, suspect #1967 auto-fit) — NE PAS INSTALLER tant qu'une release corrective n'existe pas. Si release posterieure a 866 : veille + smoke test Flux + test Wan 2.2 T2V 17 trames (cf. MEMORY_BANK 1.17/1.19).",
+      "raison_epinglage": "master-864-ca37fad = 1re release avec le fix #1946 (PR #1958), recettes video validees. master-866-42d6c0a TESTEE le 2026-09-14 et REJETEE : les 3 chemins video casses sur 16 Go (Wan T2V echec weight prep 42 segments, contournable --auto-fit off ; LTX-2.5 workspace capacity check avec ET sans le flag ; MiniMax H3 51 segments + ErrorOutOfDeviceMemory) — suspect #1967 auto-fit, image OK (Flux/SDXL/upscale). NE PAS INSTALLER tant qu'une release corrective n'existe pas ; si release posterieure a 866 : veille + matrice complete (smoke Flux + Wan 17 trames + LTX 33 + H3 turbo, cf. MEMORY_BANK 1.16/1.17/1.19).",
       "plateformes": {
         "windows": {
           "epingle": "master-864-ca37fad",
