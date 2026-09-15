@@ -581,6 +581,13 @@ The engine features **38 modular workflows** organized into 5 functional categor
 
 Pulls **CC0 assets from [blendkit.com](https://www.blenderkit.com)** (the library behind the Blender "Blendkit" addon) into the two productions: ready-to-use 3D props for the Godot game (complementing `mesh_ia`/TRELLIS.2 for standard objects), and full 3D sets rendered by Blender as **compositing base plates for the YouTube channel** (user ruling 2026-09-15: human-made origin is NOT a blocker). Anonymous search; downloads authenticate with the Blendkit account logged in inside the Blender GUI (API key read from addon preferences *inside* Blender headless, never logged — MEMORY_BANK §1.23 for the full API recipe and pitfalls).
 
+##### 🖼️ Visual Output Produced by the Workflow
+
+| YouTube Compositing Plate — "Colorful tunnel" (Cycles HIP, 1080p) | Godot Prop — "Wooden barrel" (GLB 2K, 28.7k faces) |
+| :---: | :---: |
+| <img src="docs/exemples/asset_blendkit/plaque_colorful_tunnel.jpg" width="560" /> | <img src="docs/exemples/asset_blendkit/prop_wooden_barrel.jpg" width="240" /> |
+| *Free CC0 scene rendered as-is by the workflow — neon look matching the official thumbnail* | *CC0 prop, 9.4 MB GLB @2K textures (vs 58 MB max), Workbench preview* |
+
 * **Modes**:
   - `--mode prop` (default): search → download (.blend, textures variant via `--resolution`, default **2K** ≈ 6× lighter than max) → append → **Godot-ready GLB** + Workbench control preview.
   - `--mode plate`: scene search → download → **Cycles render (GPU HIP on RX 6950 XT)** at the scene's own camera/lights, AgX + exposure −1 (reproduces the official look; EEVEE blows out scenes with strong world lighting — MEMORY_BANK §1.23).
