@@ -388,11 +388,11 @@ python main.py --list-upscalers
 <span id="workflows"></span>
 ## 📦 Complete Workflow Catalog
 
-The engine features **37 modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
+The engine features **38 modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
 
 ```text
 📋 Quick Category Map:
-  • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap
+  • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap, asset_blendkit
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
   • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, monoplan_ia
@@ -576,6 +576,25 @@ The engine features **37 modular workflows** organized into 5 functional categor
   uv run python main.py -w mesh_ia -i godot_assets/casque.png --res 512 -o casque
   ```
 * **Status (2026-09-06)**: ✅ **Validated by user** on the repo's helmet (the README's "impossible via 2.5D extrusion" case study): res 512 = 10 min 44 s (144k faces, atlas 1024²), res 1024 = 55 min 10 s (293k faces, atlas 2048²) on RX 6950 XT. Licence 100 % MIT/Apache. Docs: `C:\trellis\README.md`, MEMORY_BANK §1.14.
+
+#### 1.8. `asset_blendkit` — CC0 Stock Assets from Blendkit: Godot-ready Props & YouTube Compositing Plates
+
+Pulls **CC0 assets from [blendkit.com](https://www.blenderkit.com)** (the library behind the Blender "Blendkit" addon) into the two productions: ready-to-use 3D props for the Godot game (complementing `mesh_ia`/TRELLIS.2 for standard objects), and full 3D sets rendered by Blender as **compositing base plates for the YouTube channel** (user ruling 2026-09-15: human-made origin is NOT a blocker). Anonymous search; downloads authenticate with the Blendkit account logged in inside the Blender GUI (API key read from addon preferences *inside* Blender headless, never logged — MEMORY_BANK §1.23 for the full API recipe and pitfalls).
+
+* **Modes**:
+  - `--mode prop` (default): search → download (.blend, textures variant via `--resolution`, default **2K** ≈ 6× lighter than max) → append → **Godot-ready GLB** + Workbench control preview.
+  - `--mode plate`: scene search → download → **Cycles render (GPU HIP on RX 6950 XT)** at the scene's own camera/lights, AgX + exposure −1 (reproduces the official look; EEVEE blows out scenes with strong world lighting — MEMORY_BANK §1.23).
+* **Outputs** (`output/blendkit/<asset>/`): `<asset>.glb` + `apercu.png` (prop) or `plaque.png` (plate), plus `source.blend` (download cache — reused on re-runs, `--no-cache` to force).
+* **Examples**:
+  ```bash
+  # List CC0 search results, then pull the chosen one as a light game prop :
+  uv run python main.py -w asset_blendkit --query "wooden barrel" --list-assets
+  uv run python main.py -w asset_blendkit --query "wooden barrel" --index 4 --resolution 2K
+
+  # YouTube compositing plate: 1080p Cycles plate from a free scene (camera 0) :
+  uv run python main.py -w asset_blendkit --query "studio" --mode plate --index 0 --width 1920 --height 1080
+  ```
+* **Status (2026-09-15)**: ✅ **Validated by user** ("magnifique") on both modes — prop: "Wooden barrel" CC0 (28,692 faces, GLB 9.4 MB @2K vs 58 MB max) ; plate: free scene "Colorful tunnel" (219 objects, neon look matching the official thumbnail, 1080p→6K capable). Licence filter **cc_zero enforced by default** (game redistribution + monetized channel). Requires: Blender (headless) + Blendkit account connected in the GUI once.
 
 ---
 

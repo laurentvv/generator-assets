@@ -41,6 +41,7 @@ from workflows.h3_ref2va import H3Ref2VAWorkflow
 from workflows.monoplan_ia import MonoplanIaWorkflow
 from workflows.makehuman_clothes import MakeHumanClothesWorkflow
 from workflows.character_makeup import CharacterMakeupWorkflow, Character3DWorkflow
+from workflows.asset_blendkit import AssetBlendkitWorkflow
 
 __all__ = [
     "BaseWorkflow",
@@ -83,7 +84,8 @@ __all__ = [
     "MonoplanIaWorkflow",
     "MakeHumanClothesWorkflow",
     "CharacterMakeupWorkflow",
-    "Character3DWorkflow"
+    "Character3DWorkflow",
+    "AssetBlendkitWorkflow"
 ]
 
 
