@@ -19,8 +19,28 @@ import statistics
 import subprocess
 import sys
 
+# Force stdout/stderr en UTF-8 : sur Windows, dès que ce script est invoqué autrement
+# que depuis une vraie console (sous-processus capturé, tâche planifiée, sortie
+# redirigée vers un fichier), Python retombe sur l'encodage système (cp1252 ici) au
+# lieu de l'UTF-8 — et cp1252 ne sait pas encoder les emojis utilisés ci-dessous
+# (🔍 ✅ ⛔ ⚠️), ce qui fait planter le script avant son premier print.
+for _flux in (sys.stdout, sys.stderr):
+    if hasattr(_flux, "reconfigure"):
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+
 # Script PowerShell unique : 3 échantillons espacés + 2 snapshots process (delta CPU)
 # + capacité VRAM (registre, la classe AdapterRAM uint32 plafonne à 4 Gio).
+#
+# GPU : GPUEngine expose une instance de compteur PAR PROCESSUS ET PAR TYPE DE MOTEUR
+# (3D, Copy, VideoDecode, VideoEncode, VideoProcessing…). Sommer UtilizationPercentage
+# sur TOUTES les instances (comme avant) n'est pas une occupation GPU valide : chaque
+# moteur peut monter à 100 % indépendamment, donc un GPU inactif peut afficher 200-400 %
+# avec juste DWM/l'explorateur/Windows Update/l'indexeur qui tournent en tâche de fond
+# (typique dans les minutes qui suivent un reboot). Fix : on regroupe par type de moteur
+# (regex sur Name, ex. "...engtype_3D"), on additionne DANS chaque groupe (plusieurs
+# process peuvent légitimement se partager un même moteur), puis on prend le MAX entre
+# groupes — pas la somme, les moteurs tournent en parallèle sur des blocs matériels
+# distincts. Le résultat reflète le moteur le plus chargé, typiquement 0-5 % au repos.
 _PS_SCRIPT = r"""
 $ErrorActionPreference = 'Continue'
 $num = 3
@@ -35,7 +55,9 @@ for ($i = 0; $i -lt $num; $i++) {
   } catch {}
   try {
     $gpu = (Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine |
-            Measure-Object -Sum -Property UtilizationPercentage).Sum
+            Group-Object { if ($_.Name -match 'engtype_(\w+)') { $matches[1] } else { 'Autre' } } |
+            ForEach-Object { ($_.Group | Measure-Object -Sum -Property UtilizationPercentage).Sum } |
+            Measure-Object -Maximum).Maximum
   } catch {}
   try {
     $adapters = Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory
@@ -137,15 +159,20 @@ def main() -> int:
         vals = [s[cle] for s in data["samples"] if s[cle] is not None]
         if not vals:
             return None
-        v = statistics.mean(vals)
-        return min(v, cap) if cap is not None else v
+        # Cappe CHAQUE échantillon avant la moyenne (pas seulement le résultat final) :
+        # plus honnête si un échantillon isolé part en pic, et cohérent avec le fix
+        # d'agrégation GPU par moteur (max des groupes, déjà borné à ~100 en pratique,
+        # mais on garde le filet de sécurité).
+        if cap is not None:
+            vals = [min(v, cap) for v in vals]
+        return statistics.mean(vals)
 
     cpu, ram, gpu, vram_octets = _moy("cpu"), _moy("ram"), _moy("gpu", 100.0), _moy("vram")
     exceeded = []
 
     def _verdict(label: str, val: float | None, threshold: float, suffix: str = "%"):
         if val is None:
-            print(f"⚠️  {nom} : mesure indisponible (ignorée)")
+            print(f"⚠️  {label} : mesure indisponible (ignorée)")
             return
         etat = "OK" if val < threshold else "ÉLEVÉ"
         print(f"{'✅' if val < threshold else '⛔'} {label} : {val:.1f}{suffix} (seuil {threshold:g}{suffix}) — {etat}")
