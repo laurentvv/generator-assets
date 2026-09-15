@@ -53,7 +53,8 @@ from workflows import (
     SkyboxWorkflow,
     Turnaround3DWorkflow,
     Mesh3DWorkflow,
-    MeshIaWorkflow
+    MeshIaWorkflow,
+    AssetBlendkitWorkflow
 )
 
 
@@ -106,7 +107,8 @@ def lancer_mode_interactif(config: dict):
         "35": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)"),
         "36": ("mesh_ia", "🧊 Objet 3D IA depuis Image/Prompt (TRELLIS.2 GGUF Vulkan — volume réel + PBR)"),
         "37": ("character_makeup", "💄 MakeUp & Features MPFB2 depuis Portrait IA (YuNet + Calque hm08 + Rendus Cycles)"),
-        "38": ("musique_essence", "🧬 Musique à l'Essence d'une Référence (SA3 Medium init_audio + retrait voix HTDemucs)")
+        "38": ("musique_essence", "🧬 Musique à l'Essence d'une Référence (SA3 Medium init_audio + retrait voix HTDemucs)"),
+        "39": ("asset_blendkit", "🧰 Asset CC0 Blendkit (prop .glb Godot / plaque décor chaine rendue Cycles)")
     }
 
     while True:
@@ -194,6 +196,16 @@ def lancer_mode_interactif(config: dict):
                 faces = input("📉 Cible de faces du GLB jeu (ex: 30000 ; vide = pas de réduction, master complet) : ").strip()
                 if faces:
                     params["faces_cible"] = int(faces)
+
+            elif wf_name == "asset_blendkit":
+                params["query"] = input("🔎 Mots-clés Blendkit (ex: wooden barrel / tunnel studio) : ").strip()
+                if not params["query"]:
+                    continue
+                choix_m = input("📂 Mode : [1] prop .glb Godot   [2] plaque décor chaine (défaut: 1) : ").strip()
+                params["mode"] = "plate" if choix_m == "2" else "prop"
+                idx = input("🔢 Index du résultat (liste affichée avant choix ; défaut: 0) : ").strip()
+                if idx.isdigit():
+                    params["index"] = int(idx)
 
             elif wf_name == "material3d":
                 chemin = input("🖼️  Texture existante (ou laisser vide pour générer à partir d'un prompt) : ").strip()
@@ -604,6 +616,18 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--segmenter", default="auto", choices=["auto", "birefnet", "rmbg", "floodfill", "none"], help="Moteur de détourage 2D.")
     groupe_wf.add_argument("--palette", default="pico8", choices=["pico8", "gameboy", "endesga32"], help="Palette pour le workflow pixelart.")
     groupe_wf.add_argument("--grid-size", type=int, default=64, help="Taille de grille pour le pixel art (ex: 32, 64).")
+    groupe_wf.add_argument("--query", help="Mots-clés de recherche Blendkit (workflow asset_blendkit) — ex: 'wooden barrel'.")
+    groupe_wf.add_argument("--asset-type", dest="asset_type", choices=["model", "scene", "material"], default="model", help="Type d'asset Blendkit pour asset_blendkit (défaut: model ; mode plate utilise scene).")
+    groupe_wf.add_argument("--licence", choices=["cc_zero", "any"], default="cc_zero", help="Filtre de licence Blendkit (défaut: cc_zero — recommandé jeu + monétisation).")
+    groupe_wf.add_argument("--index", type=int, default=0, help="Index du résultat Blendkit à télécharger (voir --list-assets ; défaut: 0).")
+    groupe_wf.add_argument("--list-assets", dest="list_assets", action="store_true", help="asset_blendkit : affiche les résultats de recherche puis s'arrête.")
+    groupe_wf.add_argument("--mode", choices=["prop", "plate"], default="prop", help="asset_blendkit : prop = .glb Godot + aperçu Workbench | plate = rendu décor Cycles/EEVEE pour la chaîne (défaut: prop).")
+    groupe_wf.add_argument("--resolution", choices=["blend", "8K", "4K", "2K", "1K", "0.5K"], default="2K", help="asset_blendkit mode prop : variante de textures du .blend (défaut: 2K, léger pour le jeu ; blend = qualité max).")
+    groupe_wf.add_argument("--engine", choices=["cycles", "eevee"], default="cycles", help="asset_blendkit mode plate : moteur de rendu (défaut: cycles, GPU HIP — EEVEE sature certaines scènes, MEMORY_BANK 1.23).")
+    groupe_wf.add_argument("--camera", default=None, help="asset_blendkit mode plate : nom de la caméra de la scène à utiliser (défaut: caméra de la scène).")
+    groupe_wf.add_argument("--exposure", type=float, default=-1.0, help="asset_blendkit mode plate : exposition du rendu (défaut: -1.0, look officiel des scènes néon).")
+    groupe_wf.add_argument("--percentage", type=int, default=100, help="asset_blendkit mode plate : pourcentage de résolution Blender (défaut: 100 ; les fichiers scène imposent parfois 300 = 6K, à maîtriser).")
+    groupe_wf.add_argument("--no-cache", dest="no_cache", action="store_true", help="asset_blendkit : force le retéléchargement du .blend (défaut: cache local).")
     groupe_wf.add_argument("--res", type=int, choices=[512, 1024, 1536], default=512, help="Résolution de génération 3D pour mesh_ia (TRELLIS.2) : 512 = itération ~11 min, 1024 = master ~55 min (défaut: 512).")
     groupe_wf.add_argument("--faces-cible", type=int, default=0, help="Cible de faces du GLB « jeu » pour mesh_ia : décimation Blender OPTIONNELLE (master conservé ; défaut: 0 = pas de réduction). Repères : 30000 = item héro vu de près • 10000 = prop de décor • 3000 = clutter répété • >=8000 pour les silhouettes très courbes.")
     groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
@@ -995,7 +1019,19 @@ Exemples de Workflows 3D & 2D :
         "samples": args.samples,
         "age": args.age,
         "gender": args.gender,
-        "makeup_only": args.makeup_only
+        "makeup_only": args.makeup_only,
+        "query": args.query,
+        "asset_type": args.asset_type,
+        "licence": args.licence,
+        "index": args.index,
+        "list_assets": args.list_assets,
+        "mode": args.mode,
+        "resolution": args.resolution,
+        "engine": args.engine,
+        "camera": args.camera,
+        "exposure": args.exposure,
+        "percentage": args.percentage,
+        "no_cache": args.no_cache
     }
 
     # Détection automatique du workflow si l'argument -w n'est pas spécifié
