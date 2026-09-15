@@ -59,7 +59,11 @@ SIGNATURES = {
 
 
 def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, capture_output=True, text=True, **kw)
+    # encoding="utf-8" explicite : par défaut, subprocess+text=True capturé (pipe, pas
+    # une vraie console) retombe sur l'encodage système (cp1252 ici) au lieu de l'UTF-8
+    # du terminal, ce qui fait planter tout sous-processus qui imprime des emojis
+    # (UnicodeEncodeError sur '\U0001f50d' etc. — cf. crash de check_charge_systeme.py).
+    return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", **kw)
 
 
 def verifier_prerequis(dry_run: bool) -> None:
@@ -83,8 +87,15 @@ def verifier_prerequis(dry_run: bool) -> None:
         print("uptime : indéterminé (non bloquant)")
 
     # Charge système (bloquant — règle AGENTS.md)
+    # NB : on affiche la sortie COMPLETE (pas seulement la dernière ligne / le verdict)
+    # pour pouvoir diagnostiquer immédiatement quel compteur (CPU/RAM/GPU/VRAM) et quel
+    # process ont fait échouer le check, sans devoir le relancer manuellement à côté.
     r = run([sys.executable, str(CHECK_CHARGE)])
-    print(r.stdout.strip().splitlines()[-1] if r.stdout else "")
+    if r.stdout:
+        print(r.stdout.strip())
+    if r.stderr:
+        print(f"[stderr check_charge_systeme.py]\n{r.stderr.strip()}")
+    print(f"[exit code check_charge_systeme.py : {r.returncode}]")
     if r.returncode != 0 and not dry_run:
         sys.exit("❌ Machine occupée — attendre un créneau libre (ou rebooter) puis relancer.")
 
