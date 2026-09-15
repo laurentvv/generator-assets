@@ -8,6 +8,23 @@
 
 Tout nouveau besoin média (autre jeu, autre chaîne, habillage, démo…) est un cas d'usage légitime. Les composants doivent rester génériques et réutilisables ; toute évolution doit servir un projet concret (ou l'outillage qui les maintient : veille, docs, téléchargement).
 
+## 🌐 Dépôts consommateurs (écosystème, 15 Sept 2026)
+
+Cette fabrique est appelée par **deux dépôts voisins** (chemins locaux `C:\GIT\`) :
+
+| Dépôt | Comment il nous appelle | Usage |
+|---|---|---|
+| **`ai-doc2video`** (usine vidéo YouTube, [laurentvv/ai-doc2video](https://github.com/laurentvv/ai-doc2video)) | `generator_assets_bridge.py` (subprocess CLI) | Workflow `monoplan_ia` (hooks cinématiques MP4 1080p), `sfx` (ambiances), maintenance qwentts via `scripts/manage_qwentts.py` |
+| **`video-analys-ia`** (laboratoire d'analyse vidéo, [laurentvv/video-analys-ia](https://github.com/laurentvv/video-analys-ia)) | `generer_assets_ia.py` (subprocess CLI, pattern du bridge ci-dessus) | Stickers de substitution (`-w generate --segmenter none`), animation I2V d'une frame extraite (`-w video -i <frame>`), monoplans — pour des reproductions d'animations mesurées sans contenu protégé |
+
+**Contrat implicite** (les deux consommateurs le respectent, à préserver en cas d'évolution du CLI) :
+- `scripts/check_charge_systeme.py` exécuté **avant toute génération vidéo** (exit 1 = on ne lance pas) ;
+- prompts toujours **en anglais** ;
+- `--seed` fixé pour la reproductibilité A/B ;
+- appels en subprocess avec `check=True` depuis le répertoire de ce dépôt.
+
+L'écosystème complet (avec `YouTubeToMP3` pour l'ingestion) est cartographié dans la boussole d'`ai-doc2video` : `AGENTS.md` § « Écosystème Inter-Dépôts ».
+
 ## 📚 Documentation des outils locaux : À MAINTENIR SYSTÉMATIQUEMENT
 
 Les outils installés hors du dépôt possèdent des **README personnalisés** (écrits pour ce poste,
