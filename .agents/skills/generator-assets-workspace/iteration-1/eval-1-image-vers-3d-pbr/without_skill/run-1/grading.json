@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Route vers mesh_ia avec -i, extrusion 2.5D écartée",
+      "passed": true,
+      "evidence": "§ « Pourquoi mesh_ia et pas mesh3d » : cutout = extrusion 2,5D rejetée ; TRELLIS.2 pipeline détaillé."
+    },
+    {
+      "text": "Contrôle de charge système mentionné",
+      "passed": true,
+      "evidence": "§1.a : check_charge_systeme.py, exit 0/1, seuils ajustables cités."
+    },
+    {
+      "text": "Prompt éventuel en anglais et --seed présent",
+      "passed": true,
+      "evidence": "--seed 42 sur les deux commandes (pas de prompt avec -i, N/A correct)."
+    },
+    {
+      "text": "Stratégie résolution 512 puis 1024",
+      "passed": true,
+      "evidence": "« itérer en 512 (~12 min)... puis master en 1024 (~1 h) », variante saut d'étape documentée."
+    },
+    {
+      "text": "--faces-cible mentionné avec ordre de grandeur pertinent",
+      "passed": true,
+      "evidence": "--faces-cible 30000 = item héro vu de près + repères complets (10000, 2000-3000, ≥8000)."
+    },
+    {
+      "text": "Durées (~11 min / ~55 min) ou sorties indiquées",
+      "passed": true,
+      "evidence": "§4 mesures réelles (8 min 53 s-10 min 44 s / 55 min 10 s) + §3 table exhaustive des fichiers."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

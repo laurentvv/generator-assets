@@ -1,0 +1,23 @@
+{
+  "skill_name": "generator-assets",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "Pour le menu principal de mon jeu Godot, je cherche une petite boucle musicale sombre et ambient, genre drone froid, qui tourne sans couture pendant des minutes. Une vingtaine de secondes, sans voix. Tu peux me la générer ?",
+      "expected_output": "L'agent route vers le workflow music_bg (pas chanson/sfx/audio_ambience), propose une commande avec prompt musical en anglais, vérifie la charge système avant, fixe une seed, annonce les sorties (bed -30 LUFS, préviews d'écoute) et prévoit la validation à l'écoute par l'utilisateur.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "J'ai l'image godot_assets/casque.png (un casque en PNG fond transparent). Je veux en faire un vrai objet 3D fermé avec des textures PBR pour Godot — pas une extrusion plate. Comment on procède, et quelle commande exacte ?",
+      "expected_output": "L'agent route vers mesh_ia (TRELLIS.2) en partant de l'image -i, écarte l'extrusion 2.5D, vérifie la charge système, fixe une seed, propose d'itérer à --res 512 puis master 1024, mentionne --faces-cible pour Godot et les durées (~11 min / ~55 min).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Pour l'intro de ma chaîne YouTube il me faut : un plan cinématique de 5 secondes à partir de l'image output/scene_intro.png (travelling avant lent, ambiance salle serveur sombre), et une voix de robot qui dit « Welcome to the system, human. » Prépare-moi les commandes.",
+      "expected_output": "L'agent route vers monoplan_ia pour le plan (image source + prompt caméra anglais) et voix_robot pour la voix (recette validée par défaut, texte EN), vérifie la charge système AVANT la vidéo, fixe les seeds, et indique durées/sorties attendues.",
+      "files": []
+    }
+  ]
+}

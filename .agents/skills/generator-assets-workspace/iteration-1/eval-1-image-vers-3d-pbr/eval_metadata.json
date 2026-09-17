@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "image-vers-3d-pbr",
+  "prompt": "J'ai l'image godot_assets/casque.png (un casque en PNG fond transparent). Je veux en faire un vrai objet 3D fermé avec des textures PBR pour Godot — pas une extrusion plate. Comment on procède, et quelle commande exacte ?",
+  "assertions": [
+    { "text": "Route vers mesh_ia (TRELLIS.2) avec -i godot_assets/casque.png, et écarte l'extrusion 2.5D (mesh3d/voxel3d)" },
+    { "text": "Mentionne le contrôle de charge système (scripts/check_charge_systeme.py) à faire avant lancement" },
+    { "text": "Prompt (éventuel) en anglais et --seed présent dans la commande proposée" },
+    { "text": "Propose la stratégie résolution : itérer à --res 512 puis master à --res 1024" },
+    { "text": "Mentionne --faces-cible (décimation Godot) avec un ordre de grandeur pertinent" },
+    { "text": "Indique les durées (~11 min en 512, ~55 min en 1024) ou les sorties (.glb, planche de contrôle)" }
+  ]
+}

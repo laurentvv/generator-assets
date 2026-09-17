@@ -1,0 +1,353 @@
+{
+  "metadata": {
+    "skill_name": "generator-assets",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-09-17T13:50:35Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 139.0,
+        "tokens": 287575,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Route vers music_bg (pas chanson/sfx/audio_ambience)",
+          "passed": true,
+          "evidence": "\u00a71 : \u00ab c'est exactement le boulot du workflow music_bg \u00bb, contraste explicite avec audio_ambience (proc\u00e9dural) et musique compos\u00e9e."
+        },
+        {
+          "text": "Prompt musical en anglais dans la commande",
+          "passed": true,
+          "evidence": "\u00ab dark ambient drone, cold sustained low tones, slowly evolving atmospheric pads... no vocals \u00bb (\u00a73)."
+        },
+        {
+          "text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9 avant lancement",
+          "passed": true,
+          "evidence": "\u00a72 commande (a) : uv run python scripts/check_charge_systeme.py, exit 1 = on attend."
+        },
+        {
+          "text": "--seed pr\u00e9sent",
+          "passed": true,
+          "evidence": "--seed 42 dans la commande, graines d\u00e9riv\u00e9es 42/43/44 expliqu\u00e9es."
+        },
+        {
+          "text": "Validation \u00e0 l'\u00e9coute pr\u00e9vue",
+          "passed": true,
+          "evidence": "\u00a76 : ECOUTE_cand*_boucle_x3.mp3 soumis \u00e0 l'\u00e9coute avant industrialisation, r\u00e8gle du d\u00e9p\u00f4t cit\u00e9e."
+        },
+        {
+          "text": "Sorties attendues ou dur\u00e9e indiqu\u00e9e",
+          "passed": true,
+          "evidence": "\u00a74 table output/music_bg/ (ogg, _full.wav, _bed.wav, ECOUTE) + \u00a75 : 4-6 min."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 217.8,
+        "tokens": 330640,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Route vers mesh_ia avec -i, extrusion 2.5D \u00e9cart\u00e9e",
+          "passed": true,
+          "evidence": "\u00ab Pourquoi pas autre chose \u00bb : mesh3d = extrusion 2,5D bas-relief, voxel3d \u00e9cart\u00e9s ; mesh_ia = volume ferm\u00e9."
+        },
+        {
+          "text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9",
+          "passed": true,
+          "evidence": "\u00a71.a : check_charge_systeme.py obligatoire avant g\u00e9n\u00e9ration lourde."
+        },
+        {
+          "text": "Prompt \u00e9ventuel en anglais et --seed pr\u00e9sent",
+          "passed": true,
+          "evidence": "--seed 42 sur les deux commandes (pas de prompt n\u00e9cessaire avec -i, donc N/A prompt \u2014 correct)."
+        },
+        {
+          "text": "Strat\u00e9gie r\u00e9solution 512 puis 1024",
+          "passed": true,
+          "evidence": "\u00c9tape A it\u00e9ration 512 (~12 min) puis \u00c9tape B master 1024 ; r\u00e8gle r\u00e9p\u00e9t\u00e9e en \u00a74."
+        },
+        {
+          "text": "--faces-cible mentionn\u00e9 avec ordre de grandeur pertinent",
+          "passed": true,
+          "evidence": "--faces-cible 30000 = item h\u00e9ros/casque \u00e9quip\u00e9, rep\u00e8res 10000/2000-3000/\u22658000 cit\u00e9s."
+        },
+        {
+          "text": "Dur\u00e9es (~11 min / ~55 min) ou sorties indiqu\u00e9es",
+          "passed": true,
+          "evidence": "\u00a74 tableau mesur\u00e9 (10 min 44 s / 55 min 10 s) + \u00a73 table output/mesh_ia/casque/ compl\u00e8te."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 649.3,
+        "tokens": 1348397,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Route vers monoplan_ia (pas video/h3_ref2va)",
+          "passed": true,
+          "evidence": "\u00a70 : monoplan_ia = plan-s\u00e9quence cin\u00e9matique depuis image fixe, recette valid\u00e9e 2026-09-10."
+        },
+        {
+          "text": "Contr\u00f4le de charge syst\u00e8me AVANT la vid\u00e9o",
+          "passed": true,
+          "evidence": "\u00a71.1 bloquant : check_charge_systeme.py exit 0 obligatoire ; une seule g\u00e9n\u00e9ration lourde \u00e0 la fois."
+        },
+        {
+          "text": "Prompt vid\u00e9o en anglais et --seed pr\u00e9sent",
+          "passed": true,
+          "evidence": "\u00ab Slow cinematic dolly-in through a dark server room... \u00bb + --seed 42 (et seed 42 sur la voix)."
+        },
+        {
+          "text": "Route vers voix_robot avec recette par d\u00e9faut (pas de r\u00e9glages invent\u00e9s)",
+          "passed": true,
+          "evidence": "\u00ab Aucune option --robot-* : les d\u00e9fauts SONT la recette valid\u00e9e (17 essais) \u00bb."
+        },
+        {
+          "text": "Dur\u00e9e estim\u00e9e r\u00e9aliste",
+          "passed": true,
+          "evidence": "\u00a74 : LTX ~15 min + post ~4 min + voix 1-2 min = ~20-22 min GPU ; 4K +18 min."
+        },
+        {
+          "text": "Sorties attendues indiqu\u00e9es",
+          "passed": true,
+          "evidence": "\u00a73 table compl\u00e8te : intro_chaine_5.0s_1080p.mp4, _avec_ambiance, welcome_robot.wav/mp3/_brut.wav, 4K."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 259.9,
+        "tokens": 294797,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Route vers music_bg (pas chanson/sfx/audio_ambience)",
+          "passed": true,
+          "evidence": "\u00a71 : workflow music_bg choisi, moteur ACE-Step d\u00e9faut, mode ambient justifi\u00e9 pour un drone."
+        },
+        {
+          "text": "Prompt musical en anglais dans la commande",
+          "passed": true,
+          "evidence": "\u00ab dark ambient drone, cold glacial synth pads... instrumental only, no vocals \u00bb (\u00e9tape 2)."
+        },
+        {
+          "text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9 avant lancement",
+          "passed": true,
+          "evidence": "\u00a71.1 + \u00e9tape 1 : check_charge_systeme.py, exit 0 obligatoire, seuils cit\u00e9s."
+        },
+        {
+          "text": "--seed pr\u00e9sent",
+          "passed": true,
+          "evidence": "--seed 42 (graines 42/43/44 expliqu\u00e9es), variante seed 52 pour tonalit\u00e9."
+        },
+        {
+          "text": "Validation \u00e0 l'\u00e9coute pr\u00e9vue",
+          "passed": true,
+          "evidence": "\u00c9tape 3 : scripts/ecoute_candidat_music_bg.py 1|2|3, ECOUTE x3 = test de la couture, choix utilisateur final."
+        },
+        {
+          "text": "Sorties attendues ou dur\u00e9e indiqu\u00e9e",
+          "passed": true,
+          "evidence": "\u00a73 table compl\u00e8te output/music_bg/ + \u00a74 : ~4-6 min, comparaison Music3 ~25 min/candidat."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 274.6,
+        "tokens": 415069,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Route vers mesh_ia avec -i, extrusion 2.5D \u00e9cart\u00e9e",
+          "passed": true,
+          "evidence": "\u00a7 \u00ab Pourquoi mesh_ia et pas mesh3d \u00bb : cutout = extrusion 2,5D rejet\u00e9e ; TRELLIS.2 pipeline d\u00e9taill\u00e9."
+        },
+        {
+          "text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9",
+          "passed": true,
+          "evidence": "\u00a71.a : check_charge_systeme.py, exit 0/1, seuils ajustables cit\u00e9s."
+        },
+        {
+          "text": "Prompt \u00e9ventuel en anglais et --seed pr\u00e9sent",
+          "passed": true,
+          "evidence": "--seed 42 sur les deux commandes (pas de prompt avec -i, N/A correct)."
+        },
+        {
+          "text": "Strat\u00e9gie r\u00e9solution 512 puis 1024",
+          "passed": true,
+          "evidence": "\u00ab it\u00e9rer en 512 (~12 min)... puis master en 1024 (~1 h) \u00bb, variante saut d'\u00e9tape document\u00e9e."
+        },
+        {
+          "text": "--faces-cible mentionn\u00e9 avec ordre de grandeur pertinent",
+          "passed": true,
+          "evidence": "--faces-cible 30000 = item h\u00e9ro vu de pr\u00e8s + rep\u00e8res complets (10000, 2000-3000, \u22658000)."
+        },
+        {
+          "text": "Dur\u00e9es (~11 min / ~55 min) ou sorties indiqu\u00e9es",
+          "passed": true,
+          "evidence": "\u00a74 mesures r\u00e9elles (8 min 53 s-10 min 44 s / 55 min 10 s) + \u00a73 table exhaustive des fichiers."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 391.7,
+        "tokens": 1599840,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Route vers monoplan_ia (pas video/h3_ref2va)",
+          "passed": true,
+          "evidence": "\u00c9tape 2 : monoplan_ia, recette valid\u00e9e \u00a71.17 cit\u00e9e, options anti-tremblement expliqu\u00e9es."
+        },
+        {
+          "text": "Contr\u00f4le de charge syst\u00e8me AVANT la vid\u00e9o",
+          "passed": true,
+          "evidence": "\u00a71.1 porte d'entr\u00e9e + \u00ab \u00e0 repasser avant chaque lancement GPU (vid\u00e9o, puis audio) \u00bb."
+        },
+        {
+          "text": "Prompt vid\u00e9o en anglais et --seed pr\u00e9sent",
+          "passed": true,
+          "evidence": "\u00ab Slow cinematic dolly-in through a dark server room... \u00bb + --seed 42 partout."
+        },
+        {
+          "text": "Route vers voix_robot avec recette par d\u00e9faut (pas de r\u00e9glages invent\u00e9s)",
+          "passed": true,
+          "evidence": "voix_robot avec --robot-* explicites mais strictement \u00e9gaux aux d\u00e9fauts valid\u00e9s (af_heart, 1.30, 120, 0.65, -4) \u2014 \u00ab tu peux aussi ne rien passer \u00bb."
+        },
+        {
+          "text": "Dur\u00e9e estim\u00e9e r\u00e9aliste",
+          "passed": true,
+          "evidence": "\u00a74 : voix 2-3 min, vid\u00e9o 18-20 min, total 20-25 min, 4K 35-40 min \u2014 mesures r\u00e9elles cit\u00e9es."
+        },
+        {
+          "text": "Sorties attendues indiqu\u00e9es",
+          "passed": true,
+          "evidence": "\u00a73 tables d\u00e9taill\u00e9es 1080p/4K (amorce, brut.webm, master, ambiance) + voix (wav/mp3/brut)."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 335.3667,
+        "stddev": 274.7143,
+        "min": 139.0,
+        "max": 649.3
+      },
+      "tokens": {
+        "mean": 655537.3333,
+        "stddev": 600420.3001,
+        "min": 287575,
+        "max": 1348397
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 308.7333,
+        "stddev": 72.2262,
+        "min": 259.9,
+        "max": 391.7
+      },
+      "tokens": {
+        "mean": 769902.0,
+        "stddev": 721258.7271,
+        "min": 294797,
+        "max": 1599840
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "+26.6",
+      "tokens": "-114365"
+    }
+  },
+  "notes": []
+}

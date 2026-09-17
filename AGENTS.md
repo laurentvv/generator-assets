@@ -49,6 +49,21 @@ ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
 ## 🗂️ Documentation du dépôt
 
 - `README.md` — catalogue des workflows et statuts (mettre à jour à chaque évolution).
+- `.agents/skills/generator-assets/` — **skill IA de génération** (créé et testé le 2026-09-17,
+  cf. README § « AI-Ready ») : porte d'entrée de tout agent pour la génération — routage
+  besoin→workflow (40), garde-fous (charge système, prompts EN, seed), recettes validées,
+  écueils courants (ex. contournement build sd-cli LTX/H3). **À maintenir en sync avec le
+  catalogue réel** :
+  - nouveau workflow, option ou recette qui change → `SKILL.md` (table de routage + recettes)
+    et `references/catalogue_workflows.md` ;
+  - statut de validation qui évolue (testé non validé → validé, ou rejeté) → refléter dans les
+    deux fichiers ;
+  - écueil opérationnel majeur découvert (build moteur cassée, contournement requis) → l'ajouter
+    au bloc écueils du SKILL.md et le retirer quand il est résolu (sinon les agents suivent une
+    recette obsolète). Le workspace d'éval
+    `.agents/skills/generator-assets-workspace/` (runs de test, benchmark) peut être purgé
+    lors des itérations ultérieures — seuls `SKILL.md` et `references/` sont nécessaires en
+    production.
 - `docs/MEMORY_BANK.md` — **banque mémoire des stacks validées et écueils** (une section par
   domaine, ex. §1.10 Music3, §1.11 ACE-Step) : y consigner tout apprentissage opérationnel.
 - `docs/veille_journal.md` — **journal de veille** : chaque nouveauté de stack détectée par la
@@ -120,7 +135,8 @@ ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
   (constat 2026-09-06 ; tenir cette liste à jour si la veille signale un retrait réel).
 - 🧩 **Tout test réalisé avec l'utilisateur et VALIDÉ par l'utilisateur doit devenir un workflow**
   (`main.py -w <nom>`) : encapsuler la recette gagnante (code dans `core/` + `workflows/`,
-  enregistrement, README §Workflows, MEMORY_BANK) — jamais la laisser en script autonome ou
+  enregistrement, README §Workflows, MEMORY_BANK, **skill `.agents/skills/generator-assets/`
+  — routing + recette**) — jamais la laisser en script autonome ou
   commande CLI ad hoc. Réciproque : **ne PAS créer de workflow pour un test non validé** —
   le consigner d'abord dans MEMORY_BANK (statut « testé, non validé ») et attendre la
   validation utilisateur (ex. essence SA3 / cover ACE-Step, en attente le 2026-09-06).
@@ -171,7 +187,9 @@ changelog depuis les notes archivées) puis commit/push (docs uniquement).
 
 Après TOUTE mise à jour : mettre à jour `C:\audio-cpp\README.md` / `C:\ffmpeg\README.md` /
 `C:\SD\README.md` (section version + notes de release), `docs/MEMORY_BANK.md` si un écueil
-ou une perf change, **`scripts/engines_manifest.json`** (épinglage des installateurs
-`scripts/install_windows.ps1` et `scripts/install_unix.sh` : nouvelle version épinglée ou
-retour à `latest` selon le cas, par plateforme),
+ou une perf change, **le skill `.agents/skills/generator-assets/`** si une recette ou un écueil
+change (ex. contournement LTX/H3 `SD_CLI_PATH=C:\SD-6b3edaa` à retirer du SKILL.md quand le
+fix amont sera installé et re-validé), **`scripts/engines_manifest.json`** (épinglage des
+installateurs `scripts/install_windows.ps1` et `scripts/install_unix.sh` : nouvelle version
+épinglée ou retour à `latest` selon le cas, par plateforme),
 puis commit/push côté dépôt.

@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "generator-assets", "runs": [{"id": "eval-0-boucle-musicale-menu-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "reponse.md", "type": "text", "content": "# Boucle musicale sombre/ambient pour le menu principal Godot \u2014 plan de g\u00e9n\u00e9ration\n\nOui, je peux te la g\u00e9n\u00e9rer \u2014 c'est exactement le boulot du workflow `music_bg` de la fabrique : il est\nfaire pour produire des **boucles musicales sans couture** (moteur ACE-Step 1.5 en local, Vulkan, valid\u00e9\nutilisateur). Mais le GPU est actuellement occup\u00e9 par un autre travail, et la r\u00e8gle du d\u00e9p\u00f4t est stricte :\n**jamais de g\u00e9n\u00e9ration lourde sur une machine charg\u00e9e** (incident document\u00e9 : RTF mesur\u00e9 3,3\u00d7 trop lent\n\u00e0 cause d'une contention GPU). Je ne lance donc rien maintenant \u2014 voici le plan exact, pr\u00eat \u00e0 ex\u00e9cuter\nd\u00e8s que la machine est libre.\n\n## 1. Choix du workflow\n\n`music_bg` plut\u00f4t que `audio_ambience` : ce dernier g\u00e9n\u00e8re des ambiances sonores proc\u00e9durales (for\u00eat,\ndonjon, temp\u00eate\u2026), alors que tu veux une **boucle musicale** (drone compos\u00e9). `music_bg` encha\u00eene :\n\n1. g\u00e9n\u00e9ration de plusieurs candidats depuis une description en anglais (ACE-Step 1.5 Turbo, ~42 s par\n   candidat de 28 s sur ta RX 6950 XT, natif 48 kHz, licence MIT) ;\n2. construction d'une **boucle parfaite** par recherche du meilleur point de coupe ; en mode\n   `ambient`, couture par **crossfade equal-power de 1 s** \u2014 exactement ce qu'il faut pour un drone\n   (le mode `percussive` par d\u00e9faut aligne sur les mesures/BPM, utile pour de la musique rythm\u00e9e) ;\n3. post-traitement \u00ab bed \u00bb (passe-haut 80 Hz + creux de pr\u00e9sence), normalisation LUFS, export\n   **WAV + OGG + MP3 d'\u00e9coute** (chaque candidat est fourni en version \u00ab boucle \u00d73 \u00bb pour juger la\n   couture \u00e0 l'oreille).\n\nLe param\u00e8tre par d\u00e9faut `--lyrics [Instrumental]` garantit l'absence de voix \u2014 c'est le r\u00e9glage\nvalid\u00e9 du d\u00e9p\u00f4t pour des lits instrumentaux, donc ton \u00ab sans voix \u00bb est couvert d'office.\n\n## 2. V\u00e9rifications AVANT de lancer (dans l'ordre, depuis `C:\\GIT\\generator-assets`)\n\n```bash\ncd /c/GIT/generator-assets\n\n# (a) Contr\u00f4le de charge syst\u00e8me \u2014 OBLIGATOIRE avant toute g\u00e9n\u00e9ration lourde.\n#     Exit 1 = machine occup\u00e9e \u2192 on attend un cr\u00e9neau libre, on ne lance pas.\nuv run python scripts/check_charge_systeme.py\n\n# (b) Moteurs et mod\u00e8les d\u00e9tect\u00e9s (audio.cpp + GGUF ACE-Step 1.5).\nuv run python main.py --check\n\n# (c) V\u00e9rifier qu'aucun audiocpp_cli.exe / ffmpeg.exe / sd-cli.exe ne tourne\n#     (une seule g\u00e9n\u00e9ration lourde \u00e0 la fois \u2014 VRAM limit\u00e9e \u00e0 16 Go).\n```\n\nSi `main.py --check` signale le mod\u00e8le ACE-Step absent (package turbo ~9,4 Gio dans\n`C:\\Modeles_LLM\\ACE-Step1.5-GGUF`), le t\u00e9l\u00e9charger d'abord :\n\n```bash\nuv run python scripts/download_acestep15_gguf.py turbo\n# si bridage CDN HF : uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>\n```\n\nC'est pr\u00e9cis\u00e9ment le contr\u00f4le (a) qui bloquerait maintenant : GPU occup\u00e9 \u2192 exit 1 \u2192 on attend. C'est\nle comportement voulu.\n\n## 3. La commande de g\u00e9n\u00e9ration (\u00e0 lancer une fois la machine libre)\n\n```bash\ncd /c/GIT/generator-assets\nuv run python main.py -w music_bg \"dark ambient drone, cold sustained low tones, slowly evolving atmospheric pads, distant icy reverb, minimal, no percussion, no vocals\" \\\n  --duration 20 --candidats 3 --loop-mode ambient --tonalite \"D minor\" \\\n  --seed 42 --lufs -16 -o menu_drone_froid\n```\n\nD\u00e9tail des options :\n\n- **prompt en anglais** (r\u00e8gle du d\u00e9p\u00f4t) et volontairement sobre \u2014 le plafond de r\u00e9alisme d'ACE-Step\n  est document\u00e9 : descriptions simples, tonalit\u00e9 mineure impos\u00e9e, on ne sur d\u00e9crit pas ;\n- `--duration 20` : boucle cible ~20 s (le workflow g\u00e9n\u00e8re 28 s par candidat \u2014 marge de +8 s pour la\n  recherche du meilleur point de bouclage) ;\n- `--candidats 3` : 3 propositions \u00e0 d\u00e9partager \u00e0 l'\u00e9coute (graines 42, 43, 44 \u2014 d\u00e9riv\u00e9es de\n  `--seed 42`, donc reproductibles pour A/B) ;\n- `--loop-mode ambient` : couture par crossfade 1 s, le bon mode pour un drone (le d\u00e9faut\n  `percussive` est pens\u00e9 pour de la musique battue align\u00e9e BPM) ;\n- `--tonalite \"D minor\"` : tonalit\u00e9 mineure impos\u00e9e au planificateur ACE-Step pour asseoir le c\u00f4t\u00e9\n  sombre ;\n- `--lufs -16` : le d\u00e9faut \u221230 LUFS est la convention \u00ab lit derri\u00e8re voix off \u00bb de la cha\u00eene YouTube ;\n  pour un menu de jeu sans voix par-dessus, \u221216 LUFS (niveau d'\u00e9coute) \u00e9vite de devoir rajouter ~14 dB\n  dans Godot. On peut aussi garder \u221230 et g\u00e9rer le volume dans le bus audio Godot, au choix ;\n- `-o menu_drone_froid` : nom de base des sorties ;\n- pas besoin de `--moteur` (ACE-Step 1.5 turbo est le d\u00e9faut valid\u00e9, ~40\u00d7 plus rapide que Music3).\n\n## 4. Sorties attendues et emplacements\n\nTout atterrit dans `C:\\GIT\\generator-assets\\output\\music_bg\\` :\n\n| Fichier | Contenu |\n| :--- | :--- |\n| `menu_drone_froid.ogg` | **la boucle \u00e0 utiliser dans Godot** (OGG Vorbis) |\n| `menu_drone_froid_full.wav` | boucle sans couture 48 kHz PCM16 (~20 s), le \u00ab master \u00bb |\n| `menu_drone_froid_bed.wav` | version normalis\u00e9e \u221216 LUFS (base de l'OGG) |\n| `menu_drone_froid_preview.mp3` | aper\u00e7u MP3 du candidat promu |\n| `ECOUTE_cand1..3_boucle_x3.mp3` | **aper\u00e7us d'\u00e9coute : chaque boucle jou\u00e9e 3\u00d7 de suite \u00e0 \u221216 LUFS** \u2014 c'est le test de la couture |\n| `candidats/cand_N_brut.wav` | g\u00e9n\u00e9rations brutes (N = 1..3) |\n| `candidats/cand_N_loop_full.wav`, `cand_N_bed.wav`, `cand_N_preview.mp3` | chaque candidat finalis\u00e9 |\n| `recette_mixage_voix.txt` | recette ffmpeg de ducking (sous-produit pour voix off \u2014 inutile pour le jeu) |\n\nLe candidat \u00e0 la meilleure couture est promu \u00e0 la racine ; les 3 restent disponibles dans `candidats/`.\n\n## 5. Dur\u00e9e estim\u00e9e\n\n- G\u00e9n\u00e9ration : ~42 s par candidat de 28 s \u00d7 3 \u2248 **~2 min** ;\n- Post-traitement (recherche du point de bouclage, loudnorm 2 passes, exports OGG/MP3) : ~1-2 min ;\n- **Total : environ 4 \u00e0 6 minutes** sur machine libre.\n\n## 6. Apr\u00e8s la g\u00e9n\u00e9ration\n\n- Je te fais **\u00e9couter les `ECOUTE_cand*_boucle_x3.mp3`** \u2014 r\u00e8gle du d\u00e9p\u00f4t : tout rendu subjectif est\n  soumis \u00e0 validation avant industrialisation. Tu choisis le candidat ; si le retenu n'est pas celui\n  promu automatiquement, sa version finalis\u00e9e est d\u00e9j\u00e0 dans `candidats/`.\n- Int\u00e9gration Godot : importer le `.ogg`, cocher **Loop** sur la ressource `AudioStreamOggVorbis`\n  dans l'inspecteur, et le jouer via un `AudioStreamPlayer` dans ta sc\u00e8ne de menu (volume fin dans le\n  bus audio). La boucle est sans couture par construction.\n- Deux r\u00e9serves honn\u00eates, list\u00e9es \u00ab pas encore test\u00e9es \u00bb dans le README du workflow :\n  `--loop-mode ambient` et `--tonalite`. C'est pour \u00e7a qu'on \u00e9coute les aper\u00e7us \u00d73 avec attention\n  (la couture d'un drone s'entend surtout sur les tenues longues). Si le r\u00e9sultat sonne mal, on\n  retombe sur le mode `percussive` valid\u00e9 et/ou on retire `--tonalite`.\n- Si le candidat retenu m\u00e9rite mieux : A/B avec la variante `--variante xl-turbo` (DiT 4B, ~2\u00d7 plus\n  lent, qualit\u00e9 accrue, valid\u00e9e elle aussi) en gardant la m\u00eame graine pour comparer.\n\nDis-moi quand le GPU est lib\u00e9r\u00e9 (ou veux-tu que je surveille avec `check_charge_systeme.py` ?) et je\nlance la g\u00e9n\u00e9ration telle quelle.\n"}], "grading": {"expectations": [{"text": "Route vers music_bg (pas chanson/sfx/audio_ambience)", "passed": true, "evidence": "\u00a71 : \u00ab c'est exactement le boulot du workflow music_bg \u00bb, contraste explicite avec audio_ambience (proc\u00e9dural) et musique compos\u00e9e."}, {"text": "Prompt musical en anglais dans la commande", "passed": true, "evidence": "\u00ab dark ambient drone, cold sustained low tones, slowly evolving atmospheric pads... no vocals \u00bb (\u00a73)."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9 avant lancement", "passed": true, "evidence": "\u00a72 commande (a) : uv run python scripts/check_charge_systeme.py, exit 1 = on attend."}, {"text": "--seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 dans la commande, graines d\u00e9riv\u00e9es 42/43/44 expliqu\u00e9es."}, {"text": "Validation \u00e0 l'\u00e9coute pr\u00e9vue", "passed": true, "evidence": "\u00a76 : ECOUTE_cand*_boucle_x3.mp3 soumis \u00e0 l'\u00e9coute avant industrialisation, r\u00e8gle du d\u00e9p\u00f4t cit\u00e9e."}, {"text": "Sorties attendues ou dur\u00e9e indiqu\u00e9e", "passed": true, "evidence": "\u00a74 table output/music_bg/ (ogg, _full.wav, _bed.wav, ECOUTE) + \u00a75 : 4-6 min."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-0-boucle-musicale-menu-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "reponse.md", "type": "text", "content": "# Boucle musicale sombre/ambient pour le menu principal Godot \u2014 plan de g\u00e9n\u00e9ration\n\nBonne nouvelle : ce besoin est exactement le terrain du workflow **`music_bg`** du d\u00e9p\u00f4t, avec le moteur **ACE-Step 1.5 Turbo** (d\u00e9faut, valid\u00e9 utilisateur le 2026-09-05, ~36\u00d7 plus rapide que MiniMax-Music3, licence **MIT** donc aucune mention obligatoire dans le jeu). Pour un drone ambient, on utilisera le mode de bouclage `--loop-mode ambient` (crossfade equal-power ~1 s queue\u2192t\u00eate, pas d'alignement BPM \u2014 un drone n'a pas de pulsation \u00e0 caler).\n\n**Le GPU \u00e9tant actuellement occup\u00e9 par un autre travail, je ne lance rien maintenant** : la r\u00e8gle du d\u00e9p\u00f4t est formelle (jamais de g\u00e9n\u00e9ration lourde sur une machine charg\u00e9e \u2014 cf. smoke test v0.7.3 du 2026-09-08 : RTF mesur\u00e9 3,3\u00d7 trop lent \u00e0 cause d'une contention GPU). Tout est pr\u00eat ci-dessous, il n'y aura qu'\u00e0 relancer d\u00e8s que la machine se lib\u00e8re.\n\n---\n\n## 1. V\u00e9rifications \u00e0 faire AVANT de lancer (dans l'ordre)\n\nToutes les commandes se lancent **depuis la racine du d\u00e9p\u00f4t** `C:\\GIT\\generator-assets` (Git Bash).\n\n### 1.1 Charge syst\u00e8me (obligatoire, doit passer)\n\n```bash\nuv run python scripts/check_charge_systeme.py\n```\n\n- **Exit 0** = machine libre \u2192 on peut lancer. **Exit 1** = machine occup\u00e9e \u2192 on attend un cr\u00e9neau, on ne lance pas.\n- Seuils par d\u00e9faut : CPU 60 %, GPU 40 %, RAM 90 %, VRAM 80 %. \u00c9tant donn\u00e9 que le GPU est d\u00e9j\u00e0 pris par un autre travail, ce script sortira actuellement en \u00e9chec (\u26d4 GPU) \u2014 c'est le comportement attendu ; je le relancerai d\u00e8s la fin de l'autre job.\n\n### 1.2 Aucune g\u00e9n\u00e9ration audio d\u00e9j\u00e0 en cours\n\n```bash\ntasklist | grep -i audiocpp || echo \"aucun audiocpp_cli en cours\"\n```\n\n(\u00c9vite toute contention/superposition de jobs Vulkan sur le m\u00eame GPU.)\n\n### 1.3 Moteur et mod\u00e8le pr\u00e9sents (d\u00e9j\u00e0 v\u00e9rifi\u00e9s \u00e0 l'instant en lecture seule)\n\n- `C:\\audio-cpp\\audiocpp_cli.exe` \u2705 pr\u00e9sent (audio.cpp v0.8.0 du 2026-09-16) ;\n- `C:\\Modeles_LLM\\ACE-Step1.5-GGUF\\turbo\\ace-step-1.5-turbo-bf16.gguf` \u2705 pr\u00e9sent (9,4 Gio, paquet monolithique). Rien \u00e0 t\u00e9l\u00e9charger.\n\nSi un jour le mod\u00e8le manquait : `uv run python scripts/download_acestep15_gguf.py turbo`.\n\n---\n\n## 2. Commandes exactes \u00e0 ex\u00e9cuter, dans l'ordre\n\n### \u00c9tape 1 \u2014 contr\u00f4le de charge (cf. \u00a71.1, doit exit 0)\n\n```bash\nuv run python scripts/check_charge_systeme.py\n```\n\n### \u00c9tape 2 \u2014 g\u00e9n\u00e9ration : 3 candidats drone ambient de ~20 s, graines fixes\n\n```bash\nuv run python main.py -w music_bg \"dark ambient drone, cold glacial synth pads, deep sustained low tones, bleak hollow atmosphere, distant metallic shimmer, very slow evolution, instrumental only, no vocals, no drums, no percussion\" --duration 20 --candidats 3 --loop-mode ambient --seed 42 --lufs=-18 -o menu_drone_sombre\n```\n\nD\u00e9tail des options :\n- **prompt en anglais** (r\u00e8gle du d\u00e9p\u00f4t), sobre et sans ancre artiste \u2014 le registre \u00ab nappes sombres / ambient \u00bb est bien ma\u00eetris\u00e9 par ACE-Step (le \u00ab plafond pop \u00bb document\u00e9 dans MEMORY_BANK \u00a71.11 concerne le r\u00e9alisme instrumental rock basse/batterie/guitares, pas les nappes) ;\n- `--duration 20` : cible de boucle \u2248 20 s (le moteur g\u00e9n\u00e8re 28 s pour garder une marge, ACE-Step terminant ses morceaux par un long fondu de sortie) ;\n- `--candidats 3` : 3 propositions g\u00e9n\u00e9r\u00e9es puis d\u00e9partag\u00e9es automatiquement par la qualit\u00e9 de couture (\u0394 dB au raccord boucle) ; toutes sont finalis\u00e9es, la meilleure est promue \u00e0 la racine ;\n- `--loop-mode ambient` : bouclage par crossfade equal-power ~1 s dans la zone d'\u00e9nergie stable \u2014 la bonne strat\u00e9gie pour un drone (le mode `percussive` par d\u00e9faut sert aux musiques \u00e0 tempo) ;\n- `--seed 42` : graines d\u00e9terministes 42/43/44 \u2192 reproductible pour A/B ou reg\u00e9n\u00e9ration (contrat du d\u00e9p\u00f4t) ;\n- `--lufs=-18` : le d\u00e9faut \u221230 LUFS est calibr\u00e9 pour un lit derri\u00e8re une voix off YouTube ; pour une musique de menu Godot autonome, \u221218 LUFS est un niveau plus appropri\u00e9 (le `.ogg` export\u00e9 pour Godot est d\u00e9riv\u00e9 du bed, donc de cette cible) ;\n- `-o menu_drone_sombre` : base du nom des fichiers de sortie.\n\n### \u00c9tape 3 \u2014 aper\u00e7us d'\u00e9coute (la boucle r\u00e9p\u00e9t\u00e9e 3\u00d7 pour juger la couture)\n\n```bash\nuv run python scripts/ecoute_candidat_music_bg.py 1\nuv run python scripts/ecoute_candidat_music_bg.py 2\nuv run python scripts/ecoute_candidat_music_bg.py 3\n```\n\nChaque script produit `ECOUTE_cand<N>_boucle_x3.mp3` (boucle \u00d73 \u00e0 \u221216 LUFS, niveau d'\u00e9coute) : c'est le meilleur test \u00ab tourne sans couture pendant des minutes \u00bb avant int\u00e9gration. (Le script coupe en mode percussive par d\u00e9faut, mais bascule automatiquement en ambiante quand aucune pulsation n'est d\u00e9tect\u00e9e \u2014 ce sera le cas du drone.)\n\n### Variantes optionnelles (si les 3 premiers candidats ne conviennent pas)\n\n```bash\n# Tonalit\u00e9 froide impos\u00e9e au planner (ACE-Step only) :\nuv run python main.py -w music_bg \"dark ambient drone, cold glacial synth pads, bleak hollow atmosphere, very slow evolution, instrumental only, no vocals\" --duration 20 --candidats 3 --loop-mode ambient --seed 52 --lufs=-18 --tonalite \"D minor\" -o menu_drone_sombre_Dm\n\n# Variante DiT 4B distill\u00e9e (~2\u00d7 plus lente, qualit\u00e9 parfois sup\u00e9rieure) :\nuv run python main.py -w music_bg \"dark ambient drone, cold glacial synth pads, bleak hollow atmosphere, very slow evolution, instrumental only, no vocals\" --duration 20 --candidats 3 --loop-mode ambient --seed 42 --lufs=-18 --variante xl-turbo -o menu_drone_sombre_xl\n```\n\n---\n\n## 3. Fichiers de sortie attendus\n\nTout arrive dans **`C:\\GIT\\generator-assets\\output\\music_bg\\`** :\n\n| Fichier | Contenu | Usage |\n|---|---|---|\n| `menu_drone_sombre.ogg` | Boucle OGG Vorbis (d\u00e9riv\u00e9e du bed \u221218 LUFS) | **Le fichier pour Godot** |\n| `menu_drone_sombre_full.wav` | Boucle sans couture 48 kHz PCM16, normalis\u00e9e en pic \u22121 dBFS | Master/source |\n| `menu_drone_sombre_bed.wav` | Version normalis\u00e9e \u221218 LUFS (loudnorm 2 passes ffmpeg) | \u00c9coute de r\u00e9f\u00e9rence niveau jeu |\n| `menu_drone_sombre_preview.mp3` | Aper\u00e7u MP3 192k | \u00c9coute rapide |\n| `recette_mixage_voix.txt` | Recette ffmpeg ducking (pour voix off) | Pas utile pour le jeu, inoffensif |\n| `candidats/cand_N_brut.wav` | G\u00e9n\u00e9ration brute (28 s) de chaque candidat | Re-post-traitement possible |\n| `candidats/cand_N_loop_full.wav` | Boucle compl\u00e8te de chaque candidat | Comparaison |\n| `candidats/cand_N_bed.wav` + `cand_N_preview.mp3` | Chaque candidat finalis\u00e9 | Comparaison |\n| `ECOUTE_cand<N>_boucle_x3.mp3` (apr\u00e8s \u00e9tape 3) | Boucle \u00d73 \u00e0 \u221216 LUFS | **Test de couture \u00e0 l'\u00e9coute** |\n\nInt\u00e9gration Godot : importer le `.ogg`, cocher **Loop** dans l'onglet Import, rejouer via un `AudioStreamPlayer` sur un bus \u00ab Music \u00bb. L'OGG boucle sans trou en 4.x.\n\n---\n\n## 4. Dur\u00e9e estim\u00e9e (machine lib\u00e9r\u00e9e)\n\n- G\u00e9n\u00e9ration : 3 candidats \u00d7 28 s de musique \u00e0 RTF ~1,5 (mesur\u00e9 sur RX 6950 XT, Vulkan) \u2248 **~45 s par candidat**, soit **~2 min 15 s** de g\u00e9n\u00e9ration GPU ;\n- Post-traitement (recherche de couture, v\u00e9rification, loudnorm 2 passes, OGG/MP3) : ~15\u201330 s par candidat ;\n- **Total : ~4 \u00e0 6 minutes** tout compris, hors \u00e9coute. (Pour comparaison, le moteur legacy MiniMax-Music3 prendrait ~25 min par candidat \u2014 d'o\u00f9 le choix d'ACE-Step.)\n\n---\n\n## 5. Notes et r\u00e9serves honn\u00eates\n\n1. **Dur\u00e9e finale l\u00e9g\u00e8rement variable** : en mode ambient, la boucle est d\u00e9coup\u00e9e dans la zone d'\u00e9nergie stable du brut de 28 s \u2192 la boucle fera typiquement ~17\u201321 s, pas exactement 20,0 s. C'est sans cons\u00e9quence pour un menu.\n2. **Post-traitement \u00ab lit de voix \u00bb** : le workflow applique un highpass 80 Hz + un l\u00e9ger creux \u00e0 2,8 kHz (con\u00e7u pour laisser la place \u00e0 une voix off). Le drone garde tout son spectre au-dessus de 80 Hz ; si tu veux du infrabasse < 80 Hz, on le mentionnera et j'ajusterai apr\u00e8s ton verdict.\n3. **`--loop-mode ambient` figure encore \u00ab non test\u00e9 \u00bb dans le statut README** (dat\u00e9 2026-09-06). Les fichiers `ECOUTE_cand<N>_boucle_x3.mp3` sont pr\u00e9cis\u00e9ment l\u00e0 pour valider la couture ; apr\u00e8s ton \u00e9coute je consignerai le verdict dans `docs/MEMORY_BANK.md` / statut README (workflow d\u00e9j\u00e0 existant, rien \u00e0 cr\u00e9er).\n4. **Pas de voix garantie** : `lyrics=[Instrumental]` par d\u00e9faut + \u00ab no vocals \u00bb dans le prompt ; ACE-Step sans paroles = instrumental natif.\n5. **Licence MIT** : aucune mention d'attribution requise pour le jeu (contrairement \u00e0 Music3 qui imposerait une mention).\n\n**Prochaine \u00e9tape d\u00e8s que le GPU se lib\u00e8re** : je relance `check_charge_systeme.py`, et s'il passe j'ex\u00e9cute les \u00e9tapes 1\u21923 d'un bloc, puis je te soumets les 3 `ECOUTE_*.mp3` \u00e0 l'\u00e9coute \u2014 c'est toi qui choisiras le candidat qui part dans Godot.\n"}], "grading": {"expectations": [{"text": "Route vers music_bg (pas chanson/sfx/audio_ambience)", "passed": true, "evidence": "\u00a71 : workflow music_bg choisi, moteur ACE-Step d\u00e9faut, mode ambient justifi\u00e9 pour un drone."}, {"text": "Prompt musical en anglais dans la commande", "passed": true, "evidence": "\u00ab dark ambient drone, cold glacial synth pads... instrumental only, no vocals \u00bb (\u00e9tape 2)."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9 avant lancement", "passed": true, "evidence": "\u00a71.1 + \u00e9tape 1 : check_charge_systeme.py, exit 0 obligatoire, seuils cit\u00e9s."}, {"text": "--seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 (graines 42/43/44 expliqu\u00e9es), variante seed 52 pour tonalit\u00e9."}, {"text": "Validation \u00e0 l'\u00e9coute pr\u00e9vue", "passed": true, "evidence": "\u00c9tape 3 : scripts/ecoute_candidat_music_bg.py 1|2|3, ECOUTE x3 = test de la couture, choix utilisateur final."}, {"text": "Sorties attendues ou dur\u00e9e indiqu\u00e9e", "passed": true, "evidence": "\u00a73 table compl\u00e8te output/music_bg/ + \u00a74 : ~4-6 min, comparaison Music3 ~25 min/candidat."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-1-image-vers-3d-pbr-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "reponse.md", "type": "text", "content": "# Casque PNG \u2192 objet 3D ferm\u00e9 + PBR pour Godot : le plan complet\n\nBonne nouvelle : c'est exactement le cas d'usage du workflow **`mesh_ia`** (TRELLIS.2-4B via\ntrellis.cpp, backend Vulkan) \u2014 et ton casque est m\u00eame **le cas d'\u00e9cole qui a servi \u00e0 valider\nce workflow le 2026-09-06** (\u00ab \u00e9norme \u00e7a marche \u00bb, MEMORY_BANK \u00a71.14). On a donc des dur\u00e9es\net des r\u00e9sultats mesur\u00e9s pr\u00e9cis\u00e9ment sur cette image.\n\nPourquoi pas autre chose :\n- **`mesh3d`** (formes param\u00e9triques Blender) ferait une extrusion 2,5D \u2014 du bas-relief, pas\n  un volume ferm\u00e9. C'est pr\u00e9cis\u00e9ment ce que tu ne veux pas.\n- **`voxel3d`** ferait du voxel pour GridMap, pas un mesh lisse.\n- **`mesh_ia`** inf\u00e8re un **vrai volume ferm\u00e9** (le casque existe \u00ab tout autour \u00bb, on peut le\n  tourner dans Godot) avec **textures PBR** (basecolor / metallic / roughness) embarqu\u00e9es\n  dans le GLB, pr\u00eates pour un `MeshInstance3D` Godot 4.\n\nLe pipeline interne : DINOv3 (conditionnement image) \u2192 flow sparse-structure \u2192 flow shape\nSLAT \u2192 d\u00e9codage mesh FlexiDualGrid avec **rebouchage des trous** (d'o\u00f9 le volume ferm\u00e9) \u2192\nflow texture SLAT + d\u00e9codage PBR \u2192 d\u00e9cimation QEM + atlas UV xatlas \u2192 GLB.\n\n\u26a0\ufe0f **Rien n'a \u00e9t\u00e9 lanc\u00e9 maintenant** : le GPU est occup\u00e9 par un autre travail. R\u00e8gle du d\u00e9p\u00f4t\n(incident document\u00e9, RTF mesur\u00e9 3,3\u00d7 trop lent \u00e0 cause d'une contention GPU) : on ne lance\njamais une g\u00e9n\u00e9ration lourde sur une machine charg\u00e9e. Voici donc le plan \u00e0 ex\u00e9cuter d\u00e8s que\nle GPU est libre \u2014 dans cet ordre.\n\n---\n\n## 1. V\u00e9rifications AVANT de lancer\n\n```bash\n# Depuis la racine du d\u00e9p\u00f4t C:\\GIT\\generator-assets\n\n# a) Contr\u00f4le de charge syst\u00e8me \u2014 OBLIGATOIRE avant toute g\u00e9n\u00e9ration lourde\n#    exit 1 = machine encore occup\u00e9e \u2192 on attend un cr\u00e9neau libre, on ne lance pas\nuv run python scripts/check_charge_systeme.py\n\n# b) V\u00e9rification que les moteurs et mod\u00e8les sont d\u00e9tect\u00e9s\nuv run python main.py --check\n```\n\n\u00c0 savoir sur ces v\u00e9rifications :\n- `check_charge_systeme.py` \u00e9chantillonne CPU/GPU/RAM/VRAM (seuils par d\u00e9faut : CPU 60 %,\n  GPU 40 %, RAM 90 %, VRAM 80 % ; ajustables via `--cpu-threshold` etc. si besoin).\n- Le workflow `mesh_ia` rev\u00e9rifie lui-m\u00eame au d\u00e9marrage que `trellis-cli.exe`\n  (`C:\\trellis\\`) et les **10 GGUF TRELLIS.2 f16** (~16,4 Go, `C:\\Modeles_LLM\\trellis2-gguf`)\n  sont pr\u00e9sents \u2014 il s'interrompt proprement si quelque chose manque.\n- **Une seule g\u00e9n\u00e9ration lourde \u00e0 la fois** (RX 6950 XT 16 Go) : v\u00e9rifier qu'aucun\n  `audiocpp_cli.exe` / `sd-cli.exe` / `trellis-cli.exe` / `ffmpeg.exe` ne tourne, et ne\n  jamais en tuer un en cours.\n\nV\u00e9rification de l'image source \u2014 **d\u00e9j\u00e0 faite, elle est id\u00e9ale** :\n`godot_assets/casque.png` = **512\u00d7512, RGBA, fond transparent**, objet unique centr\u00e9.\nC'est l'entr\u00e9e parfaite pour TRELLIS : l'image \u00e9tant pr\u00e9-d\u00e9tour\u00e9e, l'alpha est conserv\u00e9 tel\nquel et le cutout BiRefNet interne de trellis n'a pas \u00e0 deviner le fond.\n\n---\n\n## 2. Les commandes exactes, dans l'ordre\n\n### \u00c9tape A \u2014 it\u00e9ration rapide \u00e0 la r\u00e9solution 512 (~12 min)\n\nPour juger la forme du volume avant d'investir le master :\n\n```bash\nuv run python main.py -w mesh_ia -i godot_assets/casque.png --res 512 -o casque --seed 42\n```\n\nOptions :\n- `-i godot_assets/casque.png` : ton image source (pas de prompt n\u00e9cessaire, donc pas de\n  g\u00e9n\u00e9ration d'image en amont \u2014 le cha\u00eenage `generate` ne se d\u00e9clenche que sans `-i`) ;\n- `--res 512` : r\u00e9solution de g\u00e9n\u00e9ration 3D d'it\u00e9ration (~11 min ; d\u00e9faut = 512) ;\n- `-o casque` : nom de base des sorties \u2192 dossier `output/mesh_ia/casque/` ;\n- `--seed 42` : graine fix\u00e9e (convention du d\u00e9p\u00f4t) pour reproduire/comparer en A/B.\n\nEnsuite : **inspecter la planche de contr\u00f4le** `casque_512_planche.png` (image source, 4 vues\norbitales Blender, aper\u00e7u de l'atlas PBR). Si la forme ou la texture ne pla\u00eet pas, on relance\n\u00e0 512 avec une autre graine \u2014 c'est la raison d'\u00eatre de cette \u00e9tape (it\u00e9\u00e9rer \u00e0 ~12 min et non\n~1 h).\n\n### \u00c9tape B \u2014 master haute d\u00e9finition \u00e0 la r\u00e9solution 1024, avec version jeu Godot\n\nUne fois la forme valid\u00e9e \u00e0 512 :\n\n```bash\nuv run python main.py -w mesh_ia -i godot_assets/casque.png --res 1024 --faces-cible 30000 -o casque --seed 42\n```\n\nOptions suppl\u00e9mentaires :\n- `--res 1024` : master HD (cascade LR\u2192HR interne) \u2014 atlas PBR 2048\u00b2 au lieu de 1024\u00b2,\n  micro-relief nettement sup\u00e9rieur ;\n- `--faces-cible 30000` : d\u00e9cimation Blender headless optionnelle (collapse d\u00e9limit\u00e9\n  UV/SHARP, **textures PBR conserv\u00e9es**) qui produit un GLB \u00ab jeu \u00bb suppl\u00e9mentaire \u2014 le\n  master pleine qualit\u00e9 est toujours conserv\u00e9 \u00e0 c\u00f4t\u00e9.\n\nChoix de `--faces-cible` (d\u00e9pend de la distance cam\u00e9ra et du nombre d'instances, pas de la\nqualit\u00e9 visuelle puisque les textures sont intactes) :\n- **`30000` = item h\u00e9ros vu de pr\u00e8s** \u2192 c'est la bonne valeur pour un casque \u00e9quip\u00e9 sur un\n  personnage ;\n- `10000` = prop de d\u00e9cor vu \u00e0 2-10 m ; `2000-3000` = clutter r\u00e9p\u00e9t\u00e9 \u00d750 ;\n- garder \u2265 8000 si silhouette tr\u00e8s courb\u00e9e (cornes, drap\u00e9s) \u2014 le casque est courb\u00e9, 30000\n  est confortable.\n\nRemarque : `--res 1536` existe mais n'est pas test\u00e9 (non recommand\u00e9 sans validation) ; les\nvariantes GGUF q4/q8 ne sont pas test\u00e9es non plus \u2014 on reste en f16 valid\u00e9.\n\n---\n\n## 3. Sorties attendues et emplacements\n\nTout atterrit dans **`output/mesh_ia/casque/`** (dossier cr\u00e9\u00e9 par le workflow ; il n'existe\npas encore, aucun \u00e9crasement \u00e0 craindre) :\n\n| Fichier | Contenu | Ordre de grandeur (mesur\u00e9 sur ce casque) |\n| :--- | :--- | :--- |\n| `casque_512.glb` puis `casque_1024.glb` | **Master** volume ferm\u00e9, atlas PBR embarqu\u00e9 | 512 : ~5,3 Mo, ~144 200 faces, atlas 1024\u00b2 \u2022 1024 : ~12 Mo, ~293 356 faces, atlas 2048\u00b2 |\n| `casque_1024_jeu.glb` | GLB d\u00e9cim\u00e9 \u00ab runtime Godot \u00bb (uniquement avec `--faces-cible`) | ~30 000 faces, ~1,5 Mo (mesur\u00e9 : 144 200 \u2192 29 999 en 512) |\n| `casque_<res>_base.png` | Aper\u00e7u de l'**atlas** UV \u2014 \u26a0\ufe0f pas l'image source | \u2014 |\n| `casque_<res>_vue0.png` \u2026 `vue3.png` | 4 rendus orbitaux studio (Blender EEVEE headless) | \u2014 |\n| `casque_<res>_planche.png` | Planche de contr\u00f4le 2\u00d73 : source + 4 vues + atlas | c'est le fichier \u00e0 inspecter pour valider |\n| `casque_<res>.ply` | Maillage brut (bonus) | \u2014 |\n| `casque_<res>_infos.json` | Dur\u00e9es par \u00e9tape, comptages de faces, chemins, seed | \u2014 |\n\nC\u00f4t\u00e9 Godot : glisser `casque_1024_jeu.glb` dans le projet \u2192 import GLTF \u2192 `MeshInstance3D`\ndirectement utilisable (mat\u00e9riau PBR inclus dans le GLB). Le master `casque_1024.glb` reste\nen archive si on veut re-d\u00e9cimer \u00e0 une autre cible plus tard.\n\n---\n\n## 4. Dur\u00e9es estim\u00e9es (RX 6950 XT, Vulkan, GGUF f16 \u2014 mesur\u00e9es sur CE casque)\n\n| \u00c9tape | res 512 (it\u00e9ration) | res 1024 (master) |\n| :--- | :--- | :--- |\n| G\u00e9n\u00e9ration TRELLIS.2 | **10 min 44 s** | **55 min 10 s** |\n| D\u00e9cimation `--faces-cible` (si pr\u00e9sente) | ~40 s | ~1-2 min |\n| Rendus Blender + planche | ~1 min | ~1-2 min |\n| **TOTAL** | **~11-12 min** | **~57-60 min** |\n\nPlan complet (it\u00e9ration 512 + master 1024) : **environ 1 h 10 de GPU**, \u00e0 lancer en deux\ncr\u00e9neaux si besoin. Le workflow affiche la progression en direct (\u00e9tapes 1/6 \u2192 6/7) et\nr\u00e9capitule les dur\u00e9es par \u00e9tape \u00e0 la fin ; tout est consign\u00e9 dans `_infos.json`.\n\nNote perf : le RDNA2 n'a pas de \u00ab matrix cores \u00bb Vulkan, on est ~4-6\u00d7 plus lent que les\nbenchmarks Strix Halo du projet \u2014 d'o\u00f9 la r\u00e8gle pratique : **it\u00e9rer \u00e0 512, master \u00e0 1024**.\n\n---\n\n## 5. R\u00e9capitulatif op\u00e9rationnel\n\n1. Attendre la fin du travail GPU en cours (aucun lancement maintenant).\n2. `uv run python scripts/check_charge_systeme.py` \u2192 exit 0 requis.\n3. `uv run python main.py -w mesh_ia -i godot_assets/casque.png --res 512 -o casque --seed 42` (~12 min).\n4. Inspecter `output/mesh_ia/casque/casque_512_planche.png` \u2192 valider la forme/le volume.\n5. Si OK : `uv run python main.py -w mesh_ia -i godot_assets/casque.png --res 1024 --faces-cible 30000 -o casque --seed 42` (~1 h).\n6. Int\u00e9grer `output/mesh_ia/casque/casque_1024_jeu.glb` dans Godot.\n\nLicence : trellis.cpp MIT, TRELLIS.2-4B MIT, DINOv3 Apache-2.0, BiRefNet MIT \u2014 usage jeu +\ncha\u00eene sans aucune contrainte. Comme l'esth\u00e9tique 3D est subjective, je te soumettrai la\nplanche de contr\u00f4le \u00e0 chaque \u00e9tape avant de passer \u00e0 la suivante.\n"}], "grading": {"expectations": [{"text": "Route vers mesh_ia avec -i, extrusion 2.5D \u00e9cart\u00e9e", "passed": true, "evidence": "\u00ab Pourquoi pas autre chose \u00bb : mesh3d = extrusion 2,5D bas-relief, voxel3d \u00e9cart\u00e9s ; mesh_ia = volume ferm\u00e9."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9", "passed": true, "evidence": "\u00a71.a : check_charge_systeme.py obligatoire avant g\u00e9n\u00e9ration lourde."}, {"text": "Prompt \u00e9ventuel en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 sur les deux commandes (pas de prompt n\u00e9cessaire avec -i, donc N/A prompt \u2014 correct)."}, {"text": "Strat\u00e9gie r\u00e9solution 512 puis 1024", "passed": true, "evidence": "\u00c9tape A it\u00e9ration 512 (~12 min) puis \u00c9tape B master 1024 ; r\u00e8gle r\u00e9p\u00e9t\u00e9e en \u00a74."}, {"text": "--faces-cible mentionn\u00e9 avec ordre de grandeur pertinent", "passed": true, "evidence": "--faces-cible 30000 = item h\u00e9ros/casque \u00e9quip\u00e9, rep\u00e8res 10000/2000-3000/\u22658000 cit\u00e9s."}, {"text": "Dur\u00e9es (~11 min / ~55 min) ou sorties indiqu\u00e9es", "passed": true, "evidence": "\u00a74 tableau mesur\u00e9 (10 min 44 s / 55 min 10 s) + \u00a73 table output/mesh_ia/casque/ compl\u00e8te."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-1-image-vers-3d-pbr-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "reponse.md", "type": "text", "content": "# Casque PNG \u2192 objet 3D volumique PBR pour Godot\n\n**R\u00e9ponse courte : c'est exactement le cas d'usage du workflow `mesh_ia`** (TRELLIS.2-4B via trellis.cpp, Vulkan) \u2014 valid\u00e9 par toi le 2026-09-06, et ironie du sort, **sur cette m\u00eame image de casque** (c'est le cas d'\u00e9cole du README : \u00ab impossible via extrusion 2,5D \u00bb). Il produit un **vrai maillage ferm\u00e9 volumique inf\u00e9r\u00e9 par IA** \u2014 pas une extrusion plate \u2014 avec **textures PBR int\u00e9gr\u00e9es** (basecolor / metallic / roughness) dans un `.glb` pr\u00eat pour Godot 4.\n\n## Pourquoi `mesh_ia` et pas `mesh3d`\n\n- `mesh3d --shape cutout` = extrusion 2,5D (bas-relief \u00e0 partir d'un masque) \u2014 c'est ce que tu ne veux pas.\n- `mesh_ia` = TRELLIS.2-4B (transformer de flow-matching, Microsoft, MIT) ex\u00e9cut\u00e9 par **trellis.cpp** en C++/GGML Vulkan \u2014 m\u00eame philosophie que sd-cli/audio.cpp, z\u00e9ro PyTorch. Pipeline : conditionnement DINOv3 \u2192 structure sparse \u2192 shape SLAT (d\u00e9codage FlexiDualGrid **avec rebouchage des trous** = volume ferm\u00e9) \u2192 texture SLAT + **d\u00e9codage PBR** \u2192 d\u00e9cimation QEM + atlas UV xatlas. Le GLB sortant a un mat\u00e9riau PBR complet, atlas embarqu\u00e9.\n\n## \u26a0\ufe0f Situation actuelle : GPU occup\u00e9 \u2192 on ne lance rien maintenant\n\nLe GPU est pris par un autre travail. **Aucune commande n'est ex\u00e9cut\u00e9e maintenant** \u2014 conform\u00e9ment \u00e0 la r\u00e8gle du d\u00e9p\u00f4t (jamais de g\u00e9n\u00e9ration lourde sur une machine charg\u00e9e ; cf. l'incident smoke test v0.7.3 : RTF mesur\u00e9 3,3\u00d7 trop lent \u00e0 cause d'une contention GPU). Voici le plan complet \u00e0 d\u00e9rouler quand la machine sera libre.\n\n---\n\n## 1. V\u00e9rifications AVANT de lancer (obligatoires, dans l'ordre)\n\nToutes les commandes se lancent **depuis la racine du d\u00e9p\u00f4t** `C:\\GIT\\generator-assets` (les sorties sont \u00e9crites en chemin relatif `output/...`).\n\n### a) Charge syst\u00e8me \u2014 LE garde-fou bloquant\n\n```bash\ncd /c/GIT/generator-assets && uv run python scripts/check_charge_systeme.py\n```\n\n- **exit 0** \u2192 on peut lancer. **exit 1** \u2192 machine occup\u00e9e (CPU/GPU/RAM/VRAM au-dessus des seuils), on attend un cr\u00e9neau libre. Seuils ajustables au besoin (`--cpu-threshold`, `--gpu-threshold`, `--ram-threshold`, `--vram-threshold`, `--duration`).\n- C'est ce check qui d\u00e9cide du moment du lancement \u2014 tant que le GPU est occup\u00e9 par l'autre travail, il doit renvoyer 1.\n\n### b) Image source \u2014 d\u00e9j\u00e0 v\u00e9rifi\u00e9e pour toi\n\n`godot_assets/casque.png` : **512\u00d7512, RGBA, fond transparent** \u2014 c'est l'entr\u00e9e id\u00e9ale pour TRELLIS (l'alpha est conserv\u00e9 par trellis, donc pas de d\u00e9tourage BiRefNet d\u00e9clench\u00e9 ; `--bg-removal auto` par d\u00e9faut le d\u00e9tecte tout seul). Objet unique, centr\u00e9, non coup\u00e9 : la checklist \u00ab bonne source \u00bb du README est d\u00e9j\u00e0 remplie. Rien \u00e0 pr\u00e9parer.\n\n### c) Cha\u00eene TRELLIS \u2014 d\u00e9j\u00e0 v\u00e9rifi\u00e9e \u00e9galement\n\n- `C:\\trellis\\trellis-cli.exe` : pr\u00e9sent (v0.6.0).\n- Les **10 GGUF requis** (16,4 Go, f16) dans `C:\\Modeles_LLM\\trellis2-gguf\\` : tous pr\u00e9sents (`ss_flow/ss_dec/shape_flow_512/shape_flow_1024/shape_dec/tex_flow_512/tex_flow_1024/tex_dec/dinov3/birefnet`).\n- De toute fa\u00e7on le workflow auto-v\u00e9rifie \u00e7a au d\u00e9marrage (`verifier_trellis()`) et refuse de tourner si un fichier manque.\n- Blender (headless) sert aux rendus de contr\u00f4le et \u00e0 la d\u00e9cimation optionnelle \u2014 d\u00e9j\u00e0 utilis\u00e9 par les autres workflows du d\u00e9p\u00f4t, et son absence est non bloquante (rendus saut\u00e9s, master GLB quand m\u00eame produit).\n\n### d) Divers\n\n- Espace disque d\u00e9risoire : ~5-12 Mo par GLB + un .ply interm\u00e9diaire.\n- Veille consult\u00e9e : aucune maj trellis.cpp en attente (`maj_en_attente.json` vide au 2026-09-17), la stack est \u00e0 jour.\n\n---\n\n## 2. Les commandes exactes, dans l'ordre\n\n**Strat\u00e9gie recommand\u00e9e : it\u00e9rer en 512 (~12 min) pour valider le volume sur la planche de contr\u00f4le, puis master en 1024 (~1 h) avec d\u00e9cimation \u00ab jeu \u00bb.** La graine est fix\u00e9e pour la reproductibilit\u00e9 A/B.\n\n### \u00c9tape 1 \u2014 it\u00e9ration rapide res 512 (~10-12 min au total)\n\n```bash\ncd /c/GIT/generator-assets && uv run python main.py -w mesh_ia -i godot_assets/casque.png --res 512 --seed 42 -o casque\n```\n\nPuis **inspecter la planche** `output/mesh_ia/casque/casque_512_planche.png` (source + 4 vues orbitales + texture PBR) : le volume est-il ferm\u00e9 et fid\u00e8le ? Le casque \u00e9tant un objet sym\u00e9trique assez classique, TRELLIS le g\u00e8re tr\u00e8s bien \u2014 c'est l'image de validation historique. Si la silhouette ou le rendu textur\u00e9 d\u00e9coit, c'est ici qu'on it\u00e8re (12 min le cycle, pas 1 h).\n\n### \u00c9tape 2 \u2014 master res 1024 + GLB \u00ab jeu \u00bb d\u00e9cim\u00e9 (~57-60 min au total)\n\n```bash\ncd /c/GIT/generator-assets && uv run python main.py -w mesh_ia -i godot_assets/casque.png --res 1024 --faces-cible 30000 --seed 42 -o casque\n```\n\nExplication des options :\n- `--res 1024` : cascade LR\u2192HR, atlas PBR 2048\u00b2, micro-relief (meill\u00e9 d'armure, rayures) \u2014 mesur\u00e9 \u00e0 55 min 10 s sur ce casque pr\u00e9cis.\n- `--faces-cible 30000` : d\u00e9cimation Blender headless (collapse, d\u00e9limit\u00e9e UV/SHARP, **textures PBR conserv\u00e9es**) \u2192 GLB \u00ab jeu \u00bb suppl\u00e9mentaire. **30000 = item h\u00e9ro vu de pr\u00e8s** (casque \u00e9quip\u00e9 / arme tenue). Rep\u00e8res : 10000 = prop de d\u00e9cor vu \u00e0 2-10 m, 2000-3000 = clutter r\u00e9p\u00e9t\u00e9 \u00d750, et garder \u22658000 pour les silhouettes tr\u00e8s courbes. Le **master complet est toujours conserv\u00e9** \u00e0 c\u00f4t\u00e9.\n- `--seed 42` : reproductibilit\u00e9 (relancer redonne le m\u00eame r\u00e9sultat ; indispensable pour l'A/B 512 vs 1024).\n- `-o casque` : nom de base des sorties (dossier + fichiers).\n\nVariante : si la 512 te convainc imm\u00e9diatement (elle avait \u00e9t\u00e9 valid\u00e9e en 2026-09-06), tu peux sauter l'\u00e9tape 1 et lancer directement la 1024 \u2014 mais 12 min de contr\u00f4le avant 1 h de calcul, c'est une assurance rentable.\n\n---\n\n## 3. Fichiers de sortie attendus\n\nTout atterrit dans **`C:\\GIT\\generator-assets\\output\\mesh_ia\\casque\\`** :\n\n| Fichier | Contenu | \u00c9tape |\n|---|---|---|\n| `casque_512.glb` | **GLB master 512** \u2014 maillage ferm\u00e9 + PBR (atlas 1024\u00b2 embarqu\u00e9), ~5,3 Mo, ~144 k faces | 1 |\n| `casque_512.ply` | Maillage brut interm\u00e9diaire | 1 |\n| `casque_512_base.png` | Aper\u00e7u de l'**atlas** de textures (\u26a0\ufe0f pas l'image source) | 1 |\n| `casque_512_vue0.png` \u2026 `vue3.png` | 4 rendus orbitaux studio (EEVEE, azimuts 25/115/205/295\u00b0) | 1 |\n| `casque_512_planche.png` | Planche de contr\u00f4le 2\u00d73 : source + 4 vues + atlas | 1 |\n| `casque_512_infos.json` | Dur\u00e9es par \u00e9tape, nb de faces, chemins, graine | 1 |\n| `casque_1024.glb` | **GLB master 1024** \u2014 ~12 Mo, ~293 k faces, atlas 2048\u00b2 | 2 |\n| `casque_1024_jeu.glb` | **GLB jeu d\u00e9cim\u00e9** (~30 k faces, ~1,5 Mo) \u2014 celui qu'on met dans Godot | 2 |\n| `casque_1024.ply`, `_base.png`, `_vue0-3.png`, `_planche.png`, `_infos.json` | Idem \u00e9tape 1 en 1024 | 2 |\n\n(\u00c0 noter : les sorties de la validation historique existent toujours dans `output/trellis_smoke/` \u2014 `casque_512.glb`, `casque_1024.glb` et leurs planches \u2014 si tu veux comparer avant m\u00eame de relancer.)\n\n## 4. Dur\u00e9es estim\u00e9es (RX 6950 XT, Vulkan, GGUF f16 \u2014 mesures r\u00e9elles du 2026-09-06 sur CE casque)\n\n| \u00c9tape | res 512 | res 1024 |\n|---|---|---|\n| G\u00e9n\u00e9ration TRELLIS.2 | **8 min 53 s \u2013 10 min 44 s** | **55 min 10 s** (cascade LR\u2192HR) |\n| D\u00e9cimation `--faces-cible` | \u2014 (non utilis\u00e9e) | ~1-2 min |\n| Rendus Blender + planche | ~1 min | ~1-2 min |\n| **Total** | **~10-12 min** | **~57-60 min** |\n\nPourquoi c'est lent : le RDNA2 n'a pas de \u00ab matrix cores \u00bb Vulkan \u2192 ~4-6\u00d7 plus lent que les benchmarks Strix Halo du projet. D'o\u00f9 la r\u00e8gle pratique : **512 pour it\u00e9rer, 1024 pour le master.** (`--res 1536` existe mais non mesur\u00e9.)\n\n## 5. Int\u00e9gration dans Godot\n\n1. Copier **`casque_1024_jeu.glb`** dans le projet Godot (le master 144-293 k faces reste en r\u00e9serve pour d'\u00e9ventuels retraits/zbrusheries).\n2. Glisser-d\u00e9poser dans la sc\u00e8ne : Godot l'importe en `PackedScene` avec `MeshInstance3D` et son mat\u00e9riau **PBR complet** (basecolor/metallic/roughness de l'atlas, embarqu\u00e9 dans le GLB \u2014 rien d'autre \u00e0 brancher, pas de `.tres` \u00e0 cr\u00e9er contrairement au workflow `material3d`).\n3. Ajuster l'\u00e9chelle/rotation selon la convention de ton projet (TRELLIS sort un objet \u00e0 l'\u00e9chelle unitaire environ, Y-up comme Godot).\n\n## Points de vigilance connus (MEMORY_BANK \u00a71.14)\n\n- `_base.png` = aper\u00e7u de l'atlas, **pas** l'image source \u2014 ne pas s'en \u00e9tonner.\n- La d\u00e9cimation ne touche **pas** aux textures : choisir `--faces-cible` selon la distance cam\u00e9ra / nombre d'instances, pas selon la qualit\u00e9 visuelle.\n- Chaque run log un r\u00e9cap par \u00e9tape et \u00e9crit `<nom>_<res>_infos.json` \u2014 \u00e0 consulter pour les dur\u00e9es r\u00e9elles.\n\n---\n\n**Prochaine action concr\u00e8te : d\u00e8s que le GPU se lib\u00e8re, lancer `uv run python scripts/check_charge_systeme.py` ; s'il passe (exit 0), encha\u00eener \u00e9tape 1 puis \u00e9tape 2 ci-dessus.** Dis-moi quand la machine est libre et je d\u00e9roule le plan.\n"}], "grading": {"expectations": [{"text": "Route vers mesh_ia avec -i, extrusion 2.5D \u00e9cart\u00e9e", "passed": true, "evidence": "\u00a7 \u00ab Pourquoi mesh_ia et pas mesh3d \u00bb : cutout = extrusion 2,5D rejet\u00e9e ; TRELLIS.2 pipeline d\u00e9taill\u00e9."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9", "passed": true, "evidence": "\u00a71.a : check_charge_systeme.py, exit 0/1, seuils ajustables cit\u00e9s."}, {"text": "Prompt \u00e9ventuel en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 sur les deux commandes (pas de prompt avec -i, N/A correct)."}, {"text": "Strat\u00e9gie r\u00e9solution 512 puis 1024", "passed": true, "evidence": "\u00ab it\u00e9rer en 512 (~12 min)... puis master en 1024 (~1 h) \u00bb, variante saut d'\u00e9tape document\u00e9e."}, {"text": "--faces-cible mentionn\u00e9 avec ordre de grandeur pertinent", "passed": true, "evidence": "--faces-cible 30000 = item h\u00e9ro vu de pr\u00e8s + rep\u00e8res complets (10000, 2000-3000, \u22658000)."}, {"text": "Dur\u00e9es (~11 min / ~55 min) ou sorties indiqu\u00e9es", "passed": true, "evidence": "\u00a74 mesures r\u00e9elles (8 min 53 s-10 min 44 s / 55 min 10 s) + \u00a73 table exhaustive des fichiers."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-2-plan-video-voix-robot-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "reponse.md", "type": "text", "content": "# Intro cha\u00eene YouTube \u2014 plan cin\u00e9matique 5 s + voix robot\n\nRien n'a \u00e9t\u00e9 lanc\u00e9 : le GPU est actuellement occup\u00e9 par un autre travail. Voici le plan\nd'ex\u00e9cution complet, pr\u00eat \u00e0 d\u00e9clencher d\u00e8s qu'un cr\u00e9neau libre se pr\u00e9sente.\n\n## 0. Ce que j'ai choisi (routage)\n\n- **Vid\u00e9o** : workflow `monoplan_ia` \u2014 plan-s\u00e9quence cin\u00e9matique depuis une image fixe\n  (LTX-2.5 I2V + ralenti motion-compens\u00e9 + zoom pur con\u00e7u). C'est la recette valid\u00e9e\n  utilisateur du 2026-09-10 (\u00ab c'est parfait, r\u00e9sultat magnifique \u00bb \u2014 intro Vent-Gris) ;\n  c'est aussi le workflow utilis\u00e9 par `ai-doc2video` pour les hooks cin\u00e9matiques.\n- **Voix** : workflow `voix_robot` \u2014 recette VALID\u00c9E et fig\u00e9e le 2026-09-17\n  (Kokoro `af_heart`, pitch +30 %, ring modulation 120 Hz, tempo 0,65, gain \u22124 dB).\n- Le travelling avant lent est obtenu par la combinaison valid\u00e9e : prompt de mouvement\n  \u00ab dolly-in \u00bb pendant la g\u00e9n\u00e9ration + rampe de zoom con\u00e7ue 1.10 \u2192 1.32 par-dessus le\n  ralenti \u2014 aucune mesure de tracking dans le warp, donc aucune vibration de cam\u00e9ra possible.\n\n## 1. V\u00e9rifications AVANT de lancer (dans l'ordre)\n\n1. **Cr\u00e9neau GPU libre (bloquant)** :\n   ```bash\n   uv run python scripts/check_charge_systeme.py\n   ```\n   Exit 0 obligatoire. Tant que le GPU est occup\u00e9 par l'autre travail, on **attend** \u2014\n   exit 1 = on ne lance pas (incident document\u00e9 : RTF mesur\u00e9 3,3\u00d7 trop lent \u00e0 cause d'une\n   contention GPU). Seuils ajustables (`--cpu-threshold`, `--gpu-threshold`, \u2026) si besoin.\n2. **Moteurs et mod\u00e8les d\u00e9tect\u00e9s** :\n   ```bash\n   uv run python main.py --check\n   ```\n   V\u00e9rifie sd-cli/LTX-2.5 et audio.cpp ; c\u00f4t\u00e9 kokoro, le binaire avec eSpeak embarqu\u00e9 est\n   r\u00e9solu automatiquement par le workflow (MEMORY_BANK \u00a71.21).\n3. **\u26a0\ufe0f Image source absente** : `output/scene_intro.png` **n'existe pas actuellement dans\n   le d\u00e9p\u00f4t** (v\u00e9rifi\u00e9 \u00e0 l'instant). Deux options :\n   - (a) tu y d\u00e9poses ton image (n'importe quel format/ratio : le workflow recadre\n     automatiquement en 16:9 832\u00d7480 par crop Lanczos) ;\n   - (b) je la g\u00e9n\u00e8re d'abord avec la commande 0 ci-dessous.\n4. **Une seule g\u00e9n\u00e9ration lourde \u00e0 la fois** : vid\u00e9o d'abord (~20 min), la voix ensuite \u2014\n   jamais en parall\u00e8le, les moteurs se battent pour les 16 Go de VRAM.\n5. V\u00e9rifier qu'aucun `sd-cli.exe` / `audiocpp_cli.exe` / `ffmpeg.exe` ne tourne au d\u00e9marrage\n   (et ne jamais tuer celui de l'autre travail en cours).\n6. `--seed 42` fix\u00e9e partout (reproductibilit\u00e9 A/B, contrat des d\u00e9p\u00f4ts consommateurs).\n\n## 2. Les commandes exactes, dans l'ordre\n\n### Commande 0 \u2014 secours, uniquement si `output/scene_intro.png` n'existe pas encore\n\n```bash\nuv run python main.py -w generate \"dark server room interior, long rows of black server racks with blinking status LEDs, cold blue light, thin haze, cinematic wide shot\" -t prop --seed 42 -o scene_intro -d output\n```\n\n(~1-2 min, Flux 1024\u00b2. \u00c0 valider visuellement avant de lancer la vid\u00e9o : c'est elle qui\nfixe le cadrage du plan. Prompt en anglais, r\u00e8gle du d\u00e9p\u00f4t.)\n\n### Commande 1 \u2014 le plan cin\u00e9matique 5 s\n\n```bash\nuv run python main.py -w monoplan_ia \"Slow cinematic dolly-in through a dark server room, long rows of black server racks with blinking status LEDs, thin haze drifting in cold blue light, moody sci-fi atmosphere\" -i output/scene_intro.png --monoplan-duration 5 --ambiance \"dark server room hum, low server fan drone, faint electrical buzz\" --seed 42 -o intro_chaine -d output/monoplan_ia\n```\n\nExplication des choix :\n- **prompt en anglais** (r\u00e8gle du d\u00e9p\u00f4t) : il d\u00e9crit le mouvement de cam\u00e9ra + la sc\u00e8ne \u2014\n  c'est lui qui pilote le travelling avant pendant la g\u00e9n\u00e9ration LTX-2.5 ;\n- `--monoplan-duration 5` : 65 trames g\u00e9n\u00e9r\u00e9es (d\u00e9faut = plafond GPU stable, max ~81) puis\n  ralenties avec interpolation motion-compens\u00e9e vers exactement 5 s \u2014 le ralenti divise la\n  respiration cam\u00e9ra du mod\u00e8le par le facteur d'\u00e9tirement, d'o\u00f9 l'aspect \u00ab travelling lent \u00bb ;\n- `--zoom-debut/--zoom-fin` **laiss\u00e9s aux d\u00e9fauts valid\u00e9s 1.10 \u2192 1.32** : la rampe de zoom\n  pur smootherstep par-dessus le ralenti, c'est elle qui \u00ab signe \u00bb l'avanc\u00e9e vers les baies ;\n- `--ambiance` : lit sonore IA optionnel (SA3 Small SFX, audio.cpp) \u00ab salle serveur \u00bb \u2014\n  mux\u00e9 automatiquement dans une version d'\u00e9coute `_avec_ambiance.mp4`. Pour une intro de\n  cha\u00eene c'est un vrai plus ; on peut le retirer si tu pr\u00e9f\u00e8res poser la voix sur silence ;\n- `--seed 42` : reproductibilit\u00e9 ;\n- `-d output/monoplan_ia` : pour que tout atterrisse proprement dans `output/monoplan_ia/`\n  (sinon le d\u00e9faut du CLI \u00e9crit dans `godot_assets/`).\n\n### Commande 2 \u2014 la voix robot\n\n```bash\nuv run python main.py -w voix_robot \"Welcome to the system, human.\" --seed 42 -o welcome_robot\n```\n\n- **Aucune option `--robot-*`** : les d\u00e9fauts SONT la recette valid\u00e9e (17 essais, verdict\n  utilisateur \u00ab c'est bien \u00bb). On ne modifie pas pitch/ringmod/tempo/gain sans accord explicite.\n- \u00c0 ce tempo (0,65), la r\u00e9plique durera ~4-5 s : elle tient dans le plan de 5 s.\n\n### Commande 3 \u2014 bonus (CPU seul, pas de GPU) : monter la voix sur l'ambiance\n\n```bash\nffmpeg -i output/monoplan_ia/intro_chaine_5.0s_1080p_avec_ambiance.mp4 -i output/voix_robot/welcome_robot/welcome_robot.wav -filter_complex \"[1:a]adelay=400:all=1[voix];[0:a][voix]amix=inputs=2:duration=first:weights='0.35 1.0'[aout]\" -map 0:v -map \"[aout]\" -c:v copy -c:a aac -b:a 192k output/monoplan_ia/intro_chaine_5.0s_final_intro.mp4\n```\n\n- Voix en entr\u00e9e \u00e0 400 ms, ambiance ramen\u00e9e \u00e0 35 % pour que la voix robot passe devant ;\n  `duration=first` coupe \u00e0 5 s pile. Le `adelay` est ajustable (300-800 ms selon le go\u00fbt).\n- Si tu pr\u00e9f\u00e8res un ducking automatique de l'ambiance sous la voix (recette sidechaincompress\n  valid\u00e9e du d\u00e9p\u00f4t, comme pour les lits musicaux des voix off), dis-le-moi \u2014 je pr\u00e9pare la commande.\n\n### Variante diffusion \u2014 master 4K UHD (recommand\u00e9 pour YouTube)\n\nLe pi\u00e8ge YouTube : une source 1080p est \u00e9cras\u00e9e par la compression AVC1 (~4-6 Mbps) ; un\nmaster 4K force le profil haut d\u00e9bit VP09/AV01, m\u00eame pour les spectateurs en 1080p. Donc :\nd'abord on valide le 1080p (commande 1), puis on produit le master 4K **sans reg\u00e9n\u00e9rer le\nplan** en reprenant les trames brutes :\n\n```bash\nuv run python main.py -w monoplan_ia --monoplan-source output/monoplan_ia/intro_chaine_brut.webm --monoplan-duration 5 --4k --seed 42 -o intro_chaine_4k -d output/monoplan_ia\n```\n\n(Upscale IA 4x-UltraSharp des 65 trames brutes + ralenti/zoom en 3328\u00d71920 + conform\n3840\u00d72160 @ 30 fps h264_amf ~45 Mbps. La voix se remonte dessus avec la commande 3 en\nchangeant simplement le nom du fichier d'entr\u00e9e vid\u00e9o.)\n\n## 3. Fichiers de sortie attendus\n\n| \u00c9tape | Fichier | Emplacement |\n| :--- | :--- | :--- |\n| 0 (secours) | `scene_intro.png` | `output/` |\n| 1 | `intro_chaine_amorce_832x480.png` (amorce recadr\u00e9e 16:9) | `output/monoplan_ia/` |\n| 1 | `intro_chaine_brut.webm` (65 trames LTX brutes \u2014 sert \u00e0 la reprise 4K) | `output/monoplan_ia/` |\n| 1 | `intro_chaine_5.0s_1080p_ralenti.mp4` (interm\u00e9diaire) | `output/monoplan_ia/` |\n| 1 | `intro_chaine_5.0s_1080p.mp4` (**master muet**) | `output/monoplan_ia/` |\n| 1 | `intro_chaine_ambiance.wav` (lit sonore SA3) | `output/monoplan_ia/` |\n| 1 | `intro_chaine_5.0s_1080p_avec_ambiance.mp4` (master + ambiance) | `output/monoplan_ia/` |\n| 2 | `welcome_robot.wav` (PCM 16-bit 24 kHz, l'effet appliqu\u00e9) | `output/voix_robot/welcome_robot/` |\n| 2 | `welcome_robot.mp3` (copie d'\u00e9coute) | `output/voix_robot/welcome_robot/` |\n| 2 | `welcome_robot_brut.wav` (TTS brut \u2014 pour retoucher l'effet sans reg\u00e9n\u00e9rer) | `output/voix_robot/welcome_robot/` |\n| 3 (bonus) | `intro_chaine_5.0s_final_intro.mp4` (vid\u00e9o + ambiance + voix) | `output/monoplan_ia/` |\n| Variante 4K | `intro_chaine_4k_5.0s_4k.mp4` (3840\u00d72160 @ 30 fps) | `output/monoplan_ia/` |\n\n## 4. Dur\u00e9es estim\u00e9es (RX 6950 XT, machine sinon inoccup\u00e9e)\n\n| \u00c9tape | Dur\u00e9e |\n| :--- | :--- |\n| Commande 1 \u2014 g\u00e9n\u00e9ration LTX (65 trames, 8 steps) | ~15 min |\n| Commande 1 \u2014 ralenti mci + zoom + ambiance + mux | ~4 min |\n| Commande 2 \u2014 voix robot (TTS kokoro + cha\u00eene FFmpeg) | ~1-2 min |\n| Commande 3 \u2014 assemblage ffmpeg (CPU seul) | < 1 min |\n| **Total GPU occup\u00e9 (commandes 1 + 2)** | **~20-22 min** |\n| Variante 4K ensuite (upscale IA + cha\u00eene 4K, sans reg\u00e9n\u00e9ration LTX) | ~18 min de plus |\n\n\u00c0 relire au moment de lancer : ces estimations supposent la machine inoccup\u00e9e \u2014 d'o\u00f9 le\ngate `check_charge_systeme.py` en \u00e9tape 1.\n\n## 5. Apr\u00e8s la g\u00e9n\u00e9ration (r\u00e8gles du d\u00e9p\u00f4t)\n\n- Je te livre les chemins des fichiers + la seed (42) ;\n- rendu subjectif : je te fais **\u00e9couter la voix et regarder le plan avant toute\n  industrialisation** (r\u00e8gle : jamais de workflow pour un test non valid\u00e9) ;\n- si la combinaison \u00ab plan + voix \u00bb est valid\u00e9e comme intro r\u00e9utilisable de la cha\u00eene, on\n  en discutera la mise en workflow r\u00e9utilisable ; sinon je consigne dans MEMORY_BANK ;\n- \u00e9cueil \u00e9ventuel (device-lost Vulkan LTX au-del\u00e0 de ~81 trames, etc.) \u2192 consign\u00e9 dans\n  MEMORY_BANK. On reste \u00e0 65 trames, sous le plafond.\n\n**Prochaine action** : d\u00e8s que le GPU est libre, je d\u00e9roule les v\u00e9rifications (section 1)\npuis les commandes 0\u21923 dans l'ordre. Dis-moi aussi si tu veux le master 4K directement\n(`--4k` \u00e0 la commande 1, ~18 min au lieu de ~20 pour le 1080p, et dans ce cas pas besoin\nde la variante de reprise).\n"}], "grading": {"expectations": [{"text": "Route vers monoplan_ia (pas video/h3_ref2va)", "passed": true, "evidence": "\u00a70 : monoplan_ia = plan-s\u00e9quence cin\u00e9matique depuis image fixe, recette valid\u00e9e 2026-09-10."}, {"text": "Contr\u00f4le de charge syst\u00e8me AVANT la vid\u00e9o", "passed": true, "evidence": "\u00a71.1 bloquant : check_charge_systeme.py exit 0 obligatoire ; une seule g\u00e9n\u00e9ration lourde \u00e0 la fois."}, {"text": "Prompt vid\u00e9o en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "\u00ab Slow cinematic dolly-in through a dark server room... \u00bb + --seed 42 (et seed 42 sur la voix)."}, {"text": "Route vers voix_robot avec recette par d\u00e9faut (pas de r\u00e9glages invent\u00e9s)", "passed": true, "evidence": "\u00ab Aucune option --robot-* : les d\u00e9fauts SONT la recette valid\u00e9e (17 essais) \u00bb."}, {"text": "Dur\u00e9e estim\u00e9e r\u00e9aliste", "passed": true, "evidence": "\u00a74 : LTX ~15 min + post ~4 min + voix 1-2 min = ~20-22 min GPU ; 4K +18 min."}, {"text": "Sorties attendues indiqu\u00e9es", "passed": true, "evidence": "\u00a73 table compl\u00e8te : intro_chaine_5.0s_1080p.mp4, _avec_ambiance, welcome_robot.wav/mp3/_brut.wav, 4K."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}, {"id": "eval-2-plan-video-voix-robot-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "reponse.md", "type": "text", "content": "# Plan de production \u2014 Intro cha\u00eene YouTube : plan cin\u00e9matique 5 s + voix de robot\n\n**Demande** : plan cin\u00e9matique de 5 secondes \u00e0 partir de `output/scene_intro.png` (travelling avant lent, ambiance salle serveur sombre) + voix de robot qui dit \u00ab Welcome to the system, human. \u00bb\n\n**R\u00e9ponse courte** : les deux briques existent d\u00e9j\u00e0 comme workflows valid\u00e9s du d\u00e9p\u00f4t \u2014\n`monoplan_ia` (plan-s\u00e9quence cin\u00e9matique depuis une image, recette valid\u00e9e le 2026-09-10,\nMEMORY_BANK \u00a71.17) et `voix_robot` (Kokoro-82M + ring modulation, recette valid\u00e9e\n **aujourd'hui m\u00eame** le 2026-09-17, MEMORY_BANK \u00a71.21). Rien \u00e0 inventer, deux commandes suffisent.\n\n\u26a0\ufe0f **Rien n'est lanc\u00e9 maintenant** : le GPU est occup\u00e9 par un autre travail. Conform\u00e9ment \u00e0 la\nr\u00e8gle du d\u00e9p\u00f4t, `scripts/check_charge_systeme.py` doit retourner exit 0 avant toute g\u00e9n\u00e9ration\nlourde (l'incident du smoke test v0.7.3 du 2026-09-08 a mesur\u00e9 un RTF 3,3\u00d7 trop lent \u00e0 cause\nd'une contention GPU \u2014 on ne lance jamais sur une machine charg\u00e9e, on attend le cr\u00e9neau).\n\n---\n\n## 1. V\u00e9rifications AVANT de lancer (dans l'ordre)\n\n### 1.1 Cr\u00e9neau GPU libre (la porte d'entr\u00e9e)\n\n```bash\ncd /c/GIT/generator-assets\nuv run python scripts/check_charge_systeme.py\n```\n\n- **exit 0** \u2192 machine libre, on peut lancer. **exit 1** \u2192 machine occup\u00e9e : on attend (aucun\n  contournement, c'est la r\u00e8gle du d\u00e9p\u00f4t). Seuils par d\u00e9faut : CPU 60 %, GPU 40 %, RAM 90 %,\n  VRAM 80 %.\n- \u00c0 repasser avant **chaque** lancement GPU (vid\u00e9o, puis audio) \u2014 pas seulement au d\u00e9but.\n\n### 1.2 \u26a0\ufe0f L'image source `output/scene_intro.png` N'EXISTE PAS actuellement\n\nJe l'ai v\u00e9rifi\u00e9 \u00e0 l'instant en lecture seule : le fichier est absent du dossier `output/`\n(aujourd'hui 2026-09-17). Deux possibilit\u00e9s :\n\n- **Tu as l'image ailleurs** \u2192 la copier \u00e0 cet emplacement (ou me donner son chemin, `-i`\n  accepte n'importe quel chemin) :\n  ```bash\n  cp /chemin/vers/ton/image.png /c/GIT/generator-assets/output/scene_intro.png\n  ```\n- **Il faut la g\u00e9n\u00e9rer** \u2192 commande de secours (Flux.1 Vulkan, ~2-4 min, GPU requis) :\n  ```bash\n  uv run python scripts/check_charge_systeme.py   # encore la porte d'entr\u00e9e\n  uv run python main.py -w generate \"Dark server room interior, long rows of server racks with blinking status LEDs, cold blue and teal glow, thin haze, deep shadows, cinematic composition\" -s 1024 --seed 42 -o scene_intro -d output\n  ```\n\nNote : le workflow recadre automatiquement l'image au 16:9 exact (recadrage centr\u00e9 Lanczos\n832\u00d7480, `conformer_amorce_16_9`). Toute proportion d'origine fonctionne ; si l'image est\ncarr\u00e9e, haut et bas seront rogn\u00e9s \u2014 pr\u00e9parer une image proche du 16:9 si tu veux ma\u00eetriser\nle cadrage.\n\n### 1.3 \u26a0\ufe0f CRITIQUE \u2014 LTX-2.5 est cass\u00e9 sur la sd-cli install\u00e9e : passer par le build parall\u00e8le\n\nPi\u00e8ge connu du d\u00e9p\u00f4t (MEMORY_BANK \u00a71.17, confirm\u00e9 le 2026-09-14) : la sd-cli **install\u00e9e**\n(`C:\\SD\\sd-cli.exe` = master-864) casse LTX-2.5 (`ltxav workspace capacity check` puis\n`ErrorOutOfDeviceMemory` \u2014 r\u00e9gression m\u00e9moire introduite entre master-841 et 864). La derni\u00e8re\nbuild LTX valid\u00e9e est **6b3edaa (master-841)**, disponible en installation parall\u00e8le de\nproduction : `C:\\SD-6b3edaa\\sd-cli.exe` (v\u00e9rifi\u00e9e pr\u00e9sente \u00e0 l'instant).\n\nLe chemin du binaire se surcharge avec la variable d'environnement `SD_CLI_PATH` (lue par\n`core/config.py`) \u2014 d'o\u00f9 le pr\u00e9fixe `SD_CLI_PATH=...` dans ma commande vid\u00e9o ci-dessous.\n**Sans ce pr\u00e9fixe, la g\u00e9n\u00e9ration \u00e9chouera en OOM vers ~2 min.**\n\n(Pr\u00e9cision pour la variante 4K : l'\u00e9tape d'upscale IA appelle `C:\\SD\\sd-cli.exe` en dur dans\n`scripts/upscale_video_ai.py` \u2014 c'est voulu et sans risque, l'upscale Flux/UltraSharp est\nvalid\u00e9 sur master-864 ; seule la g\u00e9n\u00e9ration LTX exige 6b3edaa.)\n\n### 1.4 Mod\u00e8les et binaires (d\u00e9j\u00e0 v\u00e9rifi\u00e9s pour toi, tous pr\u00e9sents)\n\n| \u00c9l\u00e9ment | Emplacement | Statut |\n|---|---|---|\n| DiT LTX-2.5 Distilled Q4_K_M | `C:\\Modeles_LLM\\LTX-2.5-Distilled-Q4_K_M.gguf` | \u2705 pr\u00e9sent |\n| VAE vid\u00e9o LTX | `C:\\Modeles_LLM\\ltx-2.5-video-vae-conv-bf16.safetensors` | \u2705 |\n| LLM texte LTX (Gemma4) | `C:\\Modeles_LLM\\gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf` | \u2705 |\n| Kokoro-82M q8_0 | `C:\\Modeles_LLM\\Kokoro-82M-GGUF\\kokoro-82m-q8_0.gguf` | \u2705 |\n| Binaire Kokoro (eSpeak embarqu\u00e9) | `C:\\IA\\audio_cpp_master_test\\build-357\\bin\\Release\\audiocpp_cli.exe` | \u2705 (r\u00e9solu automatiquement par le workflow) |\n| SA3 Small SFX (lit d'ambiance) | `C:\\Modeles_LLM\\Stable-Audio-3-Small-SFX-GGUF` | \u2705 |\n\nAucune mise \u00e0 jour en attente c\u00f4t\u00e9 veille (`output/veille/maj_en_attente.json` vide au\n2026-09-17 09:42), rien \u00e0 traiter avant de produire. V\u00e9rification g\u00e9n\u00e9rale optionnelle :\n`uv run python main.py --check`.\n\n### 1.5 Pas de g\u00e9n\u00e9ration en cours\n\nConfirmer qu'aucun `sd-cli.exe` / `audiocpp_cli.exe` / `ffmpeg.exe` lourd ne tourne d\u00e9j\u00e0\n(`tasklist | grep -iE \"sd-cli|audiocpp|ffmpeg\"`) \u2014 r\u00e8gle \u00ab jamais deux moteurs GPU en\nparall\u00e8le, jamais de maj en plein batch \u00bb.\n\n---\n\n## 2. Les commandes, dans l'ordre (\u00e0 lancer quand le GPU est libre)\n\n### \u00c9tape 1 \u2014 La voix de robot (courte : ~2-3 min, feedback rapide avant le long rendu)\n\n```bash\ncd /c/GIT/generator-assets\nuv run python scripts/check_charge_systeme.py\n\nuv run python main.py -w voix_robot \"Welcome to the system, human.\" \\\n    --robot-voice af_heart --robot-pitch 1.30 --robot-ringmod 120 \\\n    --robot-tempo 0.65 --robot-gain -4 \\\n    -o intro_robot\n```\n\n- Toutes les valeurs ci-dessus sont les **d\u00e9fauts valid\u00e9s** (essai 17 du 2026-09-17, verdict\n  utilisateur \u00ab c'est bien \u00bb) : Kokoro voix `af_heart`, pitch +30 %, ring modulation 120 Hz\n  (le timbre m\u00e9tallique), d\u00e9bit 0.65 (\u00ab tranquille \u00bb), gain \u22124 dB. Je les \u00e9cris explicitement\n  pour que la recette reste lisible ; tu peux aussi ne rien passer.\n- Le texte est en anglais, comme exig\u00e9 par les conventions du d\u00e9p\u00f4t (prompts mod\u00e8les en EN).\n- \u00c0 l'\u00e9coute : le `--robot-tempo 0.65` \u00e9tire la phrase (~3 s pour cette r\u00e9plique) \u2014 parfait\n  pour rentrer dans un plan de 5 s. Si tu veux une diction plus rapide : `--robot-tempo 0.85`.\n\n### \u00c9tape 2 \u2014 Le plan cin\u00e9matique 5 s (monoplan IA, ~18-20 min)\n\n```bash\nuv run python scripts/check_charge_systeme.py\n\nSD_CLI_PATH=\"C:\\SD-6b3edaa\\sd-cli.exe\" uv run python main.py -w monoplan_ia \\\n    \"Slow cinematic dolly-in through a dark server room, long rows of server racks with blinking status LEDs, cold blue light, thin haze, deep shadows, moody high-tech atmosphere\" \\\n    -i output/scene_intro.png \\\n    --monoplan-duration 5 \\\n    --monoplan-frames 65 \\\n    --zoom-debut 1.10 --zoom-fin 1.32 \\\n    --ambiance \"dark server room ambience, low hum of cooling fans, air conditioning drone, faint electric buzz\" \\\n    --seed 42 \\\n    -o intro_serveur -d output/intro_chaine\n```\n\nCe que fait chaque option :\n\n| Option | R\u00f4le |\n|---|---|\n| prompt (anglais) | Le mouvement demand\u00e9 au mod\u00e8le : *travelling avant lent* = \u00ab slow cinematic dolly-in \u00bb \u2014 c'est lui qui pilote la cam\u00e9ra |\n| `-i output/scene_intro.png` | Image d'amorce (conform\u00e9e automatiquement en 16:9 832\u00d7480) |\n| `--monoplan-duration 5` | Dur\u00e9e finale exacte : 5 s (le brut LTX 65 trames @ 24 fps \u2248 2,7 s est ralenti en motion-compens\u00e9 \u2014 le ralenti divise la \u00ab respiration \u00bb cam\u00e9ra du mod\u00e8le, c'est le c\u0153ur de la recette anti-tremblement) |\n| `--monoplan-frames 65` | D\u00e9faut = plafond GPU stable (max ~81 au-del\u00e0 = device lost, \u00a71.17) \u2014 je l'\u00e9cris pour m\u00e9moire |\n| `--zoom-debut/--zoom-fin` | Rampe de zoom pur 1.10\u21921.32 par-dessus le ralenti (smootherstep, math\u00e9matiquement incapable de vibrer) \u2014 elle **renforce** le travelling avant demand\u00e9 |\n| `--ambiance \"...\"` | Optionnel : lit sonore IA (SA3 Small SFX) de salle serveur mux\u00e9 \u00e0 une copie d'\u00e9coute. Retire ce flag si tu veux un master muet (le mixage propre avec ducking sera fait c\u00f4t\u00e9 ai-doc2video de toute fa\u00e7on) |\n| `--seed 42` | Reproductibilit\u00e9 A/B (convention du d\u00e9p\u00f4t) |\n| `-o intro_serveur -d output/intro_chaine` | Nom + dossier des livrables |\n| `SD_CLI_PATH=...` | **Indispensable** : route LTX vers le build 6b3edaa (cf. \u00a71.3) |\n\n**Variante 4K \u00ab broadcast YouTube \u00bb** (recommand\u00e9e pour une intro de cha\u00eene : un master\n3840\u00d72160 force YouTube \u00e0 servir son profil premium VP09/AV01 25-45 Mbps, m\u00eame aux spectateurs\nen 1080p) \u2014 ajouter simplement `--4k` :\n\n```bash\nSD_CLI_PATH=\"C:\\SD-6b3edaa\\sd-cli.exe\" uv run python main.py -w monoplan_ia \\\n    \"Slow cinematic dolly-in through a dark server room, long rows of server racks with blinking status LEDs, cold blue light, thin haze, deep shadows, moody high-tech atmosphere\" \\\n    -i output/scene_intro.png --monoplan-duration 5 \\\n    --ambiance \"dark server room ambience, low hum of cooling fans, air conditioning drone, faint electric buzz\" \\\n    --seed 42 --4k \\\n    -o intro_serveur -d output/intro_chaine\n```\n\n### \u00c9tape 3 (optionnelle) \u2014 Aper\u00e7u combin\u00e9 vid\u00e9o + voix\n\nUn simple mux d'\u00e9coute local (voix en retard de 0,8 s, lit d'ambiance \u00e0 30 %). Le mixage\nd\u00e9finitif (lits \u221230 LUFS + ducking sidechain) est le travail d'`ai-doc2video`, pas de ce d\u00e9p\u00f4t :\n\n```bash\n/c/ffmpeg/dist/bin/ffmpeg.exe -y \\\n    -i output/intro_chaine/intro_serveur_5.0s_1080p.mp4 \\\n    -i output/intro_chaine/intro_serveur_ambiance.wav \\\n    -i output/voix_robot/intro_robot/intro_robot.wav \\\n    -filter_complex \"[2:a]adelay=800|800[voix];[1:a]volume=0.30[bed];[bed][voix]amix=inputs=2:duration=first:normalize=0[a]\" \\\n    -map 0:v -map \"[a]\" -c:v copy -c:a aac -b:a 192k \\\n    output/intro_chaine/apercu_intro_complete.mp4\n```\n\n---\n\n## 3. Fichiers de sortie attendus\n\n### Vid\u00e9o (`monoplan_ia`, chemin 1080p) \u2014 dans `output/intro_chaine/`\n\n| Fichier | Contenu |\n|---|---|\n| `intro_serveur_amorce_832x480.png` | Image recadr\u00e9e 16:9 servant de premi\u00e8re trame |\n| `intro_serveur_brut.webm` | Plan brut LTX-2.5 (65 trames @ 24 fps) \u2014 \u26a0\ufe0f contient la piste audio brute LTX, \u00e0 ne pas r\u00e9utiliser |\n| `intro_serveur_5.0s_1080p_ralenti.mp4` | Interm\u00e9diaire ralenti motion-compens\u00e9 (minterpolate mci/aobmc/vsbmc) |\n| **`intro_serveur_5.0s_1080p.mp4`** | **Master muet 1920\u00d71080 @ 24 fps** (zoom pur 1.10\u21921.32 + FidelityFX CAS 0.75) |\n| `intro_serveur_ambiance.wav` | Lit sonore SA3 (si `--ambiance` pass\u00e9) |\n| `intro_serveur_5.0s_1080p_avec_ambiance.mp4` | Copie d'\u00e9coute sonoris\u00e9e |\n\nAvec `--4k` en plus : `intro_serveur_brut_4k_ai.mp4` (master UltraSharp 3328\u00d71920),\n`intro_serveur_5.0s_4k_ralenti.mp4`, `intro_serveur_5.0s_4k_zoom.mp4` (interm\u00e9diaires) et\n**`intro_serveur_5.0s_4k.mp4`** = master final 3840\u00d72160 @ 30 fps, h264_amf ~45 Mbps.\n\n*Astuce reprise* : chaque \u00e9tape \u00e9crit un fichier \u2192 si une \u00e9tape \u00e9choue, relancer la m\u00eame\ncommande reprend l\u00e0 o\u00f9 elle s'\u00e9tait arr\u00eat\u00e9e ; on peut aussi repartir du brut avec\n`--monoplan-source output/intro_chaine/intro_serveur_brut.webm` (saute la g\u00e9n\u00e9ration GPU).\n\n### Voix (`voix_robot`) \u2014 dans `output/voix_robot/intro_robot/`\n\n| Fichier | Contenu |\n|---|---|\n| **`intro_robot.wav`** | **Voix robot finale** \u2014 24 kHz, PCM 16-bit mono, effet applis\u00e9 |\n| `intro_robot.mp3` | Copie d'\u00e9coute |\n| `intro_robot_brut.wav` | TTS Kokoro sans effet (gard\u00e9 pour retuner l'effet sans reg\u00e9n\u00e9rer) |\n\n---\n\n## 4. Dur\u00e9es estim\u00e9es (RX 6950 XT, machine seule, mesures r\u00e9elles du d\u00e9p\u00f4t)\n\n| \u00c9tape | Dur\u00e9e |\n|---|---|\n| Voix robot (Kokoro 82M + effet FFmpeg) | **~2-3 min** |\n| G\u00e9n\u00e9ration LTX-2.5 65 trames (8 steps) | ~14-17 min (845 s mesur\u00e9s sur `generate_video` + chargements ; 17,3 min/plan sur les runs cha\u00een\u00e9s valid\u00e9s) |\n| Ralenti + interpolation 1080p | ~1-2 min |\n| Zoom pur + CAS | <1 min |\n| Lit d'ambiance SA3 + mux | ~1 min |\n| **Total vid\u00e9o 1080p** | **~18-20 min** |\n| Suppl\u00e9ment chemin `--4k` (upscale UltraSharp 65 trames ~9 min + ralenti 3328\u00d71920 ~3 min + zoom ~1,5 min + conform AMF <1 min) | **+~14 min \u2192 ~32-35 min** |\n| **Total mission (1080p)** | **~20-25 min** ; en 4K : **~35-40 min** |\n\nSi l'image `scene_intro.png` doit d'abord \u00eatre g\u00e9n\u00e9r\u00e9e (Flux) : +2-4 min.\n\n---\n\n## 5. Notes pour l'\u00e9coute et la suite\n\n- **Ordre propos\u00e9** : voix d'abord (2 min, tu valides le ton robot imm\u00e9diatement), puis le\n  rendu vid\u00e9o de 18-20 min. Les deux sont s\u00e9quentiels \u2014 jamais deux moteurs GPU en parall\u00e8le.\n- **Si le rendu ne te pla\u00eet pas** : on it\u00e8re sur la graine (`--seed`) et le prompt (tra\u00een\u00e9e\n  \u00ab drifting haze \u00bb, \u00ab camera slowly pushing forward \u00bb\u2026), pas sur la recette \u2014 elle est\n  valid\u00e9e. Le d\u00e9faut connu et accept\u00e9 de LTX-2.5 : il impose toujours un l\u00e9ger push-in m\u00eame\n  avec un prompt cam\u00e9ra fixe (cfg 1.0) \u2014 ici c'est exactement ce qu'on veut (travelling avant).\n- **\u00c9cueil device-lost** (\u00a71.17) : si une s\u00e9rie de crash Vulkan survient, red\u00e9marrer la\n  machine **avant** d'incriminer la recette (le pilote AMD se d\u00e9grade apr\u00e8s les device-lost\n  en cascade). Et ne jamais monter `--monoplan-frames` au-del\u00e0 de ~81.\n- **Mixage final pour la cha\u00eene** : la conformit\u00e9 broadcast (lits \u221230 LUFS, ducking\n  automatique de l'ambiance sous la voix, master 4K YouTube) est le m\u00e9tier d'`ai-doc2video`\n  via le bridge \u2014 mon mux d'\u00e9coute de l'\u00e9tape 3 n'est qu'un aper\u00e7u.\n- Ces deux workflows \u00e9tant d\u00e9j\u00e0 valid\u00e9s et enregistr\u00e9s, rien \u00e0 ajouter au README/MEMORY_BANK\n  pour cette production ; en revanche je consignerai le verdict d'\u00e9coute de l'intro si tu\n  veux en faire la carte de visite r\u00e9utilis\u00e9e de la cha\u00eene.\n\n**En r\u00e9sum\u00e9** : d\u00e8s que `check_charge_systeme.py` passe au vert et que `output/scene_intro.png`\nest en place, ce sont exactement 2 commandes (voix ~2 min, vid\u00e9o ~18-20 min, +14 min en 4K),\navec le pr\u00e9fixe `SD_CLI_PATH` obligatoire sur la commande vid\u00e9o tant que master-864 casse LTX.\n"}], "grading": {"expectations": [{"text": "Route vers monoplan_ia (pas video/h3_ref2va)", "passed": true, "evidence": "\u00c9tape 2 : monoplan_ia, recette valid\u00e9e \u00a71.17 cit\u00e9e, options anti-tremblement expliqu\u00e9es."}, {"text": "Contr\u00f4le de charge syst\u00e8me AVANT la vid\u00e9o", "passed": true, "evidence": "\u00a71.1 porte d'entr\u00e9e + \u00ab \u00e0 repasser avant chaque lancement GPU (vid\u00e9o, puis audio) \u00bb."}, {"text": "Prompt vid\u00e9o en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "\u00ab Slow cinematic dolly-in through a dark server room... \u00bb + --seed 42 partout."}, {"text": "Route vers voix_robot avec recette par d\u00e9faut (pas de r\u00e9glages invent\u00e9s)", "passed": true, "evidence": "voix_robot avec --robot-* explicites mais strictement \u00e9gaux aux d\u00e9fauts valid\u00e9s (af_heart, 1.30, 120, 0.65, -4) \u2014 \u00ab tu peux aussi ne rien passer \u00bb."}, {"text": "Dur\u00e9e estim\u00e9e r\u00e9aliste", "passed": true, "evidence": "\u00a74 : voix 2-3 min, vid\u00e9o 18-20 min, total 20-25 min, 4K 35-40 min \u2014 mesures r\u00e9elles cit\u00e9es."}, {"text": "Sorties attendues indiqu\u00e9es", "passed": true, "evidence": "\u00a73 tables d\u00e9taill\u00e9es 1080p/4K (amorce, brut.webm, master, ambiance) + voix (wav/mp3/brut)."}], "summary": {"passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "generator-assets", "skill_path": "<path/to/skill>", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-09-17T13:50:35Z", "evals_run": [0, 1, 2], "runs_per_configuration": 3}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 139.0, "tokens": 287575, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Route vers music_bg (pas chanson/sfx/audio_ambience)", "passed": true, "evidence": "\u00a71 : \u00ab c'est exactement le boulot du workflow music_bg \u00bb, contraste explicite avec audio_ambience (proc\u00e9dural) et musique compos\u00e9e."}, {"text": "Prompt musical en anglais dans la commande", "passed": true, "evidence": "\u00ab dark ambient drone, cold sustained low tones, slowly evolving atmospheric pads... no vocals \u00bb (\u00a73)."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9 avant lancement", "passed": true, "evidence": "\u00a72 commande (a) : uv run python scripts/check_charge_systeme.py, exit 1 = on attend."}, {"text": "--seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 dans la commande, graines d\u00e9riv\u00e9es 42/43/44 expliqu\u00e9es."}, {"text": "Validation \u00e0 l'\u00e9coute pr\u00e9vue", "passed": true, "evidence": "\u00a76 : ECOUTE_cand*_boucle_x3.mp3 soumis \u00e0 l'\u00e9coute avant industrialisation, r\u00e8gle du d\u00e9p\u00f4t cit\u00e9e."}, {"text": "Sorties attendues ou dur\u00e9e indiqu\u00e9e", "passed": true, "evidence": "\u00a74 table output/music_bg/ (ogg, _full.wav, _bed.wav, ECOUTE) + \u00a75 : 4-6 min."}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 217.8, "tokens": 330640, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Route vers mesh_ia avec -i, extrusion 2.5D \u00e9cart\u00e9e", "passed": true, "evidence": "\u00ab Pourquoi pas autre chose \u00bb : mesh3d = extrusion 2,5D bas-relief, voxel3d \u00e9cart\u00e9s ; mesh_ia = volume ferm\u00e9."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9", "passed": true, "evidence": "\u00a71.a : check_charge_systeme.py obligatoire avant g\u00e9n\u00e9ration lourde."}, {"text": "Prompt \u00e9ventuel en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 sur les deux commandes (pas de prompt n\u00e9cessaire avec -i, donc N/A prompt \u2014 correct)."}, {"text": "Strat\u00e9gie r\u00e9solution 512 puis 1024", "passed": true, "evidence": "\u00c9tape A it\u00e9ration 512 (~12 min) puis \u00c9tape B master 1024 ; r\u00e8gle r\u00e9p\u00e9t\u00e9e en \u00a74."}, {"text": "--faces-cible mentionn\u00e9 avec ordre de grandeur pertinent", "passed": true, "evidence": "--faces-cible 30000 = item h\u00e9ros/casque \u00e9quip\u00e9, rep\u00e8res 10000/2000-3000/\u22658000 cit\u00e9s."}, {"text": "Dur\u00e9es (~11 min / ~55 min) ou sorties indiqu\u00e9es", "passed": true, "evidence": "\u00a74 tableau mesur\u00e9 (10 min 44 s / 55 min 10 s) + \u00a73 table output/mesh_ia/casque/ compl\u00e8te."}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 649.3, "tokens": 1348397, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Route vers monoplan_ia (pas video/h3_ref2va)", "passed": true, "evidence": "\u00a70 : monoplan_ia = plan-s\u00e9quence cin\u00e9matique depuis image fixe, recette valid\u00e9e 2026-09-10."}, {"text": "Contr\u00f4le de charge syst\u00e8me AVANT la vid\u00e9o", "passed": true, "evidence": "\u00a71.1 bloquant : check_charge_systeme.py exit 0 obligatoire ; une seule g\u00e9n\u00e9ration lourde \u00e0 la fois."}, {"text": "Prompt vid\u00e9o en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "\u00ab Slow cinematic dolly-in through a dark server room... \u00bb + --seed 42 (et seed 42 sur la voix)."}, {"text": "Route vers voix_robot avec recette par d\u00e9faut (pas de r\u00e9glages invent\u00e9s)", "passed": true, "evidence": "\u00ab Aucune option --robot-* : les d\u00e9fauts SONT la recette valid\u00e9e (17 essais) \u00bb."}, {"text": "Dur\u00e9e estim\u00e9e r\u00e9aliste", "passed": true, "evidence": "\u00a74 : LTX ~15 min + post ~4 min + voix 1-2 min = ~20-22 min GPU ; 4K +18 min."}, {"text": "Sorties attendues indiqu\u00e9es", "passed": true, "evidence": "\u00a73 table compl\u00e8te : intro_chaine_5.0s_1080p.mp4, _avec_ambiance, welcome_robot.wav/mp3/_brut.wav, 4K."}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 259.9, "tokens": 294797, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Route vers music_bg (pas chanson/sfx/audio_ambience)", "passed": true, "evidence": "\u00a71 : workflow music_bg choisi, moteur ACE-Step d\u00e9faut, mode ambient justifi\u00e9 pour un drone."}, {"text": "Prompt musical en anglais dans la commande", "passed": true, "evidence": "\u00ab dark ambient drone, cold glacial synth pads... instrumental only, no vocals \u00bb (\u00e9tape 2)."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9 avant lancement", "passed": true, "evidence": "\u00a71.1 + \u00e9tape 1 : check_charge_systeme.py, exit 0 obligatoire, seuils cit\u00e9s."}, {"text": "--seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 (graines 42/43/44 expliqu\u00e9es), variante seed 52 pour tonalit\u00e9."}, {"text": "Validation \u00e0 l'\u00e9coute pr\u00e9vue", "passed": true, "evidence": "\u00c9tape 3 : scripts/ecoute_candidat_music_bg.py 1|2|3, ECOUTE x3 = test de la couture, choix utilisateur final."}, {"text": "Sorties attendues ou dur\u00e9e indiqu\u00e9e", "passed": true, "evidence": "\u00a73 table compl\u00e8te output/music_bg/ + \u00a74 : ~4-6 min, comparaison Music3 ~25 min/candidat."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 274.6, "tokens": 415069, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Route vers mesh_ia avec -i, extrusion 2.5D \u00e9cart\u00e9e", "passed": true, "evidence": "\u00a7 \u00ab Pourquoi mesh_ia et pas mesh3d \u00bb : cutout = extrusion 2,5D rejet\u00e9e ; TRELLIS.2 pipeline d\u00e9taill\u00e9."}, {"text": "Contr\u00f4le de charge syst\u00e8me mentionn\u00e9", "passed": true, "evidence": "\u00a71.a : check_charge_systeme.py, exit 0/1, seuils ajustables cit\u00e9s."}, {"text": "Prompt \u00e9ventuel en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "--seed 42 sur les deux commandes (pas de prompt avec -i, N/A correct)."}, {"text": "Strat\u00e9gie r\u00e9solution 512 puis 1024", "passed": true, "evidence": "\u00ab it\u00e9rer en 512 (~12 min)... puis master en 1024 (~1 h) \u00bb, variante saut d'\u00e9tape document\u00e9e."}, {"text": "--faces-cible mentionn\u00e9 avec ordre de grandeur pertinent", "passed": true, "evidence": "--faces-cible 30000 = item h\u00e9ro vu de pr\u00e8s + rep\u00e8res complets (10000, 2000-3000, \u22658000)."}, {"text": "Dur\u00e9es (~11 min / ~55 min) ou sorties indiqu\u00e9es", "passed": true, "evidence": "\u00a74 mesures r\u00e9elles (8 min 53 s-10 min 44 s / 55 min 10 s) + \u00a73 table exhaustive des fichiers."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 391.7, "tokens": 1599840, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "Route vers monoplan_ia (pas video/h3_ref2va)", "passed": true, "evidence": "\u00c9tape 2 : monoplan_ia, recette valid\u00e9e \u00a71.17 cit\u00e9e, options anti-tremblement expliqu\u00e9es."}, {"text": "Contr\u00f4le de charge syst\u00e8me AVANT la vid\u00e9o", "passed": true, "evidence": "\u00a71.1 porte d'entr\u00e9e + \u00ab \u00e0 repasser avant chaque lancement GPU (vid\u00e9o, puis audio) \u00bb."}, {"text": "Prompt vid\u00e9o en anglais et --seed pr\u00e9sent", "passed": true, "evidence": "\u00ab Slow cinematic dolly-in through a dark server room... \u00bb + --seed 42 partout."}, {"text": "Route vers voix_robot avec recette par d\u00e9faut (pas de r\u00e9glages invent\u00e9s)", "passed": true, "evidence": "voix_robot avec --robot-* explicites mais strictement \u00e9gaux aux d\u00e9fauts valid\u00e9s (af_heart, 1.30, 120, 0.65, -4) \u2014 \u00ab tu peux aussi ne rien passer \u00bb."}, {"text": "Dur\u00e9e estim\u00e9e r\u00e9aliste", "passed": true, "evidence": "\u00a74 : voix 2-3 min, vid\u00e9o 18-20 min, total 20-25 min, 4K 35-40 min \u2014 mesures r\u00e9elles cit\u00e9es."}, {"text": "Sorties attendues indiqu\u00e9es", "passed": true, "evidence": "\u00a73 tables d\u00e9taill\u00e9es 1080p/4K (amorce, brut.webm, master, ambiance) + voix (wav/mp3/brut)."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 335.3667, "stddev": 274.7143, "min": 139.0, "max": 649.3}, "tokens": {"mean": 655537.3333, "stddev": 600420.3001, "min": 287575, "max": 1348397}}, "without_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 308.7333, "stddev": 72.2262, "min": 259.9, "max": 391.7}, "tokens": {"mean": 769902.0, "stddev": 721258.7271, "min": 294797, "max": 1599840}}, "delta": {"pass_rate": "+0.00", "time_seconds": "+26.6", "tokens": "-114365"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Route vers mesh_ia avec -i, extrusion 2.5D écartée",
+      "passed": true,
+      "evidence": "« Pourquoi pas autre chose » : mesh3d = extrusion 2,5D bas-relief, voxel3d écartés ; mesh_ia = volume fermé."
+    },
+    {
+      "text": "Contrôle de charge système mentionné",
+      "passed": true,
+      "evidence": "§1.a : check_charge_systeme.py obligatoire avant génération lourde."
+    },
+    {
+      "text": "Prompt éventuel en anglais et --seed présent",
+      "passed": true,
+      "evidence": "--seed 42 sur les deux commandes (pas de prompt nécessaire avec -i, donc N/A prompt — correct)."
+    },
+    {
+      "text": "Stratégie résolution 512 puis 1024",
+      "passed": true,
+      "evidence": "Étape A itération 512 (~12 min) puis Étape B master 1024 ; règle répétée en §4."
+    },
+    {
+      "text": "--faces-cible mentionné avec ordre de grandeur pertinent",
+      "passed": true,
+      "evidence": "--faces-cible 30000 = item héros/casque équipé, repères 10000/2000-3000/≥8000 cités."
+    },
+    {
+      "text": "Durées (~11 min / ~55 min) ou sorties indiquées",
+      "passed": true,
+      "evidence": "§4 tableau mesuré (10 min 44 s / 55 min 10 s) + §3 table output/mesh_ia/casque/ complète."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}
