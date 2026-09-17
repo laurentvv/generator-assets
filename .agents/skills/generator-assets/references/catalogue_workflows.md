@@ -26,6 +26,12 @@ Rappel garde-fous : `scripts/check_charge_systeme.py` avant toute génération l
 `mesh_ia` — choix de `--faces-cible` : 30000 = objet héros proche, 10000 = prop standard, 2000-3000 =
 clutter répété, ≥8000 si silhouette très courbée. Itérer à 512, master à 1024.
 
+**Prérequis 3D** : §1 passe par Blender headless (bloquant pour `mesh3d`/`voxel3d`/`asset_blendkit`,
+optionnel pour `mesh_ia` — décimation + planche de contrôle) ; §2 exige Blender + addon MPFB2
+(data dir `%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data`, surcharge `MPFB_DATA_DIR`) ;
+`asset_blendkit` exige l'addon BlenderKit connecté une fois en GUI. Standards game-ready Godot,
+checklist de validation et écueils détaillés : [`pipeline_3d_blender.md`](pipeline_3d_blender.md).
+
 ## 2. Personnages humanoïdes (MakeHuman / MPFB2)
 
 | Workflow | Usage | Entrées clés | Sorties |

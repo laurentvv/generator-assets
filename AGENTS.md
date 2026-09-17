@@ -56,6 +56,10 @@ ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
   catalogue réel** :
   - nouveau workflow, option ou recette qui change → `SKILL.md` (table de routage + recettes)
     et `references/catalogue_workflows.md` ;
+  - évolution du pipeline 3D (prérequis Blender/MPFB/BlendKit, standards game-ready Godot,
+    budgets tris/LOD, écueils Blender) → `references/pipeline_3d_blender.md` (créé le 2026-09-17
+    en adaptant la partie moteur-agnostique du pack blender-skills arjun988, MIT — cloné dans
+    `C:\GIT\blender-skills`) ;
   - statut de validation qui évolue (testé non validé → validé, ou rejeté) → refléter dans les
     deux fichiers ;
   - écueil opérationnel majeur découvert (build moteur cassée, contournement requis) → l'ajouter

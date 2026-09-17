@@ -79,8 +79,12 @@ required:
 
 ```text
 .agents/skills/generator-assets/
-├── SKILL.md                        # need → workflow routing + mandatory guardrails + validated recipes
-└── references/catalogue_workflows.md   # condensed quick-reference for all 40 workflows
+├── SKILL.md                            # need → workflow routing + mandatory guardrails + validated recipes
+└── references/
+    ├── catalogue_workflows.md          # condensed quick-reference for all 40 workflows
+    └── pipeline_3d_blender.md          # Blender headless → GLB → Godot: prerequisites, game-ready
+                                        #   standards (tri budgets, naming, LOD, texel density,
+                                        #   collision), validation checklist, MPFB/BlendKit pitfalls
 ```
 
 * **Routing**: turns a natural-language media need ("*a dark ambient loop for my Godot menu*",
@@ -93,7 +97,9 @@ required:
   `voix_robot` frozen recipe, the current sd-cli LTX/H3 memory-regression workaround
   (`SD_CLI_PATH=C:\SD-6b3edaa\sd-cli.exe`), YouTube 4K mastering rules…
 * **Progressive disclosure**: a short SKILL.md (fast to load) pointing to a detailed reference
-  catalog, `README.md`, `GUIDE_AGENT_IA_HABILLAGE.md` and `docs/MEMORY_BANK.md` for depth.
+  catalog, the 3D Blender→Godot pipeline standards (game-ready budgets, naming, LOD, validation
+  checklist — adapted from the open-source blender-skills pack, engine-agnostic parts only),
+  `README.md`, `GUIDE_AGENT_IA_HABILLAGE.md` and `docs/MEMORY_BANK.md` for depth.
 
 **Benchmarked (2026-09-17)** — 6 agent runs (3 real-world requests × with/without skill):
 100 % correct routing in both configurations (the repo docs are already strong), **−15 % tokens**
