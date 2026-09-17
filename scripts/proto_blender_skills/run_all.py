@@ -48,6 +48,29 @@ TESTS = [
      [BARIL, os.path.join(OUT, "scatter_barils.png"), "40", "42", "0.5"], 600),
     ("beauty_casque", "beauty_render.py",
      [CASQUE, os.path.join(OUT, "beauty_casque.png"), "1200", "96"], 900),
+    # --- vague 2 ---
+    ("spritesheet3d_casque", "spritesheet3d.py",
+     [CASQUE, os.path.join(OUT, "spritesheet3d_casque"), "512", "8"], 600),
+    ("bake_ao_casque", "bake_ao.py",
+     [CASQUE, os.path.join(OUT, "bake_ao", "T_Casque_AO.png"),
+      os.path.join(OUT, "bake_ao", "casque_avec_ao.png")], 600),
+    ("decoupe_baril", "decoupe_assets.py",
+     [BARIL, os.path.join(OUT, "decoupe_baril")], 300),
+    ("composite_beauty", "composite_beauty.py",
+     [CASQUE, os.path.join(OUT, "beauty_casque_composite.png"), "1200"], 900),
+    # --- vague 3 : styles & recettes matériaux (blender-skills anime/lowpoly/materials) ---
+    # Leçon 2026-09-17 : blender headless sans blend sauvegardé AVALÉ les chemins
+    # relatifs (rendus perdus sans erreur) → TOUJOURS chemins absolus via ce driver.
+    ("style_toon", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_toon.png"), "toon"], 300),
+    ("style_psx", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_psx.png"), "psx"], 300),
+    ("style_wear", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_wear.png"), "wear"], 300),
+    ("style_rust", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_rust.png"), "rust"], 300),
+    ("style_moss", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_moss.png"), "moss"], 300),
+    ("style_water", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_water.png"), "water"], 300),
+    ("style_panel", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_panel.png"), "panel"], 300),
+    ("style_panel_baril", "styles_demo.py",
+     [BARIL, os.path.join(OUT, "style_panel_baril.png"), "panel"], 300),
+    ("cloth_sim", "cloth_sim.py", [os.path.join(OUT, "cloth_drap.png"), "40"], 600),
 ]
 
 
@@ -74,6 +97,31 @@ def encoder_turntable(dossier, fps=24):
            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", sortie]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     return sortie if proc.returncode == 0 else f"ffmpeg KO: {proc.stderr[-200:]}"
+
+
+def atlas_spritesheet(dossier):
+    """Assemble les sprites RGBA en atlas 4×2 + JSON de mapping (grille Godot)."""
+    import glob
+    import json as js
+    from PIL import Image
+    pngs = sorted(glob.glob(os.path.join(dossier, "sprite_*.png")))
+    if not pngs:
+        return "aucun sprite trouvé"
+    with open(os.path.join(dossier, "spritesheet_infos.json"), encoding="utf-8") as f:
+        infos = js.load(f)
+    cols, lignes = 4, 2
+    res = Image.open(pngs[0]).width
+    atlas = Image.new("RGBA", (cols * res, lignes * res), (0, 0, 0, 0))
+    for i, p in enumerate(pngs[:cols * lignes]):
+        atlas.paste(Image.open(p), ((i % cols) * res, (i // cols) * res))
+    sortie = os.path.join(dossier, "atlas_4x2.png")
+    atlas.save(sortie)
+    mapping = {f"case_{i}": {"angle_deg": infos["directions_deg"][i],
+                             "x": (i % cols) * res, "y": (i // cols) * res}
+               for i in range(min(len(pngs), cols * lignes))}
+    with open(os.path.join(dossier, "atlas_mapping.json"), "w", encoding="utf-8") as f:
+        js.dump(mapping, f, ensure_ascii=False, indent=2)
+    return sortie
 
 
 def planche_lods(dossier):
@@ -127,6 +175,12 @@ def main():
             print(f"— planche LODs : {post['planche_lods']}")
         except Exception as e:  # noqa: BLE001
             post["planche_lods"] = f"échec assemblage : {e}"
+    if resultats.get("spritesheet3d_casque", {}).get("ok"):
+        try:
+            post["atlas_sprites"] = str(atlas_spritesheet(os.path.join(OUT, "spritesheet3d_casque")))
+            print(f"— atlas sprites : {post['atlas_sprites']}")
+        except Exception as e:  # noqa: BLE001
+            post["atlas_sprites"] = f"échec assemblage : {e}"
     with open(os.path.join(OUT, "resume_campagne.json"), encoding="utf-8") as f:
         resume = json.load(f) if not seuls else {"tests": {}, "post": {}}
     resume["tests"].update(resultats)
