@@ -83,7 +83,15 @@ CLI doit préserver ce contrat.
 
 **`mesh_ia` (TRELLIS.2) — recette** : itérer à `--res 512` (~11 min), master à `--res 1024` (~55 min) ;
 `--faces-cible 30000` pour un prop Godot (10 000 = prop standard, 2-3 000 = clutter répété). Depuis un
-prompt, `mesh_ia` chaîne automatiquement `generate` (image → détourage → 3D).
+prompt, `mesh_ia` chaîne automatiquement `generate` (image → détourage → 3D). Chaque sortie inclut une
+**planche de contrôle** (4 vues EEVEE) — la regarder avant de livrer, jamais de GLB non vu.
+
+**Prérequis 3D** : ces workflows passent par **Blender headless** — obligatoire pour `mesh3d`, `voxel3d`,
+`asset_blendkit` et toute la suite MakeHuman (qui exige en plus l'addon MPFB2) ; optionnel pour `mesh_ia`
+(décimation/planche sautées si Blender absent). Résolution de l'exécutable : `BLENDER_PATH` → PATH →
+`C:\Program Files\Blender Foundation\Blender 4.0…5.2` ; `--check` le détecte. Standards game-ready Godot
+(budgets tris, nommage `SM_`/`MAT_`/`T_`, ratios LOD, texel density, collision `-colonly`, checklist de
+validation, écueils MPFB/BlendKit) : [`references/pipeline_3d_blender.md`](references/pipeline_3d_blender.md).
 
 ### 👤 Personnages humanoïdes (MakeHuman / MPFB2)
 
@@ -172,6 +180,7 @@ Préviens l'utilisateur de la durée avant de lancer ; propose une itération ba
 | Question | Où chercher |
 | :--- | :--- |
 | Détail complet d'un workflow (entrées/sorties/options/exemples) | [`references/catalogue_workflows.md`](references/catalogue_workflows.md) |
+| Standards 3D game-ready (budgets, nommage, LOD, checklist), prérequis Blender/MPFB/BlendKit, écueils | [`references/pipeline_3d_blender.md`](references/pipeline_3d_blender.md) |
 | Doc de référence, showcases, procédures d'installation | [`README.md`](../../../README.md) § 📦 Complete Workflow Catalog |
 | Habillage/texturation MakeHuman | [`GUIDE_AGENT_IA_HABILLAGE.md`](../../../GUIDE_AGENT_IA_HABILLAGE.md) |
 | Stacks validées & écueils par domaine | [`docs/MEMORY_BANK.md`](../../../docs/MEMORY_BANK.md) |
