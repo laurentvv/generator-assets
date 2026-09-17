@@ -31,6 +31,7 @@ from workflows.tts_dialogue import TTSDialogueWorkflow
 from workflows.audio_ambience import AudioAmbienceWorkflow
 from workflows.music_bg import MusicBgWorkflow
 from workflows.voix_off import VoixOffWorkflow
+from workflows.voix_robot import VoixRobotWorkflow
 from workflows.chanson import ChansonWorkflow
 from workflows.musique_adn import MusiqueAdnWorkflow
 from workflows.musique_essence import MusiqueEssenceWorkflow
@@ -74,6 +75,7 @@ __all__ = [
     "AudioAmbienceWorkflow",
     "MusicBgWorkflow",
     "VoixOffWorkflow",
+    "VoixRobotWorkflow",
     "ChansonWorkflow",
     "MusiqueAdnWorkflow",
     "MusiqueEssenceWorkflow",

@@ -1405,6 +1405,20 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   ```
 * **Status (2026-09-09)**: ✅ **User-validated** (*« c bien »* on the LLB reference, scales 0.40/0.45 with 30 s or 60 s references). Context: SA3 Medium **text-only** was rejected ("toujours pop") and the whole ACE-Step anti-pop text campaign is closed (all rejected — `docs/MEMORY_BANK.md` §1.11); SA3 Small is superseded by Medium.
 
+#### 4.14. `voix_robot` — English Robot Voice (Kokoro-82M + ring modulation)
+* **Process** (validated recipe, 2026-09-17):
+  1. **TTS**: Kokoro-82M GGUF (audio.cpp Vulkan, 24 kHz mono, voice `af_heart`, `en-us`, normal rate) reads the English text.
+  2. **"Small robot" FFmpeg effect**: pitch +30 % (`asetrate`), laid-back pacing (`atempo` 0.65 — pitch untouched), **ring modulation 120 Hz** (`aeval` — multiplying the voice by a sine removes its fundamental → metallic timbre), final gain −4 dB (the "calm" voice the user picked).
+  3. Exports WAV (PCM 16-bit) + listening MP3; the raw TTS base is kept for effect retuning without regenerating.
+* **Inputs**: `prompt` (English text or `.txt` path), `--robot-voice` (Kokoro voice, default `af_heart`), `--robot-pitch` (default 1.30), `--robot-ringmod` (Hz, default 120), `--robot-tempo` (default 0.65), `--robot-gain` (dB, default −4).
+* **Engines**: Kokoro-82M q8_0 GGUF (`C:\Modeles_LLM\Kokoro-82M-GGUF`) + ffmpeg. ⚠️ The audio.cpp release zip cannot run `kokoro_tts` yet (eSpeak-ng not bundled — MEMORY_BANK §1.21): the workflow auto-resolves the scratch binary with embedded eSpeak (`AUDIOCPP_KOKORO_CLI` env override).
+* **Outputs** (`output/voix_robot/<name>/`): `<name>.wav`, `<name>.mp3`, `<name>_brut.wav`.
+* **Example**:
+  ```bash
+  uv run python main.py -w voix_robot "Greetings, human. I am your robot assistant. Beep. Boop." -o robot_hello
+  ```
+* **Status (2026-09-17)**: ✅ **User-validated** (*« c'est bien »*) after a 17-variant listening session (2 TTS engines × ring mod / pitch / flanger / bitcrush / vibrato chains + native qwentts VoiceDesign robot instructs); winner = Kokoro `af_heart` + the effect above. Alternatives kept in `output/test_voix_robot/`.
+
 ---
 
 ### 🛠️ 5. Style Consistency, Upscaling & Batching

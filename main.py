@@ -108,7 +108,8 @@ def lancer_mode_interactif(config: dict):
         "36": ("mesh_ia", "🧊 Objet 3D IA depuis Image/Prompt (TRELLIS.2 GGUF Vulkan — volume réel + PBR)"),
         "37": ("character_makeup", "💄 MakeUp & Features MPFB2 depuis Portrait IA (YuNet + Calque hm08 + Rendus Cycles)"),
         "38": ("musique_essence", "🧬 Musique à l'Essence d'une Référence (SA3 Medium init_audio + retrait voix HTDemucs)"),
-        "39": ("asset_blendkit", "🧰 Asset CC0 Blendkit (prop .glb Godot / plaque décor chaine rendue Cycles)")
+        "39": ("asset_blendkit", "🧰 Asset CC0 Blendkit (prop .glb Godot / plaque décor chaine rendue Cycles)"),
+        "40": ("voix_robot", "🤖 Voix de Robot en Anglais (Kokoro Vulkan + ring modulation — recette validée)")
     }
 
     while True:
@@ -348,6 +349,18 @@ def lancer_mode_interactif(config: dict):
                     "🎭 Consigne de style/émotion pour qwen3 (ex: 'energetic YouTube narrator', vide = aucune) : "
                 ).strip() or None
                 params["lufs_voix"] = float(input("🎚️ LUFS cible de la voix (défaut: -16) : ").strip() or -16.0)
+
+            elif wf_name == "voix_robot":
+                params["prompt"] = input(
+                    "🤖 Texte anglais à lire : "
+                ).strip()
+                if not params["prompt"]:
+                    continue
+                params["robot_voice"] = input("🎚️ Voix Kokoro [défaut: af_heart] : ").strip() or "af_heart"
+                params["robot_pitch"] = float(input("🎚️ Facteur de pitch [défaut: 1.3] : ").strip() or 1.30)
+                params["robot_ringmod"] = float(input("🎚️ Ring modulation Hz [défaut: 120] : ").strip() or 120.0)
+                params["robot_tempo"] = float(input("🎚️ atempo (débit) [défaut: 0.65] : ").strip() or 0.65)
+                params["robot_gain"] = float(input("🎚️ Gain final dB [défaut: -4] : ").strip() or -4.0)
 
             elif wf_name == "chanson":
                 params["prompt"] = input("🎵 Paroles (texte) ou chemin d'un fichier .txt : ").strip()
@@ -668,6 +681,11 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--voix-ref", default=None, help="Référence vocale à cloner pour voix_off (WAV/MP3/M4A ; niveau contrôlé/normalisé automatiquement).")
     groupe_wf.add_argument("--instruct", default=None, help="Consigne de style/émotion pour qwen3-tts (voix_off) — ex: 'energetic YouTube narrator tone'.")
     groupe_wf.add_argument("--lufs-voix", type=float, default=-16.0, help="LUFS cible de la voix off (défaut: -16, standard dialogue YouTube).")
+    groupe_wf.add_argument("--robot-voice", default="af_heart", help="Voix Kokoro pour voix_robot (défaut: af_heart, validée).")
+    groupe_wf.add_argument("--robot-pitch", type=float, default=1.30, help="Facteur de pitch voix_robot (défaut: 1.30 = +30 %%, validé).")
+    groupe_wf.add_argument("--robot-ringmod", type=float, default=120.0, help="Fréquence de ring modulation voix_robot en Hz (défaut: 120, validé).")
+    groupe_wf.add_argument("--robot-tempo", type=float, default=0.65, help="atempo post-pitch voix_robot (défaut: 0.65, débit « tranquille » validé).")
+    groupe_wf.add_argument("--robot-gain", type=float, default=-4.0, help="Gain final voix_robot en dB (défaut: -4, voix « calme » validée).")
     groupe_wf.add_argument("--style-musique", default=None, help="Description musicale EN pour chanson (défaut : dark folk Vent-Gris).")
     groupe_wf.add_argument("--langue", default=None, help="Langue des paroles pour chanson/musique_adn (défaut: fr).")
     groupe_wf.add_argument("--negatif", default=None, help="Prompt négatif EN pour musique_adn — ex: 'pop, soft, mellow, gentle'.")
@@ -1006,6 +1024,11 @@ Exemples de Workflows 3D & 2D :
         "voix_ref": args.voix_ref,
         "instruct": args.instruct,
         "lufs_voix": args.lufs_voix,
+        "robot_voice": args.robot_voice,
+        "robot_pitch": args.robot_pitch,
+        "robot_ringmod": args.robot_ringmod,
+        "robot_tempo": args.robot_tempo,
+        "robot_gain": args.robot_gain,
         "style_musique": args.style_musique,
         "langue": args.langue,
         "negatif": args.negatif,
