@@ -28,13 +28,18 @@ pts = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
 max_dim = max(max(p.x for p in pts) - min(p.x for p in pts),
               max(p.y for p in pts) - min(p.y for p in pts),
               max(p.z for p in pts) - min(p.z for p in pts))
-scale = 2.2 / max(max_dim, 1e-9)
-for o in meshes:
+scale = 1.8 / max(max_dim, 1e-9)  # marge : l'envergure A-pose gonfle la bbox
+# GLB riggé (import glTF) : hiérarchie EMPTY racine + armature + accessoires non
+# skinnés → transformer uniquement les objets RACINES (parent None), sinon les
+# parties se désynchronisent (mains flottantes, corps coupé).
+racines = [o for o in bpy.context.scene.objects if o.parent is None]
+for o in racines:
     o.scale = (o.scale.x * scale, o.scale.y * scale, o.scale.z * scale)
-bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+bpy.context.view_layer.update()
 pts = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
-for o in meshes:
-    o.location.z -= min(p.z for p in pts)
+dz = min(p.z for p in pts)
+for o in racines:
+    o.location.z -= dz
 bpy.context.view_layer.update()
 
 bpy.ops.mesh.primitive_plane_add(size=16, location=(0, 0, -0.001))
