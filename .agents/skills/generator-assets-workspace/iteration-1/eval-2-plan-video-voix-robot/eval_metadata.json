@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "plan-video-voix-robot",
+  "prompt": "Pour l'intro de ma chaîne YouTube il me faut : un plan cinématique de 5 secondes à partir de l'image output/scene_intro.png (travelling avant lent, ambiance salle serveur sombre), et une voix de robot qui dit « Welcome to the system, human. » Prépare-moi les commandes.",
+  "assertions": [
+    { "text": "Route vers monoplan_ia pour le plan cinématique depuis image fixe (pas video/h3_ref2va)" },
+    { "text": "Mentionne le contrôle de charge système AVANT la génération vidéo (contrat dépôts consommateurs)" },
+    { "text": "Le prompt vidéo dans la commande est en anglais et --seed est présent" },
+    { "text": "Route vers voix_robot pour la voix (recette validée par défaut, sans réglages --robot-* inventés)" },
+    { "text": "Indique une durée estimée réaliste (monoplan_ia ~15 min 1080p / ~18 min 4K, voix robot rapide)" },
+    { "text": "Indique les sorties attendues (mp4 1080p/4K, wav/mp3 dans output/voix_robot/)" }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Route vers music_bg (pas chanson/sfx/audio_ambience)",
+      "passed": true,
+      "evidence": "§1 : workflow music_bg choisi, moteur ACE-Step défaut, mode ambient justifié pour un drone."
+    },
+    {
+      "text": "Prompt musical en anglais dans la commande",
+      "passed": true,
+      "evidence": "« dark ambient drone, cold glacial synth pads... instrumental only, no vocals » (étape 2)."
+    },
+    {
+      "text": "Contrôle de charge système mentionné avant lancement",
+      "passed": true,
+      "evidence": "§1.1 + étape 1 : check_charge_systeme.py, exit 0 obligatoire, seuils cités."
+    },
+    {
+      "text": "--seed présent",
+      "passed": true,
+      "evidence": "--seed 42 (graines 42/43/44 expliquées), variante seed 52 pour tonalité."
+    },
+    {
+      "text": "Validation à l'écoute prévue",
+      "passed": true,
+      "evidence": "Étape 3 : scripts/ecoute_candidat_music_bg.py 1|2|3, ECOUTE x3 = test de la couture, choix utilisateur final."
+    },
+    {
+      "text": "Sorties attendues ou durée indiquée",
+      "passed": true,
+      "evidence": "§3 table complète output/music_bg/ + §4 : ~4-6 min, comparaison Music3 ~25 min/candidat."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

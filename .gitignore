@@ -49,4 +49,7 @@ Thumbs.db
 
 # Exceptions : exemples de showcase (videos et audio commités explicitement)
 !docs/exemples/videos/*.mp4
+
+# Config locale des agents IA (symlink .qwen -> .agents, non représentable en git Windows)
 .zcode/
+.qwen/

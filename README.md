@@ -13,6 +13,7 @@
 [![Vulkan](https://img.shields.io/badge/Vulkan-Hardware%20Accelerated-red.svg?logo=vulkan&logoColor=white)](https://www.vulkan.org/)
 [![Video Generation](https://img.shields.io/badge/Video%20AI-Wan%202.1%2F2.2%20%E2%80%A2%20LTX--2.5%20%E2%80%A2%20MiniMax--H3-8A2BE2.svg)](#-generation-video-native-webm)
 [![Music Generation](https://img.shields.io/badge/Music%20AI-MiniMax--Music3%20Loops%20(audiocpp)-1DB954.svg)](#43-music_bg--ai-music-loops-as-background-beds-minimax-music3-gguf-vulkan)
+[![AI-Ready Skill](https://img.shields.io/badge/AI--Ready-agent%20skill%20included-8A2BE2.svg)](#skill-ia)
 [![sd.cpp Auto-Update](https://img.shields.io/badge/sd.cpp-Vulkan%20Auto--Update%20%26%20Build-blue.svg)](#-automatisation-de-la-mise-a-jour--compilation-vulkan-stable-diffusioncpp)
 [![Flux.1 & SDXL](https://img.shields.io/badge/Models-Flux.1%20Dev%20%26%20SDXL-black.svg)](https://blackforestlabs.ai/)
 [![PBR 3D Materials](https://img.shields.io/badge/3D-PBR%20Materials%20%26%20ORM-orange.svg)](#-3d-materials--geometry)
@@ -22,6 +23,7 @@
 
 <p align="center">
   <a href="#about">About</a> •
+  <a href="#skill-ia">AI-Ready Skill</a> •
   <a href="#installation">Installation & Models</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#capabilities">Capabilities</a> •
@@ -65,6 +67,44 @@ gguf, text-to-video, ai-music, music-generation, audio-generation
 `generator-assets` is a lightweight, local, and fully headless CLI pipeline orchestrator designed to transform natural language descriptions into **engine-ready 2D and 3D assets for Godot 4 and Blender**. 
 
 Unlike heavy web-UI tools (Automatic1111, ComfyUI), this project operates with **zero Electron or web server overhead**, executes tasks sequentially with **strict VRAM management** (auto-unloading LLMs before launching diffusion models), and directly exports native engine formats: `.tres` materials, `.glb` models with embedded PBR textures, `.gdshader` files, 360° environment skies, and `.wav`/`.ogg` audio streams.
+
+---
+
+<span id="skill-ia"></span>
+## 🤖 AI-Ready: Built-in Agent Skill (`.agents/skills/generator-assets/`)
+
+**This repository is directly drivable by AI coding agents** (ZCode, Claude Code, …): it ships a
+project skill that any agent opening the workspace discovers automatically — no setup, no MCP
+required:
+
+```text
+.agents/skills/generator-assets/
+├── SKILL.md                        # need → workflow routing + mandatory guardrails + validated recipes
+└── references/catalogue_workflows.md   # condensed quick-reference for all 40 workflows
+```
+
+* **Routing**: turns a natural-language media need ("*a dark ambient loop for my Godot menu*",
+  "*turn this PNG into a real 3D helmet*", "*a cinematic 5 s shot + a robot voice*") into the exact
+  `uv run python main.py -w <workflow>` command, with the right options, expected outputs and durations.
+* **Guardrails baked in**: system-load gate before any heavy generation
+  (`scripts/check_charge_systeme.py`), English model prompts, fixed `--seed`, one heavy job at a
+  time, user listening-validation before industrializing anything subjective.
+* **Validated recipes & live pitfalls**: `h3_ref2va --turbo`, `mesh_ia` 512→1024 strategy,
+  `voix_robot` frozen recipe, the current sd-cli LTX/H3 memory-regression workaround
+  (`SD_CLI_PATH=C:\SD-6b3edaa\sd-cli.exe`), YouTube 4K mastering rules…
+* **Progressive disclosure**: a short SKILL.md (fast to load) pointing to a detailed reference
+  catalog, `README.md`, `GUIDE_AGENT_IA_HABILLAGE.md` and `docs/MEMORY_BANK.md` for depth.
+
+**Benchmarked (2026-09-17)** — 6 agent runs (3 real-world requests × with/without skill):
+100 % correct routing in both configurations (the repo docs are already strong), **−15 % tokens**
+with the skill (agents stop re-reading the 2000-line README), and one critical pitfall surfaced by
+the baseline run (sd-cli build regression) immediately folded back into the skill. Details:
+`.agents/skills/generator-assets-workspace/iteration-1/` (`ANALYSE.md`, `benchmark.md`).
+
+> Usage: open this repo in your agent and just ask in natural language — *"génère-moi une boucle
+> musicale sombre pour le menu du jeu"*. The skill triggers, routes, and enforces the guardrails.
+> Contributions welcome: the skill is versioned like any other doc — keep it in sync when workflows
+> change (it mirrors `AGENTS.md` conventions, in French).
 
 ---
 
@@ -1619,6 +1659,7 @@ uv run python main.py -w upscale -i godot_assets/casque.png --factor 4 --upscale
 ## 🤖 AI Coding Agents Guide (MCP)
 
 > **Note for AI Assistant Agents (Claude, Gemini, Antigravity):**  
+> **First, check the built-in project skill** [`.agents/skills/generator-assets/SKILL.md`](.agents/skills/generator-assets/SKILL.md) — it is the primary entry point for any media generation task (routing + guardrails). The MCP servers below extend the pipeline into Blender and Godot scene manipulation.  
 > Users often do not wish to model manually in Blender or write repetitive engine setup code. You can leverage the `blender` and `godot-mcp-toolkit` MCP servers to automate the complete asset pipeline end-to-end.
 
 ```mermaid

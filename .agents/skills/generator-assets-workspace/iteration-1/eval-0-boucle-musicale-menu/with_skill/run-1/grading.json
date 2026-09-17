@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Route vers music_bg (pas chanson/sfx/audio_ambience)",
+      "passed": true,
+      "evidence": "§1 : « c'est exactement le boulot du workflow music_bg », contraste explicite avec audio_ambience (procédural) et musique composée."
+    },
+    {
+      "text": "Prompt musical en anglais dans la commande",
+      "passed": true,
+      "evidence": "« dark ambient drone, cold sustained low tones, slowly evolving atmospheric pads... no vocals » (§3)."
+    },
+    {
+      "text": "Contrôle de charge système mentionné avant lancement",
+      "passed": true,
+      "evidence": "§2 commande (a) : uv run python scripts/check_charge_systeme.py, exit 1 = on attend."
+    },
+    {
+      "text": "--seed présent",
+      "passed": true,
+      "evidence": "--seed 42 dans la commande, graines dérivées 42/43/44 expliquées."
+    },
+    {
+      "text": "Validation à l'écoute prévue",
+      "passed": true,
+      "evidence": "§6 : ECOUTE_cand*_boucle_x3.mp3 soumis à l'écoute avant industrialisation, règle du dépôt citée."
+    },
+    {
+      "text": "Sorties attendues ou durée indiquée",
+      "passed": true,
+      "evidence": "§4 table output/music_bg/ (ogg, _full.wav, _bed.wav, ECOUTE) + §5 : 4-6 min."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

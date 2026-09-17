@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Route vers monoplan_ia (pas video/h3_ref2va)",
+      "passed": true,
+      "evidence": "Étape 2 : monoplan_ia, recette validée §1.17 citée, options anti-tremblement expliquées."
+    },
+    {
+      "text": "Contrôle de charge système AVANT la vidéo",
+      "passed": true,
+      "evidence": "§1.1 porte d'entrée + « à repasser avant chaque lancement GPU (vidéo, puis audio) »."
+    },
+    {
+      "text": "Prompt vidéo en anglais et --seed présent",
+      "passed": true,
+      "evidence": "« Slow cinematic dolly-in through a dark server room... » + --seed 42 partout."
+    },
+    {
+      "text": "Route vers voix_robot avec recette par défaut (pas de réglages inventés)",
+      "passed": true,
+      "evidence": "voix_robot avec --robot-* explicites mais strictement égaux aux défauts validés (af_heart, 1.30, 120, 0.65, -4) — « tu peux aussi ne rien passer »."
+    },
+    {
+      "text": "Durée estimée réaliste",
+      "passed": true,
+      "evidence": "§4 : voix 2-3 min, vidéo 18-20 min, total 20-25 min, 4K 35-40 min — mesures réelles citées."
+    },
+    {
+      "text": "Sorties attendues indiquées",
+      "passed": true,
+      "evidence": "§3 tables détaillées 1080p/4K (amorce, brut.webm, master, ambiance) + voix (wav/mp3/brut)."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Route vers monoplan_ia (pas video/h3_ref2va)",
+      "passed": true,
+      "evidence": "§0 : monoplan_ia = plan-séquence cinématique depuis image fixe, recette validée 2026-09-10."
+    },
+    {
+      "text": "Contrôle de charge système AVANT la vidéo",
+      "passed": true,
+      "evidence": "§1.1 bloquant : check_charge_systeme.py exit 0 obligatoire ; une seule génération lourde à la fois."
+    },
+    {
+      "text": "Prompt vidéo en anglais et --seed présent",
+      "passed": true,
+      "evidence": "« Slow cinematic dolly-in through a dark server room... » + --seed 42 (et seed 42 sur la voix)."
+    },
+    {
+      "text": "Route vers voix_robot avec recette par défaut (pas de réglages inventés)",
+      "passed": true,
+      "evidence": "« Aucune option --robot-* : les défauts SONT la recette validée (17 essais) »."
+    },
+    {
+      "text": "Durée estimée réaliste",
+      "passed": true,
+      "evidence": "§4 : LTX ~15 min + post ~4 min + voix 1-2 min = ~20-22 min GPU ; 4K +18 min."
+    },
+    {
+      "text": "Sorties attendues indiquées",
+      "passed": true,
+      "evidence": "§3 table complète : intro_chaine_5.0s_1080p.mp4, _avec_ambiance, welcome_robot.wav/mp3/_brut.wav, 4K."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}
