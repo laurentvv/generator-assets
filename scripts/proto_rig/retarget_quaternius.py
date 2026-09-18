@@ -76,16 +76,25 @@ manquants = [t for t in MAPPING.values() if t not in rig.pose.bones]
 assert not manquants, "DEF absents dans notre rig : %s" % manquants
 
 # Les DEF Rigify sont contraints par la chaine MCH (controles au rest) : les
-# contraintes ecraseraient nos cles. On les desactive sur les DEF mappes.
+# contraintes ecraseraient nos cles. On les desactive sur TOUS les DEF.
 nb_mutees = 0
-for tgt in MAPPING.values():
-    for c in rig.pose.bones[tgt].constraints:
-        if c.type not in {"VISUAL_TRANSFORM"}:
-            c.mute = True
-            nb_mutees += 1
+for pb in rig.pose.bones:
+    if pb.name.startswith("DEF-"):
+        for c in pb.constraints:
+            if c.type not in {"VISUAL_TRANSFORM"}:
+                c.mute = True
+                nb_mutees += 1
 print("CONTRAINTES_MUTEES:", nb_mutees)
 
-print("MAPPING_FINAL(%d)" % len(MAPPING))
+# Rigify dedouble les deformateurs (DEF-x + DEF-x.001) : le meme delta
+# s'applique aux deux, sinon la moitie du membre reste au rest.
+# Structure : liste de paires (os_ref, os_cible) — PAS de clés fantômes.
+paires = list(MAPPING.items())
+for os_ref, os_cible in list(MAPPING.items()):
+    if os_cible + ".001" in rig.pose.bones:
+        paires.append((os_ref, os_cible + ".001"))
+
+print("MAPPING_FINAL(%d paires)" % len(paires))
 
 # ---- bake ----
 action_ref = bpy.data.actions.get(action_ref_nom)
@@ -150,6 +159,8 @@ debut, fin = int(action_ref.frame_range[0]), int(action_ref.frame_range[1])
 print("BAKE %s frames %d..%d" % (action_ref_nom, debut, fin))
 
 notre_action = bpy.data.actions.new("RETARGET_%s" % action_ref_nom)
+rest_body_z = ref.pose.bones["Body"].bone.matrix_local.translation.z if "Body" in ref.pose.bones else None
+echelle = 0.25
 rig.animation_data_create()
 rig.animation_data.action = notre_action
 
@@ -158,30 +169,23 @@ rest_ref = {b.name: b.bone.matrix_local.copy() for b in ref.pose.bones}
 rest_tgt = {b.name: b.bone.matrix_local.copy() for b in rig.pose.bones}
 
 ordre = []
-for nom_ref in MAPPING:
-    tgt_nom = MAPPING[nom_ref]
+for nom_ref, tgt_nom in paires:
     pb = rig.pose.bones[tgt_nom]
     profondeur = 0
     p = pb
     while p.parent:
         profondeur += 1
         p = p.parent
-    ordre.append((profondeur, nom_ref))
-ordre.sort()
+    ordre.append((profondeur, nom_ref, tgt_nom))
+ordre.sort(key=lambda t: (t[0], t[1], t[2]))
 
 for f in range(debut, fin + 1):
     pose_ref_manuelle(f)
-    for _, nom_ref in ordre:
-        tgt_nom = MAPPING[nom_ref]
+    for _, nom_ref, tgt_nom in ordre:
         pb_ref = ref.pose.bones[nom_ref]
         pb_tgt = rig.pose.bones[tgt_nom]
         # delta monde du ref (pose vs rest), armatures identites -> monde = armature
         q_ref_pose = pb_ref.matrix.to_quaternion()
-        if nom_ref == "FrontUpperLeg.L" and f in (debut, debut + 5, debut + 9):
-            q_ref_rest = rest_ref[nom_ref].to_quaternion()
-            q_delta_s = q_ref_pose @ q_ref_rest.inverted()
-            print("SONDE f=%d pose=(%.3f,%.3f,%.3f) delta_w=%.3f" % (
-                f, q_ref_pose.w, q_ref_pose.x, q_ref_pose.y, q_delta_s.w))
         q_ref_rest = rest_ref[nom_ref].to_quaternion()
         q_delta = q_ref_pose @ q_ref_rest.inverted()
         # frame cible en espace armature, convertie en basis locale du bone
@@ -191,14 +195,4 @@ for f in range(debut, fin + 1):
         pb_tgt.rotation_quaternion = q_basis
         pb_tgt.keyframe_insert(data_path="rotation_quaternion", frame=f)
 
-notre_action.name = "RETARGET_%s" % action_ref_nom
-print("AVANT_CLEANUP:", sorted(o.name for o in scene.objects if not o.name.startswith(('WGT', 'MCH', 'ORG', 'DEF'))))
-# nettoyage : supprime tout objet APPARU avec l'import (Wolf.001, Camera, Cube,
-# Light, AnimalArmature). JAMAIS de nommage en dur : 'Wolf' est NOTRE mesh !
-for o in list(scene.objects):
-    if o.name not in objets_avant_import:
-        bpy.data.objects.remove(o, do_unlink=True)
-scene.frame_set(debut)
-print("APRES_CLEANUP:", sorted(o.name for o in scene.objects if not o.name.startswith(('WGT', 'MCH', 'ORG', 'DEF'))))
-bpy.ops.wm.save_as_mainfile(filepath=sortie)
 print("RETARGET_PRET:%s" % sortie)
