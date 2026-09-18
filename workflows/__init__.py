@@ -43,6 +43,7 @@ from workflows.monoplan_ia import MonoplanIaWorkflow
 from workflows.makehuman_clothes import MakeHumanClothesWorkflow
 from workflows.character_makeup import CharacterMakeupWorkflow, Character3DWorkflow
 from workflows.asset_blendkit import AssetBlendkitWorkflow
+from workflows.audio_upscale import AudioUpscaleWorkflow
 
 __all__ = [
     "BaseWorkflow",
@@ -87,7 +88,8 @@ __all__ = [
     "MakeHumanClothesWorkflow",
     "CharacterMakeupWorkflow",
     "Character3DWorkflow",
-    "AssetBlendkitWorkflow"
+    "AssetBlendkitWorkflow",
+    "AudioUpscaleWorkflow"
 ]
 
 

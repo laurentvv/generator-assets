@@ -1465,6 +1465,18 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   ```
 * **Status (2026-09-17)**: ✅ **User-validated** (*« c'est bien »*) after a 17-variant listening session (2 TTS engines × ring mod / pitch / flanger / bitcrush / vibrato chains + native qwentts VoiceDesign robot instructs); winner = Kokoro `af_heart` + the effect above. Alternatives kept in `output/test_voix_robot/`.
 
+#### 4.15. `audio_upscale` — Audio Super-Resolution → 48 kHz (UniverSR)
+* **Process** (validated recipe, 2026-09-18): declares the input bandwidth (8/12/16/24 kHz, auto-detected via ffprobe or forced with `--upsr-rate`), pre-resamples the file to that rate if needed (FFmpeg), then runs the UniverSR flow-matching ODE (4 steps, seed 42) to reconstruct a 48 kHz signal — genuine high-band extrapolation above the input Nyquist (attenuated: −11 dB @ 16 kHz, −19 dB @ 19.2 kHz on a sweep).
+* **Variants**: `speech` (voice, default — the main use case) / `audio` (music).
+* **Inputs**: `-i` WAV/MP3 at reduced bandwidth; `--upsr-variante {speech,audio}`; `--upsr-rate` (Hz, 0 = auto; entries above 24 kHz are refused as already full-band); `--seed`.
+* **Engines**: UniverSR GGUF (`C:\Modeles_LLM\UniverSR-GGUF`, 229 MB per package) via audio.cpp **CPU only** — the Vulkan path is broken upstream (`unsupported backend op 'MUL_MAT'`), RTF ≈ 13 (28 s → ~6 min; a 3-min voice-off → ~40 min). ⚠️ Output is **mono** (stereo input is downmixed by the model).
+* **Outputs** (`output/audio_upscale/<name>/`): `<name>_48k.wav` (48 kHz mono) + `<name>_48k.mp3`.
+* **Example**:
+  ```bash
+  uv run python main.py -w audio_upscale -i voix_16k.wav --upsr-variante speech
+  ```
+* **Status (2026-09-18)**: ✅ **User-validated** — voice 16 kHz→48 kHz (*« copie sans bug, parfait même »*) and music 24 kHz→48 kHz (*« très bien, belle batterie »*). Re-test if audio.cpp ships a Vulkan path for this family (RTF would drop to ~1, opening music-bed upsampling). Apollo (compressed-music restoration, same release) was **rejected** (*« moins bonne qualité »* — no audible improvement); its GGUF stays in place, deletable on request.
+
 ---
 
 ### 🛠️ 5. Style Consistency, Upscaling & Batching

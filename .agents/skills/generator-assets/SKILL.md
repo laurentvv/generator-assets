@@ -117,6 +117,7 @@ validation, écueils MPFB/BlendKit) : [`references/pipeline_3d_blender.md`](refe
 | Retrait du chant / séparation de stems | `retrait_voix` | `-w retrait_voix -i morceau.wav` |
 | Voix off expressive FR (clonage qwen3-tts/VoxCPM2/Fish) | `voix_off` | `-w voix_off --texte "..." --voix narrator_fr` |
 | Voix de robot EN (recette validée kokoro + ringmod) | `voix_robot` | `-w voix_robot --texte "..."` |
+| Super-résolution audio → 48 kHz (voix 16k / musique 24k) | `audio_upscale` | `-w audio_upscale -i voix_16k.wav --upsr-variante speech` |
 | Voix de personnage émotionnelle + lip-sync Godot | `tts_dialogue` | `-w tts_dialogue --texte "..." --emotion angry` |
 | Bruitage SFX (procédural ou IA) | `sfx` | `-w sfx "sword swing whoosh"` |
 | Ambiance sonore bouclable sans couture | `audio_ambience` | `-w audio_ambience "forest night, wind"` |
@@ -124,7 +125,9 @@ validation, écueils MPFB/BlendKit) : [`references/pipeline_3d_blender.md`](refe
 **Recettes audio validées** : `music_bg` → `[Instrumental]` (pas de voix) pour des lits instrumentaux ;
 la sortie production est un bed −30 LUFS avec ducking possible ; `voix_robot` = recette fixe validée
 (kokoro `af_heart`, pitch +30 %, ringmod 120 Hz, atempo 0,65, gain −4 dB) — ne pas improviser d'autres
-réglages sans accord utilisateur.
+réglages sans accord utilisateur ; `audio_upscale` = UniverSR CPU validé voix (« parfait même ») et
+musique (« très bien ») — **lent (RTF ~13) et sortie MONO**, refuser les entrées > 24 kHz (déjà pleine
+bande).
 
 ### 🎬 Vidéo IA (Wan 2.1/2.2, LTX-2.5, MiniMax-H3 — sd-cli Vulkan)
 
