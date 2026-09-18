@@ -21,14 +21,18 @@ scene = bpy.context.scene
 rig = bpy.data.objects["rig_loup"]
 
 # ---- import de l'armature de reference + ses actions ----
-avant = set(bpy.data.objects.keys())
+objets_avant_import = set(bpy.data.objects.keys())
 with bpy.data.libraries.load(REF_BLEND, link=False) as (src, dst):
-    dst.objects = ["AnimalArmature"]
+    dst.objects = list(src.objects)  # import COMPLET : sinon les contraintes IK sont cassees
     dst.actions = list(src.actions)
 ref = bpy.data.objects["AnimalArmature"]
 ref.hide_set(False)
 ref.select_set(False)
-print("REF_OBJS:", [o for o in bpy.data.objects.keys() if o not in avant])
+# libraries.load ne lie PAS les objets a la collection de la scene : sans lien,
+# le depsgraph n'evalue ni l'animation ni les contraintes IK (pose figee au rest)
+scene.collection.objects.link(ref)
+bpy.context.view_layer.update()
+print("REF_OBJS:", [o for o in bpy.data.objects.keys() if o not in objets_avant_import])
 print("REF_ACTIONS:", len(bpy.data.actions))
 
 # ---- mapping ref -> DEF de notre rig (explicite, verifie sur les listes reelles) ----
@@ -86,8 +90,62 @@ print("MAPPING_FINAL(%d)" % len(MAPPING))
 # ---- bake ----
 action_ref = bpy.data.actions.get(action_ref_nom)
 assert action_ref, "action absente : " + action_ref_nom
+# L'evaluation frame_set des actions importees (legacy 2.79 -> slots 5.2) ne se
+# fait PAS en headless : on evalue les fcurves a la main, os par os.
+canalbag = None
+for layer in action_ref.layers:
+    for strip in layer.strips:
+        for cb in strip.channelbags:
+            canalbag = cb
+assert canalbag is not None, "action sans channelbag"
+courbes = {}
+for fc in canalbag.fcurves:
+    courbes.setdefault(fc.data_path, {})[fc.array_index] = fc
+print("FCURVES_MANUELLES:", len(canalbag.fcurves), "| os touches:", len(courbes))
+
+# rest du ref en pose neutre (on ecrase la pose avec les fcurves a chaque frame)
 ref.animation_data_create()
-ref.animation_data.action = action_ref
+ref.animation_data.action = None
+bpy.context.view_layer.update()
+rest_ref = {b.name: b.bone.matrix_local.copy() for b in ref.pose.bones}
+rest_tgt = {b.name: b.bone.matrix_local.copy() for b in rig.pose.bones}
+
+
+def pose_ref_manuelle(frame):
+    """Pose de la ref a `frame` reconstruite depuis les fcurves (sans frame_set).
+
+    Le rig Quaternius est un rig IK : les actions animent les CONTROLLEURS IK
+    en LOCATION ; les os des membres suivent via contraintes IK resolues par le
+    depsgraph. On applique donc locations ET rotations, puis on laisse le
+    solveur travailler dans update().
+    """
+    for chemin_os, canaux in courbes.items():
+        nom_os = chemin_os.split('"')[1]
+        pb = ref.pose.bones.get(nom_os)
+        if pb is None:
+            continue
+        if "location" in chemin_os and {0, 1, 2} <= canaux.keys():
+            pb.location = [canaux[i].evaluate(frame) for i in range(3)]
+        elif "rotation_quaternion" in chemin_os and {0, 1, 2, 3} <= canaux.keys():
+            pb.rotation_mode = "QUATERNION"
+            pb.rotation_quaternion = Quaternion(
+                [canaux[i].evaluate(frame) for i in range(4)])
+        elif "rotation_euler" in chemin_os and {0, 1, 2} <= canaux.keys():
+            pb.rotation_mode = "XYZ"
+            pb.rotation_euler = [canaux[i].evaluate(frame) for i in range(3)]
+    ref.update_tag()  # force la re-evaluation des contraintes IK en headless
+    bpy.context.view_layer.update()
+    if frame == 9:
+        ik = ref.pose.bones.get('IKFrontLeg.L')
+        haut = ref.pose.bones.get('FrontUpperLeg.L')
+        if ik:
+            print('DBG9 ik.location=', tuple(round(v, 3) for v in ik.location),
+                  'lock=', list(ik.lock_location),
+                  'nb_contraintes_sur_FrontLower=', len(ref.pose.bones['FrontLowerLeg.L'].constraints))
+        if haut:
+            print('DBG9 FrontUpper.matrix=', tuple(round(v, 3) for v in haut.matrix.translation))
+
+
 debut, fin = int(action_ref.frame_range[0]), int(action_ref.frame_range[1])
 print("BAKE %s frames %d..%d" % (action_ref_nom, debut, fin))
 
@@ -112,13 +170,18 @@ for nom_ref in MAPPING:
 ordre.sort()
 
 for f in range(debut, fin + 1):
-    scene.frame_set(f)
+    pose_ref_manuelle(f)
     for _, nom_ref in ordre:
         tgt_nom = MAPPING[nom_ref]
         pb_ref = ref.pose.bones[nom_ref]
         pb_tgt = rig.pose.bones[tgt_nom]
         # delta monde du ref (pose vs rest), armatures identites -> monde = armature
         q_ref_pose = pb_ref.matrix.to_quaternion()
+        if nom_ref == "FrontUpperLeg.L" and f in (debut, debut + 5, debut + 9):
+            q_ref_rest = rest_ref[nom_ref].to_quaternion()
+            q_delta_s = q_ref_pose @ q_ref_rest.inverted()
+            print("SONDE f=%d pose=(%.3f,%.3f,%.3f) delta_w=%.3f" % (
+                f, q_ref_pose.w, q_ref_pose.x, q_ref_pose.y, q_delta_s.w))
         q_ref_rest = rest_ref[nom_ref].to_quaternion()
         q_delta = q_ref_pose @ q_ref_rest.inverted()
         # frame cible en espace armature, convertie en basis locale du bone
@@ -129,6 +192,13 @@ for f in range(debut, fin + 1):
         pb_tgt.keyframe_insert(data_path="rotation_quaternion", frame=f)
 
 notre_action.name = "RETARGET_%s" % action_ref_nom
+print("AVANT_CLEANUP:", sorted(o.name for o in scene.objects if not o.name.startswith(('WGT', 'MCH', 'ORG', 'DEF'))))
+# nettoyage : supprime tout objet APPARU avec l'import (Wolf.001, Camera, Cube,
+# Light, AnimalArmature). JAMAIS de nommage en dur : 'Wolf' est NOTRE mesh !
+for o in list(scene.objects):
+    if o.name not in objets_avant_import:
+        bpy.data.objects.remove(o, do_unlink=True)
 scene.frame_set(debut)
+print("APRES_CLEANUP:", sorted(o.name for o in scene.objects if not o.name.startswith(('WGT', 'MCH', 'ORG', 'DEF'))))
 bpy.ops.wm.save_as_mainfile(filepath=sortie)
 print("RETARGET_PRET:%s" % sortie)
