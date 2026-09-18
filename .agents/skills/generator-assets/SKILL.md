@@ -77,6 +77,7 @@ CLI doit préserver ce contrat.
 | **Objet 3D IA volume réel** depuis prompt ou image | `mesh_ia` | `-w mesh_ia "obsidian dragon skull" --res 512` ou `-i casque.png` |
 | Skybox 360° équirectangulaire + IBL | `skybox` | `-w skybox "purple cosmic nebula"` |
 | Modèle 3D voxel pour GridMap | `voxel3d` | `-w voxel3d -i sprite.png --grid-size 32` |
+| **Animal riggé packé animé pour Godot** (Quaternius, packs mocap) | `animal_godot` | `-w animal_godot -i loup.blend -o loup_godot.glb` — skill dédié `blender-rig` si rigging/animation IA |
 | Fiche orthogonale pour modéliser dans Blender | `turnaround3d` | `-w turnaround3d "dwarven warrior"` |
 | Flowmap eau/lave + shader Godot | `flowmap` | `-w flowmap "lava river" --angle 45` |
 | Prop CC0 standard ou plaque décor (YouTube) | `asset_blendkit` | `-w asset_blendkit --query "wooden barrel" --list-assets` |
