@@ -173,8 +173,9 @@ contrainte.up_axis = "UP_Y"
 scene.camera = cam
 
 if CAM_FIXE:
-    # camera fixe en 3/4 : le mouvement du sujet est le seul evenement du plan
-    pivot.rotation_euler.z = math.radians(-38)
+    # camera fixe : 3/4 avant pour un sujet face, PROFIL pour une locomotion
+    # (gallop/trot se lisent de cote, pas de face)
+    pivot.rotation_euler.z = math.radians(-135 if "--profil" in argv else -38)
 else:
     pivot.rotation_euler.z = math.radians(-35)
     pivot.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
