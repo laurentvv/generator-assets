@@ -185,6 +185,10 @@ if CAM_FIXE:
     # camera fixe : 3/4 avant pour un sujet face, PROFIL pour une locomotion
     # (gallop/trot se lisent de cote, pas de face)
     pivot.rotation_euler.z = math.radians(-135 if "--profil" in argv else -38)
+    if "--proche" in argv:
+        # cadrage manuel serre (sujet ~1.1 m a l'origine) : ignore la bbox
+        cam.location = (0.9, -1.7, 1.05)
+        pivot.rotation_euler.z = 0.0
 else:
     pivot.rotation_euler.z = math.radians(-35)
     pivot.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
