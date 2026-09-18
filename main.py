@@ -110,7 +110,8 @@ def lancer_mode_interactif(config: dict):
         "38": ("musique_essence", "🧬 Musique à l'Essence d'une Référence (SA3 Medium init_audio + retrait voix HTDemucs)"),
         "39": ("asset_blendkit", "🧰 Asset CC0 Blendkit (prop .glb Godot / plaque décor chaine rendue Cycles)"),
         "40": ("voix_robot", "🤖 Voix de Robot en Anglais (Kokoro Vulkan + ring modulation — recette validée)"),
-        "41": ("audio_upscale", "🔊 Super-Résolution Audio → 48 kHz (UniverSR CPU — voix 16k / musique 24k restaurées, recette validée)")
+        "41": ("audio_upscale", "🔊 Super-Résolution Audio → 48 kHz (UniverSR CPU — voix 16k / musique 24k restaurées, recette validée)"),
+        "42": ("animal_godot", "🐺 Animal packé riggé (.blend) → GLB Godot game-ready (clips AN_*, recette validée)")
     }
 
     while True:
@@ -401,6 +402,14 @@ def lancer_mode_interactif(config: dict):
                 choix_v = input("🎚️ Variante : [1] speech — voix off (défaut)   [2] audio — musique : ").strip()
                 params["upsr_variante"] = "audio" if choix_v == "2" else "speech"
                 params["output"] = input("💾 Nom de sortie (défaut : nom du fichier) : ").strip() or None
+
+            elif wf_name == "animal_godot":
+                chemin = input("🐺 Blend d'animal riggé (ex. pack Quaternius) : ").strip()
+                if not chemin or not os.path.exists(chemin):
+                    print("❌ Fichier introuvable.")
+                    continue
+                params["input"] = chemin
+                params["output"] = input("💾 GLB de sortie (défaut : <blend>_godot.glb) : ").strip() or None
 
             elif wf_name == "musique_essence":
                 params["prompt"] = input(
@@ -699,6 +708,8 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--robot-gain", type=float, default=-4.0, help="Gain final voix_robot en dB (défaut: -4, voix « calme » validée).")
     groupe_wf.add_argument("--upsr-variante", dest="upsr_variante", choices=["speech", "audio"], default="speech", help="Variante UniverSR pour audio_upscale : speech = voix (défaut, cas principal) | audio = musique.")
     groupe_wf.add_argument("--upsr-rate", dest="upsr_rate", type=int, default=0, help="Bande d'entrée déclarée à UniverSR en Hz (8000/12000/16000/24000 ; défaut: 0 = auto depuis la fréquence du fichier ; au-dessus de 24000 = refus).")
+    groupe_wf.add_argument("--animal-prefixe", dest="animal_prefixe", default="AN_", help="Préfixe des clips d'animation pour animal_godot (défaut : AN_).")
+    groupe_wf.add_argument("--animal-actions", dest="animal_actions", nargs="*", default=None, help="Actions natives à garder pour animal_godot (défaut : toutes).")
     groupe_wf.add_argument("--style-musique", default=None, help="Description musicale EN pour chanson (défaut : dark folk Vent-Gris).")
     groupe_wf.add_argument("--langue", default=None, help="Langue des paroles pour chanson/musique_adn (défaut: fr).")
     groupe_wf.add_argument("--negatif", default=None, help="Prompt négatif EN pour musique_adn — ex: 'pop, soft, mellow, gentle'.")
@@ -1044,6 +1055,8 @@ Exemples de Workflows 3D & 2D :
         "robot_gain": args.robot_gain,
         "upsr_variante": args.upsr_variante,
         "upsr_rate": args.upsr_rate,
+        "animal_prefixe": args.animal_prefixe,
+        "animal_actions": args.animal_actions,
         "style_musique": args.style_musique,
         "langue": args.langue,
         "negatif": args.negatif,

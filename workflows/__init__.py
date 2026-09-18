@@ -44,6 +44,7 @@ from workflows.makehuman_clothes import MakeHumanClothesWorkflow
 from workflows.character_makeup import CharacterMakeupWorkflow, Character3DWorkflow
 from workflows.asset_blendkit import AssetBlendkitWorkflow
 from workflows.audio_upscale import AudioUpscaleWorkflow
+from workflows.animal_godot import AnimalGodotWorkflow
 
 __all__ = [
     "BaseWorkflow",

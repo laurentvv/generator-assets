@@ -18,6 +18,7 @@ Rappel garde-fous : `scripts/check_charge_systeme.py` avant toute génération l
 | `mesh3d` | Mesh 3D paramétrique Blender (texture PBR embarquée) | `prompt` ou `-i`, `--shape` (tile/cube/pillar/cylinder/sphere/card/cutout) | `_3d_<shape>.glb` + maps PBR |
 | `mesh_ia` | **Objet 3D IA volume réel** (TRELLIS.2-4B) depuis prompt (chaîne `generate`) ou image `-i` | `--res` (512 itération ~11 min / 1024 master ~55 min), `--faces-cible` (décimation Godot, ex. 30000), `--seed` | `<nom>_<res>.glb`, `_jeu.glb` (si décimation), planche de contrôle, `_infos.json` |
 | `voxel3d` | Modèle voxel (.glb, couleurs de sommets) pour GridMap | `-i` ou `prompt`, `--grid-size`, `--voxel-depth` | `_voxel.glb` |
+| `animal_godot` | **Animal packé riggé (.blend) → GLB Godot game-ready** (VALIDÉE 2026-09-18 : gallop natif « parfait ») | `-i` blend riggé, `--animal-prefixe` (AN_), `--animal-actions` (filtre) | `<blend>_godot.glb` (os + clips AN_* vérifiés) |
 | `skybox` | Panorama 360° équirectangulaire 2:1 + IBL | `prompt`, `-s`/`--width --height`, `-l 360RedmondResized:1.0` | `_sky.png`, `_sky_env.tres` |
 | `turnaround3d` | Fiche de modélisation orthogonale (face + profil, guides) | `prompt`, `-s`, `--seed` | `_front.png`, `_side.png`, `_model_sheet.png` |
 | `flowmap` | Carte de flux vectoriel + shader eau/lave Godot | `--angle`, `--flow-type` (river/vortex/radial/optical), `--turbulence`, `--mode-2d` | `_flowmap.png`, `_water.gdshader`, `_material.tres` |

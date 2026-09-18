@@ -439,6 +439,7 @@ The engine features **38 modular workflows** organized into 5 functional categor
 ```text
 📋 Quick Category Map:
   • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap, asset_blendkit
+  • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
   • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, monoplan_ia
@@ -1476,6 +1477,17 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   uv run python main.py -w audio_upscale -i voix_16k.wav --upsr-variante speech
   ```
 * **Status (2026-09-18)**: ✅ **User-validated** — voice 16 kHz→48 kHz (*« copie sans bug, parfait même »*) and music 24 kHz→48 kHz (*« très bien, belle batterie »*). Re-test if audio.cpp ships a Vulkan path for this family (RTF would drop to ~1, opening music-bed upsampling). Apollo (compressed-music restoration, same release) was **rejected** (*« moins bonne qualité »* — no audible improvement); its GGUF stays in place, deletable on request.
+
+#### 4.16. `animal_godot` — Game-Ready Animated Animal (Pack Blend → GLB for Godot)
+* **Process** (validated recipe, 2026-09-18): opens a rigged animal pack `.blend` (e.g. Quaternius CC0 packs — mesh + armature + native mocap actions), removes the legacy placeholder objects (Camera/Cube/Light), renames every native action to the `AN_*` clip convention, then exports a single **GLB** with `export_animation_mode='ACTIONS'` (one clip per action, +Y up). The result is **verified by re-import** (bone/clip/mesh counts) before delivery.
+* **Inputs**: `-i` rigged animal `.blend`; `--animal-prefixe` (clip prefix, default `AN_`); `--animal-actions` (optional whitelist of native actions to keep).
+* **Outputs**: `<blend>_godot.glb` — drop into Godot: AnimationPlayer is generated automatically with all clips.
+* **Example**:
+  ```bash
+  uv run python main.py -w animal_godot -i output/test_rig/meshes/quaternius_animaux/Wolf_rigge.blend -o loup_godot.glb
+  ```
+* **Status (2026-09-18)**: ✅ **User-validated** — native Quaternius gallop rendered from this exact chain graded *« parfait »* (the quality bar: native mocap on a textured character beats any procedural/retargeted motion). Full campaign details (agentique Rigify rigs, Kimodo text→mocap CPU, parked retarget): MEMORY_BANK §1.28 + skill `.agents/skills/blender-rig/`.
+* **Quality rule of thumb**: native pack mocap on a textured character = best; procedural FK loops = ambient only; inter-rig retarget = parked (works, below the bar).
 
 ---
 
