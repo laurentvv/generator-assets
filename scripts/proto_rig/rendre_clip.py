@@ -21,10 +21,19 @@ anim = argv[1] if len(argv) > 1 else "none"
 nb_frames = int(argv[2]) if len(argv) > 2 else 72
 fps = int(argv[3]) if len(argv) > 3 else 24
 res = int(argv[4]) if len(argv) > 4 else 1280
+CAM_FIXE = "--fixe" in argv   # camera fixe (le mouvement du sujet est seul en scene)
+BOUCLE = "--boucle" in argv   # boucle l'action cuit du fichier (retarget)
 
 scene = bpy.context.scene
 rig = next((o for o in scene.objects if o.type == "ARMATURE" and "metarig" not in o.name.lower()), None)
 assert rig, "aucune armature dans le fichier"
+
+# plage de l'action cuite (pour --boucle)
+action_debut, action_fin = 1, 1
+if BOUCLE and rig.animation_data and rig.animation_data.action:
+    fr = rig.animation_data.action.frame_range
+    action_debut, action_fin = int(fr[0]), int(fr[1])
+    print("BOUCLE action %s : frames %d..%d" % (rig.animation_data.action.name, action_debut, action_fin))
 
 
 def trouver_ffmpeg():
@@ -45,51 +54,67 @@ def poser(rig, nom, chemin, angles):
     pb.keyframe_insert(data_path="rotation_euler", frame=scene.frame_current)
 
 
+def basculer_fk(rig):
+    """Passe les MEMBRES de Rigify en mode FK (slider IK_FK=1).
+
+    Filtre strict sur les os *_parent de membres : basculer aussi la colonne
+    (torso/neck) plie la chaine torse-tete (blob d'epaules constate).
+    """
+    for nom, pb in rig.pose.bones.items():
+        if "IK_FK" in pb and ("arm_parent" in nom or "thigh_parent" in nom):
+            pb["IK_FK"] = 1.0
+            pb.keyframe_insert(data_path='["IK_FK"]', frame=scene.frame_current)
+
+
 def animer_loup(rig, n):
-    """Trot sur place : diagonales, bob, queue en vague, oreilles."""
+    """Trot sur place AMPLIFIE : diagonales marquees, bob net, queue en vague."""
+    scene.frame_set(1)
+    basculer_fk(rig)
     per = 36.0  # frames par cycle
     for f in range(1, n + 1):
         scene.frame_set(f)
         t = 2 * math.pi * f / per
-        # pattes : swing X, diagonal front.L + rear.R
-        poser(rig, "front_thigh_fk.L", "XYZ", (-0.20 + 0.45 * math.sin(t), 0, 0))
-        poser(rig, "front_shin_fk.L", "XYZ", (0.55 - 0.45 * math.cos(t), 0, 0))
-        poser(rig, "front_thigh_fk.R", "XYZ", (-0.20 - 0.45 * math.sin(t), 0, 0))
-        poser(rig, "front_shin_fk.R", "XYZ", (0.55 + 0.45 * math.cos(t), 0, 0))
-        poser(rig, "thigh_fk.R", "XYZ", (0.35 - 0.45 * math.sin(t), 0, 0))
-        poser(rig, "shin_fk.R", "XYZ", (-0.50 + 0.45 * math.cos(t), 0, 0))
-        poser(rig, "thigh_fk.L", "XYZ", (0.35 + 0.45 * math.sin(t), 0, 0))
-        poser(rig, "shin_fk.L", "XYZ", (-0.50 - 0.45 * math.cos(t), 0, 0))
-        # corps : bob vertical + léger roulis
+        # pattes : swing X ample, diagonal front.L + rear.R
+        poser(rig, "front_thigh_fk.L", "XYZ", (-0.30 + 0.75 * math.sin(t), 0, 0))
+        poser(rig, "front_shin_fk.L", "XYZ", (0.85 - 0.70 * math.cos(t), 0, 0))
+        poser(rig, "front_thigh_fk.R", "XYZ", (-0.30 - 0.75 * math.sin(t), 0, 0))
+        poser(rig, "front_shin_fk.R", "XYZ", (0.85 + 0.70 * math.cos(t), 0, 0))
+        poser(rig, "thigh_fk.R", "XYZ", (0.50 - 0.75 * math.sin(t), 0, 0))
+        poser(rig, "shin_fk.R", "XYZ", (-0.80 + 0.70 * math.cos(t), 0, 0))
+        poser(rig, "thigh_fk.L", "XYZ", (0.50 + 0.75 * math.sin(t), 0, 0))
+        poser(rig, "shin_fk.L", "XYZ", (-0.80 - 0.70 * math.cos(t), 0, 0))
+        # corps : bob vertical net + roulis
         torse = rig.pose.bones.get("spine.002")
         if torse:
-            torse.location = (0, 0, 0.015 * math.sin(2 * t))
+            torse.location = (0, 0, 0.035 * math.sin(2 * t))
             torse.keyframe_insert(data_path="location", frame=f)
-            torse.rotation_euler = (0, 0.05 * math.sin(t), 0)
+            torse.rotation_euler = (0, 0.09 * math.sin(t), 0)
             torse.keyframe_insert(data_path="rotation_euler", frame=f)
-        # tête : contre-balancement doux
+        # tête : contre-balancement marqué
         tete = rig.pose.bones.get("head")
         if tete:
-            tete.rotation_euler = (0.05 * math.sin(2 * t + 1.0), 0, 0.06 * math.sin(t))
+            tete.rotation_euler = (0.10 * math.sin(2 * t + 1.0), 0, 0.10 * math.sin(t))
             tete.keyframe_insert(data_path="rotation_euler", frame=f)
-        # queue : vague le long de la chaine
+        # queue : vague ample le long de la chaine
         for i, nom in enumerate(("spine_fk.004", "spine_fk.005", "spine_fk.006", "spine_fk.007", "spine_fk.008")):
             pb = rig.pose.bones.get(nom)
             if pb:
-                pb.rotation_euler = (0.1 * math.sin(2 * t - 0.6 * i), 0, 0.25 * math.sin(t - 0.6 * i))
+                pb.rotation_euler = (0.18 * math.sin(2 * t - 0.6 * i), 0, 0.45 * math.sin(t - 0.6 * i))
                 pb.keyframe_insert(data_path="rotation_euler", frame=f)
         # oreilles : twitch ponctuel
         for cote in (".L", ".R"):
             pb = rig.pose.bones.get("ear" + cote)
             if pb:
                 phase = math.sin(t + (0.0 if cote == ".L" else 1.5))
-                pb.rotation_euler = (0.12 * max(0.0, phase) ** 3, 0, 0)
+                pb.rotation_euler = (0.15 * max(0.0, phase) ** 3, 0, 0)
                 pb.keyframe_insert(data_path="rotation_euler", frame=f)
 
 
 def animer_humain(rig, n):
-    """Idle vivant : bras le long du corps (poses P1 eprouvees), salut de
-    l'avant-bras droit, tete et torse expressifs."""
+    """Idle vivant EProuve (version propre) : bras le long du corps, salut de
+    l'avant-bras droit, torse et tete expressifs. PAS de bascule FK ni de
+    clés de jambes : les poids manuels head/shoulders de ce rig de test
+    reagissent mal au dela (blob d'epaules constate le 2026-09-18)."""
     per = 48.0
     for f in range(1, n + 1):
         scene.frame_set(f)
@@ -147,10 +172,14 @@ contrainte.track_axis = "TRACK_NEGATIVE_Z"
 contrainte.up_axis = "UP_Y"
 scene.camera = cam
 
-pivot.rotation_euler.z = math.radians(-35)
-pivot.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
-pivot.rotation_euler.z = math.radians(325)
-pivot.keyframe_insert(data_path="rotation_euler", index=2, frame=nb_frames)
+if CAM_FIXE:
+    # camera fixe en 3/4 : le mouvement du sujet est le seul evenement du plan
+    pivot.rotation_euler.z = math.radians(-38)
+else:
+    pivot.rotation_euler.z = math.radians(-35)
+    pivot.keyframe_insert(data_path="rotation_euler", index=2, frame=1)
+    pivot.rotation_euler.z = math.radians(325)
+    pivot.keyframe_insert(data_path="rotation_euler", index=2, frame=nb_frames)
 
 
 def area_light(nom, energie, taille, loc):
@@ -198,7 +227,10 @@ dossier_png = mp4_out.replace(".mp4", "_png")
 os.makedirs(dossier_png, exist_ok=True)
 scene.render.image_settings.file_format = "PNG"
 for f in range(1, nb_frames + 1):
-    scene.frame_set(f)
+    if BOUCLE:
+        scene.frame_set(action_debut + ((f - 1) % (action_fin - action_debut + 1)))
+    else:
+        scene.frame_set(f)
     scene.render.filepath = os.path.join(dossier_png, "frame_%04d.png" % f)
     bpy.ops.render.render(write_still=True)
     if f % 12 == 0 or f == nb_frames:
