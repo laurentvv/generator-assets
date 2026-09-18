@@ -77,11 +77,13 @@ LoRAs disponibles : `-l "game_icon_diablo_style:0.8"` (bascule auto SDXL Juggern
 | `retrait_voix` | Retrait du chant / stems (HTDemucs) | `-i` morceau | `instrumental.wav/.mp3`, `stems/` |
 | `voix_off` | Voix off expressive FR, clonage depuis une référence | texte ou `.txt`, `--voix-ref`, `--moteur` (qwen3/voxcpm2/fish), `--instruct`, `--lufs-voix` (−16) | `voix_off_brut_final.wav` (−16 LUFS) + `.mp3` |
 | `voix_robot` | Voix robot EN — recette VALIDÉE figée (kokoro `af_heart`, pitch 1.30, ringmod 120 Hz, tempo 0.65, gain −4 dB) | texte EN ou `.txt`, `--robot-*` (défauts = recette validée) | `.wav`, `.mp3`, `_brut.wav` |
+| `audio_upscale` | Super-résolution audio → 48 kHz (UniverSR) — VALIDÉE voix 16k (« parfait même ») et musique 24k (« très bien ») | `-i` audio bande réduite, `--upsr-variante` (speech défaut / audio), `--upsr-rate` (0 = auto), `--seed` (42) | `<nom>_48k.wav` (mono) + `.mp3` |
 | `tts_dialogue` | Répliques émotionnelles + visèmes lip-sync Godot | `prompt` (perso), `--emotions`, `--pitch` | `.wav/.ogg` par émotion, `_dialogue_manifest.json` |
 
 Statuts clés : ACE-Step = moteur musical défaut validé (~42 s / 28 s) ; chanson validée (~15 min / 4 min) ;
 essence SA3 validée (scale 0.40-0.45, seed 42) ; voix_off validée sur 3 moteurs (production = Apache-2.0 :
-qwen3/voxcpm2) ; voix_robot validée (17 essais). **Ludique/subjectif → toujours faire écouter avant
+qwen3/voxcpm2) ; voix_robot validée (17 essais) ; audio_upscale validé mais **CPU seul RTF ~13 + sortie
+mono** (refuser > 24 kHz). **Ludique/subjectif → toujours faire écouter avant
 d'industrialiser.** Musique rock sombre : plafond réalisme instrumental connu (MEMORY_BANK §1.11/§1.22) —
 descriptions sobres, tonalité mineure imposée.
 
