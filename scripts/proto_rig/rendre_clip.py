@@ -111,29 +111,36 @@ def animer_loup(rig, n):
 
 
 def animer_humain(rig, n):
-    """Idle vivant EProuve (version propre) : bras le long du corps, salut de
-    l'avant-bras droit, torse et tete expressifs. PAS de bascule FK ni de
-    clés de jambes : les poids manuels head/shoulders de ce rig de test
-    reagissent mal au dela (blob d'epaules constate le 2026-09-18)."""
-    per = 48.0
+    """Marche sur place : bascule FK des MEMBRES uniquement, cuisses en X,
+    genoux qui plient, bras qui balancent, torse en rotation (jamais location :
+    conflit avec les poids manuels head/shoulders de ce rig de test)."""
+    scene.frame_set(1)
+    basculer_fk(rig)
+    per = 36.0
     for f in range(1, n + 1):
         scene.frame_set(f)
         t = 2 * math.pi * f / per
+        # jambes : balancement X oppose, genou plie au retour
+        poser(rig, "thigh_fk.L", "XYZ", (0.70 * math.sin(t), 0, 0))
+        poser(rig, "shin_fk.L", "XYZ", (-0.55 + 0.45 * math.cos(t), 0, 0))
+        poser(rig, "foot_fk.L", "XYZ", (0.3 - 0.25 * math.sin(t), 0, 0))
+        poser(rig, "thigh_fk.R", "XYZ", (-0.70 * math.sin(t), 0, 0))
+        poser(rig, "shin_fk.R", "XYZ", (-0.55 - 0.45 * math.cos(t), 0, 0))
+        poser(rig, "foot_fk.R", "XYZ", (0.3 + 0.25 * math.sin(t), 0, 0))
+        # bras : balancement oppose
+        poser(rig, "upper_arm_fk.L", "XYZ", (0.35 * math.sin(t), 0, -1.30))
+        poser(rig, "forearm_fk.L", "XYZ", (-0.25 - 0.15 * math.sin(t), 0, 0))
+        poser(rig, "upper_arm_fk.R", "XYZ", (-0.35 * math.sin(t), 0, 1.30))
+        poser(rig, "forearm_fk.R", "XYZ", (-0.25 + 0.15 * math.sin(t), 0, 0))
+        # torse : roulis
         torse = rig.pose.bones.get("torso")
         if torse:
-            torse.rotation_euler = (0.02 * math.sin(2 * t), 0, 0.05 * math.sin(t / 2))
+            torse.rotation_euler = (0.04 * math.sin(t), 0, 0.06 * math.sin(t))
             torse.keyframe_insert(data_path="rotation_euler", frame=f)
-        # bras gauche : idle le long du corps
-        poser(rig, "upper_arm_fk.L", "XYZ", (0, 0, -1.30 + 0.05 * math.sin(t)))
-        poser(rig, "forearm_fk.L", "XYZ", (0, 0, -0.15))
-        # bras droit : baisse (convention P1 cote droit = +), avant-bras qui salue
-        poser(rig, "upper_arm_fk.R", "XYZ", (0, 0, 1.35 - 0.05 * math.sin(t + 0.5)))
-        poser(rig, "forearm_fk.R", "XYZ", (0.55 * math.sin(2 * t + 1.0), 0, 0.5))
-        poser(rig, "hand_fk.R", "XYZ", (0, 0, 0.35 * math.sin(3 * t)))
-        # tete : regard vivant
+        # tete : compensée
         tete = rig.pose.bones.get("head")
         if tete:
-            tete.rotation_euler = (0.05 * math.sin(2 * t), 0, -0.30 + 0.12 * math.sin(t))
+            tete.rotation_euler = (-0.04 * math.sin(t), 0, 0.08 * math.sin(t + 0.5))
             tete.keyframe_insert(data_path="rotation_euler", frame=f)
 
 
