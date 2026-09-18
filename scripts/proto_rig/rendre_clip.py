@@ -132,9 +132,11 @@ def animer_humain(rig, n):
         poser(rig, "forearm_fk.L", "XYZ", (-0.25 - 0.15 * math.sin(t), 0, 0))
         poser(rig, "upper_arm_fk.R", "XYZ", (-0.35 * math.sin(t), 0, 1.30))
         poser(rig, "forearm_fk.R", "XYZ", (-0.25 + 0.15 * math.sin(t), 0, 0))
-        # torse : roulis
+        # torse : bob vertical (poids corriges en degrade doux) + roulis
         torse = rig.pose.bones.get("torso")
         if torse:
+            torse.location = (0, 0, 0.025 * abs(math.sin(t)))
+            torse.keyframe_insert(data_path="location", frame=f)
             torse.rotation_euler = (0.04 * math.sin(t), 0, 0.06 * math.sin(t))
             torse.keyframe_insert(data_path="rotation_euler", frame=f)
         # tete : compensée
