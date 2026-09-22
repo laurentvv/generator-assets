@@ -268,3 +268,67 @@ baseline au premier run) :
   `Lightricks/ComfyUI-LTXVideo` ;
 - **`comfyui-nouveaux-repos`** : diff du top étoiles des repos `topic:comfyui` créés sur les
   45 derniers jours (≥20★) — détecte les nouveaux packs H3/nodes comme ceux cités ici.
+
+## 10. 2026-09-22 — Évaluation des 4 nouveaux repos détectés par la veille (`comfyui-nouveaux-repos`)
+
+Évaluation au fil de l'eau des 4 repos remontés par la veille du 22/09 (étoiles au 22/09) ;
+verdict par rapport à notre stack CLI Vulkan et à MEMORY_BANK.
+
+### `ruashots/open-h3-ir` (60★) — ⭐ la seule idée directement actionnable
+
+Compilateur **Context-IR pour MiniMax H3** — la couche que MiniMax a décrite comme critique
+(« H3-Context-IR is critical to the quality of the final output ») mais **pas open-sourcée** :
+elle n'existait que via leur service hébergé. Ce projet la réimplémente en local et dialogue
+avec **n'importe quel endpoint OpenAI-compatible** (llama.cpp server, Ollama, vLLM…), sans GPU
+propre (le LLM vit sur l'endpoint). Ce que produit un Context-IR : document structuré à
+sections nommées dans un ordre fixe, chaque sujet lié à un label d'image numéroté, cut times
+posés sur une grille de trames légale.
+
+- **Connexion directe** avec nos travaux : grammaire H3 distillée en MEMORY_BANK §1.16, et
+  l'action (c) du proto endless (§8 : « VLM local ou Prompt-Rewriter ») — open-h3-ir EST un
+  prompt-rewriter H3 prêt à l'emploi. Le README décrit le format du document, exploitable
+  même sans installer le compilateur (restructuration manuelle de nos prompts h3_ref2va).
+- **Action possible** (pas urgente) : tester la structure Context-IR sur notre recette
+  h3_ref2va --turbo (A/B avec le protocole OmniCam/AICG3D existant : même ancre Flux, même
+  seed), en amont éventuel d'un vrai couplage LLM local (qwentts server / llama.cpp) →
+  compilateur automatique. Nodes ComfyUI dans un repo séparé (`ruashots/ComfyUI-OpenH3-IR`).
+
+### `jplenio/ComfyUI-MiniMax-Music-Production-Toolkit` (61★) — ❌ cœur déjà clos chez nous
+
+Toolbox musique ComfyUI : génération (YuE2/MiniMax Music 3), **cover par score réel**
+(SheetSage2 transcrit mélodie/accords/sections du morceau source → réécriture ABC avec
+slider de liberté → régénération), amélioration (FlashSR), mastering, métadonnées/export.
+- La **feature phare (cover via score) = explicitement du « territoire cover, rejeté
+  définitivement »** chez nous (MEMORY_BANK §1.11 : cover ACE-Step « le clone : horrible »,
+  essence SA3 rejetée ; et verbatim du verdict YuE2 2026-09-13 : « couplage
+  SheetSage2→ABC→cot=melody = territoire cover, rejeté définitivement »). Ne PAS proposer
+  de test — sauf si l'utilisateur rouvre un jour le dossier cover, auquel cas l'approche
+  « transcrire le vrai score AVANT de régénérer » est la seule avenue qui a du sens.
+- Le reste est couvert ou marginal : mastering = nos recettes FFmpeg loudnorm (README
+  FFmpeg), super-résolution = famille `audiosr` d'audio.cpp ; métadonnées/pochettes = hors
+  besoin. Familles music3/yue2/sheetsage2 déjà présentes dans `model_specs` audio.cpp si
+  besoin.
+
+### `Saganaki22/ComfyUI-Hyperflow` (55★) — 👁 watch, pas actionnable
+
+Port ComfyUI du LoRA 8-step **HyperFlow de Video Rebirth** pour MiniMax-H3 (video+audio) :
+LoRA rank 256 + **double conditionnement `(t, r)`** par step (conditionné sur l'intervalle
+intégré, `r = 1 - sigma_next`). Points clés :
+- Notre turbo validé (`--turbo` h3_ref2va, MEMORY_BANK §1.16) = LoRA **lightx2v**
+  `minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16` — un AUTRE LoRA 8-step, déjà validé.
+- Sans le double conditionnement `(t, r)` (exclusif au node ComfyUI), les builds standalone
+  (HF `drbaph/MiniMax-H3-Turbo-Lora-ComfyUI`, backbone 3,93 Go / rank-20 ~318 Mo) **dévient
+  du modèle publié** → pas d'avantage démontré pour sd-cli qui ne sait pas faire ce
+  conditionnement. À re-regarder si : ① Video Rebirth publie une voie standalone complète,
+  ② sd-cli implémente le conditionnement (t, r), ③ une comparaison qualité lightx2v vs
+  HyperFlow complet apparaît. Topic `sol-attn` du repo = piste d'attention à surveiller aussi.
+
+### `mkamranr/reelforge` (66★) — hors périmètre ici, 2 idées pour ai-doc2video
+
+Pipeline URL → reel vertical (script LLM → TTS Fish-Speech → storyboard → rendu 1080×1920 →
+vérif encode), self-hosted. Format vertical = pas notre cas (YouTube 4K paysage), mais :
+- ① **étape de vérification de conformité du master avant publication** (H.264 High @4.1,
+  CRF, AAC bitrate, LUFS cible) — transposable en check FFmpeg/ffprobe dans la chaîne
+  ai-doc2video (on a déjà les recettes loudnorm côté C:\ffmpeg) ;
+- ② architecture « chaque étape produit un artefact révisable avant la suivante » —
+  pattern dont notre proto endless se rapproche, à garder en tête pour les chaînes longues.
