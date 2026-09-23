@@ -3,23 +3,23 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "master-864-ca37fad = 1re release avec le fix #1946 (PR #1958), recettes video validees. master-866-42d6c0a TESTEE le 2026-09-14 et REJETEE : les 3 chemins video casses sur 16 Go (Wan T2V echec weight prep 42 segments, contournable --auto-fit off ; LTX-2.5 workspace capacity check avec ET sans le flag ; MiniMax H3 51 segments + ErrorOutOfDeviceMemory) — suspect #1967 auto-fit, image OK (Flux/SDXL/upscale). NE PAS INSTALLER tant qu'une release corrective n'existe pas ; si release posterieure a 866 : veille + matrice complete (smoke Flux + Wan 17 trames + LTX 33 + H3 turbo, cf. MEMORY_BANK 1.16/1.17/1.19).",
+      "raison_epinglage": "master-899-28b454b installee et gardée le 2026-09-23 (matrice complete sur machine rebootée : Flux 1024² OK, LTX-2.5 T2V 33 trames OK — marge VRAM ~120 Mo fragile, bureau bas requis ; Wan 17 trames OK -4% ; H3 turbo TOUJOURS cassé — 51 segments + ErrorOutOfDeviceMemory, signature identique a 864/866, issue #1976 ouverte). Production LTX/H3 toujours via build parallèle C:\\SD-6b3edaa (master-841). Rollback 864 : C:\\SD\\backups\\backup_20260923_master899. Matrice obligatoire sur machine fraîchement rebootée pour toute future release (le verdict LTX dépend de la VRAM du bureau).",
       "plateformes": {
         "windows": {
-          "epingle": "master-864-ca37fad",
-          "asset": "sd-master-ca37fad-bin-win-vulkan-x64.zip",
+          "epingle": "master-899-28b454b",
+          "asset": "sd-master-28b454b-bin-win-vulkan-x64.zip",
           "sous_dossier": "SD",
           "exe": "sd-cli.exe"
         },
         "linux": {
-          "epingle": "master-864-ca37fad",
-          "asset": "sd-master-ca37fad-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+          "epingle": "master-899-28b454b",
+          "asset": "sd-master-28b454b-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
         "macos-arm64": {
-          "epingle": "master-864-ca37fad",
-          "asset": "sd-master-ca37fad-bin-Darwin-macOS-26.6.2-arm64.zip",
+          "epingle": "master-899-28b454b",
+          "asset": "sd-master-28b454b-bin-Darwin-macOS-26.6.2-arm64.zip",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         }
