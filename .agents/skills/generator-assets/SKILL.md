@@ -146,17 +146,21 @@ bande).
 pour 22 frames, qualité ≥ baseline). Le mode 20 steps ne sert qu'en A/B qualité sur demande explicite.
 Les masters YouTube 4K passent par `scripts/conform_youtube_hd.py`.
 
-**⚠️ Écueil vidéo courant (état sept. 2026 — vérifier `docs/MEMORY_BANK.md` §1.16-1.19 avant tout rendu
-vidéo, cela évolue avec les maj sd-cli)** : la sd-cli installée (`C:\SD\`, master-864) **casse LTX-2.5 et
-MiniMax-H3** (régression mémoire amont, OOM ~2 min après le lancement). La build parallèle de production
-est `C:\SD-6b3edaa\` (master-841, dernière validée pour LTX/H3) :
+**⚠️ Écueil vidéo courant (état 23/09/2026 — vérifier `docs/MEMORY_BANK.md` §1.16-1.19 avant tout rendu
+vidéo, cela évolue avec les maj sd-cli)** : la sd-cli installée (`C:\SD\`, master-899) **casse MiniMax-H3**
+(régression mémoire amont : 51 segments au lieu de 2, OOM au submit ~5 min — inchangée de master-864 à 899,
+issue #1976 ouverte) ; **LTX-2.5 passe le benchmark T2V 33 trames sur 899 uniquement avec une VRAM bureau
+basse (machine rebootée, marge ~120 Mo fragile)** et son I2V 65 trames n'y est pas retesté. La build
+parallèle de production reste `C:\SD-6b3edaa\` (master-841, dernière validée pour LTX/H3) :
 ```bash
 # monoplan_ia : préfixer SD_CLI_PATH (résolu via core/config.py) :
 SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe" uv run python main.py -w monoplan_ia ... 
 ```
 Pour `h3_ref2va`, la production passe également par la build 6b3edaa (le workflow peut appeler
 `C:\SD\sd-cli.exe` en dur → utiliser `--sd-cli` ou la commande brute documentée en MEMORY_BANK §1.16).
-Seule vidéo fiable sur master-864 : **Wan T2V/I2V ≤ ~20 trames avec `--vae-on-cpu`** (workflow `video`).
+Vidéo fiable sur master-899 : **Wan T2V/I2V ≤ ~20 trames avec `--vae-on-cpu`** (workflow `video`,
+validé 23/09). Règle : **toute matrice/validation sd-cli tourne sur machine fraîchement rebootée**
+(un verdict LTX/H3 peut dépendre de la VRAM détenue par le bureau).
 
 ## 4. Durées et attentes (RX 6950 XT, ordre de grandeur)
 
