@@ -36,6 +36,7 @@ class TTSDialogueWorkflow(BaseWorkflow):
     name = "tts_dialogue"
     description = "Synthèse vocale émotionnelle (TTS / Kokoro) synchronisée avec les portraits RPG et lip-sync Godot"
 
+    emoji = "🎙️"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         personnage = params.get("prompt") or "guerriere_sanctuaire"
         emotions_str = params.get("emotions", "neutral,happy,angry,sad,hurt")

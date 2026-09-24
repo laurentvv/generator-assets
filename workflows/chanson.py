@@ -36,6 +36,7 @@ class ChansonWorkflow(BaseWorkflow):
     description = ("Chanson complète AVEC PAROLES (ACE-Step 1.5 xl-turbo, Vulkan) — "
                    "balises de structure, langue FR par défaut, ~15 min pour 4 min de chanson")
 
+    emoji = "🎵"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         brut = (params.get("prompt") or "").strip()
         if not brut:

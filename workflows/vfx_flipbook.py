@@ -121,6 +121,7 @@ class VFXFlipbookWorkflow(BaseWorkflow):
     name = "vfx_flipbook"
     description = "Planches d'animation d'effets visuels / particules (Flipbooks 4x4) et matériaux Godot 4"
 
+    emoji = "💥"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt") or "explosion magique violette"
         input_image = params.get("input")

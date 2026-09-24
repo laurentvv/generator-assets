@@ -48,6 +48,7 @@ class MonoplanIaWorkflow(BaseWorkflow):
                    "ralenti motion-compensé + zoom pur conçu (validé 2026-09-10, §1.17) ; "
                    "--4k = upscale IA UltraSharp + master 3840×2160 AMF (Hero Hooks)")
 
+    emoji = "🎞️"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt and not params.get("monoplan_source"):

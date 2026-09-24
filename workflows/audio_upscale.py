@@ -28,6 +28,7 @@ class AudioUpscaleWorkflow(BaseWorkflow):
                    "ou musique 24 kHz restaurées (recette validée 2026-09-18) — "
                    "WAV 48 kHz mono + MP3, RTF ~13")
 
+    emoji = "🔊"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):

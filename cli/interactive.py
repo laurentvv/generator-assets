@@ -15,6 +15,31 @@ from workflows import (
     WorkflowRegistry,
 )
 
+
+# Entrées de maintenance : hors registre des workflows (routées vers cli.maintenance)
+_ENTREES_MAINTENANCE = [
+    ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
+    ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
+    ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)"),
+]
+
+
+def construire_menu() -> dict:
+    """Génère le menu interactif depuis le registre (source unique : WorkflowRegistry).
+
+    Ordre = ordre d'enregistrement ; emoji et description portés par la classe.
+    Un workflow enregistré apparaît donc TOUJOURS au menu (testé par
+    tests/test_cli_contract.py). Les gestionnaires de maintenance ferment le menu.
+    """
+    menu = {}
+    for i, (nom, desc) in enumerate(WorkflowRegistry.list_all().items(), start=1):
+        emoji = getattr(WorkflowRegistry.get(nom), "emoji", "")
+        menu[str(i)] = (nom, f"{emoji} {desc}".strip() if emoji else desc)
+    for j, (nom, libelle) in enumerate(_ENTREES_MAINTENANCE, start=len(menu) + 1):
+        menu[str(j)] = (nom, libelle)
+    return menu
+
+
 def lancer_mode_interactif(config: dict):
     """Interface interactive en console permettant d'exécuter n'importe quel workflow."""
     print("\n" + "=" * 65)
@@ -23,50 +48,7 @@ def lancer_mode_interactif(config: dict):
     
     verifier_prerequis(config)
 
-    menu_workflows = {
-        "1": ("generate", "🎨 Génération d'Asset 2D (Item, Monstre, Décor)"),
-        "2": ("mesh3d", "🎲 Modèle 3D Maillé .GLB (Cube, Dalle, Pilier, Sphère, Card)"),
-        "3": ("material3d", "🧱 Pack Matériau 3D PBR (Albedo, DeepBump Normal, Roughness, ORM, .tres)"),
-        "4": ("skybox", "🌌 Skybox / Panorama 360° Équirectangulaire (.tres Environment)"),
-        "5": ("turnaround3d", "📐 Fiche de Modélisation 3D (Vues orthogonales pour Blender)"),
-        "6": ("upscale", "🔍 Upscale IA (ESRGAN Vulkan / Lanczos 2x, 4x, 4K)"),
-        "7": ("spritesheet", "📊 Planche de Sprites multi-angles (Face, Profils, Dos + JSON)"),
-        "8": ("variations", "🌈 Variantes Thématiques (Feu, Glace, Poison, etc.)"),
-        "9": ("tileable", "🔲 Texture Raccordable Seamless (Tuile TileMap)"),
-        "10": ("pixelart", "👾 Conversion Rétro Pixel Art (Pico-8, Endesga-32)"),
-        "11": ("batch", "📦 Génération par Lot (Pack depuis fichier JSON)"),
-        "12": ("rembg", "✂️ Détourage IA Haute Précision (RMBG-1.4 / BiRefNet)"),
-        "13": ("flowmap", "🌊 Cartes de Flux Vectoriels & Shaders Godot (Eau / Lave)"),
-        "14": ("ui_9slice", "🖼️ Cadres & Boutons 9-Patch Extensibles (.tres / .tscn)"),
-        "15": ("voxel3d", "🧊 Modèle 3D Voxel (.GLB) pour GridMap Godot 4"),
-        "16": ("autotile_pack", "🗺️ Planche Autotile 47 Tuiles Wang Minimal 3x3 (.tres)"),
-        "17": ("rife_interp", "⚡ Super-Fluidité d'Animation 60 FPS (RIFE v4 ONNX)"),
-        "18": ("vfx_flipbook", "💥 Planche de Particules VFX Flipbook 4x4 + GPUParticles"),
-        "19": ("rpg_portrait", "🎭 Galerie de Dialogues RPG Multi-Émotions + JSON"),
-        "20": ("sfx", "🔊 Synthèse d'Effets Sonores & Bruitages (.wav / .ogg)"),
-        "21": ("ip_adapter", "🎨 Cohérence de Style & Charte Graphique (IP-Adapter)"),
-        "22": ("anim_loop", "🔄 Boucles de Textures & Shaders Animés (Loop Engine)"),
-        "23": ("pose_control", "🕺 Contrôle d'Armatures & Poses (ControlNet OpenPose)"),
-        "24": ("tts_dialogue", "🎙️ Synthèse Vocale Émotionnelle & Lip-Sync Godot"),
-        "25": ("audio_ambience", "🌌 Ambiances Sonores Immersives & Paysages Bouclables"),
-        "26": ("music_bg", "🎵 Boucles Musicales IA en Fond Sonore (MiniMax-Music3 / ACE-Step 1.5 Vulkan + Bed Voix Off)"),
-        "27": ("voix_off", "🎙️ Voix Off Expressive avec Clonage Vocal (qwen3-tts / VoxCPM2 / Fish GGUF Vulkan)"),
-        "28": ("chanson", "🎵 Chanson Complète AVEC PAROLES (ACE-Step 1.5 xl-turbo, balises structure)"),
-        "29": ("musique_adn", "🧬 Nouvelle Musique avec l'ADN d'une Référence (BPM + tonalité auto imposés)"),
-        "30": ("retrait_voix", "🎧 Retrait du Chant d'un Morceau (HTDemucs — instrumental + stems)"),
-        "31": ("makehuman_clothes", "👗 Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"),
-        "32": ("video", "🎬 Génération Vidéo IA Native (.webm) via Wan 2.1 / LTX / MiniMax Vulkan"),
-        "33": ("update_sd", "🔄 Gestionnaire de Mise à Jour & Compilation Vulkan (stable-diffusion.cpp)"),
-        "34": ("update_llama", "🦙 Gestionnaire de Mise à Jour & Compilation Vulkan (llama.cpp)"),
-        "35": ("update_vulkan", "⚡ Suite Complète IA Vulkan (SD + LLaMA + Diagnostic GPU)"),
-        "36": ("mesh_ia", "🧊 Objet 3D IA depuis Image/Prompt (TRELLIS.2 GGUF Vulkan — volume réel + PBR)"),
-        "37": ("character_makeup", "💄 MakeUp & Features MPFB2 depuis Portrait IA (YuNet + Calque hm08 + Rendus Cycles)"),
-        "38": ("musique_essence", "🧬 Musique à l'Essence d'une Référence (SA3 Medium init_audio + retrait voix HTDemucs)"),
-        "39": ("asset_blendkit", "🧰 Asset CC0 Blendkit (prop .glb Godot / plaque décor chaine rendue Cycles)"),
-        "40": ("voix_robot", "🤖 Voix de Robot en Anglais (Kokoro Vulkan + ring modulation — recette validée)"),
-        "41": ("audio_upscale", "🔊 Super-Résolution Audio → 48 kHz (UniverSR CPU — voix 16k / musique 24k restaurées, recette validée)"),
-        "42": ("animal_godot", "🐺 Animal packé riggé (.blend) → GLB Godot game-ready (clips AN_*, recette validée)")
-    }
+    menu_workflows = construire_menu()
 
     while True:
         try:
@@ -415,6 +397,49 @@ def lancer_mode_interactif(config: dict):
                 blend = input("🎬 Scène .blend pour rendus de contrôle studio (laisser vide pour calque seul) : ").strip()
                 if blend:
                     params["blend_file"] = blend
+
+            elif wf_name == "monoplan_ia":
+                params["prompt"] = input("🎬 Mouvement de caméra / scène EN (ex: slow zoom in on the artifact) : ").strip()
+                if not params["prompt"]:
+                    continue
+                img = input("🖼️  Image d'amorce (laisser vide si réutilisation d'un monoplan existant) : ").strip()
+                if img:
+                    params["input"] = img
+                else:
+                    src = input("🎥 Webm monoplan déjà généré à réutiliser (--monoplan-source) : ").strip()
+                    if not src or not os.path.exists(src):
+                        print("❌ Il faut une image d'amorce ou un monoplan source existant.")
+                        continue
+                    params["monoplan_source"] = src
+                nom_out = input("💾 Nom de sortie [défaut: auto] : ").strip()
+                if nom_out:
+                    params["output"] = nom_out
+
+            elif wf_name == "h3_ref2va":
+                params["input"] = input("🎥 Vidéo source (référence Ref2VA, mp4/webm) : ").strip()
+                if not params["input"] or not os.path.exists(params["input"]):
+                    print("❌ Fichier introuvable.")
+                    continue
+                params["prompt"] = input("🗣️  Description EN de la SUITE (ex: she smiles and waves goodbye) : ").strip()
+                if not params["prompt"]:
+                    continue
+                # Mode turbo = recette validée (AGENTS.md : toujours le proposer)
+                params["turbo"] = input("⚡ Mode turbo 8 steps (O/n, ~2x plus rapide) : ").strip().lower() not in ("n", "non", "no")
+
+            elif wf_name == "outfit":
+                char_name = input("👤 Personnage cible [marc_novice] : ").strip()
+                if char_name:
+                    params["character"] = char_name
+                top = input("🧵 Tissu du haut EN [défaut: tunique médiévale beige] : ").strip()
+                if top:
+                    params["top"] = top
+
+            elif wf_name == "character3d":
+                port = input("🖼️  Portrait IA de référence (PNG) : ").strip()
+                if not port or not os.path.exists(port):
+                    print("❌ Portrait introuvable.")
+                    continue
+                params["portrait"] = port
 
             elif wf_name == "update_sd":
                 from pathlib import Path

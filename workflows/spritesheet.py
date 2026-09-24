@@ -30,6 +30,7 @@ class SpriteSheetWorkflow(BaseWorkflow):
     name = "spritesheet"
     description = "Génération d'une planche de sprites multi-angles (Face, Profils, Dos) avec export JSON Godot"
 
+    emoji = "📊"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:

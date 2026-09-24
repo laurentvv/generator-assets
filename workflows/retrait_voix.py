@@ -26,6 +26,7 @@ class RetraitVoixWorkflow(BaseWorkflow):
                    "instrumental sans voix + 4 stems (drums/bass/other/vocals), "
                    "rééchantillonnage 44,1 kHz automatique")
 
+    emoji = "🎧"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):

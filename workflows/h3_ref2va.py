@@ -70,6 +70,7 @@ class H3Ref2VAWorkflow(BaseWorkflow):
     name = "h3_ref2va"
     description = "Continuation vidéo+audio via MiniMax-H3 Ref2VA (réf = queue d'une vidéo source, webm avec audio)"
 
+    emoji = "🗣️"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt:

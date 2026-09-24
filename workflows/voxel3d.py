@@ -26,6 +26,7 @@ class Voxel3DWorkflow(BaseWorkflow):
     name = "voxel3d"
     description = "Modèles 3D Voxel maillés (.GLB) optimisés (Crossy Road, Minecraft, GridMap Godot 4)"
 
+    emoji = "🧊"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if not verifier_blender():
             raise RuntimeError("Blender 4.x / 5.x est requis pour exécuter le workflow voxel3d.")

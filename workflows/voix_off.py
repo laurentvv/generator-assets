@@ -31,6 +31,7 @@ class VoixOffWorkflow(BaseWorkflow):
                    "clonage vocal optionnel — qwen3-tts/VoxCPM2 (Apache-2.0) ou Fish S2-Pro, "
                    "sortie normalisée -16 LUFS + MP3")
 
+    emoji = "🎙️"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         # Le texte : paramètre prompt (texte lui-même) OU chemin d'un fichier .txt
         brut = (params.get("prompt") or "").strip()

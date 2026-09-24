@@ -24,6 +24,7 @@ class VariationsWorkflow(BaseWorkflow):
     name = "variations"
     description = "Génération de variantes thématiques (Feu, Glace, Poison, Foudre, etc.) pour un asset"
 
+    emoji = "🌈"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")

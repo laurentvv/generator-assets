@@ -44,6 +44,7 @@ class RifeInterpWorkflow(BaseWorkflow):
     name = "rife_interp"
     description = "Super-fluidité d'animation IA (RIFE v4 ONNX) : multiplie le nombre de trames (2x, 4x, 60 FPS)"
 
+    emoji = "⚡"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image = params.get("input")
         if not input_image or not os.path.exists(input_image):

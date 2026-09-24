@@ -60,6 +60,7 @@ class MusicBgWorkflow(BaseWorkflow):
     name = "music_bg"
     description = "Boucles musicales IA « tech » en fond sonore YouTube (MiniMax-Music3 / ACE-Step 1.5 GGUF Vulkan + bed -30 LUFS + recette ducking)"
 
+    emoji = "🎵"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or PROMPT_TECH_DEFAUT
         # Le flag CLI --duration a un défaut bas (2 s) : toute valeur < 4 s = non renseignée

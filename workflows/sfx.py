@@ -31,6 +31,7 @@ class SFXWorkflow(BaseWorkflow):
     name = "sfx"
     description = "Effets sonores & bruitages de jeux vidéo (.wav / .ogg) — moteur IA (SA3 small SFX) ou synthèse procédurale"
 
+    emoji = "🔊"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "sword_slash"
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)

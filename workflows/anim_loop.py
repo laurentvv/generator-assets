@@ -32,6 +32,7 @@ class AnimLoopWorkflow(BaseWorkflow):
     name = "anim_loop"
     description = "Boucles de textures & shaders animés fluides (AnimateDiff / LTX Loop) pour Godot 4 (.gdshader / .tres)"
 
+    emoji = "🔄"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "magical portal vortex"
         input_image = params.get("input")

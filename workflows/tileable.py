@@ -22,6 +22,7 @@ class TileableWorkflow(BaseWorkflow):
     name = "tileable"
     description = "Génération de textures seamless / tuiles de terrain infinies pour TileMaps Godot"
 
+    emoji = "🔲"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:

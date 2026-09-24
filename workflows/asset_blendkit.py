@@ -36,6 +36,7 @@ class AssetBlendkitWorkflow(BaseWorkflow):
     description = ("Asset CC0 blendkit.com : prop .glb prêt Godot (mode prop) ou plaque de décor "
                    "rendue Blender Cycles GPU pour la chaîne (mode plate) — compte Blendkit requis")
 
+    emoji = "🧰"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         query = params.get("query")
         if not query:

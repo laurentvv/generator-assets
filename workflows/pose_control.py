@@ -35,6 +35,7 @@ class PoseControlWorkflow(BaseWorkflow):
     name = "pose_control"
     description = "Contrôle d'armatures & poses de personnages (ControlNet OpenPose) + Scène Godot (.tscn) et Marker2D"
 
+    emoji = "🕺"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt") or "chevalier en armure sombre"
         pose_nom = params.get("pose") or params.get("type") or "idle"

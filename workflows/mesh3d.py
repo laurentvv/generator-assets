@@ -20,6 +20,7 @@ class Mesh3DWorkflow(BaseWorkflow):
     name = "mesh3d"
     description = "Génération de modèle 3D maillé (.glb) complet avec textures PBR pour Godot (Blender Headless)"
 
+    emoji = "🎲"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")
