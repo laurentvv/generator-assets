@@ -106,13 +106,15 @@ Perfs vidéo (RX 6950 XT) : `monoplan_ia` ~15 min (65 f, 8 steps) + ~3 min post 
 device-lost → reboot avant d'incriminer la recette). Masters YouTube : 4K obligatoire (VP09/AV01),
 `scripts/conform_youtube_hd.py`, upscale vidéo `scripts/upscale_video_ai.py`.
 
-**⚠️ Écueil build sd-cli (état sept. 2026, MEMORY_BANK §1.16-1.19)** : LTX-2.5 ET MiniMax-H3 sont cassés
-sur la sd-cli installée (`C:\SD\`, master-864 — OOM `ltxav workspace capacity check` / 51 segments) ;
+**⚠️ Écueil build sd-cli (état sept. 2026, MEMORY_BANK §1.16-1.19)** : MiniMax-H3 est cassé
+sur la sd-cli installée (`C:\SD\`, master-908 — 54 segments + OOM submit, inchangé de master-864 à 908
+malgré le fix amont #1900) ; LTX-2.5 n'y passe le benchmark T2V 33 trames qu'avec une VRAM bureau basse
+(machine rebootée, marge ~120 Mo fragile) et son I2V 65 trames n'y est pas retesté ;
 dernière build vidéo validée = **6b3edaa (master-841)**, installée en parallèle dans `C:\SD-6b3edaa\`.
 Pour `monoplan_ia` : préfixer `SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe"` (ou `--sd-cli`). Pour
 `h3_ref2va` : production via la build parallèle (commande brute en §1.16 si le workflow appelle le
-binaire en dur). Sur master-864, seule vidéo fiable : Wan T2V/I2V ≤ ~20 trames `--vae-on-cpu`.
-L'upscale ESRGAN vidéo (`scripts/upscale_video_ai.py`) reste validé sur master-864. **Toujours
+binaire en dur). Sur master-908, seule vidéo fiable : Wan T2V/I2V ≤ ~20 trames `--vae-on-cpu`.
+L'upscale ESRGAN vidéo (`scripts/upscale_video_ai.py`) reste validé. **Toujours
 revérifier cet état dans MEMORY_BANK avant un rendu vidéo.**
 
 ## Maintenance (menu interactif 33-35, hors génération)

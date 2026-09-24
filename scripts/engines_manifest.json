@@ -3,23 +3,23 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "master-899-28b454b installee et gardée le 2026-09-23 (matrice complete sur machine rebootée : Flux 1024² OK, LTX-2.5 T2V 33 trames OK — marge VRAM ~120 Mo fragile, bureau bas requis ; Wan 17 trames OK -4% ; H3 turbo TOUJOURS cassé — 51 segments + ErrorOutOfDeviceMemory, signature identique a 864/866, issue #1976 ouverte). Production LTX/H3 toujours via build parallèle C:\\SD-6b3edaa (master-841). Rollback 864 : C:\\SD\\backups\\backup_20260923_master899. Matrice obligatoire sur machine fraîchement rebootée pour toute future release (le verdict LTX dépend de la VRAM du bureau).",
+      "raison_epinglage": "master-908-88411ef installee et gardée le 2026-09-24 (matrice complete sur machine rebootée : Flux 1024² OK 27,00 s, LTX-2.5 T2V 33 trames OK 54,21 s — marge VRAM ~120 Mo fragile, bureau bas requis ; Wan 17 trames OK 1999,5 s -1,2% ; H3 turbo TOUJOURS cassé malgré le fix amont #1900 attendu — 54 segments (51 sur 864-899, sain = 2) + ErrorOutOfDeviceMemory, issue #1976 ouverte). Gains 908 : conditioning cache (#2034), fix alpha upscale RGBA (#2029), perf Wan VAE (#2038). Production LTX/H3 toujours via build parallèle C:\\SD-6b3edaa (master-841). Rollback 899 : C:\\SD\\backups\\backup_20260924_master908. Matrice obligatoire sur machine fraîchement rebootée pour toute future release (le verdict LTX dépend de la VRAM du bureau).",
       "plateformes": {
         "windows": {
-          "epingle": "master-899-28b454b",
-          "asset": "sd-master-28b454b-bin-win-vulkan-x64.zip",
+          "epingle": "master-908-88411ef",
+          "asset": "sd-master-88411ef-bin-win-vulkan-x64.zip",
           "sous_dossier": "SD",
           "exe": "sd-cli.exe"
         },
         "linux": {
-          "epingle": "master-899-28b454b",
-          "asset": "sd-master-28b454b-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+          "epingle": "master-908-88411ef",
+          "asset": "sd-master-88411ef-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
         "macos-arm64": {
-          "epingle": "master-899-28b454b",
-          "asset": "sd-master-28b454b-bin-Darwin-macOS-26.6.2-arm64.zip",
+          "epingle": "master-908-88411ef",
+          "asset": "sd-master-88411ef-bin-Darwin-macOS-26.6.2-arm64.zip",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         }
