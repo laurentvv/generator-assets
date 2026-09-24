@@ -7,7 +7,6 @@ Détecte automatiquement les modèles Flux.1 (GGUF + Encoders) et SDXL / SD 1.5 
 """
 
 import os
-import subprocess
 import tempfile
 from typing import List, Optional, Tuple, Union
 from PIL import Image
@@ -24,13 +23,11 @@ from core.config import (
     DEFAULT_VAE,
     DEFAULT_BACKEND,
     DEFAULT_THREADS,
-    DEFAULT_WAN_MODEL,
-    DEFAULT_WAN_VAE,
-    DEFAULT_WAN_T5XXL,
     resoudre_modele_video,
     resoudre_vae_video,
     resoudre_t5xxl_video
 )
+from core.process import run_engine
 
 
 def est_modele_flux(sd_model_path: str) -> bool:
@@ -173,7 +170,7 @@ def generer_image_vulkan(
         ])
 
     try:
-        subprocess.run(commande, check=True)
+        run_engine(commande, timeout=1800, capture=False, check=True, etiquette=f"sd-cli {moteur_nom}")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"Le fichier de sortie {output_path} n'a pas été produit.")
         # .copy() charge les pixels en mémoire avant la suppression du temporaire.
@@ -289,7 +286,7 @@ def generer_video_vulkan(
         commande.extend(["-s", "-1"])
 
     try:
-        subprocess.run(commande, check=True)
+        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli vidéo")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"La vidéo de sortie {output_path} n'a pas été produite.")
         print(f"✅ Vidéo générée avec succès : {output_path}")
@@ -423,7 +420,7 @@ def generer_video_ref2va_h3(
         return output_path
 
     try:
-        subprocess.run(commande, check=True)
+        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli H3 Ref2VA")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"La vidéo de sortie {output_path} n'a pas été produite.")
         log_fn(f"✅ Vidéo H3 Ref2VA générée : {output_path}")

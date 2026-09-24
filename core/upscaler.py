@@ -8,17 +8,17 @@ Supporte :
 """
 
 import os
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Optional
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageFilter
 from core.config import (
     DEFAULT_BACKEND,
     DEFAULT_ESRGAN_MODEL,
     DEFAULT_SD_CLI,
     resoudre_upscaler
 )
+from core.process import run_engine
 
 
 def upscale_esrgan(
@@ -59,7 +59,7 @@ def upscale_esrgan(
             "-v"
         ]
 
-        subprocess.run(commande, check=True)
+        run_engine(commande, timeout=600, capture=False, check=True, etiquette="sd-cli ESRGAN")
         img_upscaled_rgb = Image.open(temp_out).convert("RGB")
 
     # Si l'image source possédait de la transparence, ré-injecter l'Alpha agrandi
