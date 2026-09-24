@@ -53,3 +53,6 @@ Thumbs.db
 # Config locale des agents IA (symlink .qwen -> .agents, non représentable en git Windows)
 .zcode/
 .qwen/
+
+# pytest
+.pytest_cache/

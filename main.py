@@ -120,14 +120,19 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choix (1-37) [défaut: 1] : ").strip()
+            choix = input("\n👉 Choix (1-42) [défaut: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Au revoir !")
                 break
 
             wf_name, _ = menu_workflows.get(choix, ("generate", ""))
-            wf_cls = WorkflowRegistry.get(wf_name)
-            wf_instance = wf_cls(config)
+            if wf_name in ("update_sd", "update_llama", "update_vulkan"):
+                # Gestionnaires de maintenance : hors registre des workflows,
+                # dispatch direct vers leur branche dédiée plus bas.
+                wf_instance = None
+            else:
+                wf_cls = WorkflowRegistry.get(wf_name)
+                wf_instance = wf_cls(config)
 
             params = {"output_dir": config.get("output_dir", DEFAULT_OUTPUT_DIR)}
 
@@ -533,7 +538,8 @@ def lancer_mode_interactif(config: dict):
 # ==============================================================================
 # Point d'Entrée CLI
 # ==============================================================================
-def main():
+def construire_parseur() -> argparse.ArgumentParser:
+    """Construit le parseur d'arguments CLI (extrait de main pour testabilité du contrat consommateurs)."""
     parser = argparse.ArgumentParser(
         prog="generator-assets",
         description="⚔️ Système de Workflows IA pour Assets 2D & 3D Godot (Flux.1 Vulkan + LoRAs + PBR Materials + Blender Mesh GLB + Upscale ESRGAN).",
@@ -643,7 +649,7 @@ Exemples de Workflows 3D & 2D :
 
     # Paramètres spécifiques aux workflows
     groupe_wf = parser.add_argument_group("Options des Workflows Avancés")
-    groupe_wf.add_argument("--factor", type=float, default=2.0, help="Facteur d'agrandissement pour l'upscale ou l'interpolation (ex: 2.0, 4.0).")
+    groupe_wf.add_argument("--factor", type=float, default=None, help="Facteur d'agrandissement pour l'upscale ou l'interpolation (ex: 2.0, 4.0 ; défaut : propre au workflow — 2.0, ou 4.0 quand l'upscale IA est actif pour generate).")
     groupe_wf.add_argument("--normal-strength", type=float, default=3.5, help="Intensité du relief pour la Normal Map PBR (défaut: 3.5).")
     groupe_wf.add_argument("--pbr-engine", default="auto", choices=["auto", "deep", "sobel"], help="Moteur d'estimation PBR (deep = DeepBump ONNX, sobel = filtres 2D).")
     groupe_wf.add_argument("--segmenter", default="auto", choices=["auto", "birefnet", "rmbg", "floodfill", "none"], help="Moteur de détourage 2D.")
@@ -665,6 +671,7 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--faces-cible", type=int, default=0, help="Cible de faces du GLB « jeu » pour mesh_ia : décimation Blender OPTIONNELLE (master conservé ; défaut: 0 = pas de réduction). Repères : 30000 = item héro vu de près • 10000 = prop de décor • 3000 = clutter répété • >=8000 pour les silhouettes très courbes.")
     groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
     groupe_wf.add_argument("--file", "--recipe", dest="recipe_file", help="Fichier JSON ou liste texte pour le workflow batch.")
+    groupe_wf.add_argument("--continue-on-error", dest="continue_on_error", action="store_true", help="batch : continue le lot après l'échec d'un asset et sort en code ≠ 0 à la fin avec la liste des échecs (défaut : arrêt à la première erreur, code ≠ 0).")
     groupe_wf.add_argument("--columns", type=int, default=4, help="Nombre de colonnes pour la planche de sprites.")
     groupe_wf.add_argument("--no-preview", action="store_true", help="Désactive l'aperçu 3x3 pour le workflow tileable.")
     groupe_wf.add_argument("--angle", type=float, default=90.0, help="Angle de direction en degrés pour le workflow flowmap (défaut: 90 = bas).")
@@ -676,18 +683,18 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--voxel-scale", type=float, default=0.05, help="Taille d'un voxel en unités Godot (workflow voxel3d).")
     groupe_wf.add_argument("--biome-a", help="Description ou image du premier biome pour autotile_pack.")
     groupe_wf.add_argument("--biome-b", help="Description ou image du second biome pour autotile_pack.")
-    groupe_wf.add_argument("--frames", type=int, default=16, help="Nombre de trames d'animation (vfx_flipbook, rife_interp).")
+    groupe_wf.add_argument("--frames", type=int, default=None, help="Nombre de trames d'animation (video, vfx_flipbook, rife_interp, anim_loop, h3_ref2va ; défaut : propre au workflow — ex. 33 pour video, 22 pour h3_ref2va, 16 pour anim_loop).")
     groupe_wf.add_argument("--vfx-type", default="explosion", choices=["explosion", "fire", "lightning", "portal", "slash", "aura"], help="Type d'effet pour vfx_flipbook.")
     groupe_wf.add_argument("--emotions", default="neutral,happy,angry,sad,hurt", help="Liste des émotions séparées par des virgules pour rpg_portrait et tts_dialogue.")
-    groupe_wf.add_argument("--duration", type=float, default=2.0, help="Durée en secondes pour sfx ou audio_ambience.")
+    groupe_wf.add_argument("--duration", type=float, default=None, help="Durée en secondes (sfx, audio_ambience, music_bg, chanson, musique_adn/essence ; défaut : propre au workflow — 1.5 sfx, 8.0 ambience, 12.0 music_bg, 180.0 chanson, 60.0 musique_adn, 30.0 musique_essence).")
     groupe_wf.add_argument("--sfx-engine", dest="sfx_engine", choices=["ia", "procedural"], default="ia", help="Moteur du workflow sfx : ia = Stable Audio 3 Small SFX via audio.cpp (validé 2026-09-09, normalisation de crête incluse, prompt EN libre) | procedural = synthèse numpy (types figés sword/coin/explosion…).")
     groupe_wf.add_argument("--mode-2d", action="store_true", help="Génère un shader ou setup orienté Godot 2D au lieu de 3D.")
     groupe_wf.add_argument("--pose", choices=["idle", "slash_attack", "cast_spell", "shield_block", "jump", "walk"], default="idle", help="Pose OpenPose pour pose_control.")
-    groupe_wf.add_argument("--pitch", type=float, default=160.0, help="Pitch vocal fondamental pour tts_dialogue (défaut: 160Hz).")
-    groupe_wf.add_argument("--fps", type=float, default=12.0, help="Cadence FPS pour anim_loop (défaut: 12.0).")
+    groupe_wf.add_argument("--pitch", type=float, default=None, help="Pitch vocal fondamental pour tts_dialogue (défaut workflow : 160 Hz).")
+    groupe_wf.add_argument("--fps", type=float, default=None, help="Cadence FPS pour anim_loop (défaut workflow : 12.0) et video (défaut workflow : 24).")
     groupe_wf.add_argument("--items", help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet').")
     groupe_wf.add_argument("--ambience-type", choices=["dungeon", "forest", "storm", "space", "campfire", "tavern"], help="Type d'ambiance pour audio_ambience.")
-    groupe_wf.add_argument("--lufs", type=float, default=-30.0, help="LUFS cible du lit musical « bed » pour music_bg (défaut: -30).")
+    groupe_wf.add_argument("--lufs", type=float, default=None, help="LUFS cible du lit musical « bed » pour music_bg (défaut workflow : -30).")
     groupe_wf.add_argument("--loop-mode", choices=["percussive", "ambient"], default="percussive", help="Stratégie de bouclage music_bg (défaut: percussive, alignée BPM).")
     groupe_wf.add_argument("--music-backend", choices=["vulkan", "cpu", "auto"], default="vulkan", help="Backend audio.cpp pour music_bg (défaut: vulkan).")
     groupe_wf.add_argument("--moteur", choices=["acestep", "music3", "qwen3", "voxcpm2", "fish"], default="acestep", help="Moteur : music_bg → acestep (défaut, ACE-Step 1.5) | music3 ; voix_off → qwen3 (clonage+instruct, Apache-2.0) | voxcpm2 (clonage sans transcript, Apache-2.0) | fish (balises expression, licence recherche).")
@@ -808,6 +815,12 @@ Exemples de Workflows 3D & 2D :
     groupe_chemins.add_argument("--backend", default=DEFAULT_BACKEND, help="Backend sd-cli")
     groupe_chemins.add_argument("--threads", type=int, default=DEFAULT_THREADS, help="Threads CPU pour encoders")
 
+    return parser
+
+
+def main():
+    """Point d'entrée CLI."""
+    parser = construire_parseur()
     args = parser.parse_args()
 
     config = {
@@ -953,9 +966,35 @@ Exemples de Workflows 3D & 2D :
         lancer_mode_interactif(config)
         return
 
-    type_normalise = {"1": "item", "2": "character", "3": "prop"}.get(args.type, args.type)
+    params = construire_params(args, prompt_texte)
 
-    # Préparation des paramètres du workflow
+    # Détection automatique du workflow si l'argument -w n'est pas spécifié
+    wf_cible = args.workflow.lower()
+    if wf_cible == "generate" and args.recipe_file:
+        wf_cible = "batch"
+
+    try:
+        workflow_cls = WorkflowRegistry.get(wf_cible)
+        workflow_instance = workflow_cls(config)
+        resultat = workflow_instance.run(params)
+        if wf_cible == "batch" and isinstance(resultat, dict) and resultat.get("echecs"):
+            print(f"❌ Batch terminé avec {len(resultat['echecs'])} asset(s) en échec sur {resultat.get('total_tasks')} :")
+            for echec in resultat["echecs"]:
+                print(f"   • '{echec['prompt']}' (workflow {echec['workflow']}) : {echec['erreur']}")
+            sys.exit(1)
+    except Exception as e:
+        print(f"❌ Erreur lors de l'exécution du workflow '{wf_cible}' : {e}")
+        sys.exit(1)
+
+
+def construire_params(args: argparse.Namespace, prompt_texte: str) -> dict:
+    """Construit les paramètres du workflow depuis les arguments CLI.
+
+    Seules les clés réellement renseignées (non None) sont transmises : quand une
+    option CLI n'est pas passée, chaque workflow applique son propre défaut
+    (contrat consommateurs, cf. tests/test_cli_contract.py).
+    """
+    type_normalise = {"1": "item", "2": "character", "3": "prop"}.get(args.type, args.type)
     params = {
         "prompt": prompt_texte,
         "input": args.input_file,
@@ -1082,21 +1121,10 @@ Exemples de Workflows 3D & 2D :
         "camera": args.camera,
         "exposure": args.exposure,
         "percentage": args.percentage,
-        "no_cache": args.no_cache
+        "no_cache": args.no_cache,
+        "continue_on_error": args.continue_on_error
     }
-
-    # Détection automatique du workflow si l'argument -w n'est pas spécifié
-    wf_cible = args.workflow.lower()
-    if wf_cible == "generate" and args.recipe_file:
-        wf_cible = "batch"
-
-    try:
-        workflow_cls = WorkflowRegistry.get(wf_cible)
-        workflow_instance = workflow_cls(config)
-        workflow_instance.run(params)
-    except Exception as e:
-        print(f"❌ Erreur lors de l'exécution du workflow '{wf_cible}' : {e}")
-        sys.exit(1)
+    return {cle: valeur for cle, valeur in params.items() if valeur is not None}
 
 
 if __name__ == "__main__":

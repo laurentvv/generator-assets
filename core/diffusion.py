@@ -8,6 +8,7 @@ Détecte automatiquement les modèles Flux.1 (GGUF + Encoders) et SDXL / SD 1.5 
 
 import os
 import subprocess
+import tempfile
 from typing import List, Optional, Tuple, Union
 from PIL import Image
 from core.config import (
@@ -28,8 +29,7 @@ from core.config import (
     DEFAULT_WAN_T5XXL,
     resoudre_modele_video,
     resoudre_vae_video,
-    resoudre_t5xxl_video,
-    TEMP_IMAGE
+    resoudre_t5xxl_video
 )
 
 
@@ -84,13 +84,24 @@ def generer_image_vulkan(
     hires_strength: float = 0.5,
     loras: Optional[List[Union[str, Tuple[str, float]]]] = None,
     lora_dir: Optional[str] = None,
-    output_path: str = TEMP_IMAGE
+    output_path: Optional[str] = None
 ) -> Image.Image:
     """
     Exécute sd-cli.exe sous Vulkan avec support des LoRAs et bascule auto Flux / SDXL.
+    Sans output_path, le rendu passe par un fichier temporaire unique (tempfile),
+    supprimé après lecture : compatible avec plusieurs exécutions en parallèle et
+    insensible aux restes d'un appel précédent.
     """
     prompt_final = formater_prompt_avec_loras(prompt, loras)
     is_flux = est_modele_flux(sd_model)
+
+    chemin_temporaire = output_path is None
+    if chemin_temporaire:
+        descripteur, output_path = tempfile.mkstemp(suffix=".png", prefix="ga_rendu_")
+        os.close(descripteur)
+        # sd-cli doit créer le fichier lui-même : on retire l'amorce vide pour
+        # qu'une image obsolète ne puisse jamais être relue en cas d'échec.
+        os.remove(output_path)
 
     moteur_nom = "Flux.1" if is_flux else "SDXL / SD"
     mode_str = "Img2Img" if init_img else ("Seamless Tile" if circular else "Txt2Img")
@@ -165,10 +176,17 @@ def generer_image_vulkan(
         subprocess.run(commande, check=True)
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"Le fichier de sortie {output_path} n'a pas été produit.")
-        return Image.open(output_path)
+        # .copy() charge les pixels en mémoire avant la suppression du temporaire.
+        return Image.open(output_path).copy()
     except Exception as e:
         print(f"❌ Erreur lors du rendu ({moteur_nom}) via sd-cli : {e}")
         raise
+    finally:
+        if chemin_temporaire and os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except OSError:
+                pass
 
 
 def generer_video_vulkan(

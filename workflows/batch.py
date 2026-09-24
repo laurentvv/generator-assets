@@ -51,6 +51,10 @@ class BatchWorkflow(BaseWorkflow):
         total = len(tasks)
         self.log(f"Lancement de la génération de {total} asset(s)...")
 
+        # Défaut : arrêt à la première erreur (code retour ≠ 0 côté CLI).
+        # --continue-on-error : parcourt tout le lot puis signale les échecs (code ≠ 0 si échecs).
+        continue_sur_erreur = bool(params.get("continue_on_error"))
+        echecs = []
         resultats = []
         for index, task in enumerate(tasks, start=1):
             prompt = task.get("prompt")
@@ -69,12 +73,19 @@ class BatchWorkflow(BaseWorkflow):
                 res = wf_instance.run(merged_params)
                 resultats.append(res)
             except Exception as e:
+                echecs.append({"prompt": prompt, "workflow": wf_nom, "erreur": str(e)})
+                if not continue_sur_erreur:
+                    raise RuntimeError(
+                        f"Asset {index}/{total} en échec ('{prompt}' via {wf_nom}) : {e} — "
+                        f"lot interrompu (relancer avec --continue-on-error pour terminer le lot malgré tout)."
+                    ) from e
                 self.log(f"❌ Erreur sur l'asset '{prompt}' : {e}")
 
-        self.log(f"Batch terminé : {len(resultats)}/{total} assets générés avec succès.", emoji="🎉")
+        self.log(f"Batch terminé : {len(resultats)}/{total} assets générés, {len(echecs)} échec(s).", emoji="🎉")
 
         return {
             "total_tasks": total,
             "completed": len(resultats),
+            "echecs": echecs,
             "results": resultats
         }
