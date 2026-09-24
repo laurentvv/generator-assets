@@ -9,6 +9,7 @@ Supporte :
 
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional
 from PIL import Image, ImageFilter, ImageOps
@@ -16,8 +17,7 @@ from core.config import (
     DEFAULT_BACKEND,
     DEFAULT_ESRGAN_MODEL,
     DEFAULT_SD_CLI,
-    resoudre_upscaler,
-    TEMP_IMAGE
+    resoudre_upscaler
 )
 
 
@@ -35,49 +35,41 @@ def upscale_esrgan(
         raise FileNotFoundError(f"Modèle ESRGAN introuvable : {esrgan_model_path}")
 
     a_alpha = image_entree.mode == "RGBA"
-    
-    # 1. Sauvegarder la composante RGB pour ESRGAN
-    temp_in = "temp_esrgan_in.png"
-    temp_out = "temp_esrgan_out.png"
-    
-    rgb_in = image_entree.convert("RGB")
-    rgb_in.save(temp_in, "PNG")
 
-    nom_modele = Path(esrgan_model_path).name
-    print(f"[ESRGAN Vulkan] Upscaling IA avec '{nom_modele}'...")
+    # Fichiers temporaires uniques (tempfile) : compatible exécutions parallèles,
+    # et aucun reste d'un appel précédent ne peut être relu.
+    with tempfile.TemporaryDirectory(prefix="ga_esrgan_") as dossier_temp:
+        temp_in = os.path.join(dossier_temp, "entree.png")
+        temp_out = os.path.join(dossier_temp, "sortie.png")
 
-    commande = [
-        sd_cli,
-        "-M", "upscale",
-        "--upscale-model", esrgan_model_path,
-        "-i", temp_in,
-        "-o", temp_out,
-        "--upscale-repeats", str(repeats),
-        "--backend", backend,
-        "-v"
-    ]
+        rgb_in = image_entree.convert("RGB")
+        rgb_in.save(temp_in, "PNG")
 
-    try:
+        nom_modele = Path(esrgan_model_path).name
+        print(f"[ESRGAN Vulkan] Upscaling IA avec '{nom_modele}'...")
+
+        commande = [
+            sd_cli,
+            "-M", "upscale",
+            "--upscale-model", esrgan_model_path,
+            "-i", temp_in,
+            "-o", temp_out,
+            "--upscale-repeats", str(repeats),
+            "--backend", backend,
+            "-v"
+        ]
+
         subprocess.run(commande, check=True)
         img_upscaled_rgb = Image.open(temp_out).convert("RGB")
-        
-        # 2. Si l'image source possédait de la transparence, ré-injecter l'Alpha agrandi
-        if a_alpha:
-            alpha_orig = image_entree.split()[-1]
-            alpha_upscaled = alpha_orig.resize(img_upscaled_rgb.size, Image.Resampling.LANCZOS)
-            r, g, b = img_upscaled_rgb.split()
-            img_finale = Image.merge("RGBA", (r, g, b, alpha_upscaled))
-            return img_finale
-        else:
-            return img_upscaled_rgb
 
-    finally:
-        for p in [temp_in, temp_out]:
-            if os.path.exists(p):
-                try:
-                    os.remove(p)
-                except Exception:
-                    pass
+    # Si l'image source possédait de la transparence, ré-injecter l'Alpha agrandi
+    if a_alpha:
+        alpha_orig = image_entree.split()[-1]
+        alpha_upscaled = alpha_orig.resize(img_upscaled_rgb.size, Image.Resampling.LANCZOS)
+        r, g, b = img_upscaled_rgb.split()
+        return Image.merge("RGBA", (r, g, b, alpha_upscaled))
+    else:
+        return img_upscaled_rgb
 
 
 def upscale_smart_lanczos(

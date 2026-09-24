@@ -1541,7 +1541,8 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   2. Parses target workflows, prompts, and custom overrides per task.
   3. Sequentially executes each generation task while actively releasing VRAM between jobs.
   4. Produces a consolidated report of all exported assets.
-* **Inputs**: `--file` / `--recipe` (JSON recipe path or newline-delimited text file).
+* **Inputs**: `--file` / `--recipe` (JSON recipe path or newline-delimited text file); `--continue-on-error` (keep going after a failed asset).
+* **Failure policy**: by default the batch stops at the first failed asset and exits with a non-zero code; with `--continue-on-error` the whole batch runs and the exit code is still non-zero when any asset failed (each failure listed with its prompt and error). Consumers calling with `check=True` can rely on exit code 0 = every asset generated.
 * **Engines**: WorkflowRegistry dispatcher, JSON recipe parser.
 * **Outputs**: Complete batch of generated game assets.
 

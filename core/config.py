@@ -145,7 +145,8 @@ DEFAULT_MPFB_EYES_DIR = os.getenv(
     "MPFB_EYES_DIR",
     os.path.join(DEFAULT_MPFB_DATA_DIR, "eyes", "materials")
 )
-TEMP_IMAGE = "temp_render.png"
+# NB : plus aucun fichier temporaire en chemin relatif (ex-temp_render.png) —
+# les rendus passent par tempfile (unique par appel, compatible exécutions parallèles).
 
 # Charte Visuelle par Défaut (Style Anchor)
 DEFAULT_STYLE_ANCHOR = (

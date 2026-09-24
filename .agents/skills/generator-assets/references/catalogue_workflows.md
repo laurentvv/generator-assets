@@ -60,7 +60,7 @@ checklist de validation et écueils détaillés : [`pipeline_3d_blender.md`](pip
 | `ui_9slice` | Cadres/boutons 9-patch | `prompt` ou `-i`, `--margin`/`--auto-margin` | `.png`, `_stylebox.tres`, `_ninepatch.tscn` |
 | `autotile_pack` | Atlas autotile 47 tuiles Wang + TileSet | `--biome-a`, `--biome-b`, `-s` | `_atlas.png`, `_tileset.tres` |
 | `rembg` | Détourage neuronal (BiRefNet/RMBG-1.4) | `-i` (requis) | `_rembg.png` |
-| `batch` | Génération en série depuis un JSON | `--recipe <fichier.json>` | selon recette |
+| `batch` | Génération en série depuis un JSON | `--recipe <fichier.json>` (défaut : arrêt à la 1ʳᵉ erreur, exit ≠ 0 ; `--continue-on-error` = lot complet + échecs listés) | selon recette |
 
 LoRAs disponibles : `-l "game_icon_diablo_style:0.8"` (bascule auto SDXL Juggernaut) — liste complète
 `python main.py --list-loras`.
