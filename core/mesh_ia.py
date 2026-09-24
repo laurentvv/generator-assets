@@ -15,6 +15,7 @@ Pipeline : image PNG (détourée idéalement — l'alpha est conservé par trell
 
 import os
 import subprocess
+import tempfile
 import time
 from string import Template
 from typing import Any, Dict, List, Optional, Tuple
@@ -260,7 +261,10 @@ def reduire_mesh_blender(glb_path: str, glb_sortie: str, faces_cible: int) -> Op
         print("⚠️ Blender introuvable : réduction de maillage sautée.")
         return None
 
-    script = os.path.join(os.path.dirname(glb_sortie) or ".", "_reduction.py")
+    # Script temporaire unique (tempfile) : plus de _reduction.py écrit dans le
+    # dossier de sortie (collision entre exécutions parallèles + pollution).
+    descripteur, script = tempfile.mkstemp(suffix=".py", prefix="ga_reduction_")
+    os.close(descripteur)
     with open(script, "w", encoding="utf-8") as f:
         f.write(_SCRIPT_REDUCTION.substitute())
 
@@ -272,6 +276,12 @@ def reduire_mesh_blender(glb_path: str, glb_sortie: str, faces_cible: int) -> Op
     except subprocess.TimeoutExpired:
         print("⚠️ Réduction Blender expirée (10 min) : sautée.")
         return None
+    finally:
+        if os.path.exists(script):
+            try:
+                os.remove(script)
+            except OSError:
+                pass
 
     if not os.path.exists(glb_sortie):
         print(f"⚠️ Réduction Blender a échoué : {(proc.stderr or '')[-500:]}")
