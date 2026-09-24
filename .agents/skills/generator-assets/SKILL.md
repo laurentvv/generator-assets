@@ -146,10 +146,11 @@ bande).
 pour 22 frames, qualité ≥ baseline). Le mode 20 steps ne sert qu'en A/B qualité sur demande explicite.
 Les masters YouTube 4K passent par `scripts/conform_youtube_hd.py`.
 
-**⚠️ Écueil vidéo courant (état 23/09/2026 — vérifier `docs/MEMORY_BANK.md` §1.16-1.19 avant tout rendu
-vidéo, cela évolue avec les maj sd-cli)** : la sd-cli installée (`C:\SD\`, master-899) **casse MiniMax-H3**
-(régression mémoire amont : 51 segments au lieu de 2, OOM au submit ~5 min — inchangée de master-864 à 899,
-issue #1976 ouverte) ; **LTX-2.5 passe le benchmark T2V 33 trames sur 899 uniquement avec une VRAM bureau
+**⚠️ Écueil vidéo courant (état 24/09/2026 — vérifier `docs/MEMORY_BANK.md` §1.16-1.19 avant tout rendu
+vidéo, cela évolue avec les maj sd-cli)** : la sd-cli installée (`C:\SD\`, master-908) **casse MiniMax-H3**
+(régression mémoire amont : 54 segments au lieu de 2, OOM au submit ~4 min — le fix amont #1900 de
+master-908 a modifié le découpage (51→54) sans le corriger, inchangée de master-864 à 908,
+issue #1976 ouverte) ; **LTX-2.5 passe le benchmark T2V 33 trames sur 908 uniquement avec une VRAM bureau
 basse (machine rebootée, marge ~120 Mo fragile)** et son I2V 65 trames n'y est pas retesté. La build
 parallèle de production reste `C:\SD-6b3edaa\` (master-841, dernière validée pour LTX/H3) :
 ```bash
@@ -158,8 +159,8 @@ SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe" uv run python main.py -w monoplan_ia ...
 ```
 Pour `h3_ref2va`, la production passe également par la build 6b3edaa (le workflow peut appeler
 `C:\SD\sd-cli.exe` en dur → utiliser `--sd-cli` ou la commande brute documentée en MEMORY_BANK §1.16).
-Vidéo fiable sur master-899 : **Wan T2V/I2V ≤ ~20 trames avec `--vae-on-cpu`** (workflow `video`,
-validé 23/09). Règle : **toute matrice/validation sd-cli tourne sur machine fraîchement rebootée**
+Vidéo fiable sur master-908 : **Wan T2V/I2V ≤ ~20 trames avec `--vae-on-cpu`** (workflow `video`,
+validé 23-24/09). Règle : **toute matrice/validation sd-cli tourne sur machine fraîchement rebootée**
 (un verdict LTX/H3 peut dépendre de la VRAM détenue par le bureau).
 
 ## 4. Durées et attentes (RX 6950 XT, ordre de grandeur)
