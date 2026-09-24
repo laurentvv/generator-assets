@@ -39,6 +39,7 @@ class CharacterMakeupWorkflow(BaseWorkflow):
     name = "character_makeup"
     description = "MakeUp & features MPFB2 depuis portrait IA (YuNet + calque d'encre UV hm08 + rendus Cycles)"
 
+    emoji = "💄"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         portrait_path = params.get("portrait") or params.get("input")
         if not portrait_path:

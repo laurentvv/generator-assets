@@ -28,6 +28,7 @@ class VideoWorkflow(BaseWorkflow):
     name = "video"
     description = "Génération vidéo IA native (.webm) via Wan 2.1 / LTX / MiniMax sous Vulkan (T2V, I2V, FLF2V)"
 
+    emoji = "🎬"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt:

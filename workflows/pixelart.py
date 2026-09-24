@@ -20,6 +20,7 @@ class PixelArtWorkflow(BaseWorkflow):
     name = "pixelart"
     description = "Conversion & quantification rétro Pixel Art (Pico-8, Endesga-32, GameBoy) pour jeux rétro"
 
+    emoji = "👾"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image = params.get("input")
         prompt = params.get("prompt")

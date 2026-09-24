@@ -36,6 +36,7 @@ class MusiqueEssenceWorkflow(BaseWorkflow):
                    "SA3 Medium init_audio (Vulkan) puis retrait du chant HTDemucs — "
                    "échelle 0,40-0,45 et graine fixe validées ; --keep-vocals pour la version brute")
 
+    emoji = "🧬"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         style = params.get("prompt")
         if not style:

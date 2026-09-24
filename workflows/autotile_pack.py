@@ -23,6 +23,7 @@ class AutotilePackWorkflow(BaseWorkflow):
     name = "autotile_pack"
     description = "Planches d'Autotiles 47 tuiles (Wang / Minimal 3x3) + Ressource TileSet.tres pour Godot 4"
 
+    emoji = "🗺️"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         biome_a_param = params.get("biome_a") or params.get("prompt") or "herbe verte fleurie"
         biome_b_param = params.get("biome_b") or "terre rocheuse sombre"

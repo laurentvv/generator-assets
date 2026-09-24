@@ -48,6 +48,7 @@ class AudioAmbienceWorkflow(BaseWorkflow):
     name = "audio_ambience"
     description = "Ambiances sonores immersives & paysages sonores procéduraux en boucle continue pour Godot 4 (.wav / .ogg / .tres)"
 
+    emoji = "🌌"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "dungeon"
         ambience_type = params.get("flow_type") or params.get("vfx_type") or prompt

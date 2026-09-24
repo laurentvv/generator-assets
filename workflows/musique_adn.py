@@ -33,6 +33,7 @@ class MusiqueAdnWorkflow(BaseWorkflow):
     description = ("Générer une NOUVELLE musique avec l'ADN d'une référence (BPM + tonalité "
                    "auto, imposés au planner ACE-Step 1.5 xl-turbo) — style décrit en texte")
 
+    emoji = "🧬"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         reference = params.get("input")
         if not reference or not os.path.exists(reference):

@@ -22,6 +22,7 @@ class Turnaround3DWorkflow(BaseWorkflow):
     name = "turnaround3d"
     description = "Planche de modélisation 3D (Vues orthogonales Face + Profil calibrées pour Blender)"
 
+    emoji = "📐"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:

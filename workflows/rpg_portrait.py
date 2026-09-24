@@ -54,6 +54,7 @@ class RPGPortraitWorkflow(BaseWorkflow):
     name = "rpg_portrait"
     description = "Galerie de portraits de dialogues RPG avec émotions cohérentes (Neutre, Joie, Colère, etc.) + JSON Godot"
 
+    emoji = "🎭"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")

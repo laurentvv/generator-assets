@@ -32,6 +32,7 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
     name = "makehuman_clothes"
     description = "Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"
 
+    emoji = "👗"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         theme = params.get("prompt")
         if not theme:

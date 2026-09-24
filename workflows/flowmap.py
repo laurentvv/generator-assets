@@ -21,6 +21,7 @@ class FlowmapWorkflow(BaseWorkflow):
     name = "flowmap"
     description = "Cartes de flux vectoriels (Flowmaps) et Shaders d'eau/lave animés pour Godot 4"
 
+    emoji = "🌊"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "river"
         type_flux = params.get("flow_type") or ("vortex" if "vortex" in prompt or "whirlpool" in prompt else "river")

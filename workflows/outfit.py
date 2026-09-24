@@ -23,11 +23,13 @@ class OutfitWorkflow(BaseWorkflow):
     name = "outfit"
     description = "Génération 100% automatique de tenues PBR (tissus/cuirs) pour personnages 3D"
 
+    emoji = "👔"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         char_name = params.get("character", "marc_novice")
         top_prompt = params.get("top", "rustic medieval beige burlap tunic fabric")
         shoes_prompt = params.get("shoes", "worn dark brown medieval leather shoes texture")
-        blend_file = params.get("blend") or os.path.join(DEFAULT_OUTPUT_DIR, f"{char_name}.blend")
+        # NB : le CLI et la console interactive transmettent la clé "blend_file"
+        blend_file = params.get("blend_file") or params.get("blend") or os.path.join(DEFAULT_OUTPUT_DIR, f"{char_name}.blend")
         glb_file = os.path.join(DEFAULT_OUTPUT_DIR, f"{char_name}.glb")
         render_file = os.path.join(DEFAULT_OUTPUT_DIR, f"{char_name}_beauty_render.png")
         

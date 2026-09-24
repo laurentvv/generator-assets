@@ -148,6 +148,7 @@ class UI9SliceWorkflow(BaseWorkflow):
     name = "ui_9slice"
     description = "Génération de cadres d'UI, fenêtres d'inventaire et boutons 9-Patch extensibles pour Godot 4"
 
+    emoji = "🖼️"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")

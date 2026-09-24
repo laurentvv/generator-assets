@@ -20,6 +20,7 @@ class UpscaleWorkflow(BaseWorkflow):
     name = "upscale"
     description = "Super-résolution IA (ESRGAN Vulkan / Lanczos) pour Images et Vidéos (.webm / .mp4)"
 
+    emoji = "🔍"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_path = params.get("input")
         if not input_path or not os.path.exists(input_path):

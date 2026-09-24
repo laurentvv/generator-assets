@@ -45,6 +45,7 @@ class MeshIaWorkflow(BaseWorkflow):
     description = ("Objet 3D IA volumique depuis une image ou un prompt "
                    "(TRELLIS.2-4B GGUF, Vulkan) : GLB PBR + rendus de contrôle Blender")
 
+    emoji = "🧊"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image = params.get("input")
         prompt = params.get("prompt")

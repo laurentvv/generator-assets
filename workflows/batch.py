@@ -19,6 +19,7 @@ class BatchWorkflow(BaseWorkflow):
     name = "batch"
     description = "Génération par lots depuis un fichier JSON ou liste textuelle de concepts"
 
+    emoji = "📦"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         fichier_recette = params.get("file") or params.get("recipe")
         if not fichier_recette or not os.path.exists(fichier_recette):

@@ -22,6 +22,7 @@ class SkyboxWorkflow(BaseWorkflow):
     name = "skybox"
     description = "Génération d'Environnement Skybox 360° équirectangulaire et fichier Environment Godot 4"
 
+    emoji = "🌌"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:

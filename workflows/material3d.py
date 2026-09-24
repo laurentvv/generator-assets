@@ -38,6 +38,7 @@ class Material3DWorkflow(BaseWorkflow):
     name = "material3d"
     description = "Pack Matériau 3D PBR complet (Albedo, Normal, Roughness, Height, AO, ORM + .tres Godot)"
 
+    emoji = "🧱"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")

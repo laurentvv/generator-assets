@@ -33,6 +33,7 @@ class IPAdapterWorkflow(BaseWorkflow):
     name = "ip_adapter"
     description = "Cohérence de style & charte graphique (IP-Adapter) depuis une image de référence + Palettes Godot"
 
+    emoji = "🎨"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image_path = params.get("input")
         concept = params.get("prompt")

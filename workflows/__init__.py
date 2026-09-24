@@ -1,96 +1,47 @@
 """
-Module d'enregistrement des workflows 2D & 3D.
+Enregistrement des workflows 2D & 3D.
+
+Chaque module `workflows/<nom>.py` déclare sa (ou ses) classe(s) via
+`@WorkflowRegistry.register`. L'import est piloté par la liste ordonnée
+`_MODULES_ORDONNES` : c'est elle qui fixe l'ordre du menu interactif et de
+`--list-workflows`. Tout nouveau module non listé est découvert automatiquement
+(pkgutil) et enregistré en fin de liste — un workflow ne peut plus être absent
+du registre par oubli d'import.
 """
 
-from workflows.base import BaseWorkflow, WorkflowRegistry
-from workflows.generate import GenerateWorkflow
-from workflows.upscale import UpscaleWorkflow
-from workflows.spritesheet import SpriteSheetWorkflow
-from workflows.variations import VariationsWorkflow
-from workflows.tileable import TileableWorkflow
-from workflows.pixelart import PixelArtWorkflow
-from workflows.batch import BatchWorkflow
-from workflows.material3d import Material3DWorkflow
-from workflows.skybox import SkyboxWorkflow
-from workflows.turnaround3d import Turnaround3DWorkflow
-from workflows.mesh3d import Mesh3DWorkflow
-from workflows.mesh_ia import MeshIaWorkflow
-from workflows.rembg import RembgWorkflow
-from workflows.flowmap import FlowmapWorkflow
-from workflows.ui_9slice import UI9SliceWorkflow
-from workflows.voxel3d import Voxel3DWorkflow
-from workflows.autotile_pack import AutotilePackWorkflow
-from workflows.rife_interp import RifeInterpWorkflow
-from workflows.vfx_flipbook import VFXFlipbookWorkflow
-from workflows.rpg_portrait import RPGPortraitWorkflow
-from workflows.sfx import SFXWorkflow
-from workflows.ip_adapter import IPAdapterWorkflow
-from workflows.anim_loop import AnimLoopWorkflow
-from workflows.pose_control import PoseControlWorkflow
-from workflows.tts_dialogue import TTSDialogueWorkflow
-from workflows.audio_ambience import AudioAmbienceWorkflow
-from workflows.music_bg import MusicBgWorkflow
-from workflows.voix_off import VoixOffWorkflow
-from workflows.voix_robot import VoixRobotWorkflow
-from workflows.chanson import ChansonWorkflow
-from workflows.musique_adn import MusiqueAdnWorkflow
-from workflows.musique_essence import MusiqueEssenceWorkflow
-from workflows.retrait_voix import RetraitVoixWorkflow
-from workflows.outfit import OutfitWorkflow
-from workflows.video import VideoWorkflow
-from workflows.h3_ref2va import H3Ref2VAWorkflow
-from workflows.monoplan_ia import MonoplanIaWorkflow
-from workflows.makehuman_clothes import MakeHumanClothesWorkflow
-from workflows.character_makeup import CharacterMakeupWorkflow, Character3DWorkflow
-from workflows.asset_blendkit import AssetBlendkitWorkflow
-from workflows.audio_upscale import AudioUpscaleWorkflow
-from workflows.animal_godot import AnimalGodotWorkflow
+import importlib
+import pkgutil
 
-__all__ = [
-    "BaseWorkflow",
-    "WorkflowRegistry",
-    "GenerateWorkflow",
-    "UpscaleWorkflow",
-    "SpriteSheetWorkflow",
-    "VariationsWorkflow",
-    "TileableWorkflow",
-    "PixelArtWorkflow",
-    "BatchWorkflow",
-    "Material3DWorkflow",
-    "SkyboxWorkflow",
-    "Turnaround3DWorkflow",
-    "Mesh3DWorkflow",
-    "MeshIaWorkflow",
-    "RembgWorkflow",
-    "FlowmapWorkflow",
-    "UI9SliceWorkflow",
-    "Voxel3DWorkflow",
-    "AutotilePackWorkflow",
-    "RifeInterpWorkflow",
-    "VFXFlipbookWorkflow",
-    "RPGPortraitWorkflow",
-    "SFXWorkflow",
-    "IPAdapterWorkflow",
-    "AnimLoopWorkflow",
-    "PoseControlWorkflow",
-    "TTSDialogueWorkflow",
-    "AudioAmbienceWorkflow",
-    "MusicBgWorkflow",
-    "VoixOffWorkflow",
-    "VoixRobotWorkflow",
-    "ChansonWorkflow",
-    "MusiqueAdnWorkflow",
-    "MusiqueEssenceWorkflow",
-    "RetraitVoixWorkflow",
-    "OutfitWorkflow",
-    "VideoWorkflow",
-    "H3Ref2VAWorkflow",
-    "MonoplanIaWorkflow",
-    "MakeHumanClothesWorkflow",
-    "CharacterMakeupWorkflow",
-    "Character3DWorkflow",
-    "AssetBlendkitWorkflow",
-    "AudioUpscaleWorkflow"
+from workflows.base import BaseWorkflow, WorkflowRegistry
+
+_MODULES_ORDONNES = [
+    "generate", "upscale", "spritesheet", "variations", "tileable", "pixelart",
+    "batch", "material3d", "skybox", "turnaround3d", "mesh3d", "mesh_ia", "rembg",
+    "flowmap", "ui_9slice", "voxel3d", "autotile_pack", "rife_interp", "vfx_flipbook",
+    "rpg_portrait", "sfx", "ip_adapter", "anim_loop", "pose_control", "tts_dialogue",
+    "audio_ambience", "music_bg", "voix_off", "voix_robot", "chanson", "musique_adn",
+    "musique_essence", "retrait_voix", "outfit", "video", "h3_ref2va", "monoplan_ia",
+    "makehuman_clothes", "character_makeup", "asset_blendkit", "audio_upscale",
+    "animal_godot",
+]
+
+_decouverts = sorted(
+    m.name for m in pkgutil.iter_modules(__path__)
+    if m.name not in _MODULES_ORDONNES and not m.name.startswith("_")
+)
+for _nom in _MODULES_ORDONNES + _decouverts:
+    importlib.import_module(f"workflows.{_nom}")
+
+# Exports nommés historiques : liste complète par construction (inclut les classes
+# oubliées de l'ancien __all__, ex. AnimalGodotWorkflow).
+__all__ = ["BaseWorkflow", "WorkflowRegistry"] + [
+    cls.__name__ for cls in WorkflowRegistry._workflows.values()
 ]
 
 
+def __getattr__(nom: str):
+    """Résout les anciens imports `from workflows import XWorkflow` via le registre."""
+    for cls in WorkflowRegistry._workflows.values():
+        if cls.__name__ == nom:
+            return cls
+    raise AttributeError(f"module 'workflows' n'a pas d'attribut '{nom}'")

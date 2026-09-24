@@ -25,6 +25,7 @@ class VoixRobotWorkflow(BaseWorkflow):
     description = ("Voix de robot en anglais — TTS Kokoro-82M (Vulkan) + effet FFmpeg "
                    "pitch/ring modulation (recette validée 2026-09-17) — .wav + .mp3")
 
+    emoji = "🤖"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         brut = (params.get("prompt") or "").strip()
         if not brut:

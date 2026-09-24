@@ -23,6 +23,7 @@ class GenerateWorkflow(BaseWorkflow):
     name = "generate"
     description = "Génération d'un asset 2D isolé (LLM -> Diffusion -> Détourage -> Centrage Godot -> Upscale IA optionnel)"
 
+    emoji = "🎨"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:

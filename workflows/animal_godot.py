@@ -26,6 +26,7 @@ class AnimalGodotWorkflow(BaseWorkflow):
                    "parasites, clips renommés AN_* (1 par action native), "
                    "vérifié par ré-import (recette validée 2026-09-18)")
 
+    emoji = "🐺"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):

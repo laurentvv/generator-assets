@@ -22,6 +22,7 @@ class RembgWorkflow(BaseWorkflow):
     name = "rembg"
     description = "Détourage IA haute précision (RMBG-1.4 / BiRefNet) pour assets 2D sans frange blanche"
 
+    emoji = "✂️"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         image_entree = params.get("image") or params.get("input")
         if not image_entree or not os.path.exists(image_entree):
