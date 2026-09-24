@@ -9,8 +9,7 @@ import json
 import os
 import shutil
 import subprocess
-import sys
-from pathlib import Path
+import tempfile
 from typing import Optional
 import numpy as np
 from PIL import Image
@@ -178,7 +177,8 @@ bpy.ops.export_scene.gltf(filepath=output_path, export_format="GLB")
 print(f"✅ Export GLB termine : {{output_path}}")
 """
 
-    temp_script = os.path.abspath("temp_blender_sculpt.py")
+    descripteur, temp_script = tempfile.mkstemp(suffix=".py", prefix="ga_blender_sculpt_")
+    os.close(descripteur)
     with open(temp_script, "w", encoding="utf-8") as f:
         f.write(script_blender)
 
@@ -300,7 +300,8 @@ bpy.ops.export_scene.gltf(filepath=output_path, export_format="GLB")
 print(f"✅ Export GLB termine : {{output_path}}")
 """
 
-    temp_script = os.path.abspath("temp_blender_gen.py")
+    descripteur, temp_script = tempfile.mkstemp(suffix=".py", prefix="ga_blender_gen_")
+    os.close(descripteur)
     with open(temp_script, "w", encoding="utf-8") as f:
         f.write(script_blender)
 
