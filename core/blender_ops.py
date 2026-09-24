@@ -8,11 +8,11 @@ Génère des maillages 3D texturés avec matériaux PBR complets (Albedo, Normal
 import json
 import os
 import shutil
-import subprocess
 import tempfile
 from typing import Optional
 import numpy as np
 from PIL import Image
+from core.process import run_engine
 
 BLENDER_CANDIDATES = [
     os.getenv("BLENDER_PATH", ""),
@@ -183,7 +183,7 @@ print(f"✅ Export GLB termine : {{output_path}}")
         f.write(script_blender)
 
     try:
-        res = subprocess.run([blender_bin, "-b", "--python", temp_script], capture_output=True, text=True, check=True)
+        res = run_engine([blender_bin, "-b", "--python", temp_script], timeout=600, check=True, etiquette="blender")
         if not os.path.exists(fichier_glb):
             raise FileNotFoundError(f"Le fichier {fichier_glb} n'a pas été généré par Blender.")
         return fichier_glb
@@ -306,7 +306,7 @@ print(f"✅ Export GLB termine : {{output_path}}")
         f.write(script_blender)
 
     try:
-        res = subprocess.run([blender_bin, "-b", "--python", temp_script], capture_output=True, text=True, check=True)
+        res = run_engine([blender_bin, "-b", "--python", temp_script], timeout=600, check=True, etiquette="blender")
         if not os.path.exists(fichier_glb):
             raise FileNotFoundError(f"Le fichier {fichier_glb} n'a pas été généré par Blender.")
         return fichier_glb

@@ -29,7 +29,7 @@ import pytest
 from PIL import Image
 
 import main
-from core import diffusion, upscaler
+from core import diffusion, process, upscaler
 from workflows.base import BaseWorkflow, WorkflowRegistry
 from workflows.batch import BatchWorkflow
 
@@ -109,13 +109,17 @@ def faux_sd_cli(monkeypatch):
     """Remplace subprocess.run par un faux sd-cli qui écrit un PNG au chemin -o."""
     appels = []
 
+    from subprocess import CompletedProcess
+
     def faux_run(commande, check=True, **kwargs):
         appels.append(list(commande))
         sortie = commande[commande.index("-o") + 1]
         Image.new("RGB", (4, 4), (200, 30, 30)).save(sortie, "PNG")
+        return CompletedProcess(commande, 0, stdout="", stderr="")
 
-    monkeypatch.setattr(diffusion.subprocess, "run", faux_run)
-    monkeypatch.setattr(upscaler.subprocess, "run", faux_run)
+    # Tous les moteurs passent désormais par core.process.run_engine :
+    # un seul monkeypatch couvre diffusion, upscaler et blender_ops.
+    monkeypatch.setattr(process.subprocess, "run", faux_run)
     return appels
 
 
