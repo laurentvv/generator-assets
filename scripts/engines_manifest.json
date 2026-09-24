@@ -58,10 +58,11 @@
       "repo": "0xShug0/audio.cpp",
       "plateformes": {
         "windows": {
-          "release": "latest",
+          "release": "v0.8.1",
           "asset_pattern": "audio-*-bin-windows-x64-vulkan.zip",
           "sous_dossier": "audio-cpp",
-          "exe": "audiocpp_cli.exe"
+          "exe": "audiocpp_cli.exe",
+          "raison_epinglage": "v0.8.1 gardée le 2026-09-24 : v0.8.2 testée puis REJETÉE — crash STATUS_ILLEGAL_INSTRUCTION (0xC000001D) au chargement d'ace_step (runtime.model.variant acestep-v15-turbo), backend vulkan ET cpu, alors que v0.8.1 restaurée depuis backup refonctionne (smoke 12 s turbo OK, RTF 3,25). Rollback effectué le 2026-09-24 ; retenter à partir de v0.8.3 (vérifier les issues amont)."
         },
         "linux": {
           "release": "latest",
