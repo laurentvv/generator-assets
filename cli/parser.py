@@ -221,17 +221,24 @@ def surface_cli(parseur: argparse.ArgumentParser) -> list:
 
     Une entrée par option : flags triés, dest, classe d'action, défaut, choices
     triés, nargs, nom du type. Le help est volontairement exclu (cosmétique).
+    Les défauts string sont normalisés « posix » (backslashes → slashes) :
+    os.path.join produit des chemins différents selon l'OS pour une même valeur
+    (C:\\x\\y sous Windows, C:\\x/y sous Linux) et le gel doit être comparable
+    d'une plateforme à l'autre (CI ubuntu + windows).
     Alimente le test de gel tests/test_cli_contract.py : toute dérive de dest,
     de défaut ou de type casse le contrat des dépôts consommateurs
     (ai-doc2video, video-analys-ia) sans que le test anti-doublon ne le voie.
     """
     entrees = []
     for action in parseur._actions:
+        default = action.default
+        if isinstance(default, str):
+            default = default.replace("\\", "/")
         entrees.append([
             sorted(action.option_strings),
             action.dest,
             type(action).__name__,
-            repr(action.default),
+            repr(default),
             sorted(action.choices) if action.choices is not None else None,
             action.nargs,
             getattr(action.type, "__name__", None) if action.type is not None else None,
