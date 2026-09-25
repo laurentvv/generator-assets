@@ -24,6 +24,20 @@ class OutfitWorkflow(BaseWorkflow):
     description = "Génération 100% automatique de tenues PBR (tissus/cuirs) pour personnages 3D"
 
     emoji = "👔"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --character est partagé
+    # avec character_makeup : il vit ici, premier utilisateur dans le registre.
+    # --blend-file (partagé) vit dans character_makeup.
+    PARAMETRES = [
+        dict(flags=("--character",), default="marc_novice",
+             help="Nom du personnage cible (workflows outfit, character_makeup)."),
+        dict(flags=("--top",), default="rustic medieval beige burlap tunic fabric",
+             help="Description du tissu/matière pour le haut/tunique (workflow outfit)."),
+        dict(flags=("--shoes",), default="worn dark brown medieval leather shoes texture",
+             help="Description de la matière pour les chaussures/bottes (workflow outfit)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         char_name = params.get("character", "marc_novice")
         top_prompt = params.get("top", "rustic medieval beige burlap tunic fabric")

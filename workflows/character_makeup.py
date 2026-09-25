@@ -40,6 +40,30 @@ class CharacterMakeupWorkflow(BaseWorkflow):
     description = "MakeUp & features MPFB2 depuis portrait IA (YuNet + calque d'encre UV hm08 + rendus Cycles)"
 
     emoji = "💄"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --character (partagé)
+    # vit dans outfit ; --samples reste en table plate (partagé avec
+    # asset_blendkit, famille 2D) ; --width/--height idem (partagés multi-familles).
+    PARAMETRES = [
+        dict(flags=("--portrait",),
+             help="Chemin vers le portrait 2D de référence pour character_makeup."),
+        dict(flags=("--skin",),
+             help="Chemin vers la texture de peau diffuse 3D pour le transfert de gamut (character_makeup)."),
+        dict(flags=("--eye-color",), default="cyan",
+             help="Teinte d'iris personnalisée pour les yeux MPFB (ex: 'cyan', 'amber', 'none')."),
+        dict(flags=("--blend-file",),
+             help="Fichier Blender .blend pour rendus de contrôle studio Cycles (character_makeup)."),
+        dict(flags=("--render-modes",), default="head,body",
+             help="Modes de rendus studio à exécuter pour character_makeup ('head,body', 'head', 'body')."),
+        dict(flags=("--age",), type=float, default=0.12,
+             help="Âge normalisé MPFB (0.12 = enfant 4-5 ans, 0.18 = 8 ans, 0.5 = adulte)."),
+        dict(flags=("--gender",), type=float, default=0.0,
+             help="Genre morphologique MPFB (0.0 = enfant/féminin neutre, 1.0 = masculin)."),
+        dict(flags=("--makeup-only",), action="store_true",
+             help="Génère uniquement le calque d'encre MakeUp sans construire le corps 3D complet."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         portrait_path = params.get("portrait") or params.get("input")
         if not portrait_path:

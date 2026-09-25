@@ -67,8 +67,15 @@ class WorkflowRegistry:
 
         Utilisé par cli/parser.py pour générer le groupe d'options « par
         workflow » ; l'ordre suit celui du registre (menu interactif).
+        Une classe fille hérite de la liste PARAMETRES de sa mère (même objet) —
+        ex. character3d ⊂ character_makeup : la déclaration ne doit être émise
+        qu'une fois, sinon argparse refuse le flag en doublon.
         """
         declarations: List[Dict[str, Any]] = []
+        vus: set = set()
         for wf_cls in cls._workflows.values():
-            declarations.extend(getattr(wf_cls, "PARAMETRES", []))
+            for declaration in getattr(wf_cls, "PARAMETRES", []):
+                if id(declaration) not in vus:
+                    vus.add(id(declaration))
+                    declarations.append(declaration)
         return declarations

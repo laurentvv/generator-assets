@@ -33,6 +33,16 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
     description = "Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"
 
     emoji = "👗"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--parts",), default="torso,pants,shoes",
+             help="Pièces de garde-robe séparées par des virgules pour makehuman_clothes (défaut: 'torso,pants,shoes')."),
+        dict(flags=("--mpfb-dir",),
+             help="Répertoire personnalisé des assets MakeHuman / MPFB."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         theme = params.get("prompt")
         if not theme:
