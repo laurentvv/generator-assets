@@ -1,5 +1,5 @@
 {
-  "_lisez_moi": "Versions connues-bonnes des moteurs C++, lues par scripts/install_windows.ps1 (cle 'windows') et scripts/install_unix.sh (cles 'linux', 'macos-arm64', 'macos-x64'). Maintenu par la veille (scripts/veille_versions.py) et les mises a jour validees (process AGENTS.md). 'epingle' fixe une version precise quand les plus recentes posent probleme ; sinon 'release': 'latest' ou 'scan_releases' prend la derniere publication upstream. Backend GPU : Vulkan partout, Metal sur macOS. trellis.cpp n'est pas publie pour macOS (build source requis). Le FFmpeg installe est un build STANDARD (BtbN Windows/Linux, Homebrew macOS) couvrant 100 % des recettes du depot ; le build custom de la station (AMF, libfdk-aac, cpu=native) est machine-specifique et nonfree donc NON redistribuable.",
+  "_lisez_moi": "Versions connues-bonnes des moteurs C++, lues par scripts/install_windows.ps1 (cle 'windows') et scripts/install_unix.sh (cles 'linux', 'macos-arm64', 'macos-x64'). Maintenu par la veille (scripts/veille_versions.py) et les mises a jour validees (process AGENTS.md). 'epingle' fixe une version precise quand les plus recentes posent probleme ; sinon 'release': 'latest' ou 'scan_releases' prend la derniere publication upstream. Cle 'sha256' (facultative) : empreinte de l'asset resolu — obligatoire pour les assets epingles, a rafraichir a chaque changement de pin/release (source : champ digest de l'API GitHub) ; les installateurs la verifient apres telechargement et refusent un asset modifie. Pour les fiches 'latest'/'scan_releases' sans sha256, les installateurs utilisent le digest renvoyé par l'API au moment de la resolution. Pas de sha256 possible sur les URL directes mouvantes (ffmpeg BtbN 'latest'). Backend GPU : Vulkan partout, Metal sur macOS. trellis.cpp n'est pas publie pour macOS (build source requis). Le FFmpeg installe est un build STANDARD (BtbN Windows/Linux, Homebrew macOS) couvrant 100 % des recettes du depot ; le build custom de la station (AMF, libfdk-aac, cpu=native) est machine-specifique et nonfree donc NON redistribuable.",
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
@@ -8,18 +8,21 @@
         "windows": {
           "epingle": "master-908-88411ef",
           "asset": "sd-master-88411ef-bin-win-vulkan-x64.zip",
+          "sha256": "e9d089361a00bd30b1e23cc39d2a98745536688acbf5e9e68ce2498a548d07e1",
           "sous_dossier": "SD",
           "exe": "sd-cli.exe"
         },
         "linux": {
           "epingle": "master-908-88411ef",
           "asset": "sd-master-88411ef-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+          "sha256": "3f898579f384a97368fed42daebc4ed81e65798c633ed09b84cb27812a65ba33",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
         "macos-arm64": {
           "epingle": "master-908-88411ef",
           "asset": "sd-master-88411ef-bin-Darwin-macOS-26.6.2-arm64.zip",
+          "sha256": "acf9cd2219e69bdfc0faa0d6daaafa696d9551c723b74d6e37f2cd78da386d5a",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         }
@@ -60,6 +63,7 @@
         "windows": {
           "release": "v0.8.2-audio8-perf-hotfix",
           "asset_pattern": "audio-*-bin-windows-x64-vulkan.zip",
+          "sha256": "3426ed753f7c720221ce20d27a4c134b6e7595f20955d6a2b9d10e7f47cfec2b",
           "sous_dossier": "audio-cpp",
           "exe": "audiocpp_cli.exe",
           "raison_epinglage": "v0.8.2-audio8-perf-hotfix installée le 2026-09-25 (accord 'go') : le crash ace_step de v0.8.2 pure (STATUS_ILLEGAL_INSTRUCTION au chargement) est CORRIGÉ sur le hotfix — smoke 12 s turbo OK (RTF 3,82/3,53), A/B même jour vs v0.8.1 : moyenne 3,68 vs 3,32 (+11 %, dans la marge de bruit ace_step du poste, v0.8.1 faisait 3,25-3,85 intra-jour le 24/09) → pas de régression nette, sfx stable_audio OK. Retester la prochaine release (v0.8.3+) et enlever le pin si le A/B reste propre."
@@ -91,12 +95,14 @@
         "windows": {
           "epingle": "v0.6.0",
           "asset": "trellis-vulkan-windows-x64.zip",
+          "sha256": "bfe437e4c222b37141b3bcb0600eabee6f39823a5fafa0b3913f50f575e424d0",
           "sous_dossier": "trellis",
           "exe": "trellis-cli.exe"
         },
         "linux": {
           "epingle": "v0.6.0",
           "asset": "trellis-vulkan-linux-x64.tar.gz",
+          "sha256": "6bc453c1e3a94a4b7bda15cd7f93fdf05f240869c44bf2b102a5db4a5fde19b6",
           "sous_dossier": "trellis",
           "exe": "trellis-cli"
         }

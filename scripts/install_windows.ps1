@@ -91,6 +91,8 @@ function Get-ReleasesGitHub {
 }
 
 # Resout l'URL de l'asset d'un moteur a partir de sa fiche plateforme du manifeste.
+# Renvoie aussi sha256 si connu : cle 'sha256' du manifeste (asset epingle) ou champ
+# 'digest' de l'API GitHub (release 'latest' / scan_releases) ; absent sur URL directe mouvante.
 function Resolve-UrlMoteur {
     param([string]$Repo, [psobject]$Spec)
     if ($Spec.url) {
@@ -98,17 +100,28 @@ function Resolve-UrlMoteur {
     }
     if ($Spec.epingle -and $Spec.asset) {
         return @{
-            url   = "https://github.com/$Repo/releases/download/$($Spec.epingle)/$($Spec.asset)"
-            label = "$($Spec.asset) (epingle $($Spec.epingle))"
+            url    = "https://github.com/$Repo/releases/download/$($Spec.epingle)/$($Spec.asset)"
+            label  = "$($Spec.asset) (epingle $($Spec.epingle))"
+            sha256 = $Spec.sha256
         }
     }
-    if ($Spec.release -eq "latest") {
-        Write-Info "Recherche de la derniere release $Repo..."
-        $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" `
+    if ($Spec.release) {
+        # 'latest' = derniere publication ; sinon la valeur EST le tag epingle.
+        $uriRelease = if ($Spec.release -eq "latest") {
+            Write-Info "Recherche de la derniere release $Repo..."
+            "https://api.github.com/repos/$Repo/releases/latest"
+        } else {
+            Write-Info "Resolution de la release epinglee $($Spec.release) ($Repo)..."
+            "https://api.github.com/repos/$Repo/releases/tags/$($Spec.release)"
+        }
+        $rel = Invoke-RestMethod -Uri $uriRelease `
                                  -Headers @{ "User-Agent" = "generator-assets-installer/1.0" }
         foreach ($a in $rel.assets) {
             if ($a.name -like $Spec.asset_pattern) {
-                return @{ url = $a.browser_download_url; label = "$($a.name) ($($rel.tag_name))" }
+                # Le sha256 du manifeste (connu-bonne, maintenu par le process de maj)
+                # prime sur le digest de l'API (qui suivrait un re-upload amont).
+                $sha = if ($Spec.sha256) { $Spec.sha256 } else { $a.digest -replace '^sha256:', '' }
+                return @{ url = $a.browser_download_url; label = "$($a.name) ($($rel.tag_name))"; sha256 = $sha }
             }
         }
         throw "Aucun asset '$($Spec.asset_pattern)' dans la release $($rel.tag_name) de $Repo"
@@ -119,7 +132,7 @@ function Resolve-UrlMoteur {
         foreach ($rel in $rels) {
             foreach ($a in $rel.assets) {
                 if ($a.name -like $Spec.asset_pattern) {
-                    return @{ url = $a.browser_download_url; label = "$($a.name) ($($rel.tag_name))" }
+                    return @{ url = $a.browser_download_url; label = "$($a.name) ($($rel.tag_name))"; sha256 = ($a.digest -replace '^sha256:', '') }
                 }
             }
         }
@@ -154,6 +167,16 @@ function Install-Moteur {
     Invoke-Telechargement -Url $resolu.url -Dest $zip
     $tailleMo = [math]::Round((Get-Item $zip).Length / 1MB, 1)
     Write-Ok "Telecharge ($tailleMo Mo)"
+
+    if ($resolu.sha256) {
+        $hashObtenu = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLower()
+        if ($hashObtenu -ne $resolu.sha256.ToLower()) {
+            throw "sha256 invalide pour $($resolu.label) : attendu $($resolu.sha256), obtenu $hashObtenu (asset corrompu ou modifie ?)"
+        }
+        Write-Ok "sha256 verifie ($($resolu.sha256.Substring(0, 12))...)"
+    } else {
+        Write-Alerte "Pas de sha256 connu pour cet asset : integrite non verifiee."
+    }
 
     Write-Info "Extraction..."
     Expand-Archive -Path $zip -DestinationPath $extract -Force
