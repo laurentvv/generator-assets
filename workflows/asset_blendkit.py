@@ -37,6 +37,35 @@ class AssetBlendkitWorkflow(BaseWorkflow):
                    "rendue Blender Cycles GPU pour la chaîne (mode plate) — compte Blendkit requis")
 
     emoji = "🧰"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --mode reste en table
+    # plate (dest lu aussi par upscale et video, cross-familles).
+    PARAMETRES = [
+        dict(flags=("--query",),
+             help="Mots-clés de recherche Blendkit (workflow asset_blendkit) — ex: 'wooden barrel'."),
+        dict(flags=("--asset-type",), dest="asset_type", choices=["model", "scene", "material"], default="model",
+             help="Type d'asset Blendkit pour asset_blendkit (défaut: model ; mode plate utilise scene)."),
+        dict(flags=("--licence",), choices=["cc_zero", "any"], default="cc_zero",
+             help="Filtre de licence Blendkit (défaut: cc_zero — recommandé jeu + monétisation)."),
+        dict(flags=("--index",), type=int, default=0,
+             help="Index du résultat Blendkit à télécharger (voir --list-assets ; défaut: 0)."),
+        dict(flags=("--list-assets",), dest="list_assets", action="store_true",
+             help="asset_blendkit : affiche les résultats de recherche puis s'arrête."),
+        dict(flags=("--resolution",), choices=["blend", "8K", "4K", "2K", "1K", "0.5K"], default="2K",
+             help="asset_blendkit mode prop : variante de textures du .blend (défaut: 2K, léger pour le jeu ; blend = qualité max)."),
+        dict(flags=("--engine",), choices=["cycles", "eevee"], default="cycles",
+             help="asset_blendkit mode plate : moteur de rendu (défaut: cycles, GPU HIP — EEVEE sature certaines scènes, MEMORY_BANK 1.23)."),
+        dict(flags=("--camera",), default=None,
+             help="asset_blendkit mode plate : nom de la caméra de la scène à utiliser (défaut: caméra de la scène)."),
+        dict(flags=("--exposure",), type=float, default=-1.0,
+             help="asset_blendkit mode plate : exposition du rendu (défaut: -1.0, look officiel des scènes néon)."),
+        dict(flags=("--percentage",), type=int, default=100,
+             help="asset_blendkit mode plate : pourcentage de résolution Blender (défaut: 100 ; les fichiers scène imposent parfois 300 = 6K, à maîtriser)."),
+        dict(flags=("--no-cache",), dest="no_cache", action="store_true",
+             help="asset_blendkit : force le retéléchargement du .blend (défaut: cache local)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         query = params.get("query")
         if not query:

@@ -128,54 +128,26 @@ Exemples de Workflows 3D & 2D :
         help="Active l'upscaling IA automatique (ESRGAN 4x ou Lanczos) après la génération."
     )
 
-    # Paramètres spécifiques aux workflows
-    groupe_wf = parser.add_argument_group("Options des Workflows Avancés")
+    # Options partagées entre familles de workflows (audit §2.2 keystone) : chaque
+    # flag ci-dessous est lu par des workflows de familles DIFFÉRENTES (2D,
+    # vidéo/3D, audio, personnage) — pas de propriétaire unique, il reste donc en
+    # table plate. Tout flag mono-workflow ou intra-famille vit désormais dans le
+    # PARAMETRES de sa classe (groupe « Options par Workflow » ci-dessous).
+    groupe_wf = parser.add_argument_group("Options partagées entre familles de workflows")
     groupe_wf.add_argument("--factor", type=float, default=None, help="Facteur d'agrandissement pour l'upscale ou l'interpolation (ex: 2.0, 4.0 ; défaut : propre au workflow — 2.0, ou 4.0 quand l'upscale IA est actif pour generate).")
-    groupe_wf.add_argument("--normal-strength", type=float, default=3.5, help="Intensité du relief pour la Normal Map PBR (défaut: 3.5).")
-    groupe_wf.add_argument("--pbr-engine", default="auto", choices=["auto", "deep", "sobel"], help="Moteur d'estimation PBR (deep = DeepBump ONNX, sobel = filtres 2D).")
-    groupe_wf.add_argument("--segmenter", default="auto", choices=["auto", "birefnet", "rmbg", "floodfill", "none"], help="Moteur de détourage 2D.")
-    groupe_wf.add_argument("--palette", default="pico8", choices=["pico8", "gameboy", "endesga32"], help="Palette pour le workflow pixelart.")
-    groupe_wf.add_argument("--grid-size", type=int, default=64, help="Taille de grille pour le pixel art (ex: 32, 64).")
-    groupe_wf.add_argument("--query", help="Mots-clés de recherche Blendkit (workflow asset_blendkit) — ex: 'wooden barrel'.")
-    groupe_wf.add_argument("--asset-type", dest="asset_type", choices=["model", "scene", "material"], default="model", help="Type d'asset Blendkit pour asset_blendkit (défaut: model ; mode plate utilise scene).")
-    groupe_wf.add_argument("--licence", choices=["cc_zero", "any"], default="cc_zero", help="Filtre de licence Blendkit (défaut: cc_zero — recommandé jeu + monétisation).")
-    groupe_wf.add_argument("--index", type=int, default=0, help="Index du résultat Blendkit à télécharger (voir --list-assets ; défaut: 0).")
-    groupe_wf.add_argument("--list-assets", dest="list_assets", action="store_true", help="asset_blendkit : affiche les résultats de recherche puis s'arrête.")
     groupe_wf.add_argument("--mode", choices=["prop", "plate"], default="prop", help="asset_blendkit : prop = .glb Godot + aperçu Workbench | plate = rendu décor Cycles/EEVEE pour la chaîne (défaut: prop).")
-    groupe_wf.add_argument("--resolution", choices=["blend", "8K", "4K", "2K", "1K", "0.5K"], default="2K", help="asset_blendkit mode prop : variante de textures du .blend (défaut: 2K, léger pour le jeu ; blend = qualité max).")
-    groupe_wf.add_argument("--engine", choices=["cycles", "eevee"], default="cycles", help="asset_blendkit mode plate : moteur de rendu (défaut: cycles, GPU HIP — EEVEE sature certaines scènes, MEMORY_BANK 1.23).")
-    groupe_wf.add_argument("--camera", default=None, help="asset_blendkit mode plate : nom de la caméra de la scène à utiliser (défaut: caméra de la scène).")
-    groupe_wf.add_argument("--exposure", type=float, default=-1.0, help="asset_blendkit mode plate : exposition du rendu (défaut: -1.0, look officiel des scènes néon).")
-    groupe_wf.add_argument("--percentage", type=int, default=100, help="asset_blendkit mode plate : pourcentage de résolution Blender (défaut: 100 ; les fichiers scène imposent parfois 300 = 6K, à maîtriser).")
-    groupe_wf.add_argument("--no-cache", dest="no_cache", action="store_true", help="asset_blendkit : force le retéléchargement du .blend (défaut: cache local).")
-    groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
-    groupe_wf.add_argument("--file", "--recipe", dest="file", help="Fichier JSON ou liste texte pour le workflow batch.")
-    groupe_wf.add_argument("--continue-on-error", dest="continue_on_error", action="store_true", help="batch : continue le lot après l'échec d'un asset et sort en code ≠ 0 à la fin avec la liste des échecs (défaut : arrêt à la première erreur, code ≠ 0).")
     groupe_wf.add_argument("--columns", type=int, default=4, help="Nombre de colonnes pour la planche de sprites.")
-    groupe_wf.add_argument("--no-preview", action="store_true", help="Désactive l'aperçu 3x3 pour le workflow tileable.")
-    groupe_wf.add_argument("--angle", type=float, default=90.0, help="Angle de direction en degrés pour le workflow flowmap (défaut: 90 = bas).")
-    groupe_wf.add_argument("--flow-type", default="river", choices=["river", "vortex", "radial", "optical"], help="Type de flux pour le workflow flowmap.")
-    groupe_wf.add_argument("--turbulence", type=float, default=0.35, help="Intensité des tourbillons/méandres pour flowmap (défaut: 0.35).")
-    groupe_wf.add_argument("--margin", type=int, default=32, help="Taille de marge fixe en pixels pour le workflow ui_9slice.")
-    groupe_wf.add_argument("--auto-margin", action="store_true", help="Détection automatique des marges de tranches pour ui_9slice.")
-    groupe_wf.add_argument("--voxel-depth", type=int, default=4, help="Épaisseur en voxels pour l'extrusion 3D (workflow voxel3d).")
-    groupe_wf.add_argument("--voxel-scale", type=float, default=0.05, help="Taille d'un voxel en unités Godot (workflow voxel3d).")
-    groupe_wf.add_argument("--biome-a", help="Description ou image du premier biome pour autotile_pack.")
-    groupe_wf.add_argument("--biome-b", help="Description ou image du second biome pour autotile_pack.")
     groupe_wf.add_argument("--frames", type=int, default=None, help="Nombre de trames d'animation (video, vfx_flipbook, rife_interp, anim_loop, h3_ref2va ; défaut : propre au workflow — ex. 33 pour video, 22 pour h3_ref2va, 16 pour anim_loop).")
-    groupe_wf.add_argument("--vfx-type", default="explosion", choices=["explosion", "fire", "lightning", "portal", "slash", "aura"], help="Type d'effet pour vfx_flipbook.")
     groupe_wf.add_argument("--emotions", default="neutral,happy,angry,sad,hurt", help="Liste des émotions séparées par des virgules pour rpg_portrait et tts_dialogue.")
-    groupe_wf.add_argument("--mode-2d", action="store_true", help="Génère un shader ou setup orienté Godot 2D au lieu de 3D.")
-    groupe_wf.add_argument("--pose", choices=["idle", "slash_attack", "cast_spell", "shield_block", "jump", "walk"], default="idle", help="Pose OpenPose pour pose_control.")
     groupe_wf.add_argument("--fps", type=float, default=None, help="Cadence FPS pour anim_loop (défaut workflow : 12.0) et video (défaut workflow : 24).")
-    groupe_wf.add_argument("--items", help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet').")
     groupe_wf.add_argument("--samples", type=int, default=48, help="Nombre d'échantillons de rendu Cycles pour Blender (défaut: 48).")
     groupe_wf.add_argument("--width", type=int, default=None, help="Largeur personnalisée en pixels (skybox : panoramique 2:1, video).")
     groupe_wf.add_argument("--height", type=int, default=None, help="Hauteur personnalisée en pixels (skybox : panoramique 2:1, video).")
     # Options déclarées par les workflows eux-mêmes (audit §2.2 keystone) : chaque
-    # classe expose PARAMETRES (cf. workflows/base.py) ; la table plate ci-dessus
-    # est migrée famille par famille vers ces déclarations. Surface CLI agrégée
-    # inchangée (contrat consommateurs).
+    # classe expose PARAMETRES (cf. workflows/base.py). Migration TERMINÉE — les
+    # 5 familles (monoplan, audio, vidéo/3D, personnage, 2D) ont quitté la table
+    # plate, qui ne garde plus que les options cross-familles. Surface CLI
+    # agrégée inchangée (contrat consommateurs, gelée par tests/surface_cli.json).
     groupe_declares = parser.add_argument_group("Options par Workflow (déclarées par les workflows)")
     for declaration in WorkflowRegistry.parametres_declares():
         d = dict(declaration)

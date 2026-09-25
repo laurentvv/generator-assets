@@ -27,6 +27,17 @@ class Voxel3DWorkflow(BaseWorkflow):
     description = "Modèles 3D Voxel maillés (.GLB) optimisés (Crossy Road, Minecraft, GridMap Godot 4)"
 
     emoji = "🧊"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --grid-size (partagé
+    # avec pixelart) vit dans pixelart.
+    PARAMETRES = [
+        dict(flags=("--voxel-depth",), type=int, default=4,
+             help="Épaisseur en voxels pour l'extrusion 3D (workflow voxel3d)."),
+        dict(flags=("--voxel-scale",), type=float, default=0.05,
+             help="Taille d'un voxel en unités Godot (workflow voxel3d)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if not verifier_blender():
             raise RuntimeError("Blender 4.x / 5.x est requis pour exécuter le workflow voxel3d.")

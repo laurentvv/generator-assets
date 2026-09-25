@@ -21,6 +21,17 @@ class PixelArtWorkflow(BaseWorkflow):
     description = "Conversion & quantification rétro Pixel Art (Pico-8, Endesga-32, GameBoy) pour jeux rétro"
 
     emoji = "👾"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --grid-size est aussi lu
+    # par voxel3d (même famille 2D) : il vit ici, utilisateur primaire du help.
+    PARAMETRES = [
+        dict(flags=("--palette",), default="pico8", choices=["pico8", "gameboy", "endesga32"],
+             help="Palette pour le workflow pixelart."),
+        dict(flags=("--grid-size",), type=int, default=64,
+             help="Taille de grille pour le pixel art (ex: 32, 64)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image = params.get("input")
         prompt = params.get("prompt")

@@ -24,6 +24,14 @@ class GenerateWorkflow(BaseWorkflow):
     description = "Génération d'un asset 2D isolé (LLM -> Diffusion -> Détourage -> Centrage Godot -> Upscale IA optionnel)"
 
     emoji = "🎨"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--segmenter",), default="auto", choices=["auto", "birefnet", "rmbg", "floodfill", "none"],
+             help="Moteur de détourage 2D."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:
