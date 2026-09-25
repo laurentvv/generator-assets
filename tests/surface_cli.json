@@ -247,7 +247,7 @@
   ],
   "clip_l",
   "_StoreAction",
-  "'C:\\\\Modeles_LLM\\\\clip_l.safetensors'",
+  "'C:/Modeles_LLM/clip_l.safetensors'",
   null,
   null,
   null
@@ -657,7 +657,7 @@
   ],
   "llama_cli",
   "_StoreAction",
-  "'C:\\\\llama.cpp\\\\llama-cli.exe'",
+  "'C:/llama.cpp/llama-cli.exe'",
   null,
   null,
   null
@@ -690,7 +690,7 @@
   ],
   "llm_model",
   "_StoreAction",
-  "'C:\\\\Modeles_LLM\\\\LFM2.5-8B-A1B-Q6_K.gguf'",
+  "'C:/Modeles_LLM/LFM2.5-8B-A1B-Q6_K.gguf'",
   null,
   null,
   null
@@ -1262,7 +1262,7 @@
   ],
   "sd_cli",
   "_StoreAction",
-  "'C:\\\\SD\\\\sd-cli.exe'",
+  "'C:/SD/sd-cli.exe'",
   null,
   null,
   null
@@ -1284,7 +1284,7 @@
   ],
   "sd_model",
   "_StoreAction",
-  "'C:\\\\Modeles_LLM\\\\flux1-dev-Q6_K.gguf'",
+  "'C:/Modeles_LLM/flux1-dev-Q6_K.gguf'",
   null,
   null,
   null
@@ -1445,7 +1445,7 @@
   ],
   "t5xxl",
   "_StoreAction",
-  "'C:\\\\Modeles_LLM\\\\t5xxl_fp16.safetensors'",
+  "'C:/Modeles_LLM/t5xxl_fp16.safetensors'",
   null,
   null,
   null
@@ -1674,7 +1674,7 @@
   ],
   "vae",
   "_StoreAction",
-  "'C:\\\\Modeles_LLM\\\\ae.safetensors'",
+  "'C:/Modeles_LLM/ae.safetensors'",
   null,
   null,
   null
