@@ -17,4 +17,10 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "ruff>=0.9",
 ]
+
+[tool.ruff]
+# Gate bloquante minimale (erreurs de syntaxe et de noms) — élargir progressivement
+# après le grand nettoyage (284 alertes de style préexistantes, cf. PLAN d'audit §2.5 P2).
+lint.select = ["E9", "F821", "F823", "F811"]
