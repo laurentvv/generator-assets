@@ -75,6 +75,9 @@ def generer_image_vulkan(
     seed: int = -1,
     init_img: Optional[str] = None,
     strength: float = 0.75,
+    control_image: Optional[str] = None,
+    control_net: Optional[str] = None,
+    control_strength: float = 0.9,
     circular: bool = False,
     hires: bool = False,
     hires_scale: float = 2.0,
@@ -85,12 +88,19 @@ def generer_image_vulkan(
 ) -> Image.Image:
     """
     Exécute sd-cli.exe sous Vulkan avec support des LoRAs et bascule auto Flux / SDXL.
-    Sans output_path, le rendu passe par un fichier temporaire unique (tempfile),
-    supprimé après lecture : compatible avec plusieurs exécutions en parallèle et
-    insensible aux restes d'un appel précédent.
+    Support du ControlNet image (control_image + control_net requis ensemble ;
+    recette validée le 2026-09-26 : SDXL juggernautXL + ControlNet OpenPose xinsir,
+    A/B avec/sans en output/test_controlnet/). Sans output_path, le rendu passe par
+    un fichier temporaire unique (tempfile), supprimé après lecture : compatible avec
+    plusieurs exécutions en parallèle et insensible aux restes d'un appel précédent.
     """
     prompt_final = formater_prompt_avec_loras(prompt, loras)
     is_flux = est_modele_flux(sd_model)
+
+    if control_image and not os.path.exists(control_image):
+        raise FileNotFoundError(f"Image de contrôle ControlNet introuvable : {control_image}")
+    if (control_image or control_net) and not (control_image and control_net):
+        raise ValueError("ControlNet : control_image et control_net doivent être fournis ensemble.")
 
     chemin_temporaire = output_path is None
     if chemin_temporaire:
@@ -102,6 +112,8 @@ def generer_image_vulkan(
 
     moteur_nom = "Flux.1" if is_flux else "SDXL / SD"
     mode_str = "Img2Img" if init_img else ("Seamless Tile" if circular else "Txt2Img")
+    if control_image and control_net:
+        mode_str += " + ControlNet"
     if loras:
         mode_str += f" + {len(loras)} LoRA(s)"
 
@@ -158,6 +170,13 @@ def generer_image_vulkan(
 
     if init_img and os.path.exists(init_img):
         commande.extend(["-i", init_img, "--strength", str(strength)])
+
+    if control_image and control_net:
+        commande.extend([
+            "--control-image", control_image,
+            "--control-net", control_net,
+            "--control-strength", str(control_strength)
+        ])
 
     if circular:
         commande.append("--circular")
