@@ -74,7 +74,7 @@ Exemples de Workflows 3D & 2D :
     )
     parser.add_argument(
         "-i", "--input",
-        dest="input_file",
+        dest="input",
         help="Chemin de l'image source pour mesh3d, upscale, material3d, pixelart ou variations."
     )
     parser.add_argument(
@@ -150,7 +150,7 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--res", type=int, choices=[512, 1024, 1536], default=512, help="Résolution de génération 3D pour mesh_ia (TRELLIS.2) : 512 = itération ~11 min, 1024 = master ~55 min (défaut: 512).")
     groupe_wf.add_argument("--faces-cible", type=int, default=0, help="Cible de faces du GLB « jeu » pour mesh_ia : décimation Blender OPTIONNELLE (master conservé ; défaut: 0 = pas de réduction). Repères : 30000 = item héro vu de près • 10000 = prop de décor • 3000 = clutter répété • >=8000 pour les silhouettes très courbes.")
     groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
-    groupe_wf.add_argument("--file", "--recipe", dest="recipe_file", help="Fichier JSON ou liste texte pour le workflow batch.")
+    groupe_wf.add_argument("--file", "--recipe", dest="file", help="Fichier JSON ou liste texte pour le workflow batch.")
     groupe_wf.add_argument("--continue-on-error", dest="continue_on_error", action="store_true", help="batch : continue le lot après l'échec d'un asset et sort en code ≠ 0 à la fin avec la liste des échecs (défaut : arrêt à la première erreur, code ≠ 0).")
     groupe_wf.add_argument("--columns", type=int, default=4, help="Nombre de colonnes pour la planche de sprites.")
     groupe_wf.add_argument("--no-preview", action="store_true", help="Désactive l'aperçu 3x3 pour le workflow tileable.")
@@ -301,139 +301,33 @@ Exemples de Workflows 3D & 2D :
 def construire_params(args: argparse.Namespace, prompt_texte: str) -> dict:
     """Construit les paramètres du workflow depuis les arguments CLI.
 
-    Seules les clés réellement renseignées (non None) sont transmises : quand une
-    option CLI n'est pas passée, chaque workflow applique son propre défaut
-    (contrat consommateurs, cf. tests/test_cli_contract.py).
+    Générique : part de vars(args) (dest argparse == clé params) et ne transmet
+    que les clés réellement renseignées (non None) — quand une option n'est pas
+    passée, chaque workflow applique son propre défaut (contrat consommateurs,
+    cf. tests/test_cli_contract.py). Les rares clés dérivées (type normalisé,
+    LLM, preview, portrait) sont gérées explicitement ci-dessous ; les clés de
+    contrôle CLI (chemins moteurs, flags list/check/update-*) n'y entrent jamais.
     """
-    type_normalise = {"1": "item", "2": "character", "3": "prop"}.get(args.type, args.type)
-    params = {
-        "prompt": prompt_texte,
-        "input": args.input_file,
-        "type": type_normalise,
-        "shape": args.shape,
-        "output": args.output,
-        "output_dir": args.output_dir,
-        "size": args.size,
-        "factor": args.factor,
-        "normal_strength": args.normal_strength,
-        "palette": args.palette,
-        "grid_size": args.grid_size,
-        "res": args.res,
-        "faces_cible": args.faces_cible,
-        "themes": args.themes,
-        "file": args.recipe_file,
-        "columns": args.columns,
-        "preview": not args.no_preview,
-        "no_llm": True if args.no_llm else not args.use_llm,
-        "use_llm": args.use_llm and not args.no_llm,
-        "sans_llm": True if args.no_llm else not args.use_llm,
-        "strength": args.strength,
-        "steps": args.steps,
-        "guidance": args.guidance,
-        "cfg_scale": args.cfg_scale,
-        "seed": args.seed,
-        "tolerance": args.tolerance,
-        "loras": args.loras,
-        "lora_dir": args.lora_dir,
-        "upscale": args.upscale,
-        "upscale_model": args.upscale_model,
-        "segmenter": args.segmenter,
-        "pbr_engine": args.pbr_engine,
-        "angle": args.angle,
-        "flow_type": args.flow_type,
-        "turbulence": args.turbulence,
-        "margin": args.margin,
-        "auto_margin": args.auto_margin,
-        "voxel_depth": args.voxel_depth,
-        "voxel_scale": args.voxel_scale,
-        "biome_a": args.biome_a,
-        "biome_b": args.biome_b,
-        "frames": args.frames,
-        "vfx_type": args.vfx_type,
-        "emotions": args.emotions,
-        "duration": args.duration,
-        "sfx_engine": args.sfx_engine,
-        "mode_2d": args.mode_2d,
-        "pose": args.pose,
-        "pitch": args.pitch,
-        "fps": args.fps,
-        "items": args.items,
-        "ambience_type": args.ambience_type,
-        "character": args.character,
-        "top": args.top,
-        "shoes": args.shoes,
-        "mpfb_dir": args.mpfb_dir,
-        "parts": args.parts,
-        "width": args.width,
-        "height": args.height,
-        "end_img": args.end_img,
-        "control_video": args.control_video,
-        "flow_shift": args.flow_shift,
-        "ref_frames": args.ref_frames,
-        "ref_audio": args.ref_audio,
-        "max_vram": args.max_vram,
-        "turbo": args.turbo,
-        "monoplan_frames": args.monoplan_frames,
-        "monoplan_duration": args.monoplan_duration,
-        "zoom_debut": args.zoom_debut,
-        "zoom_fin": args.zoom_fin,
-        "ambiance": args.ambiance,
-        "monoplan_source": args.monoplan_source,
-        "carton_titre": args.carton_titre,
-        "carton_duree": args.carton_duree,
-        "carton_zoom_fin": args.carton_zoom_fin,
-        "upscale_4k": args.upscale_4k,
-        "dry_run": args.dry_run,
-        "lufs": args.lufs,
-        "loop_mode": args.loop_mode,
-        "music_backend": args.music_backend,
-        "moteur": args.moteur,
-        "variante": args.variante,
-        "bpm_force": args.force_bpm,
-        "tonalite": args.tonalite,
-        "mesure": args.mesure,
-        "candidats": args.candidats,
-        "lyrics": args.lyrics,
-        "analyse": args.analyse,
-        "voix_ref": args.voix_ref,
-        "instruct": args.instruct,
-        "lufs_voix": args.lufs_voix,
-        "robot_voice": args.robot_voice,
-        "robot_pitch": args.robot_pitch,
-        "robot_ringmod": args.robot_ringmod,
-        "robot_tempo": args.robot_tempo,
-        "robot_gain": args.robot_gain,
-        "upsr_variante": args.upsr_variante,
-        "upsr_rate": args.upsr_rate,
-        "animal_prefixe": args.animal_prefixe,
-        "animal_actions": args.animal_actions,
-        "style_musique": args.style_musique,
-        "langue": args.langue,
-        "negatif": args.negatif,
-        "scale": args.scale,
-        "keep_vocals": args.keep_vocals,
-        "portrait": args.portrait or args.input_file,
-        "skin": args.skin,
-        "eye_color": args.eye_color,
-        "blend_file": args.blend_file,
-        "render_modes": args.render_modes,
-        "samples": args.samples,
-        "age": args.age,
-        "gender": args.gender,
-        "makeup_only": args.makeup_only,
-        "query": args.query,
-        "asset_type": args.asset_type,
-        "licence": args.licence,
-        "index": args.index,
-        "list_assets": args.list_assets,
-        "mode": args.mode,
-        "resolution": args.resolution,
-        "engine": args.engine,
-        "camera": args.camera,
-        "exposure": args.exposure,
-        "percentage": args.percentage,
-        "no_cache": args.no_cache,
-        "continue_on_error": args.continue_on_error
-    }
+    params = vars(args).copy()
+
+    for cle in (
+        "workflow", "prompt_flag", "interactive", "check", "list_workflows",
+        "list_loras", "list_upscalers",
+        "update_sd", "sd_install_dir", "sd_source_dir",
+        "update_llama", "llama_install_dir", "llama_source_dir",
+        "update_vulkan",
+        "llama_cli", "llm_model", "sd_cli", "sd_model", "clip_l", "t5xxl",
+        "vae", "backend", "threads", "style", "no_preview",
+    ):
+        params.pop(cle, None)
+
+    params["prompt"] = prompt_texte
+    params["type"] = {"1": "item", "2": "character", "3": "prop"}.get(args.type, args.type)
+    params["preview"] = not args.no_preview
+    params["no_llm"] = True if args.no_llm else not args.use_llm
+    params["use_llm"] = args.use_llm and not args.no_llm
+    params["sans_llm"] = True if args.no_llm else not args.use_llm
+    params["portrait"] = args.portrait or args.input
+
     return {cle: valeur for cle, valeur in params.items() if valeur is not None}
 

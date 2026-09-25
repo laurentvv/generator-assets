@@ -132,7 +132,9 @@ DEFAULT_YUNET_MODEL = os.getenv(
 # Paramètres de rendu
 DEFAULT_BACKEND = os.getenv("SD_BACKEND", "diffusion=vulkan0,te=cpu")
 DEFAULT_THREADS = int(os.getenv("SD_THREADS", "16"))
-DEFAULT_OUTPUT_DIR = os.getenv("OUTPUT_DIR", "godot_assets")
+# Sortie par défaut : output/ (ignoré par git) — godot_assets/ reste le dossier
+# des assets de référence validés (exemples du README), plus aucune génération n'y atterrit.
+DEFAULT_OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
 DEFAULT_MPFB_DATA_DIR = os.getenv(
     "MPFB_DATA_DIR",
     os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data")

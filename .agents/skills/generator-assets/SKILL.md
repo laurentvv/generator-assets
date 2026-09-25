@@ -22,7 +22,7 @@ uv run python main.py -w <workflow> "<prompt ou args>" [options]
 - `--seed <N>` : graine fixe pour la reproductibilité A/B ;
 - `uv run python main.py --check` : vérifie que les moteurs et modèles sont détectés ;
 - `uv run python main.py --interactive` : console interactive (menu 40 workflows) pour exploration humaine ;
-- les sorties atterrissent dans `output/<workflow>/<nom>/` (ou `godot_assets/` pour les anciens workflows 2D).
+- les sorties atterrissent dans `output/` (ou son sous-dossier `<workflow>/` — depuis le 2026-09-25 le défaut est `output/` partout ; `godot_assets/` = assets de référence validés uniquement).
 
 Le détail complet de chaque workflow (entrées, sorties, options, exemples) est dans
 [`references/catalogue_workflows.md`](references/catalogue_workflows.md) — à consulter dès que le routage
