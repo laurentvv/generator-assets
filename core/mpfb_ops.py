@@ -10,7 +10,6 @@ Permet d'extraire des géométries quads parfaites pour différentes pièces de 
 import json
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -20,6 +19,7 @@ import numpy as np
 from PIL import Image, ImageFilter, ImageDraw
 
 from core.blender_ops import trouver_blender
+from core.process import run_engine
 from core.config import (
     DEFAULT_MPFB_DATA_DIR,
     DEFAULT_MPFB_INK_DIR,
@@ -294,7 +294,7 @@ def compiler_vetement_mpfb(
 
     try:
         cmd = [blender_bin, "--background", "--python", temp_script_path]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=90)
+        res = run_engine(cmd, check=False, timeout=90, etiquette="blender mpfb compile")
         if "SUCCESS:" in res.stdout:
             # Génération de la vignette .thumb (128x128) via Pillow côté hôte Python
             thumb_path = os.path.join(output_folder, f"{asset_name}.thumb")
@@ -499,7 +499,7 @@ if r"{render_png_esc}":
 
     try:
         cmd = [blender_bin, "--background", "--python", temp_script_path]
-        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+        res = run_engine(cmd, check=False, timeout=120, etiquette="blender mpfb habillage")
         stdout_txt = res.stdout or ""
         if "BLEND_SAVED_SUCCESS" in stdout_txt:
             return True
@@ -1064,7 +1064,7 @@ print("RENDERS_RESULT_JSON:" + json.dumps(resultats))
 
     try:
         cmd = [blender_bin, "--background", "--python", temp_script]
-        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
+        res = run_engine(cmd, check=False, timeout=300, etiquette="blender mpfb rendus")
         out_json = {}
         stdout_txt = res.stdout or ""
         for line in stdout_txt.splitlines():
@@ -1295,7 +1295,7 @@ print("BODY_CREATED_SUCCESS")
 
     try:
         cmd = [blender_bin, "--background", "--python", temp_script]
-        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
+        res = run_engine(cmd, check=False, timeout=300, etiquette="blender mpfb corps")
         stdout_txt = res.stdout or ""
         if "BODY_CREATED_SUCCESS" in stdout_txt:
             return True

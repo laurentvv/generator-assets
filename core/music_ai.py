@@ -17,7 +17,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import time
 from math import gcd
 from typing import Callable, Dict, List, Optional, Tuple
@@ -36,6 +35,7 @@ from core.config import (
     resoudre_gguf_acestep15,
     resoudre_modele_musique,
 )
+from core.process import EngineError, run_engine
 
 SR_CIBLE = 48000
 SEUIL_SILENCE_RMS = 1e-4
@@ -130,11 +130,12 @@ def generer_musique_music3(
             time.sleep(5.0)
         cmd = _construire(backend_cible, avec_graine)
         try:
-            resultat = subprocess.run(
-                cmd, capture_output=True, text=True,
-                encoding="utf-8", errors="replace", timeout=timeout_s,
+            resultat = run_engine(
+                cmd, check=False, capture=True, timeout=timeout_s,
+                etiquette="audio.cpp music3",
             )
-        except subprocess.TimeoutExpired:
+        except EngineError:
+            # timeout : essai suivant (backend CPU / sans graine)
             derniere_erreur = f"timeout après {timeout_s}s"
             continue
 
@@ -265,11 +266,12 @@ def generer_musique_acestep(
             time.sleep(5.0)
         cmd = _construire(backend_cible)
         try:
-            resultat = subprocess.run(
-                cmd, capture_output=True, text=True,
-                encoding="utf-8", errors="replace", timeout=timeout_s,
+            resultat = run_engine(
+                cmd, check=False, capture=True, timeout=timeout_s,
+                etiquette="audio.cpp acestep",
             )
-        except subprocess.TimeoutExpired:
+        except EngineError:
+            # timeout : essai suivant (backend CPU)
             derniere_erreur = f"timeout après {timeout_s}s"
             continue
 
@@ -577,8 +579,8 @@ def mesurer_lufs(chemin: str, filtre_amont: Optional[str] = None) -> Dict[str, f
     ffmpeg = resoudre_ffmpeg()
     chaine = f"{filtre_amont},loudnorm=print_format=json" if filtre_amont else "loudnorm=print_format=json"
     cmd = [ffmpeg, "-hide_banner", "-i", chemin, "-af", chaine, "-f", "null", "-"]
-    resultat = subprocess.run(
-        cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
+    resultat = run_engine(
+        cmd, check=False, timeout=120, etiquette="ffmpeg loudnorm mesure",
     )
     texte = resultat.stderr or ""
     correspondances = re.findall(r"\{[^{}]*\"input_i\"[^{}]*\}", texte, flags=re.DOTALL)
@@ -612,7 +614,7 @@ def exporter_bed_lufs(chemin_source: str, chemin_sortie: str, lufs_cible: float 
     )
     cmd = [ffmpeg, "-hide_banner", "-y", "-i", chemin_source, "-af", filtre,
            "-ar", str(SR_CIBLE), "-c:a", "pcm_s16le", chemin_sortie]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=180)
+    run_engine(cmd, check=True, timeout=180, etiquette="ffmpeg normalisation bed")
     return mesurer_lufs(chemin_sortie)
 
 
@@ -621,7 +623,7 @@ def convertir_mp3(chemin_source: str, chemin_sortie: str, debit_k: int = 192) ->
     ffmpeg = resoudre_ffmpeg()
     cmd = [ffmpeg, "-hide_banner", "-y", "-i", chemin_source, "-c:a", "libmp3lame",
            "-b:a", f"{debit_k}k", chemin_sortie]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=180)
+    run_engine(cmd, check=True, timeout=180, etiquette="ffmpeg mp3")
     return chemin_sortie
 
 
@@ -635,7 +637,7 @@ def convertir_ogg(chemin_source: str, chemin_sortie: str, qualite: int = 5) -> s
     ffmpeg = resoudre_ffmpeg()
     cmd = [ffmpeg, "-hide_banner", "-y", "-i", chemin_source, "-c:a", "libvorbis",
            "-qscale:a", str(qualite), chemin_sortie]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=180)
+    run_engine(cmd, check=True, timeout=180, etiquette="ffmpeg ogg")
     return chemin_sortie
 
 
@@ -718,11 +720,11 @@ def analyser_boucle_flamingo(
         "--temp", "0.1", "-ngl", "99",
     ]
     try:
-        resultat = subprocess.run(
-            cmd, capture_output=True, text=True,
-            encoding="utf-8", errors="replace", timeout=timeout_s,
+        resultat = run_engine(
+            cmd, check=False, capture=True, timeout=timeout_s,
+            etiquette="llama-cli flamingo",
         )
-    except subprocess.TimeoutExpired:
+    except EngineError:
         log("⚠️ Analyse Music Flamingo : timeout, ignorée.")
         return None
 

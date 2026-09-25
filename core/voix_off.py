@@ -19,7 +19,6 @@ normalisation finale de la voix (défaut -16 LUFS, standard dialogue YouTube).
 
 import os
 import re
-import subprocess
 from typing import Any, Dict, Optional
 
 from core.config import DEFAULT_MODEL_DIR
@@ -30,6 +29,7 @@ from core.music_ai import (
     resoudre_audiocpp,
     resoudre_ffmpeg,
 )
+from core.process import run_engine
 
 # Chemins des paquets GGUF (surchargeables par variable d'environnement).
 MODELE_QWEN3_TTS = os.getenv(
@@ -97,9 +97,9 @@ def _verifier_modele(moteur: str) -> str:
 def mesurer_niveau_db(chemin: str) -> Dict[str, float]:
     """Mesure les niveaux (dB) d'un fichier audio via ffmpeg volumedetect."""
     ffmpeg = resoudre_ffmpeg()
-    resultat = subprocess.run(
+    resultat = run_engine(
         [ffmpeg, "-hide_banner", "-i", chemin, "-af", "volumedetect", "-f", "null", "-"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
+        check=False, timeout=120, etiquette="ffmpeg volumedetect",
     )
     texte = resultat.stderr or ""
     def _extraire(motif: str) -> float:
@@ -119,10 +119,10 @@ def preparer_reference(chemin_ref: str, dossier_travail: str) -> str:
     base = os.path.splitext(os.path.basename(chemin_ref))[0]
     wav_converti = os.path.join(dossier_travail, f"ref_{base}.wav")
     if not os.path.exists(wav_converti):
-        subprocess.run(
+        run_engine(
             [ffmpeg, "-hide_banner", "-y", "-i", chemin_ref,
              "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le", wav_converti],
-            check=True, capture_output=True, timeout=180,
+            check=True, timeout=180, etiquette="ffmpeg référence wav",
         )
 
     niveaux = mesurer_niveau_db(wav_converti)
@@ -139,10 +139,10 @@ def preparer_reference(chemin_ref: str, dossier_travail: str) -> str:
         f"measured_LRA={mesures['LRA']}:measured_thresh={mesures['thresh']}:"
         f"offset={mesures['offset']}:linear=true"
     )
-    subprocess.run(
+    run_engine(
         [ffmpeg, "-hide_banner", "-y", "-i", wav_converti, "-af", filtre,
          "-ar", "48000", "-ac", "1", "-c:a", "pcm_s16le", wav_normalise],
-        check=True, capture_output=True, timeout=180,
+        check=True, timeout=180, etiquette="ffmpeg normalisation référence",
     )
     apres = mesurer_niveau_db(wav_normalise)
     print(f"✅ Référence normalisée : {apres['mean']:.1f} dB moyen / {apres['max']:.1f} dB crête.")
@@ -165,10 +165,10 @@ def transcrire_reference(wav_ref: str, dossier_travail: str, backend: str = "vul
             f"la référence (ou fournir le transcript à côté du WAV : {cache})."
         )
     audiocpp = resoudre_audiocpp()
-    resultat = subprocess.run(
+    resultat = run_engine(
         [audiocpp, "--task", "asr", "--family", "qwen3_asr", "--model", MODELE_QWEN3_ASR,
          "--backend", backend, "--language", "fr", "--audio", wav_ref],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
+        check=False, timeout=600, etiquette="audio.cpp asr",
     )
     m = re.search(r"text_output=(.+)", (resultat.stdout or "") + (resultat.stderr or ""))
     if not m or not m.group(1).strip():
@@ -222,7 +222,8 @@ def generer_voix_off(
         cmd += ["--seed", str(seed)]
 
     print(f"🎙️ Génération voix off : moteur={moteur}, clonage={'oui' if ref_effective else 'non'}, backend={backend}…")
-    subprocess.run(cmd, check=True, timeout=3600)
+    # Progression audio.cpp en direct sur la console (génération = minutes)
+    run_engine(cmd, capture=False, check=True, timeout=3600, etiquette="audio.cpp voix off")
     if not os.path.exists(sortie):
         raise RuntimeError(f"La génération n'a pas produit {sortie}")
     return {"sortie": sortie, "moteur": moteur, "clonage": bool(ref_effective),

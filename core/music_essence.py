@@ -16,10 +16,10 @@ La bave de voix se retire ensuite via HTDemucs (core.separation.retirer_voix).
 
 import os
 import re
-import subprocess
 from typing import Any, Dict, Optional
 
 from core.music_ai import convertir_mp3, resoudre_audiocpp
+from core.process import run_engine
 
 MODELE_SA3_MEDIUM = os.getenv(
     "SA3_MEDIUM_MODEL",
@@ -64,9 +64,9 @@ def generer_essence_sa3(
         "--request-option", f"init_noise_level={scale}",
         "--out", sortie_wav,
     ]
-    res = subprocess.run(
-        cmd, capture_output=True, text=True, timeout=int(duree * 10 + 300),
-        encoding="utf-8", errors="replace",
+    res = run_engine(
+        cmd, check=False, capture=True,
+        timeout=int(duree * 10 + 300), etiquette="audio.cpp sa3 essence",
     )
     if res.returncode != 0 or not os.path.exists(sortie_wav):
         extrait = (res.stderr or res.stdout or "").strip()[-400:]

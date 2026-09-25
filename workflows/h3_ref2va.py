@@ -20,7 +20,6 @@ de charge système bloque si la machine est occupée.
 
 import json
 import os
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -33,6 +32,7 @@ from core.config import (
     slugifier_texte,
 )
 from core.diffusion import generer_video_ref2va_h3
+from core.process import EngineError, run_engine
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 SCRIPT_CHECK_CHARGE = Path(__file__).resolve().parent.parent / "scripts" / "check_charge_systeme.py"
@@ -43,22 +43,22 @@ def _duree_et_audio(ffmpeg: str, video_path: str) -> tuple:
     probe = str(ffmpeg).replace("ffmpeg.exe", "ffprobe.exe")
     duree = None
     try:
-        sortie = subprocess.run(
+        sortie = run_engine(
             [probe, "-v", "error", "-show_entries", "format=duration",
              "-of", "csv=p=0", video_path],
-            capture_output=True, text=True, check=True
+            check=True, timeout=60, etiquette="ffprobe durée",
         ).stdout.strip()
         duree = float(sortie)
     except Exception:
         duree = None
     try:
-        subprocess.run(
+        run_engine(
             [probe, "-v", "error", "-select_streams", "a", "-show_entries",
              "stream=index", "-of", "csv=p=0", video_path],
-            capture_output=True, text=True, check=True
+            check=True, timeout=60, etiquette="ffprobe audio",
         )
         a_audio = True
-    except subprocess.CalledProcessError:
+    except EngineError:
         a_audio = False
     return duree, a_audio
 
@@ -106,7 +106,10 @@ class H3Ref2VAWorkflow(BaseWorkflow):
         # --- Pré-contrôle de charge (règle AGENTS.md : jamais de génération lourde sur machine occupée)
         if not dry_run and SCRIPT_CHECK_CHARGE.exists():
             self.log("Pré-contrôle de charge système (CPU/GPU/RAM/VRAM)...")
-            retour = subprocess.run([sys.executable, str(SCRIPT_CHECK_CHARGE)])
+            retour = run_engine(
+                [sys.executable, str(SCRIPT_CHECK_CHARGE)],
+                capture=False, check=False, timeout=300, etiquette="check charge",
+            )
             if retour.returncode == 1:
                 raise RuntimeError("Machine occupée (check_charge_systeme exit 1) — attendre un créneau libre avant de relancer.")
 
@@ -139,17 +142,17 @@ class H3Ref2VAWorkflow(BaseWorkflow):
                 "-ss", f"{start:.3f}", "-i", source_abs, "-t", f"{duree_ref:.3f}",
                 "-vf", "fps=24", os.path.join(ref_dir, "frame_%04d.png")
             ]
-            subprocess.run(cmd_frames, check=True)
+            run_engine(cmd_frames, capture=False, check=True, timeout=600, etiquette="ffmpeg trames référence")
             n_extraits = len([f for f in os.listdir(ref_dir) if f.endswith(".png")])
             self.log(f"→ {n_extraits} trames extraites dans {ref_dir}")
 
             if a_audio and not ref_audio_path:
                 ref_audio_path = os.path.join(ref_dir, "ref_audio.wav")
-                subprocess.run(
+                run_engine(
                     [DEFAULT_FFMPEG, "-y", "-v", "error",
                      "-ss", f"{start:.3f}", "-i", source_abs, "-t", f"{duree_ref:.3f}",
                      "-vn", "-acodec", "pcm_s16le", ref_audio_path],
-                    check=True
+                    capture=False, check=True, timeout=300, etiquette="ffmpeg audio référence",
                 )
                 self.log(f"→ WAV de référence extrait : {ref_audio_path}")
             elif not a_audio:

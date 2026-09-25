@@ -33,7 +33,6 @@ Traitements intégrés (issus des itérations d'écoute sur le sample pluie/orag
 
 import os
 import re
-import subprocess
 import tempfile
 from typing import Any, Dict
 
@@ -41,6 +40,7 @@ import numpy as np
 import soundfile as sf
 
 from core.music_ai import mesurer_lufs, resoudre_audiocpp, resoudre_ffmpeg
+from core.process import run_engine
 
 MODELE_SA3_SFX = os.getenv(
     "SA3_SFX_MODEL",
@@ -100,10 +100,10 @@ def _traiter_loudness_nappe(chemin_wav: str, gain_db: float) -> None:
     )
     tmp = chemin_wav + ".lufs.wav"
     try:
-        subprocess.run(
+        run_engine(
             [ffmpeg, "-hide_banner", "-y", "-i", chemin_wav, "-af", chaine,
              "-ar", "44100", "-c:a", "pcm_s16le", tmp],
-            check=True, capture_output=True, timeout=180,
+            check=True, timeout=180, etiquette="ffmpeg normalisation sfx",
         )
         os.replace(tmp, chemin_wav)
     finally:
@@ -143,9 +143,9 @@ def generer_sfx_ia(
         cmd += ["--seed", str(int(seed))]
 
     try:
-        res = subprocess.run(
-            cmd, capture_output=True, text=True,
-            timeout=int(duree * 10 + 300), encoding="utf-8", errors="replace",
+        res = run_engine(
+            cmd, check=False, capture=True,
+            timeout=int(duree * 10 + 300), etiquette="audio.cpp sfx",
         )
         if res.returncode != 0 or not os.path.exists(wav_brut):
             extrait = (res.stderr or res.stdout or "").strip()[-400:]
