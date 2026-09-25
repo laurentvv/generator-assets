@@ -87,6 +87,11 @@ ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
   smoke test v0.7.3 du 2026-09-08 : RTF mesuré 3,3× trop lent à cause d'une contention GPU).
   Seuils ajustables (`--cpu-threshold`, `--gpu-threshold`, `--ram-threshold`, `--vram-threshold`, `--duration`).
 - Code : docstrings et logs en français, identifiants en anglais, prompts modèles en anglais.
+- Journalisation (audit §2.8) : les messages de **diagnostic** (étapes techniques, commandes
+  moteurs, avertissements, mesures) passent par `logging` — `logger = logging.getLogger(__name__)`,
+  configuration via `core.journal.configurer_journal()` (appelée par main.py, `--verbose` = DEBUG) ;
+  les `print()` restent réservés aux **sorties utilisateur** (menus interactifs, listes,
+  récapitulatifs). Tout nouveau module suit ce découpage dès l'écriture.
 - Gros téléchargements HF/ModelScope : `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`
   (contourne le bridage CDN mono-connexion, ~10× plus rapide).
 - Veille versions (audio.cpp, sd-cli, trellis.cpp + GGUF TRELLIS.2 sur HF, FFmpeg, Python,

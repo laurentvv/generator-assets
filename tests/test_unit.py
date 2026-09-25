@@ -273,3 +273,52 @@ def test_charger_env_n_ecrase_pas_la_variable_existante(tmp_path, monkeypatch):
 
 def test_charger_env_fichier_absent_sans_erreur(tmp_path):
     charger_env(tmp_path / "inexistant.env")  # ne doit pas lever
+
+
+# ==============================================================================
+# core.journal — journalisation structurée (audit §2.8)
+
+def test_configurer_journal_niveau_fichier_et_idempotence(tmp_path):
+    import logging
+    from core.journal import configurer_journal
+
+    racine = logging.getLogger()
+    handlers_avant, niveau_avant = list(racine.handlers), racine.level
+    try:
+        log_fichier = tmp_path / "logs" / "run.log"
+        configurer_journal("DEBUG", fichier=log_fichier)
+        racine = logging.getLogger()
+        assert racine.level == logging.DEBUG
+        assert len(racine.handlers) == 2  # console stderr + fichier
+
+        logging.getLogger("test.journal").debug("entrée %s", "debug")
+        contenu = log_fichier.read_text(encoding="utf-8")
+        assert "entrée debug" in contenu
+        assert "DEBUG" in contenu
+        assert "test.journal" in contenu
+
+        # idempotence : ré-appeler remplace les handlers au lieu d'empiler
+        configurer_journal("INFO")
+        racine = logging.getLogger()
+        assert racine.level == logging.INFO
+        assert len(racine.handlers) == 1
+    finally:
+        racine = logging.getLogger()
+        for h in list(racine.handlers):
+            racine.removeHandler(h)
+        for h in handlers_avant:
+            racine.addHandler(h)
+        racine.setLevel(niveau_avant)
+
+
+def test_run_engine_journalise_la_commande(caplog):
+    # la commande exécutée passe désormais par logging (core.process), pas par print
+    import logging
+    import sys
+    from core.process import run_engine
+
+    with caplog.at_level(logging.INFO, logger="core.process"):
+        run_engine([sys.executable, "-c", "print('x')"], timeout=60, etiquette="testlog")
+    assert any("▶️" and "testlog" in r.message for r in caplog.records) or any(
+        "▶️" in r.getMessage() for r in caplog.records
+    )

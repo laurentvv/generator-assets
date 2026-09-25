@@ -251,6 +251,7 @@ Exemples de Workflows 3D & 2D :
 
     # Modes utilitaires
     parser.add_argument("--interactive", action="store_true", help="Lance la session interactive.")
+    parser.add_argument("--verbose", action="store_true", help="Journalisation détaillée (DEBUG) : commandes moteurs, tracebacks complets.")
     parser.add_argument("--check", action="store_true", help="Vérifie la présence des exécutables et des modèles.")
     parser.add_argument("--list-workflows", action="store_true", help="Affiche la liste des workflows disponibles.")
     parser.add_argument("--list-loras", action="store_true", help="Affiche la liste des LoRAs installés.")
@@ -311,7 +312,7 @@ def construire_params(args: argparse.Namespace, prompt_texte: str) -> dict:
     params = vars(args).copy()
 
     for cle in (
-        "workflow", "prompt_flag", "interactive", "check", "list_workflows",
+        "workflow", "prompt_flag", "interactive", "check", "verbose", "list_workflows",
         "list_loras", "list_upscalers",
         "update_sd", "sd_install_dir", "sd_source_dir",
         "update_llama", "llama_install_dir", "llama_source_dir",

@@ -8,9 +8,12 @@ journalisation de la commande, timeout systématique, erreur typée portant le
 code retour et la fin du stderr au lieu d'une `CalledProcessError` muette.
 """
 
+import logging
 import subprocess
 from pathlib import Path
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 _QUEUE_ERREUR = 800  # caractères de stderr inclus dans un EngineError
 
@@ -50,9 +53,9 @@ def run_engine(
     - `check=True` (défaut) : lève EngineError si le code retour ≠ 0.
     """
     affichage = subprocess.list2cmdline(commande)
-    print(f"▶️ [{etiquette}] {affichage}")
+    logger.info("▶️ [%s] %s", etiquette, affichage)
     if timeout is None:
-        print(f"⚠️ [{etiquette}] exécution SANS timeout — à réserver aux cas maîtrisés")
+        logger.warning("⚠️ [%s] exécution SANS timeout — à réserver aux cas maîtrisés", etiquette)
 
     try:
         resultat = subprocess.run(
