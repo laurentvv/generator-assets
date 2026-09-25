@@ -46,6 +46,16 @@ class MeshIaWorkflow(BaseWorkflow):
                    "(TRELLIS.2-4B GGUF, Vulkan) : GLB PBR + rendus de contrôle Blender")
 
     emoji = "🧊"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--res",), type=int, choices=[512, 1024, 1536], default=512,
+             help="Résolution de génération 3D pour mesh_ia (TRELLIS.2) : 512 = itération ~11 min, 1024 = master ~55 min (défaut: 512)."),
+        dict(flags=("--faces-cible",), type=int, default=0,
+             help="Cible de faces du GLB « jeu » pour mesh_ia : décimation Blender OPTIONNELLE (master conservé ; défaut: 0 = pas de réduction). Repères : 30000 = item héro vu de près • 10000 = prop de décor • 3000 = clutter répété • >=8000 pour les silhouettes très courbes."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image = params.get("input")
         prompt = params.get("prompt")

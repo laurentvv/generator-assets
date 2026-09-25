@@ -71,6 +71,23 @@ class H3Ref2VAWorkflow(BaseWorkflow):
     description = "Continuation vidéo+audio via MiniMax-H3 Ref2VA (réf = queue d'une vidéo source, webm avec audio)"
 
     emoji = "🗣️"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --frames et --width/
+    # --height restent dans la table plate (partagés entre familles).
+    PARAMETRES = [
+        dict(flags=("--ref-frames",), type=int, default=12,
+             help="h3_ref2va : trames de queue extraites de la vidéo source comme référence (défaut: 12)."),
+        dict(flags=("--ref-audio",),
+             help="h3_ref2va : WAV de référence Ref2VA (extrait automatiquement de la source si omis)."),
+        dict(flags=("--max-vram",), type=int, default=10,
+             help="h3_ref2va : budget VRAM Gio du DiT via graph-cut sd-cli (défaut: 10, obligatoire sur 16 Go)."),
+        dict(flags=("--turbo",), action="store_true",
+             help="h3_ref2va : LoRA turbo distillé 8 steps (recette VALIDÉE 2026-09-09 — ~2x plus rapide, qualité et raccord référence >= baseline ; MEMORY_BANK §1.16)."),
+        dict(flags=("--dry-run",), action="store_true", default=False,
+             help="Construit la commande (extraction + sd-cli) sans exécuter la génération."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt:

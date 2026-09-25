@@ -328,6 +328,30 @@ def test_famille_audio_migree_en_declarations():
     assert args.langue == "kr" and args.variante == "xl-sft" and args.duration == 120.0
 
 
+def test_famille_video_3d_migree_en_declarations():
+    """3e famille migrée (audit §2.2) : mesh_ia, video, h3_ref2va, animal_godot.
+    --frames/--fps/--width/--height restent en table plate (partagés avec les
+    familles 2D / personnage). Surface figée par test_surface_cli_gelee."""
+    from workflows import h3_ref2va, mesh_ia, video
+    assert len(mesh_ia.MeshIaWorkflow.PARAMETRES) == 2        # --res --faces-cible
+    assert len(video.VideoWorkflow.PARAMETRES) == 3           # --end-img --control-video --flow-shift
+    assert len(h3_ref2va.H3Ref2VAWorkflow.PARAMETRES) == 5    # --ref-frames --ref-audio --max-vram --turbo --dry-run
+    from workflows import animal_godot
+    assert len(animal_godot.AnimalGodotWorkflow.PARAMETRES) == 2
+    toutes = WorkflowRegistry.parametres_declares()
+    flags_agreges = {f for decl in toutes for f in decl["flags"]}
+    assert {
+        "--res", "--faces-cible", "--end-img", "--control-video", "--flow-shift",
+        "--ref-frames", "--ref-audio", "--max-vram", "--turbo", "--dry-run",
+        "--animal-prefixe", "--animal-actions",
+    } <= flags_agreges
+    # contrat h3_ref2va : --turbo (mode par défaut recommandé) et --max-vram traversent
+    args = main.construire_parseur().parse_args(
+        ["-w", "h3_ref2va", "suite du plan", "--turbo", "--max-vram", "12", "--dry-run"]
+    )
+    assert args.turbo is True and args.max_vram == 12 and args.dry_run is True
+
+
 # ============================================================================
 # 7. Gel de la surface CLI complète (audit §2.2 — filet de la migration)
 # ============================================================================

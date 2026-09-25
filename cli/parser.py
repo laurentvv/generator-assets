@@ -148,8 +148,6 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--exposure", type=float, default=-1.0, help="asset_blendkit mode plate : exposition du rendu (défaut: -1.0, look officiel des scènes néon).")
     groupe_wf.add_argument("--percentage", type=int, default=100, help="asset_blendkit mode plate : pourcentage de résolution Blender (défaut: 100 ; les fichiers scène imposent parfois 300 = 6K, à maîtriser).")
     groupe_wf.add_argument("--no-cache", dest="no_cache", action="store_true", help="asset_blendkit : force le retéléchargement du .blend (défaut: cache local).")
-    groupe_wf.add_argument("--res", type=int, choices=[512, 1024, 1536], default=512, help="Résolution de génération 3D pour mesh_ia (TRELLIS.2) : 512 = itération ~11 min, 1024 = master ~55 min (défaut: 512).")
-    groupe_wf.add_argument("--faces-cible", type=int, default=0, help="Cible de faces du GLB « jeu » pour mesh_ia : décimation Blender OPTIONNELLE (master conservé ; défaut: 0 = pas de réduction). Repères : 30000 = item héro vu de près • 10000 = prop de décor • 3000 = clutter répété • >=8000 pour les silhouettes très courbes.")
     groupe_wf.add_argument("--themes", help="Liste des thèmes séparés par des virgules pour le workflow variations.")
     groupe_wf.add_argument("--file", "--recipe", dest="file", help="Fichier JSON ou liste texte pour le workflow batch.")
     groupe_wf.add_argument("--continue-on-error", dest="continue_on_error", action="store_true", help="batch : continue le lot après l'échec d'un asset et sort en code ≠ 0 à la fin avec la liste des échecs (défaut : arrêt à la première erreur, code ≠ 0).")
@@ -171,8 +169,6 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--pose", choices=["idle", "slash_attack", "cast_spell", "shield_block", "jump", "walk"], default="idle", help="Pose OpenPose pour pose_control.")
     groupe_wf.add_argument("--fps", type=float, default=None, help="Cadence FPS pour anim_loop (défaut workflow : 12.0) et video (défaut workflow : 24).")
     groupe_wf.add_argument("--items", help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet').")
-    groupe_wf.add_argument("--animal-prefixe", dest="animal_prefixe", default="AN_", help="Préfixe des clips d'animation pour animal_godot (défaut : AN_).")
-    groupe_wf.add_argument("--animal-actions", dest="animal_actions", nargs="*", default=None, help="Actions natives à garder pour animal_godot (défaut : toutes).")
     groupe_wf.add_argument("--character", default="marc_novice", help="Nom du personnage cible (workflows outfit, character_makeup).")
     groupe_wf.add_argument("--top", default="rustic medieval beige burlap tunic fabric", help="Description du tissu/matière pour le haut/tunique (workflow outfit).")
     groupe_wf.add_argument("--shoes", default="worn dark brown medieval leather shoes texture", help="Description de la matière pour les chaussures/bottes (workflow outfit).")
@@ -189,15 +185,6 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--parts", default="torso,pants,shoes", help="Pièces de garde-robe séparées par des virgules pour makehuman_clothes (défaut: 'torso,pants,shoes').")
     groupe_wf.add_argument("--width", type=int, default=None, help="Largeur personnalisée en pixels (skybox : panoramique 2:1, video).")
     groupe_wf.add_argument("--height", type=int, default=None, help="Hauteur personnalisée en pixels (skybox : panoramique 2:1, video).")
-    groupe_wf.add_argument("--end-img", help="Image clé de fin pour l'interpolation vidéo FLF2V (workflow video).")
-    groupe_wf.add_argument("--control-video", help="Dossier de trames de guidage vidéo V2V (workflow video).")
-    groupe_wf.add_argument("--flow-shift", type=float, default=3.0, help="Facteur de shift flow-matching pour modèles Wan/SD3 (défaut: 3.0).")
-    groupe_wf.add_argument("--ref-frames", type=int, default=12, help="h3_ref2va : trames de queue extraites de la vidéo source comme référence (défaut: 12).")
-    groupe_wf.add_argument("--ref-audio", help="h3_ref2va : WAV de référence Ref2VA (extrait automatiquement de la source si omis).")
-    groupe_wf.add_argument("--max-vram", type=int, default=10, help="h3_ref2va : budget VRAM Gio du DiT via graph-cut sd-cli (défaut: 10, obligatoire sur 16 Go).")
-    groupe_wf.add_argument("--turbo", action="store_true", help="h3_ref2va : LoRA turbo distillé 8 steps (recette VALIDÉE 2026-09-09 — ~2x plus rapide, qualité et raccord référence >= baseline ; MEMORY_BANK §1.16).")
-    groupe_wf.add_argument("--dry-run", action="store_true", default=False, help="Construit la commande (extraction + sd-cli) sans exécuter la génération.")
-
     # Options déclarées par les workflows eux-mêmes (audit §2.2 keystone) : chaque
     # classe expose PARAMETRES (cf. workflows/base.py) ; la table plate ci-dessus
     # est migrée famille par famille vers ces déclarations. Surface CLI agrégée

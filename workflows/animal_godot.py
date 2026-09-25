@@ -27,6 +27,16 @@ class AnimalGodotWorkflow(BaseWorkflow):
                    "vérifié par ré-import (recette validée 2026-09-18)")
 
     emoji = "🐺"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--animal-prefixe",), dest="animal_prefixe", default="AN_",
+             help="Préfixe des clips d'animation pour animal_godot (défaut : AN_)."),
+        dict(flags=("--animal-actions",), dest="animal_actions", nargs="*", default=None,
+             help="Actions natives à garder pour animal_godot (défaut : toutes)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):

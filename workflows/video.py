@@ -29,6 +29,20 @@ class VideoWorkflow(BaseWorkflow):
     description = "Génération vidéo IA native (.webm) via Wan 2.1 / LTX / MiniMax sous Vulkan (T2V, I2V, FLF2V)"
 
     emoji = "🎬"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --frames, --fps,
+    # --width/--height restent dans la table plate (partagés entre familles :
+    # anim_loop/vfx_flipbook 2D, h3_ref2va, skybox, asset_blendkit).
+    PARAMETRES = [
+        dict(flags=("--end-img",),
+             help="Image clé de fin pour l'interpolation vidéo FLF2V (workflow video)."),
+        dict(flags=("--control-video",),
+             help="Dossier de trames de guidage vidéo V2V (workflow video)."),
+        dict(flags=("--flow-shift",), type=float, default=3.0,
+             help="Facteur de shift flow-matching pour modèles Wan/SD3 (défaut: 3.0)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt:
