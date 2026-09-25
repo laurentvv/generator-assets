@@ -7,6 +7,7 @@ Matériaux PBR 3D, Skyboxes 360, Fiches de modélisation et Génération de Mesh
 100% Ligne de Commande Locale (CLI) • Zéro Gradio • Léger et Rapide.
 """
 
+import logging
 import os
 import sys
 
@@ -35,6 +36,7 @@ from core.config import (
     resoudre_sd_model,
     verifier_prerequis,
 )
+from core.journal import configurer_journal
 from workflows import WorkflowRegistry
 
 
@@ -42,6 +44,10 @@ def main():
     """Point d'entrée CLI."""
     parser = construire_parseur()
     args = parser.parse_args()
+
+    # Journalisation structurée (stderr) : INFO par défaut, DEBUG avec --verbose.
+    configurer_journal("DEBUG" if args.verbose else "INFO")
+    logger = logging.getLogger(__name__)
 
     config = {
         "llama_cli": args.llama_cli,
@@ -133,6 +139,8 @@ def main():
                 print(f"   • '{echec['prompt']}' (workflow {echec['workflow']}) : {echec['erreur']}")
             sys.exit(1)
     except Exception as e:
+        # Traceback complet disponible en DEBUG (--verbose) ; message court à l'utilisateur.
+        logger.debug("Traceback complet de l'échec du workflow '%s' :", wf_cible, exc_info=True)
         print(f"❌ Erreur lors de l'exécution du workflow '{wf_cible}' : {e}")
         sys.exit(1)
 
