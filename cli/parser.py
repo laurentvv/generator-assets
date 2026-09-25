@@ -3,6 +3,7 @@
 """Construction du parseur d'arguments CLI et des paramètres workflows."""
 
 import argparse
+from workflows.base import WorkflowRegistry
 from core.config import (
     DEFAULT_BACKEND,
     DEFAULT_CLIP_L,
@@ -226,16 +227,16 @@ Exemples de Workflows 3D & 2D :
     groupe_wf.add_argument("--max-vram", type=int, default=10, help="h3_ref2va : budget VRAM Gio du DiT via graph-cut sd-cli (défaut: 10, obligatoire sur 16 Go).")
     groupe_wf.add_argument("--turbo", action="store_true", help="h3_ref2va : LoRA turbo distillé 8 steps (recette VALIDÉE 2026-09-09 — ~2x plus rapide, qualité et raccord référence >= baseline ; MEMORY_BANK §1.16).")
     groupe_wf.add_argument("--dry-run", action="store_true", default=False, help="Construit la commande (extraction + sd-cli) sans exécuter la génération.")
-    groupe_wf.add_argument("--monoplan-frames", type=int, default=65, help="monoplan_ia : trames de la génération unique LTX-2.5 (défaut: 65 = plafond GPU stable, max ~81 au-delà device lost — MEMORY_BANK §1.17).")
-    groupe_wf.add_argument("--monoplan-duration", type=float, default=10.0, help="monoplan_ia : durée cible du plan en secondes via ralenti motion-compensé (défaut: 10.0).")
-    groupe_wf.add_argument("--zoom-debut", type=float, default=1.10, help="monoplan_ia : zoom initial de la rampe conçue (défaut: 1.10).")
-    groupe_wf.add_argument("--zoom-fin", type=float, default=1.32, help="monoplan_ia : zoom final de la rampe conçue (défaut: 1.32).")
-    groupe_wf.add_argument("--ambiance", help="monoplan_ia : prompt EN du lit sonore IA optionnel (SA3 Small SFX, normalisation incluse) muxé au master.")
-    groupe_wf.add_argument("--monoplan-source", help="monoplan_ia : webm monoplan déjà généré à réutiliser (reprise, saute la génération GPU).")
-    groupe_wf.add_argument("--carton-titre", help="monoplan_ia : titre du carton de fin (image figée + titre haute couture animé). « | » sépare les lignes, ex. \"L'HÉRITIER|DU VIDE\".")
-    groupe_wf.add_argument("--carton-duree", type=float, default=6.0, help="monoplan_ia : durée du carton de titre en secondes (défaut: 6.0).")
-    groupe_wf.add_argument("--carton-zoom-fin", type=float, default=1.36, help="monoplan_ia : zoom final du carton, poursuit la rampe du plan (défaut: 1.36).")
-    groupe_wf.add_argument("--4k", "--upscale-ia", dest="upscale_4k", action="store_true", help="monoplan_ia : chemin 4K UHD natif — super-résolution IA 4x-UltraSharp des trames brutes 480p (sd-cli Vulkan, ~7 min/65 trames) AVANT ralenti + zoom (3328×1920 @ 30 fps), conform 3840×2160 h264_amf 45M + FidelityFX CAS 0.75 (spéc Hero Hooks ai-doc2video).")
+
+    # Options déclarées par les workflows eux-mêmes (audit §2.2 keystone) : chaque
+    # classe expose PARAMETRES (cf. workflows/base.py) ; la table plate ci-dessus
+    # est migrée famille par famille vers ces déclarations. Surface CLI agrégée
+    # inchangée (contrat consommateurs).
+    groupe_declares = parser.add_argument_group("Options par Workflow (déclarées par les workflows)")
+    for declaration in WorkflowRegistry.parametres_declares():
+        d = dict(declaration)
+        flags = d.pop("flags")
+        groupe_declares.add_argument(*flags, **d)
 
     # Paramètres généraux de rendu
     groupe_ia = parser.add_argument_group("Paramètres IA & Rendu")

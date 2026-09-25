@@ -233,3 +233,65 @@ def test_batch_tolerant_termine_et_signale_les_echecs(tmp_path, recette_deux_ass
     assert len(res["echecs"]) == 1
     assert res["echecs"][0]["prompt"] == "asset echec"
     assert "panne moteur simulée" in res["echecs"][0]["erreur"]
+
+
+# ============================================================================
+# 6. Options déclarées par les workflows (audit §2.2 keystone)
+# ============================================================================
+
+def test_aucun_doublon_de_flag_dans_le_parseur():
+    """Un flag ne doit être déclaré qu'une seule fois (table plate OU déclaration
+    de workflow) : argparse accepte silencieusement les redéclarations (la
+    dernière gagne) — le test protège la migration famille par famille."""
+    parseur = main.construire_parseur()
+    vus = []
+    for action in parseur._actions:
+        vus.extend(action.option_strings)
+    doublons = {f for f in vus if vus.count(f) > 1}
+    assert not doublons, f"flags déclarés plusieurs fois : {sorted(doublons)}"
+
+
+def test_flags_monoplan_migres_en_declaration_reste_identiques():
+    """1re famille migrée (monoplan_ia) : même surface CLI, mêmes dests/défauts.
+    Le bridge ai-doc2video appelle ces flags en subprocess — contrat figé."""
+    parseur = main.construire_parseur()
+    args = parseur.parse_args([
+        "-w", "monoplan_ia", "-i", "img.png",
+        "--monoplan-frames", "42", "--monoplan-duration", "8.0",
+        "--zoom-debut", "1.2", "--zoom-fin", "1.4",
+        "--ambiance", "server room hum", "--monoplan-source", "plan.webm",
+        "--carton-titre", "A|B", "--carton-duree", "3.0", "--carton-zoom-fin", "1.3",
+        "--4k",
+    ])
+    assert args.monoplan_frames == 42
+    assert args.monoplan_duration == 8.0
+    assert args.zoom_debut == 1.2 and args.zoom_fin == 1.4
+    assert args.ambiance == "server room hum"
+    assert args.monoplan_source == "plan.webm"
+    assert args.carton_titre == "A|B"
+    assert args.carton_duree == 3.0 and args.carton_zoom_fin == 1.3
+    assert args.upscale_4k is True
+
+    # alias --upscale-ia et défauts par défaut
+    args2 = parseur.parse_args(["-w", "monoplan_ia", "--upscale-ia"])
+    assert args2.upscale_4k is True
+    args3 = parseur.parse_args(["-w", "monoplan_ia"])
+    assert args3.monoplan_frames == 65 and args3.upscale_4k is False
+
+    # params transmis au workflow, avec filtrage None du contrat
+    params = main.construire_params(args, "test prompt")
+    assert params["monoplan_frames"] == 42
+    assert params["upscale_4k"] is True
+    assert params["carton_titre"] == "A|B"
+    params3 = main.construire_params(args3, "test prompt")
+    assert params3["monoplan_frames"] == 65
+    assert "ambiance" not in params3  # None filtré
+
+
+def test_monoplan_ia_porte_toutes_ses_declarations():
+    """La classe expose bien ses 10 paramètres, et le registre les agrège."""
+    from workflows.monoplan_ia import MonoplanIaWorkflow
+    assert len(MonoplanIaWorkflow.PARAMETRES) == 10
+    toutes = WorkflowRegistry.parametres_declares()
+    flags_agreges = {f for decl in toutes for f in decl["flags"]}
+    assert {"--monoplan-frames", "--4k", "--carton-titre"} <= flags_agreges

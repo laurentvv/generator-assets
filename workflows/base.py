@@ -13,10 +13,20 @@ from typing import Any, Dict, List, Type
 
 class BaseWorkflow(ABC):
     """Classe de base pour tous les workflows automatisés."""
-    
+
     name: str = "base"
     description: str = "Workflow de base"
-    
+
+    # Déclaration des paramètres CLI spécifiques au workflow (audit §2.2 keystone).
+    # Chaque entrée = kwargs d'add_argument, avec la clé spéciale "flags" portant
+    # les options (ex. dict(flags=("--res",), type=int, default=512, help="…")).
+    # La surface CLI reste agrégée (tous les flags de tous les workflows toujours
+    # acceptés — contrat consommateurs préservé) : cli/parser.py agrège ces
+    # déclarations via WorkflowRegistry. La table plate du parseur est migrée
+    # famille par famille ; un flag ne doit exister QUE dans une seule déclaration
+    # ou dans la table plate (test anti-doublon).
+    PARAMETRES: List[Dict[str, Any]] = []
+
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
 
@@ -50,3 +60,15 @@ class WorkflowRegistry:
     @classmethod
     def list_all(cls) -> Dict[str, str]:
         return {name: wf.description for name, wf in cls._workflows.items()}
+
+    @classmethod
+    def parametres_declares(cls) -> List[Dict[str, Any]]:
+        """Agrège les PARAMETRES déclarés par tous les workflows enregistrés.
+
+        Utilisé par cli/parser.py pour générer le groupe d'options « par
+        workflow » ; l'ordre suit celui du registre (menu interactif).
+        """
+        declarations: List[Dict[str, Any]] = []
+        for wf_cls in cls._workflows.values():
+            declarations.extend(getattr(wf_cls, "PARAMETRES", []))
+        return declarations

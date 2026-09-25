@@ -49,6 +49,33 @@ class MonoplanIaWorkflow(BaseWorkflow):
                    "--4k = upscale IA UltraSharp + master 3840×2160 AMF (Hero Hooks)")
 
     emoji = "🎞️"
+
+    # Déclaration des paramètres CLI propres au workflow (audit §2.2 keystone,
+    # 1re famille migrée de la table plate de cli/parser.py — help/défauts repris
+    # tels quels, surface CLI inchangée).
+    PARAMETRES = [
+        dict(flags=("--monoplan-frames",), type=int, default=65,
+             help="monoplan_ia : trames de la génération unique LTX-2.5 (défaut: 65 = plafond GPU stable, max ~81 au-delà device lost — MEMORY_BANK §1.17)."),
+        dict(flags=("--monoplan-duration",), type=float, default=10.0,
+             help="monoplan_ia : durée cible du plan en secondes via ralenti motion-compensé (défaut: 10.0)."),
+        dict(flags=("--zoom-debut",), type=float, default=1.10,
+             help="monoplan_ia : zoom initial de la rampe conçue (défaut: 1.10)."),
+        dict(flags=("--zoom-fin",), type=float, default=1.32,
+             help="monoplan_ia : zoom final de la rampe conçue (défaut: 1.32)."),
+        dict(flags=("--ambiance",),
+             help="monoplan_ia : prompt EN du lit sonore IA optionnel (SA3 Small SFX, normalisation incluse) muxé au master."),
+        dict(flags=("--monoplan-source",),
+             help="monoplan_ia : webm monoplan déjà généré à réutiliser (reprise, saute la génération GPU)."),
+        dict(flags=("--carton-titre",),
+             help="monoplan_ia : titre du carton de fin (image figée + titre haute couture animé). « | » sépare les lignes, ex. \"L'HÉRITIER|DU VIDE\"."),
+        dict(flags=("--carton-duree",), type=float, default=6.0,
+             help="monoplan_ia : durée du carton de titre en secondes (défaut: 6.0)."),
+        dict(flags=("--carton-zoom-fin",), type=float, default=1.36,
+             help="monoplan_ia : zoom final du carton, poursuit la rampe du plan (défaut: 1.36)."),
+        dict(flags=("--4k", "--upscale-ia"), dest="upscale_4k", action="store_true",
+             help="monoplan_ia : chemin 4K UHD natif — super-résolution IA 4x-UltraSharp des trames brutes 480p (sd-cli Vulkan, ~7 min/65 trames) AVANT ralenti + zoom (3328×1920 @ 30 fps), conform 3840×2160 h264_amf 45M + FidelityFX CAS 0.75 (spéc Hero Hooks ai-doc2video)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt and not params.get("monoplan_source"):
