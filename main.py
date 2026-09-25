@@ -111,7 +111,7 @@ def main():
     prompt_texte = args.prompt_flag or args.prompt
 
     # Lancement du mode interactif si demandé explicitement ou si aucun paramètre fourni
-    a_des_entrees = bool(prompt_texte or args.input_file or args.recipe_file or args.biome_a)
+    a_des_entrees = bool(prompt_texte or args.input or args.file or args.biome_a)
     if args.interactive or (not a_des_entrees and args.workflow == "generate"):
         lancer_mode_interactif(config)
         return
@@ -120,7 +120,7 @@ def main():
 
     # Détection automatique du workflow si l'argument -w n'est pas spécifié
     wf_cible = args.workflow.lower()
-    if wf_cible == "generate" and args.recipe_file:
+    if wf_cible == "generate" and args.file:
         wf_cible = "batch"
 
     try:
