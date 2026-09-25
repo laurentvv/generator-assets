@@ -32,6 +32,18 @@ class SFXWorkflow(BaseWorkflow):
     description = "Effets sonores & bruitages de jeux vidéo (.wav / .ogg) — moteur IA (SA3 small SFX) ou synthèse procédurale"
 
     emoji = "🔊"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --duration sert toute la
+    # famille audio (sfx, audio_ambience, music_bg, chanson, musique_adn/essence) :
+    # il vit ici, premier workflow utilisateur de la famille dans le registre.
+    PARAMETRES = [
+        dict(flags=("--duration",), type=float, default=None,
+             help="Durée en secondes (sfx, audio_ambience, music_bg, chanson, musique_adn/essence ; défaut : propre au workflow — 1.5 sfx, 8.0 ambience, 12.0 music_bg, 180.0 chanson, 60.0 musique_adn, 30.0 musique_essence)."),
+        dict(flags=("--sfx-engine",), dest="sfx_engine", choices=["ia", "procedural"], default="ia",
+             help="Moteur du workflow sfx : ia = Stable Audio 3 Small SFX via audio.cpp (validé 2026-09-09, normalisation de crête incluse, prompt EN libre) | procedural = synthèse numpy (types figés sword/coin/explosion…)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "sword_slash"
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)

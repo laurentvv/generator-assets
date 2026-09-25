@@ -26,6 +26,22 @@ class VoixRobotWorkflow(BaseWorkflow):
                    "pitch/ring modulation (recette validée 2026-09-17) — .wav + .mp3")
 
     emoji = "🤖"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--robot-voice",), default="af_heart",
+             help="Voix Kokoro pour voix_robot (défaut: af_heart, validée)."),
+        dict(flags=("--robot-pitch",), type=float, default=1.30,
+             help="Facteur de pitch voix_robot (défaut: 1.30 = +30 %%, validé)."),
+        dict(flags=("--robot-ringmod",), type=float, default=120.0,
+             help="Fréquence de ring modulation voix_robot en Hz (défaut: 120, validé)."),
+        dict(flags=("--robot-tempo",), type=float, default=0.65,
+             help="atempo post-pitch voix_robot (défaut: 0.65, débit « tranquille » validé)."),
+        dict(flags=("--robot-gain",), type=float, default=-4.0,
+             help="Gain final voix_robot en dB (défaut: -4, voix « calme » validée)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         brut = (params.get("prompt") or "").strip()
         if not brut:

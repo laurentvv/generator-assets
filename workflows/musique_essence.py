@@ -37,6 +37,17 @@ class MusiqueEssenceWorkflow(BaseWorkflow):
                    "échelle 0,40-0,45 et graine fixe validées ; --keep-vocals pour la version brute")
 
     emoji = "🧬"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --duration vit dans sfx,
+    # --music-backend (partagé) dans music_bg.
+    PARAMETRES = [
+        dict(flags=("--scale",), type=float, default=0.45,
+             help="Échelle d'essence init_audio pour musique_essence (défaut: 0.45 ; plateau validé 0.40-0.45, >=0.5 = loterie de graine, <=0.35 = quasi-copie avec bave de chant)."),
+        dict(flags=("--keep-vocals",), action="store_true",
+             help="musique_essence : saute le retrait de voix HTDemucs (conserve la version brute avec la bave du chant de référence)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         style = params.get("prompt")
         if not style:

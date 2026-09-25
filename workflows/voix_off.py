@@ -32,6 +32,19 @@ class VoixOffWorkflow(BaseWorkflow):
                    "sortie normalisée -16 LUFS + MP3")
 
     emoji = "🎙️"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --moteur (partagé avec
+    # music_bg) vit dans music_bg.
+    PARAMETRES = [
+        dict(flags=("--voix-ref",), default=None,
+             help="Référence vocale à cloner pour voix_off (WAV/MP3/M4A ; niveau contrôlé/normalisé automatiquement)."),
+        dict(flags=("--instruct",), default=None,
+             help="Consigne de style/émotion pour qwen3-tts (voix_off) — ex: 'energetic YouTube narrator tone'."),
+        dict(flags=("--lufs-voix",), type=float, default=-16.0,
+             help="LUFS cible de la voix off (défaut: -16, standard dialogue YouTube)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         # Le texte : paramètre prompt (texte lui-même) OU chemin d'un fichier .txt
         brut = (params.get("prompt") or "").strip()

@@ -49,6 +49,16 @@ class AudioAmbienceWorkflow(BaseWorkflow):
     description = "Ambiances sonores immersives & paysages sonores procéduraux en boucle continue pour Godot 4 (.wav / .ogg / .tres)"
 
     emoji = "🌌"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). Flag conservé pour la
+    # surface : le run lit flow_type puis vfx_type en priorité (ambience_type
+    # n'est actuellement lu nulle part — ne pas câbler sans validation).
+    PARAMETRES = [
+        dict(flags=("--ambience-type",), choices=["dungeon", "forest", "storm", "space", "campfire", "tavern"],
+             help="Type d'ambiance pour audio_ambience."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "dungeon"
         ambience_type = params.get("flow_type") or params.get("vfx_type") or prompt

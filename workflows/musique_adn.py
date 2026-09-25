@@ -34,6 +34,16 @@ class MusiqueAdnWorkflow(BaseWorkflow):
                    "auto, imposés au planner ACE-Step 1.5 xl-turbo) — style décrit en texte")
 
     emoji = "🧬"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --variante vit dans
+    # music_bg ; --langue dans chanson ; --tonalite et --lyrics (partagés) dans
+    # music_bg.
+    PARAMETRES = [
+        dict(flags=("--negatif",), default=None,
+             help="Prompt négatif EN pour musique_adn — ex: 'pop, soft, mellow, gentle'."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         reference = params.get("input")
         if not reference or not os.path.exists(reference):

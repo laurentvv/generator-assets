@@ -37,6 +37,17 @@ class ChansonWorkflow(BaseWorkflow):
                    "balises de structure, langue FR par défaut, ~15 min pour 4 min de chanson")
 
     emoji = "🎵"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --variante (choix ACE-Step)
+    # vit dans music_bg ; --langue est partagé avec musique_adn.
+    PARAMETRES = [
+        dict(flags=("--style-musique",), default=None,
+             help="Description musicale EN pour chanson (défaut : dark folk Vent-Gris)."),
+        dict(flags=("--langue",), default=None,
+             help="Langue des paroles pour chanson/musique_adn (défaut: fr)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         brut = (params.get("prompt") or "").strip()
         if not brut:
