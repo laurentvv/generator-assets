@@ -25,6 +25,15 @@ class VariationsWorkflow(BaseWorkflow):
     description = "Génération de variantes thématiques (Feu, Glace, Poison, Foudre, etc.) pour un asset"
 
     emoji = "🌈"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --themes est aussi lu
+    # par ip_adapter (même famille 2D) : il vit ici, utilisateur primaire du help.
+    PARAMETRES = [
+        dict(flags=("--themes",),
+             help="Liste des thèmes séparés par des virgules pour le workflow variations."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")

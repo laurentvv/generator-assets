@@ -23,6 +23,15 @@ class TileableWorkflow(BaseWorkflow):
     description = "Génération de textures seamless / tuiles de terrain infinies pour TileMaps Godot"
 
     emoji = "🔲"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). Le dest no_preview est
+    # transformé en clé preview par cli/parser.construire_params.
+    PARAMETRES = [
+        dict(flags=("--no-preview",), action="store_true",
+             help="Désactive l'aperçu 3x3 pour le workflow tileable."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:

@@ -24,6 +24,16 @@ class AutotilePackWorkflow(BaseWorkflow):
     description = "Planches d'Autotiles 47 tuiles (Wang / Minimal 3x3) + Ressource TileSet.tres pour Godot 4"
 
     emoji = "🗺️"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--biome-a",),
+             help="Description ou image du premier biome pour autotile_pack."),
+        dict(flags=("--biome-b",),
+             help="Description ou image du second biome pour autotile_pack."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         biome_a_param = params.get("biome_a") or params.get("prompt") or "herbe verte fleurie"
         biome_b_param = params.get("biome_b") or "terre rocheuse sombre"

@@ -33,6 +33,17 @@ class AnimLoopWorkflow(BaseWorkflow):
     description = "Boucles de textures & shaders animés fluides (AnimateDiff / LTX Loop) pour Godot 4 (.gdshader / .tres)"
 
     emoji = "🔄"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --mode-2d est partagé
+    # avec flowmap et vfx_flipbook (même famille 2D) : il vit ici, premier
+    # utilisateur dans le registre. --frames/--fps/--columns restent en table
+    # plate (partagés avec video/rife_interp, cross-familles).
+    PARAMETRES = [
+        dict(flags=("--mode-2d",), action="store_true",
+             help="Génère un shader ou setup orienté Godot 2D au lieu de 3D."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "magical portal vortex"
         input_image = params.get("input")

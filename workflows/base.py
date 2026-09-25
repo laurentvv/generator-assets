@@ -22,9 +22,10 @@ class BaseWorkflow(ABC):
     # les options (ex. dict(flags=("--res",), type=int, default=512, help="…")).
     # La surface CLI reste agrégée (tous les flags de tous les workflows toujours
     # acceptés — contrat consommateurs préservé) : cli/parser.py agrège ces
-    # déclarations via WorkflowRegistry. La table plate du parseur est migrée
-    # famille par famille ; un flag ne doit exister QUE dans une seule déclaration
-    # ou dans la table plate (test anti-doublon).
+    # déclarations via WorkflowRegistry. Migration TERMINÉE : la table plate du
+    # parseur ne garde plus que les options cross-familles (--factor, --frames…).
+    # Un flag ne doit exister QUE dans une seule déclaration ou dans la table
+    # plate (test anti-doublon + gel de surface tests/surface_cli.json).
     PARAMETRES: List[Dict[str, Any]] = []
 
     def __init__(self, config: Dict[str, Any] = None):

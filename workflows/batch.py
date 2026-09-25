@@ -20,6 +20,16 @@ class BatchWorkflow(BaseWorkflow):
     description = "Génération par lots depuis un fichier JSON ou liste textuelle de concepts"
 
     emoji = "📦"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--file", "--recipe"), dest="file",
+             help="Fichier JSON ou liste texte pour le workflow batch."),
+        dict(flags=("--continue-on-error",), dest="continue_on_error", action="store_true",
+             help="batch : continue le lot après l'échec d'un asset et sort en code ≠ 0 à la fin avec la liste des échecs (défaut : arrêt à la première erreur, code ≠ 0)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         fichier_recette = params.get("file") or params.get("recipe")
         if not fichier_recette or not os.path.exists(fichier_recette):

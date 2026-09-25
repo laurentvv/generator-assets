@@ -122,6 +122,16 @@ class VFXFlipbookWorkflow(BaseWorkflow):
     description = "Planches d'animation d'effets visuels / particules (Flipbooks 4x4) et matériaux Godot 4"
 
     emoji = "💥"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --vfx-type est aussi lu
+    # en secours par anim_loop et audio_ambience ; --mode-2d (partagé) vit dans
+    # anim_loop ; --frames reste en table plate (cross-familles).
+    PARAMETRES = [
+        dict(flags=("--vfx-type",), default="explosion", choices=["explosion", "fire", "lightning", "portal", "slash", "aura"],
+             help="Type d'effet pour vfx_flipbook."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt") or "explosion magique violette"
         input_image = params.get("input")

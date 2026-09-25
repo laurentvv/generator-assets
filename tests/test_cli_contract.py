@@ -386,6 +386,72 @@ def test_declarations_heritees_emises_une_seule_fois():
     assert len(ids) == len(set(ids)), "déclaration agrégée plusieurs fois"
 
 
+def test_famille_2d_migree_en_declarations():
+    """Dernière famille migrée (audit §2.2) : 15 workflows 2D. Les flags
+    cross-familles (--factor --frames --fps --columns --emotions --mode
+    --samples --width --height) restent dans la table plate du parseur.
+    Surface figée par test_surface_cli_gelee."""
+    from workflows import (
+        asset_blendkit, batch, flowmap, generate, ip_adapter, material3d,
+        pixelart, pose_control, tileable, variations, voxel3d, vfx_flipbook,
+    )
+    assert len(generate.GenerateWorkflow.PARAMETRES) == 1          # --segmenter
+    assert len(material3d.Material3DWorkflow.PARAMETRES) == 2      # --normal-strength --pbr-engine
+    assert len(pixelart.PixelArtWorkflow.PARAMETRES) == 2          # --palette --grid-size
+    assert len(asset_blendkit.AssetBlendkitWorkflow.PARAMETRES) == 11
+    assert len(variations.VariationsWorkflow.PARAMETRES) == 1      # --themes
+    assert len(tileable.TileableWorkflow.PARAMETRES) == 1          # --no-preview
+    assert len(flowmap.FlowmapWorkflow.PARAMETRES) == 3            # --angle --flow-type --turbulence
+    assert len(voxel3d.Voxel3DWorkflow.PARAMETRES) == 2            # --voxel-depth --voxel-scale
+    assert len(vfx_flipbook.VFXFlipbookWorkflow.PARAMETRES) == 1   # --vfx-type
+    assert len(ip_adapter.IPAdapterWorkflow.PARAMETRES) == 1       # --items
+    assert len(pose_control.PoseControlWorkflow.PARAMETRES) == 1   # --pose
+    assert len(batch.BatchWorkflow.PARAMETRES) == 2                # --file/--recipe --continue-on-error
+    toutes = WorkflowRegistry.parametres_declares()
+    flags_agreges = {f for decl in toutes for f in decl["flags"]}
+    assert {
+        "--segmenter", "--normal-strength", "--pbr-engine", "--palette",
+        "--grid-size", "--query", "--asset-type", "--licence", "--index",
+        "--list-assets", "--resolution", "--engine", "--camera", "--exposure",
+        "--percentage", "--no-cache", "--themes", "--no-preview", "--angle",
+        "--flow-type", "--turbulence", "--margin", "--auto-margin",
+        "--voxel-depth", "--voxel-scale", "--biome-a", "--biome-b", "--vfx-type",
+        "--mode-2d", "--items", "--pose", "--file", "--continue-on-error",
+        # ui_9slice et anim_loop vérifiés ci-dessous (imports tardifs)
+    } <= flags_agreges
+    from workflows import anim_loop, ui_9slice
+    assert len(ui_9slice.UI9SliceWorkflow.PARAMETRES) == 2         # --margin --auto-margin
+    assert len(anim_loop.AnimLoopWorkflow.PARAMETRES) == 1         # --mode-2d
+    assert "--margin" in flags_agreges and "--mode-2d" in flags_agreges
+    # contrat batch : alias --recipe et défaut strict conservés
+    args = main.construire_parseur().parse_args(["-w", "batch", "--recipe", "r.json"])
+    assert args.file == "r.json" and args.continue_on_error is False
+
+
+def test_flags_cross_familles_restant_en_table_plate():
+    """Les 9 options cross-familles sont restées dans le groupe partagé du
+    parseur (aucun propriétaire unique) : garde-fou du final de migration."""
+    parseur = main.construire_parseur()
+    titres = [g.title for g in parseur._action_groups]
+    assert "Options partagées entre familles de workflows" in titres
+    groupe = next(g for g in parseur._action_groups
+                  if g.title == "Options partagées entre familles de workflows")
+    flags = {f for a in groupe._group_actions for f in a.option_strings}
+    assert flags == {
+        "--factor", "--mode", "--columns", "--frames", "--emotions", "--fps",
+        "--samples", "--width", "--height",
+    }
+
+
+def test_tous_workflows_exclusifs_declares_chez_eux():
+    """Chaque workflow avec des déclarations expose un sous-ensemble cohérent :
+    la déclaration vit dans la classe ou son ancêtre (jamais ailleurs)."""
+    for nom in WorkflowRegistry.list_all():
+        cls = WorkflowRegistry.get(nom)
+        for declaration in getattr(cls, "PARAMETRES", []):
+            assert "flags" in declaration, f"{nom} : déclaration sans 'flags'"
+
+
 # ============================================================================
 # 7. Gel de la surface CLI complète (audit §2.2 — filet de la migration)
 # ============================================================================

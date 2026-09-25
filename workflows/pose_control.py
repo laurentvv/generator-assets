@@ -36,6 +36,14 @@ class PoseControlWorkflow(BaseWorkflow):
     description = "Contrôle d'armatures & poses de personnages (ControlNet OpenPose) + Scène Godot (.tscn) et Marker2D"
 
     emoji = "🕺"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--pose",), choices=["idle", "slash_attack", "cast_spell", "shield_block", "jump", "walk"], default="idle",
+             help="Pose OpenPose pour pose_control."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt") or "chevalier en armure sombre"
         pose_nom = params.get("pose") or params.get("type") or "idle"

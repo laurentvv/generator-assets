@@ -34,6 +34,15 @@ class IPAdapterWorkflow(BaseWorkflow):
     description = "Cohérence de style & charte graphique (IP-Adapter) depuis une image de référence + Palettes Godot"
 
     emoji = "🎨"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --themes (partagé avec
+    # variations) vit dans variations.
+    PARAMETRES = [
+        dict(flags=("--items",),
+             help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet')."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image_path = params.get("input")
         concept = params.get("prompt")

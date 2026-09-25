@@ -39,6 +39,16 @@ class Material3DWorkflow(BaseWorkflow):
     description = "Pack Matériau 3D PBR complet (Albedo, Normal, Roughness, Height, AO, ORM + .tres Godot)"
 
     emoji = "🧱"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--normal-strength",), type=float, default=3.5,
+             help="Intensité du relief pour la Normal Map PBR (défaut: 3.5)."),
+        dict(flags=("--pbr-engine",), default="auto", choices=["auto", "deep", "sobel"],
+             help="Moteur d'estimation PBR (deep = DeepBump ONNX, sobel = filtres 2D)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")

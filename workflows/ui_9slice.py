@@ -149,6 +149,16 @@ class UI9SliceWorkflow(BaseWorkflow):
     description = "Génération de cadres d'UI, fenêtres d'inventaire et boutons 9-Patch extensibles pour Godot 4"
 
     emoji = "🖼️"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--margin",), type=int, default=32,
+             help="Taille de marge fixe en pixels pour le workflow ui_9slice."),
+        dict(flags=("--auto-margin",), action="store_true",
+             help="Détection automatique des marges de tranches pour ui_9slice."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         input_image = params.get("input")

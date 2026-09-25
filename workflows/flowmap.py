@@ -22,6 +22,20 @@ class FlowmapWorkflow(BaseWorkflow):
     description = "Cartes de flux vectoriels (Flowmaps) et Shaders d'eau/lave animés pour Godot 4"
 
     emoji = "🌊"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --flow-type est aussi lu
+    # en secours par anim_loop et audio_ambience ; --mode-2d (partagé) vit dans
+    # anim_loop.
+    PARAMETRES = [
+        dict(flags=("--angle",), type=float, default=90.0,
+             help="Angle de direction en degrés pour le workflow flowmap (défaut: 90 = bas)."),
+        dict(flags=("--flow-type",), default="river", choices=["river", "vortex", "radial", "optical"],
+             help="Type de flux pour le workflow flowmap."),
+        dict(flags=("--turbulence",), type=float, default=0.35,
+             help="Intensité des tourbillons/méandres pour flowmap (défaut: 0.35)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or "river"
         type_flux = params.get("flow_type") or ("vortex" if "vortex" in prompt or "whirlpool" in prompt else "river")
