@@ -9,7 +9,6 @@ def dynamic_import(absolute_package_str, key):
                 return getattr(mpfb_mod, key)
     raise ValueError(f"Module {absolute_package_str} introuvable")
 
-import sys
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
     bpy.ops.preferences.addon_enable(module="bl_ext.user_default.mpfb")
