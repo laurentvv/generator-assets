@@ -233,3 +233,43 @@ def test_aiguiller_vetement_repli_categorie(catalogue_factice):
     # aucun score positif pour "shoes" sans mot-clé → repli catalog.get("shoes01") → None ici
     item = aiguiller_modele_vetement("something", category="shoes", catalog_path=catalogue_factice)
     assert item is None
+
+
+# ==============================================================================
+# core.config — chargeur .env (audit §2.3)
+
+from core.config import charger_env
+
+
+def test_charger_env_lit_cle_valeur_et_commentaires(tmp_path, monkeypatch):
+    fichier = tmp_path / ".env"
+    fichier.write_text(
+        "# commentaire\n"
+        "TEST_ENV_A=valeur simple\n"
+        'TEST_ENV_B="valeur quotée"\n'
+        "export TEST_ENV_C=c\n"
+        "\n"
+        "ligne invalide sans séparateur\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("TEST_ENV_A", raising=False)
+    monkeypatch.delenv("TEST_ENV_B", raising=False)
+    monkeypatch.delenv("TEST_ENV_C", raising=False)
+    charger_env(fichier)
+    import os
+    assert os.environ["TEST_ENV_A"] == "valeur simple"
+    assert os.environ["TEST_ENV_B"] == "valeur quotée"
+    assert os.environ["TEST_ENV_C"] == "c"
+
+
+def test_charger_env_n_ecrase_pas_la_variable_existante(tmp_path, monkeypatch):
+    fichier = tmp_path / ".env"
+    fichier.write_text("TEST_ENV_EXISTANTE=du_fichier\n", encoding="utf-8")
+    monkeypatch.setenv("TEST_ENV_EXISTANTE", "du_shell")
+    charger_env(fichier)
+    import os
+    assert os.environ["TEST_ENV_EXISTANTE"] == "du_shell"
+
+
+def test_charger_env_fichier_absent_sans_erreur(tmp_path):
+    charger_env(tmp_path / "inexistant.env")  # ne doit pas lever
