@@ -86,10 +86,10 @@ def construire_prompt_coherant(
             sortie_brute = sortie_brute.replace(prompt_texte, "")
 
         lignes = [
-            l for l in sortie_brute.splitlines()
-            if l.strip()
-            and not l.strip().startswith("[Start thinking]")
-            and not (l.strip().startswith("[") and "t/s" in l)
+            ligne for ligne in sortie_brute.splitlines()
+            if ligne.strip()
+            and not ligne.strip().startswith("[Start thinking]")
+            and not (ligne.strip().startswith("[") and "t/s" in ligne)
         ]
         description_llm = lignes[0].strip() if lignes else concept
 

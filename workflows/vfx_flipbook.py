@@ -9,17 +9,13 @@ Produit :
 - Scène d'exemple GPUParticles (.tscn)
 """
 
-import math
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Tuple
-import numpy as np
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+from typing import Any, Dict, Tuple
+from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_image_vulkan
 from core.llm import construire_prompt_coherant
-from core.segmentation import detourer_ia
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
@@ -65,7 +61,7 @@ particles_anim_loop = false
     with open(chemin_mat, "w", encoding="utf-8") as f:
         f.write(code_mat)
 
-    code_part = f"""[gd_resource type="ParticleProcessMaterial" format=3]
+    code_part = """[gd_resource type="ParticleProcessMaterial" format=3]
 
 [resource]
 gravity = Vector3(0, 0, 0)

@@ -6,9 +6,9 @@ Génère des Normal Maps, Roughness, Height, AO et le pack ORM Godot 4 de haute 
 """
 
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageOps
 
 from core.config import DEFAULT_DEEPBUMP_MODEL, resoudre_modele_onnx
 

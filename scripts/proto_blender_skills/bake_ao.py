@@ -4,7 +4,6 @@
 # Usage : blender --background --python bake_ao.py -- <glb_in> <ao_png> <apercu_png>
 # Sortie : carte AO PNG + vue après mélange AO × albedo.
 
-import os
 import sys
 
 import bpy

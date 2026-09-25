@@ -384,9 +384,9 @@ def veille() -> tuple:
     try:
         r = subprocess.run(["uv", "pip", "list", "--outdated"], capture_output=True,
                            text=True, timeout=300, cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        lignes = [l for l in (r.stdout or "").splitlines()
-                  if l and not l.startswith(("Package", "-"))]
-        cles = sorted(l.split()[0] for l in lignes if l.split())
+        lignes = [ligne for ligne in (r.stdout or "").splitlines()
+                  if ligne and not ligne.startswith(("Package", "-"))]
+        cles = sorted(ligne.split()[0] for ligne in lignes if ligne.split())
         deja_vues = etat.get("paquets_python", {}).get("obsolete", [])
         nouvelles = [p for p in cles if p not in deja_vues]
         if nouvelles:

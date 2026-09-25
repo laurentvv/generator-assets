@@ -7,7 +7,6 @@ pendant la nuit, avec encodage automatique en Full HD 1080p YouTube.
 import os
 import sys
 import time
-import json
 import subprocess
 from datetime import datetime
 

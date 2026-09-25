@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-import bpy, bmesh, importlib, mathutils, sys
+import bpy
+import bmesh
+import importlib
+import mathutils
+import sys
 
 def dynamic_import(absolute_package_str, key):
     for amod in sys.modules:

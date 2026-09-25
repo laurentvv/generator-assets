@@ -31,7 +31,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 # Support UTF-8 sur consoles Windows (évite les erreurs UnicodeEncodeError cp1252)
 if sys.platform == "win32":
@@ -392,9 +392,9 @@ def action_verifier(install_dir: Path) -> None:
             log_warn("Une NOUVELLE VERSION est disponible !")
 
         print("\n💡 Pour mettre à jour rapidement via les binaires officiels GitHub :")
-        print(f"   python scripts/update_llama_cpp.py --download")
+        print("   python scripts/update_llama_cpp.py --download")
         print("\n💡 Pour compiler les toutes dernières sources master avec Vulkan :")
-        print(f"   python scripts/update_llama_cpp.py --build")
+        print("   python scripts/update_llama_cpp.py --build")
 
     print("=" * 70 + "\n")
 

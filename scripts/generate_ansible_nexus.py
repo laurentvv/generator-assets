@@ -49,46 +49,44 @@ def create_contact_sheet(frames_dir, output_sheet_path, num_frames=4):
         return
     step = max(1, len(files) // num_frames)
     selected = [files[i] for i in range(0, len(files), step)][:num_frames]
-    
+
     images = [Image.open(f) for f in selected]
     w, h = images[0].size
     thumb_w, thumb_h = 960, int(960 * h / w)
-    
+
     sheet = Image.new("RGB", (thumb_w * 2, thumb_h * 2), (10, 10, 15))
     positions = [(0, 0), (thumb_w, 0), (0, thumb_h), (thumb_w, thumb_h)]
-    
+
     for idx, img in enumerate(images):
         resized = img.resize((thumb_w, thumb_h), Image.Resampling.LANCZOS)
         sheet.paste(resized, positions[idx])
-        
+
     sheet.save(output_sheet_path, quality=95)
     print(f"🖼️ Planche contact 4K créée : {output_sheet_path}")
 
 def run_pipeline(model_choice="wan21"):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
+
     # Import du module d'upscale IA
     sys.path.insert(0, str(Path(__file__).parent))
     from upscale_video_ai import upscale_video_ai
-    
+
     print("=" * 85)
     print("🚀 [PIPELINE ANSIBLE CONTROL NEXUS - PRODUCTION 4K]")
     print(f"   Modèle choisi   : {model_choice.upper()}")
     print(f"   Dossier sortie  : {OUTPUT_DIR}")
     print(f"   Prompt          : {PROMPT[:90]}...")
     print("=" * 85)
-    
+
     raw_video = None
     master_4k = None
-    has_audio = False
-    
+
     t_start = time.time()
-    
+
     if model_choice == "wan22":
         raw_video = os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_raw.webm")
         master_4k = os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_4k_master.mp4")
-        has_audio = False
-        
+
         cmd_gen = [
             SD_CLI, "-M", "vid_gen",
             "--diffusion-model", os.path.join(MODELS_DIR, "Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf"),
@@ -114,12 +112,11 @@ def run_pipeline(model_choice="wan21"):
             "-o", raw_video,
             "-v"
         ]
-        
+
     elif model_choice == "wan21":
         raw_video = os.path.join(OUTPUT_DIR, "ansible_nexus_wan21_raw.webm")
         master_4k = os.path.join(OUTPUT_DIR, "ansible_nexus_wan21_4k_master.mp4")
-        has_audio = False
-        
+
         cmd_gen = [
             SD_CLI, "-M", "vid_gen",
             "--diffusion-model", os.path.join(MODELS_DIR, "wan2.1-t2v-14b-Q4_K_M.gguf"),
@@ -140,12 +137,11 @@ def run_pipeline(model_choice="wan21"):
             "-o", raw_video,
             "-v"
         ]
-        
+
     elif model_choice == "ltx25":
         raw_video = os.path.join(OUTPUT_DIR, "ansible_nexus_ltx25_raw.webm")
         master_4k = os.path.join(OUTPUT_DIR, "ansible_nexus_ltx25_4k_master.mp4")
-        has_audio = True
-        
+
         cmd_gen = [
             SD_CLI, "-M", "vid_gen",
             "--diffusion-model", os.path.join(MODELS_DIR, "LTX-2.5-Distilled-Q4_K_M.gguf"),
@@ -166,16 +162,16 @@ def run_pipeline(model_choice="wan21"):
         ]
     else:
         raise ValueError(f"Modèle inconnu : {model_choice}")
-        
+
     # Étape 1 : Génération vidéo
     print(f"\n🎬 1. Génération vidéo native avec {model_choice.upper()}...")
     t_gen_start = time.time()
     subprocess.run(cmd_gen, check=True)
     t_gen_end = time.time()
     print(f"✅ Vidéo brute générée en {t_gen_end - t_gen_start:.1f}s : {raw_video}")
-    
+
     # Étape 2 : Super-Résolution IA 4K
-    print(f"\n🚀 2. Super-Résolution IA 4K (Real-ESRGAN Vulkan + FidelityFX CAS 0.75)...")
+    print("\n🚀 2. Super-Résolution IA 4K (Real-ESRGAN Vulkan + FidelityFX CAS 0.75)...")
     upscale_video_ai(
         input_video=raw_video,
         output_video=master_4k,
@@ -183,20 +179,20 @@ def run_pipeline(model_choice="wan21"):
         bitrate="50M",
         cas_strength=0.75
     )
-    
+
     # Étape 3 : Extraction des trames 4K pour inspection
     frames_dir = os.path.join(OUTPUT_DIR, f"frames_{model_choice}")
     os.makedirs(frames_dir, exist_ok=True)
-    print(f"\n📸 3. Extraction des trames du Master 4K pour contrôle qualité...")
+    print("\n📸 3. Extraction des trames du Master 4K pour contrôle qualité...")
     cmd_extract = [
         FFMPEG, "-y", "-i", master_4k,
         os.path.join(frames_dir, "frame_%03d.png")
     ]
     subprocess.run(cmd_extract, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-    
+
     sheet_path = os.path.join(OUTPUT_DIR, f"planche_contact_{model_choice}_4k.png")
     create_contact_sheet(frames_dir, sheet_path)
-    
+
     # Étape 4 : Création du comparatif zoom haute fidélité (Trame 10)
     zoom_comp_path = os.path.join(OUTPUT_DIR, f"comparatif_zoom_{model_choice}_4k_cas075.png")
     try:
@@ -204,27 +200,27 @@ def run_pipeline(model_choice="wan21"):
         raw_trame = os.path.join(OUTPUT_DIR, f"trame_brute_{model_choice}.png")
         cmd_t = [FFMPEG, "-y", "-ss", "0.4", "-i", raw_video, "-vframes", "1", raw_trame]
         subprocess.run(cmd_t, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
+
         up_trame = os.path.join(frames_dir, "frame_010.png")
         if not os.path.exists(up_trame):
             # Fallback première trame
             up_trame = sorted([os.path.join(frames_dir, f) for f in os.listdir(frames_dir) if f.endswith(".png")])[0]
-            
+
         if os.path.exists(raw_trame) and os.path.exists(up_trame):
             img_raw = Image.open(raw_trame).convert("RGB")
             img_up = Image.open(up_trame).convert("RGB")
-            
+
             # Upscale bicubique baseline pour comparaison directe
             img_raw_scaled = img_raw.resize(img_up.size, Image.Resampling.BICUBIC)
-            
+
             # Crop central 1200x900 pour zoom chirurgical
             w, h = img_up.size
             cx, cy = w // 2, h // 2
             crop_box = (cx - 600, cy - 450, cx + 600, cy + 450)
-            
+
             crop_base = img_raw_scaled.crop(crop_box)
             crop_ai = img_up.crop(crop_box)
-            
+
             # Montage côte à côte
             comp = Image.new("RGB", (2400, 900), (0, 0, 0))
             comp.paste(crop_base, (0, 0))
@@ -233,7 +229,7 @@ def run_pipeline(model_choice="wan21"):
             print(f"🔍 Comparatif Zoom 100% créé : {zoom_comp_path}")
     except Exception as e:
         print(f"⚠️ Erreur création zoom comparatif : {e}")
-    
+
     total_time = time.time() - t_start
     print("\n" + "=" * 85)
     print(f"🏆 PIPELINE ACHEVÉ AVEC SUCCÈS EN {total_time:.1f}s ({total_time/60:.2f} min) !")
@@ -247,7 +243,7 @@ def main():
     parser.add_argument("--model", choices=["wan22", "wan21", "ltx25"], default="wan22",
                         help="Modèle de rendu (wan22 pour photoréalisme MoE ultime, wan21 pour géométrie 3D, ltx25 pour son natif)")
     args = parser.parse_args()
-    
+
     run_pipeline(args.model)
 
 if __name__ == "__main__":

@@ -107,7 +107,7 @@ try:
     ui_sheet = Image.new('RGBA', (820, 310), (16, 18, 24, 255))
     u_draw = ImageDraw.Draw(ui_sheet)
     u_draw.text((20, 12), "UI 9-SLICE : Preservation des Coins Ornementaux & Etirement Vectoriel Godot 4", fill=(240, 240, 250))
-    
+
     c_res = cadre.resize((220, 220), Image.Resampling.LANCZOS)
     ui_sheet.paste(c_res, (20, 45), c_res)
     u_draw.rectangle([18, 43, 242, 267], outline=(80, 90, 120), width=1)
@@ -128,7 +128,7 @@ try:
     c_up = Image.open('godot_assets/casque_esrgan_4x.png').convert('RGBA')
     ow, oh = c_orig.size
     crop_orig = c_orig.crop((int(ow*0.35), int(oh*0.30), int(ow*0.65), int(oh*0.60))).resize((250, 250), Image.Resampling.NEAREST)
-    
+
     uw, uh = c_up.size
     crop_up = c_up.crop((int(uw*0.35), int(uh*0.30), int(uw*0.65), int(uh*0.60))).resize((250, 250), Image.Resampling.LANCZOS)
 

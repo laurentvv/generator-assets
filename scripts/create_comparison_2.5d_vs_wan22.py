@@ -10,7 +10,6 @@ Génération d'un comparatif vidéo split-screen 50/50 en 4K Ultra HD (3840x2160
 import os
 import sys
 import subprocess
-from pathlib import Path
 
 for f in (sys.stdout, sys.stderr):
     if hasattr(f, "reconfigure"):

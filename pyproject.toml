@@ -21,6 +21,19 @@ dev = [
 ]
 
 [tool.ruff]
-# Gate bloquante minimale (erreurs de syntaxe et de noms) — élargir progressivement
-# après le grand nettoyage (284 alertes de style préexistantes, cf. PLAN d'audit §2.5 P2).
-lint.select = ["E9", "F821", "F823", "F811"]
+# Gate de style (audit §2.5 P2, élargie le 2026-09-25 après grand nettoyage) :
+# E4 = imports (E401/E402/E40x), E7 = comparaisons/ambiguïtés (E701/E741…),
+# E9 = erreurs de syntaxe, F = pyflakes (imports/variables mortes, noms indéfinis),
+# W = whitespace. E501 (longueur de ligne) volontairement exclue : les help
+# CLI et docstrings du dépôt sont volontiers longs.
+lint.select = ["E4", "E7", "E9", "F", "W"]
+# E402 toléré où le pattern bootstrap est délibéré : main.py reconfigure la
+# console UTF-8 avant ses imports, scripts/ sont des outils autonomes qui
+# installent sys.path avant d'importer le paquet, clothes_catalog doit rester
+# importable en direct depuis le disque.
+exclude = [".agents"]
+
+[tool.ruff.lint.per-file-ignores]
+"main.py" = ["E402"]
+"scripts/**" = ["E402"]
+"core/clothes_catalog.py" = ["E402"]

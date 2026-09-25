@@ -45,7 +45,7 @@ def lancer_mode_interactif(config: dict):
     print("\n" + "=" * 65)
     print(" ⚔️  Generator Assets - Console de Workflows 2D & 3D Godot ⚔️ ")
     print("=" * 65)
-    
+
     verifier_prerequis(config)
 
     menu_workflows = construire_menu()
@@ -76,8 +76,8 @@ def lancer_mode_interactif(config: dict):
             loras_dispos = lister_loras()
             if loras_dispos and wf_name in ["generate", "mesh3d", "material3d", "skybox", "turnaround3d", "spritesheet", "variations"]:
                 print("\n🧩 LoRAs détectés :")
-                for idx, l in enumerate(loras_dispos, 1):
-                    print(f"   [{idx}] {l['name']} ({l['size_mb']} Mo)")
+                for idx, lora in enumerate(loras_dispos, 1):
+                    print(f"   [{idx}] {lora['name']} ({lora['size_mb']} Mo)")
                 choix_l = input("Appliquer des LoRAs ? (ex: '1:0.8, 2:1.0' ou laisser vide) : ").strip()
                 if choix_l:
                     loras_choisis = []
@@ -174,7 +174,7 @@ def lancer_mode_interactif(config: dict):
                 if not os.path.exists(chemin):
                     print(f"❌ Fichier introuvable : {chemin}")
                     continue
-                
+
                 upscalers = lister_upscalers()
                 if upscalers:
                     print("\n🚀 Modèles Upscalers IA disponibles :")

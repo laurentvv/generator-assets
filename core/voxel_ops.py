@@ -6,8 +6,7 @@ Module de génération de Voxel 3D (Extrusion, Culling des faces internes et Exp
 
 import json
 import os
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Tuple
 import numpy as np
 from PIL import Image
 
@@ -23,7 +22,7 @@ def image_vers_grille_voxels(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Transforme une image RGBA en volume 3D discret (occupancy et couleurs RGB).
-    
+
     Returns:
         occupancy: array 3D booléen (H, W, D)
         colors: array 4D float32 (H, W, D, 3) dans [0, 1]
@@ -84,7 +83,6 @@ def exporter_voxel_glb(
 
     # Extraction des quads visibles
     h, w, d = occupancy.shape
-    faces_data = []
 
     # Définition des 6 faces d'un cube unitaire centré en (0,0,0)
     # Normale: (+X, -X, +Y, -Y, +Z, -Z)

@@ -7,9 +7,7 @@ Génère les angles (face, profil droit, dos, profil gauche), effectue le détou
 
 import json
 import os
-from pathlib import Path
-from typing import Any, Dict, List
-from PIL import Image
+from typing import Any, Dict
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_image_vulkan
@@ -51,7 +49,7 @@ class SpriteSheetWorkflow(BaseWorkflow):
 
         for nom_angle, description_angle in ANGLES_4:
             self.log(f"Génération de la vue : {nom_angle.upper()}...")
-            
+
             prompt_angle = construire_prompt_coherant(
                 concept=f"{concept}, {nom_angle} angle",
                 type_asset="character",

@@ -20,7 +20,7 @@ import os
 import shutil
 import tempfile
 import time
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 from PIL import Image
 
@@ -426,7 +426,7 @@ class _BlocTitre:
                  hauteur: int = 1080, largeur: int = 1920):
         from PIL import ImageFont
 
-        self.lignes = [l.upper() for l in lignes]
+        self.lignes = [ligne.upper() for ligne in lignes]
         self.largeur = largeur
         # facteur d'échelle des métriques fixes (traits d'ornement, vignette) :
         # 1.0 en 1080p (rendu validé inchangé), 2.0 en 4K
@@ -434,7 +434,7 @@ class _BlocTitre:
         # taille auto : la ligne la plus large doit tenir à l'interlettrage FINAL
         taille_test = 200
         font_test = ImageFont.truetype(chemin_police, taille_test)
-        ligne_ref = max(self.lignes, key=lambda l: self._largeur(font_test, l, _TRACK_FIN_EM, taille_test))
+        ligne_ref = max(self.lignes, key=lambda ligne: self._largeur(font_test, ligne, _TRACK_FIN_EM, taille_test))
         largeur_test = self._largeur(font_test, ligne_ref, _TRACK_FIN_EM, taille_test)
         self.em = max(80, int(taille_test * largeur_max / largeur_test))
         self.font = ImageFont.truetype(chemin_police, self.em)

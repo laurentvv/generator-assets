@@ -30,7 +30,7 @@ def main():
     print(f"Base MakeHuman : {w_base}x{h_base}")
 
     portrait = Image.open(PORTRAIT_PATH).convert("RGBA")
-    
+
     # Repères exacts sur le portrait (1024x1024) :
     # Oeil Droit : (418, 360), Oeil Gauche : (605, 360), Nez : (512, 460), Bouche : (512, 550)
     # Centre des yeux sur portrait : (511.5, 360.0)
@@ -43,19 +43,19 @@ def main():
 
     # Echelle idéale = 171.0 / 187.0 = 0.914438
     scale = 171.0 / 187.0
-    
+
     # 1. Rotation 90° du portrait
     # Dans le repère pivoté :
     # - Oeil Gauche devient en haut
     # - Oeil Droit devient en bas
     rot_portrait = portrait.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
-    
+
     # 2. Redimensionnement global à l'échelle MakeHuman
     w_rot, h_rot = rot_portrait.size
     scaled_w = int(w_rot * scale)
     scaled_h = int(h_rot * scale)
     scaled_portrait = rot_portrait.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS)
-    
+
     # Position du centre des yeux dans l'image pivotée et mise à l'échelle :
     # Dans portrait original : (511.5, 360.0)
     # Après rotate 90° (centre 512, 512) : X' = 360, Y' = 1024 - 511.5 = 512.5
@@ -72,7 +72,7 @@ def main():
     # 3. Masque d'estompage chirurgical (uniquement le visage, nez, yeux, bouche, cicatrices)
     mask = Image.new("L", (scaled_w, scaled_h), 0)
     arr_mask = np.zeros((scaled_h, scaled_w), dtype=np.float32)
-    
+
     # Centre du masque centré sur le nez / milieu du visage
     # Nez dans le repère scaled : (460 * scale, 512 * scale) = (420.6, 468.2)
     cx = 420.6

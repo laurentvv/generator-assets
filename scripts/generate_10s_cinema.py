@@ -220,8 +220,8 @@ def main():
     print("🎬 [TOP DÉPART PRODUCTION] FILM 10 SECONDES : 10 PLANS LIÉS")
     print(f"   Heure de départ : {date_str}")
     print(f"   Modèle Flagship : Wan 2.1 14B ({STEPS} étapes Euler)")
-    print(f"   Résolution native : 832×480 | Format par plan : 17 trames (1.06s)")
-    print(f"   Sortie finale : Full HD 1080p 60 FPS (Master AMF)")
+    print("   Résolution native : 832×480 | Format par plan : 17 trames (1.06s)")
+    print("   Sortie finale : Full HD 1080p 60 FPS (Master AMF)")
     print("=" * 80)
 
     clips = []
@@ -317,7 +317,7 @@ def main():
     # 3. Mixage final & Conformation YouTube Full HD 1080p (60 FPS)
     t_master_start = time.time()
     film_final_1080p = os.path.join(OUTPUT_DIR, "film_10s_dragon_1080p_master.mp4")
-    print(f"\n🚀 [Mastering] Conformation YouTube Full HD 1080p 60 FPS (AMF Hardware CBR 20M)...")
+    print("\n🚀 [Mastering] Conformation YouTube Full HD 1080p 60 FPS (AMF Hardware CBR 20M)...")
 
     cmd_master = [
         FFMPEG, "-y",

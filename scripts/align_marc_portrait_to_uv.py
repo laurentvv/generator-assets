@@ -8,8 +8,7 @@ sur l'îlot UV de la tête MakeHuman hm08 (2048x2048).
 
 import os
 import sys
-from PIL import Image, ImageEnhance, ImageFilter, ImageDraw, ImageOps
-import numpy as np
+from PIL import Image, ImageFilter, ImageDraw
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):

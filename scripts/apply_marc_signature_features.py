@@ -11,7 +11,7 @@ Application nette, contrastée et professionnelle des détails signature de Marc
 
 import os
 import sys
-from PIL import Image, ImageFilter, ImageEnhance, ImageOps
+from PIL import Image, ImageFilter, ImageEnhance
 import numpy as np
 
 for stream in (sys.stdout, sys.stderr):
@@ -33,12 +33,12 @@ def main():
     w_base, h_base = base_skin.size
 
     portrait = Image.open(PORTRAIT_PATH).convert("RGBA")
-    
+
     # 1. Calibrage géométrique exact
     scale = 171.0 / 187.0
     rot_portrait = portrait.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
     scaled_portrait = rot_portrait.resize((int(rot_portrait.width * scale), int(rot_portrait.height * scale)), Image.Resampling.LANCZOS)
-    
+
     eye_in_scaled_x = 360.0 * scale
     eye_in_scaled_y = 512.5 * scale
     paste_x = int(round(1710.1 - eye_in_scaled_x))
@@ -49,10 +49,8 @@ def main():
     # sans toucher au nez ni à la bouche
     arr_port = np.array(scaled_portrait, dtype=np.float32)[:, :, :3]
     h_scaled, w_scaled, _ = arr_port.shape
-    
+
     # Calque de détails transparent
-    detail_layer = np.zeros((h_scaled, w_scaled, 4), dtype=np.float32)
-    
     # Coordonnées des zones clés dans l'image pivotée (X' = Y_orig, Y' = 1024 - X_orig) :
     # 1) Cicatrice front droit : Y_orig ~ 230..280, X_orig ~ 360..420
     #    -> X' ~ 210..260, Y' ~ 550..620
@@ -64,7 +62,7 @@ def main():
 
     # Création du masque d'isolation des traits caractéristiques
     feature_mask = np.zeros((h_scaled, w_scaled), dtype=np.float32)
-    
+
     # Masque cicatrice front
     for y in range(h_scaled):
         for x in range(w_scaled):
@@ -95,10 +93,10 @@ def main():
     # Mode MULTIPLY + OVERLAY pour incruster nettement les cicatrices rougeoyantes et les cernes
     # sans aucune rupture de teinte
     mult_blend = (arr_mh * arr_port_enh) / 255.0
-    
+
     # Rehausser la saturation rouge de la cicatrice
     mult_blend[:, :, 0] = np.clip(mult_blend[:, :, 0] * 1.15, 0, 255)
-    
+
     # Fusion finale avec le masque ciblé
     alpha_3d = np.repeat(arr_mask_smooth[:, :, np.newaxis], 3, axis=2)
     final_face_patch = np.clip(arr_mh * (1.0 - alpha_3d) + mult_blend * alpha_3d, 0, 255).astype(np.uint8)

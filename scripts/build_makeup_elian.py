@@ -1,4 +1,6 @@
-import os, sys, json
+import os
+import sys
+import json
 import cv2
 import numpy as np
 from PIL import Image, ImageFilter, ImageDraw
@@ -140,7 +142,7 @@ def main():
     # Teinte lèvres naturelle
     lips_bgr = tuple(float(x) for x in np.clip(joue_3d * ratio_lips * 1.05, 0, 255))
 
-    print(f"  🖌️ Couleurs cibles 3D (RGB) :")
+    print("  🖌️ Couleurs cibles 3D (RGB) :")
     print(f"     Cernes      : {tuple(int(x) for x in cernes_bgr[::-1])}")
     print(f"     Cœur cerne  : {tuple(int(x) for x in cernes_core_bgr[::-1])}")
     print(f"     Temples     : {tuple(int(x) for x in temple_bgr[::-1])}")

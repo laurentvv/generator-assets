@@ -10,7 +10,6 @@ Supporte :
 - Export WAV (PCM 16-bit), OGG Vorbis et Bus Audio Godot (.tres)
 """
 
-import math
 import os
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
@@ -63,7 +62,7 @@ def synthetiser_sfx(
 ) -> np.ndarray:
     """
     Synthétise un effet sonore procédural haute qualité.
-    
+
     Types disponibles :
     - 'sword' / 'slash' / 'whoosh' : Tranchant d'épée avec bruit filtré balayé
     - 'coin' / 'pickup' : Clochette magique ou pièce rétro (chime harmonique)
@@ -78,7 +77,6 @@ def synthetiser_sfx(
 
     if any(k in sfx_type for k in ["sword", "slash", "whoosh", "blade"]):
         bruit = np.random.uniform(-1.0, 1.0, len(t))
-        freq_env = np.geomspace(3500.0, 250.0, len(t))
         sos = signal.butter(4, [200, 4000], btype='bandpass', fs=sr, output='sos')
         filtre = signal.sosfilt(sos, bruit)
         son = _appliquer_enveloppe_adsr(filtre, sr, attack=0.005, decay=0.08, sustain_level=0.15, sustain_time=0.05, release=0.15)
@@ -287,7 +285,7 @@ def synthetiser_ambiance(
 ) -> np.ndarray:
     """
     Génère une nappe d'ambiance sonore stéréo 2 canaux en boucle seamless parfaite.
-    
+
     Types d'ambiances :
     - 'dungeon' : Sub-bass drone sombre, résonance de caverne et échos de gouttes d'eau.
     - 'forest' / 'enchanted' : Vent feutré, gazouillis magiques, scintillements de fées.

@@ -100,9 +100,6 @@ def main() -> None:
                     "-q:v", "2", os.path.join(tmp, "f_%04d.png")], capture_output=True)
     pngs = sorted(f for f in os.listdir(tmp) if f.startswith("f_"))
     fx = 1920.0 / L
-    pc = np.array([(PATCH[0] + PATCH[2]) / 2, (PATCH[1] + PATCH[3]) / 2])  # centre patch (640)
-    origine = np.array([PATCH[0], PATCH[1]])                               # coin du patch (640)
-    demi = pc - origine                                                    # demi-taille patch
     W, HH = 1920, 1080
     for i, nom in enumerate(pngs[:len(echelles)]):
             img = cv2.imread(os.path.join(tmp, nom))

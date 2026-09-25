@@ -130,8 +130,8 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
         fv = [v_map_p[v.index] for v in f.verts]
         try:
             nf = bm_p.faces.new(fv)
-            for i, l in enumerate(nf.loops):
-                l[uv_p].uv = f.loops[i][uv_s].uv
+            for i, lp in enumerate(nf.loops):
+                lp[uv_p].uv = f.loops[i][uv_s].uv
         except ValueError:
             pass
 

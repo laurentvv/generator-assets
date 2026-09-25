@@ -122,7 +122,7 @@ print("PURGE_ACTIONS_OK")
 
     sortie = _run_blender(blender, _script_export(chemin_blend, sortie_glb, prefixe))
     if "EXPORT_OK" not in sortie:
-        extrait = [l for l in sortie.splitlines() if l.strip()][-5:]
+        extrait = [ligne for ligne in sortie.splitlines() if ligne.strip()][-5:]
         raise RuntimeError("Export GLB échoué : " + " | ".join(extrait))
     if not os.path.exists(sortie_glb):
         raise RuntimeError(f"GLB non produit : {sortie_glb}")

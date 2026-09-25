@@ -6,11 +6,8 @@ Gère la topologie 18 points COCO, les presets de postures de jeux vidéo,
 le rendu du squelette de guidage et l'exportation des points d'ancrage Godot (Marker2D).
 """
 
-import json
-import math
 import os
-from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
+from typing import Dict, Tuple
 from PIL import Image, ImageDraw
 
 # Définition des 18 points COCO OpenPose (0-indexed)

@@ -11,7 +11,7 @@ Transformation IA de patrons UV MakeHuman existants :
 
 import os
 import sys
-from PIL import Image, ImageEnhance, ImageOps, ImageFilter
+from PIL import Image
 import numpy as np
 
 for stream in (sys.stdout, sys.stderr):
@@ -39,16 +39,16 @@ def main():
 
     # Isoler le fond noir (les pixels où R=G=B=0)
     bg_mask = (arr_ws[:, :, 0] < 10) & (arr_ws[:, :, 1] < 10) & (arr_ws[:, :, 2] < 10)
-    
+
     # Isoler les boucles métalliques et boutons en haut à gauche / bas
     # Zone boucles : Y: 0..400, X: 0..600
     is_buckle = np.zeros(bg_mask.shape, dtype=bool)
     is_buckle[0:450, 0:600] = True
-    
+
     # Transformation de la couleur du tissu : Bleu denim -> Toile de jute beige/brun terreux
     # Luminance de base
     lum = (arr_ws[:, :, 0] * 0.299 + arr_ws[:, :, 1] * 0.587 + arr_ws[:, :, 2] * 0.114) / 255.0
-    
+
     # Teinte toile de jute rustique : RGB = (185, 155, 120) * lum
     burlap_r = np.clip(lum * 195.0 + 15.0, 0, 255)
     burlap_g = np.clip(lum * 165.0 + 10.0, 0, 255)
@@ -103,7 +103,7 @@ def main():
     # 3. Application des textures UV dans Blender
     from core.blender_ops import trouver_blender
     blender_bin = trouver_blender()
-    
+
     script_blender = f"""# -*- coding: utf-8 -*-
 import bpy, os
 
@@ -115,23 +115,23 @@ def assign_uv_material(obj_name, diffuse_path, normal_path, roughness_val=0.85):
     if not obj:
         print(f"⚠️ Objet {{obj_name}} introuvable")
         return
-    
+
     mat = bpy.data.materials.new(name=f"CustomUV_{{obj.name}}")
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     nodes.clear()
-    
+
     out_node = nodes.new('ShaderNodeOutputMaterial')
     bsdf = nodes.new('ShaderNodeBsdfPrincipled')
     bsdf.inputs['Roughness'].default_value = roughness_val
     links.new(bsdf.outputs['BSDF'], out_node.inputs['Surface'])
-    
+
     if os.path.exists(diffuse_path):
         tex_diff = nodes.new('ShaderNodeTexImage')
         tex_diff.image = bpy.data.images.load(diffuse_path)
         links.new(tex_diff.outputs['Color'], bsdf.inputs['Base Color'])
-        
+
     if os.path.exists(normal_path):
         tex_norm = nodes.new('ShaderNodeTexImage')
         tex_norm.image = bpy.data.images.load(normal_path)
@@ -139,7 +139,7 @@ def assign_uv_material(obj_name, diffuse_path, normal_path, roughness_val=0.85):
         norm_node = nodes.new('ShaderNodeNormalMap')
         links.new(tex_norm.outputs['Color'], norm_node.inputs['Color'])
         links.new(norm_node.outputs['Normal'], bsdf.inputs['Normal'])
-        
+
     obj.data.materials.clear()
     obj.data.materials.append(mat)
     print(f"✅ Nouveau patron UV assigné à {{obj.name}}")

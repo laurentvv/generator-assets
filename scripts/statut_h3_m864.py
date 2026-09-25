@@ -157,7 +157,7 @@ def analyser_verdict(code: int, log: Path, dry_run: bool) -> None:
 
     print("\n" + "=" * 70)
     if code == 0 and webm:
-        print(f"✅ VERDICT : H3 FONCTIONNE sur master-864")
+        print("✅ VERDICT : H3 FONCTIONNE sur master-864")
         print(f"   webm : {webm[-1].name} — à écouter/voir avant validation qualité.")
         print("   → Production chaîne OK sur m864 (qualité à juger sur le webm).")
     else:

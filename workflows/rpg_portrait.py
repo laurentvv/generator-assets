@@ -42,8 +42,8 @@ def assembler_grille_portraits(portraits: List[Image.Image], colonnes: int = 3) 
     grid = Image.new("RGBA", (pw * colonnes, ph * lignes), (0, 0, 0, 0))
     for idx, p in enumerate(portraits):
         c = idx % colonnes
-        l = idx // colonnes
-        grid.paste(p, (c * pw, l * ph))
+        ligne = idx // colonnes
+        grid.paste(p, (c * pw, ligne * ph))
     return grid
 
 

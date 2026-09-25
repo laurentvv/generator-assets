@@ -8,7 +8,6 @@ LLM (enrichissement) -> Flux.1 (Vulkan + LoRAs) -> Détourage Floodfill -> Centr
 import os
 from pathlib import Path
 from typing import Any, Dict
-from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_image_vulkan

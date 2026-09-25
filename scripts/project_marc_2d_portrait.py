@@ -8,9 +8,7 @@ lèvres gercées, suie) et les incruste avec un fondu doux sans couture sur la c
 
 import os
 import sys
-from pathlib import Path
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
-import numpy as np
+from PIL import Image, ImageFilter
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -57,7 +55,7 @@ def transferer_portrait_2d_vers_skin_uv(
     masque_alpha = Image.new("L", (largeur_visage_uv, hauteur_visage_uv), 0)
     import PIL.ImageDraw as ImageDraw
     draw = ImageDraw.Draw(masque_alpha)
-    
+
     # Ellipse centrée sur les traits essentiels (yeux, nez, bouche, joues, menton)
     marge_x = int(largeur_visage_uv * 0.08)
     marge_y = int(hauteur_visage_uv * 0.08)

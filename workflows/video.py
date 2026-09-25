@@ -12,7 +12,6 @@ Supporte :
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte

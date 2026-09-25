@@ -9,7 +9,7 @@ import os
 import sys
 
 import bpy
-from mathutils import Matrix, Quaternion, Vector
+from mathutils import Quaternion
 
 argv = sys.argv[sys.argv.index("--") + 1:]
 action_ref_nom = argv[0]

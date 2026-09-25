@@ -37,14 +37,14 @@ def main():
 
     # 2. Charger le portrait de Marc
     portrait = Image.open(PORTRAIT_PATH).convert("RGBA")
-    
+
     # 3. Découpe chirurgicale du visage (front, sourcils avec cicatrice, yeux avec cernes, nez, bouche, joues)
     # Dans marc_portrait.png (1024x1024) :
     face_crop = portrait.crop((230, 160, 794, 720))  # 564 x 560 px
-    
+
     # Rotation 90° anti-horaire pour correspondre à l'orientation MakeHuman UV
     face_rot = face_crop.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
-    
+
     # Redimensionnement précis pour matcher l'échelle faciale MakeHuman
     target_w = 460
     target_h = 460
@@ -55,7 +55,7 @@ def main():
     arr_mask = np.zeros((target_h, target_w), dtype=np.float32)
     cx, cy = target_w / 2.0, target_h / 2.0
     rx, ry = target_w * 0.42, target_h * 0.40
-    
+
     for y in range(target_h):
         for x in range(target_w):
             d = np.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2)
@@ -84,7 +84,7 @@ def main():
 
     diff_mpfb = os.path.join(OUT_MPFB_DIR, "marc_novice_diffuse.png")
     diff_local = os.path.join(OUT_LOCAL_DIR, "marc_novice_diffuse.png")
-    
+
     final_diffuse.convert("RGB").save(diff_mpfb, "PNG", optimize=True)
     final_diffuse.convert("RGB").save(diff_local, "PNG", optimize=True)
     print(f"✅ Texture Diffuse (visage seul) enregistrée : {diff_mpfb}")

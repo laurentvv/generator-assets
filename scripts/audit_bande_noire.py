@@ -91,7 +91,6 @@ def diff_raccord(video: str, tmp: str) -> float:
 
 def auditer_video(video: str, phases, seuil: float, raccord: bool, raccord_max: float):
     """Retourne (ok, rapport_multiligne)."""
-    import numpy as np
     from PIL import Image
 
     lignes_rapport = []

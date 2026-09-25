@@ -8,7 +8,6 @@ Prend un prompt ou une image, génère le pack de textures PBR, et exporte le mo
 import os
 from pathlib import Path
 from typing import Any, Dict
-from PIL import Image
 
 from core.blender_ops import exporter_mesh_pbr_glb, verifier_blender
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte

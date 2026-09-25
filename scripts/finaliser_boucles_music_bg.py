@@ -24,7 +24,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import soundfile
 
-from core.config import slugifier_texte
 from core.music_ai import (
     SR_CIBLE,
     charger_audio,
@@ -33,7 +32,6 @@ from core.music_ai import (
     convertir_ogg,
     exporter_bed_lufs,
     fabriquer_boucle,
-    mesurer_lufs,
     normaliser_pic,
     post_traiter_lit_voix,
     ressampler,
@@ -128,7 +126,7 @@ def main():
     print(f"  • {nom_base}_full.wav (boucle complète 48 kHz)")
     print(f"  • {nom_base}_bed.wav ({LUFS_CIBLE:.0f} LUFS, prêt derrière une voix)")
     print(f"  • {nom_base}.ogg / {nom_base}_preview.mp3")
-    print(f"  • recette_mixage_voix.txt")
+    print("  • recette_mixage_voix.txt")
     print(f"  • {len(candidats)} boucles finalisées dans candidats/ (bed + MP3)")
     print(f"  • {len(candidats)} aperçus d'écoute ECOUTE_cand<N>_boucle_x3.mp3 (×3, -16 LUFS)")
     print("\n📋 Récapitulatif :")

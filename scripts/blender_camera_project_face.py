@@ -10,7 +10,6 @@ Script Blender Headless : Projection Caméra du Portrait 2D de Marc sur le Mesh 
 """
 
 import bpy
-import bmesh
 import importlib
 import mathutils
 import os

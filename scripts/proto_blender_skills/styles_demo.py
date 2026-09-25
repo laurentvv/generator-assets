@@ -5,7 +5,6 @@
 #   wear : usure procédurale Pointiness → arêtes métal claires (sur l'albedo existant)
 # Usage : blender --background --python styles_demo.py -- <glb_in> <out_png> <mode>
 
-import os
 import sys
 
 import bpy

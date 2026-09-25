@@ -24,7 +24,7 @@ import os
 import shutil
 from typing import Any, Dict
 
-from core.music_ai import convertir_mp3, resoudre_audiocpp, resoudre_ffmpeg
+from core.music_ai import resoudre_audiocpp, resoudre_ffmpeg
 from core.process import run_engine
 
 # Paquets GGUF UniverSR (org audio-cpp, 229 Mo chacun — cf. MEMORY_BANK §1.27).

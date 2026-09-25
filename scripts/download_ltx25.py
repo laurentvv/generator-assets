@@ -16,10 +16,10 @@ if os.path.exists(dest) and os.path.getsize(dest) >= EXPECTED_SIZE:
     print(f"[OK] {FILE_NAME} est déjà présent et complet ({os.path.getsize(dest)} octets).")
     sys.exit(0)
 
-print(f"===========================================================")
+print("===========================================================")
 print(f" Téléchargement SOTA : {FILE_NAME} (14.05 Go)")
 print(f" Destination : {dest}")
-print(f"===========================================================")
+print("===========================================================")
 
 cmd = [
     curl,

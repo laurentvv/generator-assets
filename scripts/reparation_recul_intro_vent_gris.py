@@ -20,7 +20,7 @@ import time
 sys.path.insert(0, r"C:\GIT\generator-assets")
 from scripts.lancement_nuit_intro_vent_gris import (  # noqa: E402
     OUTPUT_DIR, FFMPEG, generer_ltx_i2v, extraire_derniere_trame,
-    conformer_1080p, executer, verifier_charge, log,
+    log,
 )
 
 ANTI_RECUL = (

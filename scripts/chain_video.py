@@ -8,7 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import subprocess
 import time
 import cv2
-import numpy as np
 
 for f in (sys.stdout, sys.stderr):
     if hasattr(f, 'reconfigure'):
@@ -224,9 +223,9 @@ def main():
         pprompt = plan["prompt"]
         out_clip = os.path.join(OUTPUT_DIR, f"dragon_{pname}.webm")
 
-        print(f"\n=======================================================")
+        print("\n=======================================================")
         print(f" Plan {pid}/3 : {pdesc}")
-        print(f"=======================================================")
+        print("=======================================================")
         generer_plan(
             prompt=pprompt,
             out_path=out_clip,

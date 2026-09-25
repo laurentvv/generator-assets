@@ -5,7 +5,6 @@ Rendu studio Cycles direct depuis la scène .blend native avec les shaders PBR.
 """
 
 import bpy
-import mathutils
 
 BLEND_FILE = r"C:\GIT\generator-assets\godot_assets\marc_novice.blend"
 OUT_PNG = r"C:\GIT\generator-assets\godot_assets\marc_novice_beauty_render.png"

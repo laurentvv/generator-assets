@@ -24,7 +24,6 @@ import argparse
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 # Console Windows : force l'UTF-8
 for stream in (sys.stdout, sys.stderr):
@@ -35,7 +34,7 @@ racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if racine not in sys.path:
     sys.path.insert(0, racine)
 
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image
 import numpy as np
 
 BLENDER_EXE_DEFAULT = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
@@ -199,7 +198,7 @@ shaderConfig diffuse True
 
 def etape_2_executer_recette_blender(chemin_blender: str, chemin_recette: str):
     """Étape 2 : Exécute le script Blender de recette pour construire le mesh 3D et exporter les GLB."""
-    print(f"\n[2/3] 🔨 ÉTAPE 2 : Exécution de la recette 3D dans Blender...")
+    print("\n[2/3] 🔨 ÉTAPE 2 : Exécution de la recette 3D dans Blender...")
     if not os.path.exists(chemin_recette):
         raise FileNotFoundError(f"Script de recette Blender introuvable : {chemin_recette}")
 
@@ -216,8 +215,8 @@ def etape_2_executer_recette_blender(chemin_blender: str, chemin_recette: str):
 
 def etape_3_rendre_validation(chemin_blender: str, glb_path: str, sortie_render: str):
     """Étape 3 : Rendu studio Cycles de validation du modèle GLB généré."""
-    print(f"\n[3/3] 📸 ÉTAPE 3 : Rendu studio de validation 3D...")
-    
+    print("\n[3/3] 📸 ÉTAPE 3 : Rendu studio de validation 3D...")
+
     if not os.path.exists(glb_path):
         print(f"⚠️ Fichier GLB '{glb_path}' introuvable pour le rendu de validation, étape ignorée.")
         return

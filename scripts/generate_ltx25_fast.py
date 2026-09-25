@@ -7,7 +7,6 @@ import os
 import sys
 import time
 import subprocess
-from pathlib import Path
 
 # UTF-8 stdout
 for f in (sys.stdout, sys.stderr):
@@ -44,7 +43,7 @@ def run_fast_generation(prompt=PROMPT_DEFAULT, frames=25, steps=10, fps=24, outp
 
     if not os.path.exists(LTX_MODEL):
         print(f"\n⚠️ Le fichier {LTX_MODEL} est en cours de finalisation de téléchargement.")
-        print(f"   Veuillez patienter quelques instants que le téléchargement se termine.")
+        print("   Veuillez patienter quelques instants que le téléchargement se termine.")
         return None, None, None
 
     cmd = [
@@ -77,7 +76,7 @@ def run_fast_generation(prompt=PROMPT_DEFAULT, frames=25, steps=10, fps=24, outp
 
         # Conformation YouTube HD 1080p
         if os.path.exists(CONFORM_SCRIPT):
-            print(f"   🚀 Conformation matérielle YouTube Full HD 1080p...")
+            print("   🚀 Conformation matérielle YouTube Full HD 1080p...")
             subprocess.run([sys.executable, CONFORM_SCRIPT, out_webm, out_mp4], check=True)
             print(f"   🎥 Vidéo Full HD 1080p prête : {out_mp4}")
 

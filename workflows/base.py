@@ -6,7 +6,6 @@ Inspiré par les architectures de graphes de traitement (ComfyUI) mais optimisé
 pour une exécution CLI ultra-légère, sans interface et avec gestion mémoire stricte.
 """
 
-import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Type
 
@@ -42,7 +41,7 @@ class BaseWorkflow(ABC):
 
 class WorkflowRegistry:
     """Registre centralisé des workflows disponibles."""
-    
+
     _workflows: Dict[str, Type[BaseWorkflow]] = {}
 
     @classmethod

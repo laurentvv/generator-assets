@@ -10,9 +10,7 @@ Produit :
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict
-import numpy as np
 
 from core.audio_ops import exporter_ambiance_godot, synthetiser_ambiance
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte

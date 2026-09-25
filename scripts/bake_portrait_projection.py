@@ -8,7 +8,6 @@ Fini le découpage 2D approximatif : Blender projette lui-même les coordonnées
 import bpy
 import bmesh
 import importlib
-import mathutils
 import os
 import sys
 

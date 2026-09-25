@@ -6,7 +6,6 @@ Rendu 3D Closeup du Visage de Marc avec la Texture UV Projetée.
 import bpy
 import importlib
 import mathutils
-import os
 import sys
 
 def dynamic_import(absolute_package_str, key):
