@@ -352,6 +352,40 @@ def test_famille_video_3d_migree_en_declarations():
     assert args.turbo is True and args.max_vram == 12 and args.dry_run is True
 
 
+def test_famille_personnage_migree_en_declarations():
+    """4e famille migrée (audit §2.2) : outfit, makehuman_clothes,
+    character_makeup. --character (partagé outfit/character_makeup) vit chez
+    outfit ; --samples reste en table plate (partagé avec asset_blendkit).
+    Surface figée par test_surface_cli_gelee."""
+    from workflows import character_makeup, makehuman_clothes, outfit
+    assert len(outfit.OutfitWorkflow.PARAMETRES) == 3            # --character --top --shoes
+    assert len(makehuman_clothes.MakeHumanClothesWorkflow.PARAMETRES) == 2  # --parts --mpfb-dir
+    assert len(character_makeup.CharacterMakeupWorkflow.PARAMETRES) == 8
+    toutes = WorkflowRegistry.parametres_declares()
+    flags_agreges = {f for decl in toutes for f in decl["flags"]}
+    assert {
+        "--character", "--top", "--shoes", "--parts", "--mpfb-dir", "--portrait",
+        "--skin", "--eye-color", "--blend-file", "--render-modes", "--age",
+        "--gender", "--makeup-only",
+    } <= flags_agreges
+    # contrat outfit : défauts CLI conservés (personnage marc_novice), explicite traverse
+    args = main.construire_parseur().parse_args(
+        ["-w", "outfit", "tissu runique", "--character", "serena", "--age", "0.5"]
+    )
+    assert args.character == "serena" and args.age == 0.5
+
+
+def test_declarations_heritees_emises_une_seule_fois():
+    """character3d hérite de CharacterMakeupWorkflow : PARAMETRES est le même
+    objet liste sur les deux classes — le registre ne doit l'agréger qu'une
+    fois, sinon argparse refuse le flag en doublon (conflit --portrait…)."""
+    from workflows.character_makeup import Character3DWorkflow, CharacterMakeupWorkflow
+    assert Character3DWorkflow.PARAMETRES is CharacterMakeupWorkflow.PARAMETRES
+    toutes = WorkflowRegistry.parametres_declares()
+    ids = [id(declaration) for declaration in toutes]
+    assert len(ids) == len(set(ids)), "déclaration agrégée plusieurs fois"
+
+
 # ============================================================================
 # 7. Gel de la surface CLI complète (audit §2.2 — filet de la migration)
 # ============================================================================
