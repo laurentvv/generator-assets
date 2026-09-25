@@ -10,6 +10,38 @@ import unicodedata
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+# Racine du dépôt (parent de core/) — référence pour .env et les chemins relatifs.
+RACINE_DEPOT = Path(__file__).resolve().parents[1]
+
+
+def charger_env(chemin: Optional[Path] = None) -> None:
+    """Charge un fichier .env dans os.environ SANS écraser les variables déjà posées.
+
+    Format supporté : CLE=VALEUR (une par ligne), préfixe 'export ' optionnel,
+    guillemets simples/doubles retirés, lignes vides et # commentaires ignorés.
+    Priorité : variable d'environnement shell > .env > défauts de ce module
+    (cf. .env.example à la racine du dépôt).
+    """
+    fichier = Path(chemin) if chemin else RACINE_DEPOT / ".env"
+    if not fichier.is_file():
+        return
+    for ligne in fichier.read_text(encoding="utf-8").splitlines():
+        ligne = ligne.strip()
+        if not ligne or ligne.startswith("#"):
+            continue
+        if ligne.startswith("export "):
+            ligne = ligne[len("export "):]
+        cle, separateur, valeur = ligne.partition("=")
+        if not separateur:
+            continue
+        cle = cle.strip()
+        valeur = valeur.strip().strip('"').strip("'")
+        os.environ.setdefault(cle, valeur)
+
+
+# .env optionnel à la racine du dépôt — chargé AVANT la lecture des variables ci-dessous.
+charger_env()
+
 # Chemins des exécutables
 DEFAULT_LLAMA_CLI = os.getenv("LLAMA_CLI_PATH", r"C:\llama.cpp\llama-cli.exe")
 DEFAULT_SD_CLI = os.getenv("SD_CLI_PATH", r"C:\SD\sd-cli.exe")

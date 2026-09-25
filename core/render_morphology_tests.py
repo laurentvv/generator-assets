@@ -21,7 +21,15 @@ except ImportError:
     from mpfb.services import HumanService, TargetService, ClothesService
     from mpfb.ui.apply_assets.assetlibrary.assetsettingspanel import ASSET_SETTINGS_PROPERTIES
 
-def get_universal_skin_vertex_indices(base_obj_path: str = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\extensions\user_default\mpfb\data\3dobjs\base.obj"):
+# Script exécuté dans Blender (pas d'import core.config garanti) : chemins dérivés.
+# Racine MPFB de l'utilisateur (%APPDATA%) et racine du dépôt (parent de core/).
+MPFB_ROOT = os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data")
+MPFB_OBJSDIR = os.path.expandvars(
+    r"%APPDATA%\Blender Foundation\Blender\5.2\extensions\user_default\mpfb\data\3dobjs"
+)
+RACINE_DEPOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def get_universal_skin_vertex_indices(base_obj_path: str = os.path.join(MPFB_OBJSDIR, "base.obj")):
     verts = []
     with open(base_obj_path, "r") as f:
         for line in f:
@@ -33,12 +41,12 @@ def get_universal_skin_vertex_indices(base_obj_path: str = r"C:\Users\laurent\Ap
     hand_indices = set(i for i, v in enumerate(body_verts) if abs(v[0]) >= 3.8 and v[1] <= 3.5)
     return sorted(list(head_indices | hand_indices))
 
-def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: str = r"C:\GIT\generator-assets\godot_assets"):
+def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: str = os.path.join(RACINE_DEPOT, "godot_assets")):
     theme_slug = f"medieval_{theme_name}"
     out_dir = os.path.join(output_base_dir, "renders_morphologies")
     os.makedirs(out_dir, exist_ok=True)
     
-    mpfb_root = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data"
+    mpfb_root = MPFB_ROOT
     suit_mhclo = os.path.join(mpfb_root, "clothes", "male_casualsuit01", "male_casualsuit01.mhclo")
     shoes_mhclo = os.path.join(mpfb_root, "clothes", "shoes01", "shoes01.mhclo")
 

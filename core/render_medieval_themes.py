@@ -14,14 +14,22 @@ import bmesh
 import os
 import math
 
-def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = r"C:\GIT\generator-assets\godot_assets"):
+# Script exécuté dans Blender (pas d'import core.config garanti) : chemins dérivés
+# de %APPDATA% (MPFB utilisateur) et de la position du fichier (racine du dépôt).
+MPFB_ROOT = os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data")
+MPFB_OBJSDIR = os.path.expandvars(
+    r"%APPDATA%\Blender Foundation\Blender\5.2\extensions\user_default\mpfb\data\3dobjs"
+)
+RACINE_DEPOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os.path.join(RACINE_DEPOT, "godot_assets")):
     godot_dir = output_base_dir
     theme_slug = f"medieval_{theme_name}"
     out_dir = os.path.join(godot_dir, f"renders_{theme_slug}")
     os.makedirs(out_dir, exist_ok=True)
-    
-    mpfb_root = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data"
-    objsdir = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\extensions\user_default\mpfb\data\3dobjs"
+
+    mpfb_root = MPFB_ROOT
+    objsdir = MPFB_OBJSDIR
     base_obj_path = os.path.join(objsdir, "base.obj")
     suit_obj_path = os.path.join(mpfb_root, "clothes", "male_casualsuit01", "male_casualsuit01.obj")
     shoes_obj_path = os.path.join(mpfb_root, "clothes", "shoes01", "shoes01.obj")

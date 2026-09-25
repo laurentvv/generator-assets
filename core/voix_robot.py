@@ -22,12 +22,13 @@ import os
 import subprocess
 from typing import Any, Dict, Optional
 
+from core.config import DEFAULT_MODEL_DIR
 from core.music_ai import convertir_mp3, resoudre_ffmpeg
 
 # Paquet GGUF Kokoro-82M (org audio-cpp, cf. MEMORY_BANK §1.21).
 MODELE_KOKORO = os.getenv(
     "KOKORO_TTS_MODEL",
-    os.path.join("C:\\Modeles_LLM", "Kokoro-82M-GGUF", "kokoro-82m-q8_0.gguf"),
+    os.path.join(DEFAULT_MODEL_DIR, "Kokoro-82M-GGUF", "kokoro-82m-q8_0.gguf"),
 )
 
 # Binaire scratch avec espeak-ng embarqué (kokoro_tts inutilisable dans la release,

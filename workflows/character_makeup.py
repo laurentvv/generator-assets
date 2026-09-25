@@ -83,8 +83,12 @@ class CharacterMakeupWorkflow(BaseWorkflow):
             candidats_skin = [
                 os.path.join(DEFAULT_OUTPUT_DIR, "skins", char_name, f"{char_name}_diffuse.png"),
                 os.path.join(DEFAULT_OUTPUT_DIR, "skins", f"{char_name}_diffuse.png"),
-                os.path.join(r"C:\test", "L'HERITIER DU VIDE", "assets", "textures", f"{char_name}_diffuse.png")
             ]
+            # Repli projet spécifique (ancien chemin machine C:\test\... : surcharge possible
+            # sans code via MAKEUP_SKIN_FALLBACK_DIR, ex. <projet>/assets/textures).
+            repli_projet = os.getenv("MAKEUP_SKIN_FALLBACK_DIR")
+            if repli_projet:
+                candidats_skin.append(os.path.join(repli_projet, f"{char_name}_diffuse.png"))
             for c in candidats_skin:
                 if os.path.exists(c):
                     skin_path = c

@@ -55,5 +55,8 @@ Thumbs.db
 .zcode/
 .qwen/
 
+# Configuration locale (.env — copier .env.example ; jamais versionné)
+.env
+
 # pytest
 .pytest_cache/

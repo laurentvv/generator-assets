@@ -304,7 +304,7 @@ def compiler_vetement_mpfb(
                 im_thumb.save(thumb_path, format="PNG")
 
             # Synchronisation dans les deux répertoires MPFB (data/data/clothes et data/clothes)
-            alt_root = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data\data\clothes"
+            alt_root = DEFAULT_MPFB_CLOTHES_DIR
             if os.path.exists(os.path.dirname(alt_root)) and output_folder != os.path.join(alt_root, asset_name):
                 alt_dest = os.path.join(alt_root, asset_name)
                 os.makedirs(alt_dest, exist_ok=True)
