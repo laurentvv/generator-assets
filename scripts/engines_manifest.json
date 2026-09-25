@@ -90,19 +90,19 @@
     },
     "trellis.cpp": {
       "repo": "pwilkin/trellis.cpp",
-      "raison_epinglage": "Version validee en production (workflow mesh_ia, MEMORY_BANK §1.14) ; miroirs GGUF TRELLIS.2 documentes dans C:\\trellis\\README.md.",
+      "raison_epinglage": "v0.8.1 installee le 2026-09-26 (accord utilisateur, nuit) : A/B propre post-reboot v0.8.1=630 s vs v0.6.0=583 s (+8 %, marge de bruit, seed 42/casque/res 512, output/trellis_ab_v081) — la regression +51 % de v0.8.0 (rejetee le 25/09, 1193,8 vs 789,1 s) n'est PAS reproduite ; rendus Blender equivalents. Binaires v0.6.0 : C:\\trellis\\backups\\backup_20260926_v060. Workflow mesh_ia (MEMORY_BANK §1.14) ; miroirs GGUF TRELLIS.2 documentes dans C:\\trellis\\README.md.",
       "plateformes": {
         "windows": {
-          "epingle": "v0.6.0",
+          "epingle": "v0.8.1",
           "asset": "trellis-vulkan-windows-x64.zip",
-          "sha256": "bfe437e4c222b37141b3bcb0600eabee6f39823a5fafa0b3913f50f575e424d0",
+          "sha256": "d6c70678635f5367f9aa93261e9310e7c0c327ca8395399cf2ef869ccc2e72ba",
           "sous_dossier": "trellis",
           "exe": "trellis-cli.exe"
         },
         "linux": {
-          "epingle": "v0.6.0",
+          "epingle": "v0.8.1",
           "asset": "trellis-vulkan-linux-x64.tar.gz",
-          "sha256": "6bc453c1e3a94a4b7bda15cd7f93fdf05f240869c44bf2b102a5db4a5fde19b6",
+          "sha256": "8c2ed7f76ab9f09d3e24dae82b1a52a75d308e853bdfd289e26d57b1f422f33b",
           "sous_dossier": "trellis",
           "exe": "trellis-cli"
         }
