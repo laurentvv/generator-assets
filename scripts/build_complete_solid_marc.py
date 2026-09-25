@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import bpy
-import bmesh
 import importlib
-import mathutils
 import os
 import sys
 

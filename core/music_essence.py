@@ -16,7 +16,7 @@ La bave de voix se retire ensuite via HTDemucs (core.separation.retirer_voix).
 
 import os
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from core.music_ai import convertir_mp3, resoudre_audiocpp
 from core.process import run_engine

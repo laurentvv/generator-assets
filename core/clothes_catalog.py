@@ -13,7 +13,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -91,7 +91,7 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
             item_path = os.path.join(dossier_base, item_name)
             if not os.path.isdir(item_path):
                 continue
-            
+
             # Recherche du .mhclo
             mhclo_file = os.path.join(item_path, f"{item_name}.mhclo")
             if not os.path.exists(mhclo_file):
@@ -102,7 +102,7 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
                     continue
 
             meta = parser_fichier_mhclo(mhclo_file)
-            
+
             # Détection de la catégorie par le nom si absent des tags
             nom_lower = item_name.lower()
             if "shoe" in nom_lower or "boot" in nom_lower:
@@ -132,7 +132,7 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
 
             # Enrichissement bilingue exhaustif des mots-clés (FR + EN)
             keywords = [item_name, meta["category"], meta["gender"]] + meta["tags"]
-            
+
             # Mots-clés de genre
             if meta["gender"] == "male":
                 keywords.extend(["male", "man", "men", "boy", "homme", "garcon", "masculin"])
@@ -241,11 +241,11 @@ def aiguiller_modele_vetement(
 
     for item_id, item in catalog.items():
         score = 0
-        
+
         # Filtre de genre strict si déterminé
         if gender and item["gender"] != "unisex" and item["gender"] != gender.lower():
             continue
-            
+
         # Filtre de catégorie strict si déterminé
         if category and item["category"] != category.lower():
             continue

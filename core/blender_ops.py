@@ -183,7 +183,7 @@ print(f"✅ Export GLB termine : {{output_path}}")
         f.write(script_blender)
 
     try:
-        res = run_engine([blender_bin, "-b", "--python", temp_script], timeout=600, check=True, etiquette="blender")
+        run_engine([blender_bin, "-b", "--python", temp_script], timeout=600, check=True, etiquette="blender")
         if not os.path.exists(fichier_glb):
             raise FileNotFoundError(f"Le fichier {fichier_glb} n'a pas été généré par Blender.")
         return fichier_glb
@@ -231,7 +231,7 @@ def exporter_mesh_pbr_glb(
     os.makedirs(output_dir, exist_ok=True)
     fichier_glb = os.path.join(output_dir, f"{nom_base}.glb")
     fichier_glb_abs = os.path.abspath(fichier_glb).replace("\\", "/")
-    
+
     albedo_abs = os.path.abspath(albedo_path).replace("\\", "/") if albedo_path and os.path.exists(albedo_path) else ""
     normal_abs = os.path.abspath(normal_path).replace("\\", "/") if normal_path and os.path.exists(normal_path) else ""
     orm_abs = os.path.abspath(orm_path).replace("\\", "/") if orm_path and os.path.exists(orm_path) else ""
@@ -306,7 +306,7 @@ print(f"✅ Export GLB termine : {{output_path}}")
         f.write(script_blender)
 
     try:
-        res = run_engine([blender_bin, "-b", "--python", temp_script], timeout=600, check=True, etiquette="blender")
+        run_engine([blender_bin, "-b", "--python", temp_script], timeout=600, check=True, etiquette="blender")
         if not os.path.exists(fichier_glb):
             raise FileNotFoundError(f"Le fichier {fichier_glb} n'a pas été généré par Blender.")
         return fichier_glb

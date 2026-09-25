@@ -106,7 +106,7 @@ if normal_file and os.path.exists(normal_file):
     tex_norm.image = bpy.data.images.load(normal_file)
     tex_norm.image.colorspace_settings.name = 'Non-Color'
     links.new(mapping.outputs['Vector'], tex_norm.inputs['Vector'])
-    
+
     norm_node = nodes.new('ShaderNodeNormalMap')
     norm_node.location = (-50, -200)
     links.new(tex_norm.outputs['Color'], norm_node.inputs['Color'])

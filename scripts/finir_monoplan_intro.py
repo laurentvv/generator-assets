@@ -148,7 +148,7 @@ def etape_4_livrables() -> None:
             capture_output=True,
         )
     log(f"🌅 V6 PRÊTE : {V6_24}")
-    log(f"   + ambiance : intro_vent_gris_10s_v6_avec_ambiance.mp4")
+    log("   + ambiance : intro_vent_gris_10s_v6_avec_ambiance.mp4")
     log(f"   + 48 fps   : {os.path.basename(V6_48)}")
 
 

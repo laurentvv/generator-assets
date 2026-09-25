@@ -379,7 +379,7 @@ def show_models_table(verify_remote: bool = True, verify_hash: bool = False):
     print("🧠 CATALOGUE ET INTÉGRITÉ DES MODÈLES GGUF (C:\\IA\\qwentts.cpp\\models)")
     print("=" * 80)
     print(f"📁 Dossier local : {MODELS_DIR}")
-    print(f"🌐 Dépôt distant : HuggingFace (Serveurperso/Qwen3-TTS-GGUF)")
+    print("🌐 Dépôt distant : HuggingFace (Serveurperso/Qwen3-TTS-GGUF)")
     if verify_hash:
         print("🔍 Mode vérification : Calcul intégral SHA256 vs HuggingFace LFS OID")
     print("-" * 80)
@@ -671,7 +671,7 @@ def perform_update(force: bool = False) -> bool:
     try:
         pull_res = subprocess.run(["git", "pull", "--rebase"], cwd=str(QWEN_DIR), capture_output=True, text=True, check=True)
         logger.info(f"Git pull : {pull_res.stdout.strip()}")
-        sub_res = subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=str(QWEN_DIR), capture_output=True, text=True, check=True)
+        subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=str(QWEN_DIR), capture_output=True, text=True, check=True)
         logger.info("Git submodules mis à jour.")
     except Exception as e:
         logger.error(f"Échec du pull git : {e}")
@@ -697,7 +697,7 @@ def perform_update(force: bool = False) -> bool:
 
     new_commit = get_git_commit_short(QWEN_DIR)
     print("\n" + "=" * 80)
-    print(f"🎉 MISE À JOUR TERMINÉE AVEC SUCCÈS !")
+    print("🎉 MISE À JOUR TERMINÉE AVEC SUCCÈS !")
     print(f"Nouveau Commit : {new_commit}")
     print(f"Sauvegarde de secours conservée dans : {backup_path.name}")
     print("=" * 80)

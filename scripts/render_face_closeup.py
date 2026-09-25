@@ -5,8 +5,6 @@ Rendu gros plan (Face Close-Up) pour valider la netteté des cicatrices et déta
 """
 
 import bpy
-import mathutils
-import os
 
 GLB_PATH = r"C:\GIT\generator-assets\godot_assets\marc_novice.glb"
 OUT_PNG = r"C:\GIT\generator-assets\godot_assets\marc_novice_face_closeup.png"

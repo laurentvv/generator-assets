@@ -22,7 +22,6 @@ import os
 import urllib.parse
 import urllib.request
 
-from core.config import slugifier_texte
 from core.blender_ops import trouver_blender
 from core.process import run_engine
 
@@ -115,7 +114,7 @@ def executer_job_blender(job: dict, dossier_job: str) -> dict:
             print(ligne.strip())
     chemin_resultat = os.path.join(dossier_job, "resultat.json")
     if not os.path.isfile(chemin_resultat):
-        extraits = [l.strip() for l in (processus.stderr or "").splitlines() if l.strip()][-6:]
+        extraits = [ligne.strip() for ligne in (processus.stderr or "").splitlines() if ligne.strip()][-6:]
         raise RuntimeError(f"le worker Blender n'a pas produit de résultat (exit {processus.returncode}) : {' | '.join(extraits)}")
     with open(chemin_resultat, "r", encoding="utf-8") as f:
         resultat = json.load(f)

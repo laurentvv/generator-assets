@@ -10,9 +10,7 @@ Produit :
 
 import json
 import os
-from pathlib import Path
-from typing import Any, Dict, List
-import soundfile as sf
+from typing import Any, Dict
 
 from core.audio_ops import exporter_sfx_godot, synthetiser_voix_emotionnelle
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte

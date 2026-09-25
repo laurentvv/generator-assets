@@ -5,7 +5,6 @@ Workflow Autotile Pack : Génération de planches d'Autotile 47 tuiles (Terrain 
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict
 from PIL import Image
 

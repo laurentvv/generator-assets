@@ -36,7 +36,7 @@ def main():
     print("=" * 65)
 
     # 1. Exécution du Baking Blender
-    print(f"\n[1/3] Exécution de Blender headless pour le baking UV...")
+    print("\n[1/3] Exécution de Blender headless pour le baking UV...")
     cmd = [BLENDER_EXE, "--background", "--python", SCRIPT_BAKE_BLENDER]
     res = subprocess.run(cmd, capture_output=True, text=True)
     print(res.stdout)
@@ -45,7 +45,7 @@ def main():
         sys.exit(1)
 
     # 2. Composition & Fusion sans couture avec la peau du corps
-    print(f"[2/3] Fusion sans couture de la face projetée avec la peau corporelle...")
+    print("[2/3] Fusion sans couture de la face projetée avec la peau corporelle...")
     baked_img = Image.open(TEMP_BAKE_OUTPUT).convert("RGBA")
     skin_base_img = Image.open(SKIN_BASE).convert("RGBA").resize(baked_img.size)
 
@@ -63,7 +63,7 @@ def main():
     skin_finale = Image.alpha_composite(skin_base_img, baked_face).convert("RGB")
 
     # 3. Sauvegarde dans tous les dossiers cibles
-    print(f"[3/3] Export des textures de peau UV officielles...")
+    print("[3/3] Export des textures de peau UV officielles...")
     for path in [SORTIE_DIFFUSE_MPFB, SORTIE_DIFFUSE_LOCAL, SORTIE_DIFFUSE_POC]:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         skin_finale.save(path, "PNG", optimize=True)

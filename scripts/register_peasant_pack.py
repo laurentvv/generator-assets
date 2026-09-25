@@ -54,7 +54,7 @@ def main():
 
     # Copie du maillage 3D propre et du .mhclo
     shutil.copyfile(os.path.join(SYS_WS_DIR, "male_worksuit01.obj"), os.path.join(ws_dest_dir, "paysan_medieval_worksuit.obj"))
-    
+
     # Adapter le fichier .mhclo
     with open(os.path.join(SYS_WS_DIR, "male_worksuit01.mhclo"), "r", encoding="utf-8") as f:
         mhclo_content = f.read()
@@ -103,7 +103,7 @@ shaderConfig diffuse True
     os.makedirs(sh_dest_dir, exist_ok=True)
 
     shutil.copyfile(os.path.join(SYS_SH_DIR, "shoes01.obj"), os.path.join(sh_dest_dir, "paysan_medieval_shoes.obj"))
-    
+
     with open(os.path.join(SYS_SH_DIR, "shoes01.mhclo"), "r", encoding="utf-8") as f:
         mhclo_sh = f.read()
     mhclo_sh = mhclo_sh.replace("shoes01.obj", "paysan_medieval_shoes.obj")
@@ -153,7 +153,7 @@ shaderConfig diffuse True
                     pdata = json.load(f)
             except Exception:
                 pdata = {}
-        
+
         pdata["paysan_medieval_worksuit"] = {
             "author": "Generator Assets AI",
             "category": "Clothes",

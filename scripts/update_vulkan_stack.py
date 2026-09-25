@@ -8,7 +8,6 @@ Supervise et automatise la mise à jour et la compilation Vulkan de :
 """
 
 import argparse
-import os
 import shutil
 import subprocess
 import sys
@@ -86,9 +85,9 @@ def inspecter_gpu_vulkan() -> None:
                 timeout=8
             )
             out = res.stdout or ""
-            gpu_lines = [l.strip() for l in out.split("\n") if "deviceName" in l or "driverVersion" in l or "apiVersion" in l]
-            for l in gpu_lines:
-                print(f"  • {l}")
+            gpu_lines = [ligne.strip() for ligne in out.split("\n") if "deviceName" in ligne or "driverVersion" in ligne or "apiVersion" in ligne]
+            for ligne in gpu_lines:
+                print(f"  • {ligne}")
         except Exception:
             print("  • vulkaninfo disponible dans System32")
     else:

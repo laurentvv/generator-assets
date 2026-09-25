@@ -75,7 +75,7 @@ class ChansonWorkflow(BaseWorkflow):
         graine = params.get("seed")
         graine = int(graine) if graine is not None and int(graine) >= 0 else -1
 
-        nb_lignes = len([l for l in paroles.splitlines() if l.strip() and not l.strip().startswith("[")])
+        nb_lignes = len([ligne for ligne in paroles.splitlines() if ligne.strip() and not ligne.strip().startswith("[")])
         nom = slugifier_texte(params.get("output") or nom_defaut)[:60]
         sortie = os.path.join("output", "music_chanson", f"{nom}.wav")
         os.makedirs(os.path.dirname(sortie), exist_ok=True)

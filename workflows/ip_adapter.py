@@ -10,7 +10,7 @@ Produit :
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte

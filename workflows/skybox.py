@@ -6,7 +6,6 @@ Génère une image 2:1 (ex: 2048x1024) avec boucle horizontale et exporte la res
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict
 from PIL import Image
 

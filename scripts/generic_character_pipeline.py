@@ -12,11 +12,9 @@ Processus universel, propre et reproductible :
 """
 
 import argparse
-import json
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
@@ -26,7 +24,7 @@ racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if racine not in sys.path:
     sys.path.insert(0, racine)
 
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageEnhance
 import numpy as np
 
 BLENDER_EXE = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
@@ -68,7 +66,7 @@ def generer_pack_skin(
 ) -> dict:
     """Génère le pack de skin complet MPFB (.mhmat, .thumb, diffuse.png, normal.png)."""
     print(f"\n[1/4] 🎨 Génération du pack de skin '{nom_skin}' à partir du skin d'origine...")
-    
+
     if not os.path.exists(skin_base_path):
         raise FileNotFoundError(f"Skin d'origine introuvable : {skin_base_path}")
 
@@ -172,7 +170,7 @@ def generer_script_blender_personnage(config: dict) -> str:
     hair = config.get("hair", "short01.mhclo")
     glb_out = config.get("export_glb", f"godot_assets/{nom}.glb")
     preview_out = config.get("render_preview", f"godot_assets/{nom}_render.png")
-    
+
     script = f"""# -*- coding: utf-8 -*-
 import bpy, importlib, mathutils, os, sys
 
@@ -345,11 +343,11 @@ def executer_pipeline_complet(config: dict):
     )
 
     # 2. Génération et exécution du script Blender
-    print(f"\n[2/4] 🔨 Assemblage anatomique du modèle 3D sous Blender 5.2...")
+    print("\n[2/4] 🔨 Assemblage anatomique du modèle 3D sous Blender 5.2...")
     script_blender = generer_script_blender_personnage(config)
     cmd = [BLENDER_EXE, "--background", "--python", script_blender]
     res = subprocess.run(cmd, capture_output=True, text=True)
-    
+
     if os.path.exists(script_blender):
         os.remove(script_blender)
 

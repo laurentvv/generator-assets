@@ -191,7 +191,6 @@ def executer_mode_plate(job: dict, chemin_blend: str, resultat: dict) -> None:
     log(f"résolution effective : {resultat['resolution']}")
 
     moteur_demande = options.get("engine", "cycles")
-    moteur = "CYCLES"
     if moteur_demande == "eevee":
         scene.render.engine = "BLENDER_EEVEE"  # enum RNA incomplet : affectation directe
     if scene.render.engine == "CYCLES":

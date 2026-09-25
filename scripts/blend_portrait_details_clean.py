@@ -9,7 +9,7 @@ Transfert de détails haute fidélité par incrustation douce (Luminance Overlay
 
 import os
 import sys
-from PIL import Image, ImageFilter, ImageEnhance, ImageChops
+from PIL import Image, ImageFilter
 import numpy as np
 
 for stream in (sys.stdout, sys.stderr):
@@ -31,16 +31,16 @@ def main():
     w_base, h_base = base_skin.size
 
     portrait = Image.open(PORTRAIT_PATH).convert("RGBA")
-    
+
     # 1. Calibrage rigide sur les trous UV MakeHuman
     scale = 171.0 / 187.0
     rot_portrait = portrait.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
-    
+
     w_rot, h_rot = rot_portrait.size
     scaled_w = int(w_rot * scale)
     scaled_h = int(h_rot * scale)
     scaled_portrait = rot_portrait.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS)
-    
+
     eye_in_scaled_x = 360.0 * scale
     eye_in_scaled_y = 512.5 * scale
     paste_x = int(round(1710.1 - eye_in_scaled_x))

@@ -70,7 +70,7 @@ def main():
     sortie = os.path.join("output", "music_chanson", f"{nom_base}.wav")
     os.makedirs(os.path.dirname(sortie), exist_ok=True)
 
-    nb_lignes = len([l for l in paroles.splitlines() if l.strip() and not l.strip().startswith("[")])
+    nb_lignes = len([ligne for ligne in paroles.splitlines() if ligne.strip() and not ligne.strip().startswith("[")])
     print(f"🎵 Chanson : {nom_base} • {nb_lignes} lignes chantées • {args.duree:.0f} s • "
           f"variante {args.variante} • langue {args.langue}")
     chemin, backend = generer_musique_acestep(

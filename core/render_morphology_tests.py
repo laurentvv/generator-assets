@@ -15,10 +15,10 @@ import os
 import math
 
 try:
-    from bl_ext.user_default.mpfb.services import HumanService, TargetService, ClothesService
+    from bl_ext.user_default.mpfb.services import HumanService
     from bl_ext.user_default.mpfb.ui.apply_assets.assetlibrary.assetsettingspanel import ASSET_SETTINGS_PROPERTIES
 except ImportError:
-    from mpfb.services import HumanService, TargetService, ClothesService
+    from mpfb.services import HumanService
     from mpfb.ui.apply_assets.assetlibrary.assetsettingspanel import ASSET_SETTINGS_PROPERTIES
 
 # Script exécuté dans Blender (pas d'import core.config garanti) : chemins dérivés.
@@ -45,7 +45,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
     theme_slug = f"medieval_{theme_name}"
     out_dir = os.path.join(output_base_dir, "renders_morphologies")
     os.makedirs(out_dir, exist_ok=True)
-    
+
     mpfb_root = MPFB_ROOT
     suit_mhclo = os.path.join(mpfb_root, "clothes", "male_casualsuit01", "male_casualsuit01.mhclo")
     shoes_mhclo = os.path.join(mpfb_root, "clothes", "shoes01", "shoes01.mhclo")
@@ -83,7 +83,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
 
     for morph_name, macro_dict in morphologies:
         print(f"=== [Morphologie: {morph_name.upper()}] Thème: {theme_slug} ===")
-        
+
         # 1. Nettoyage de la scène
         for o in list(bpy.data.objects):
             bpy.data.objects.remove(o, do_unlink=True)
@@ -166,8 +166,8 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
             fv = [v_map_p[v.index] for v in f.verts]
             try:
                 nf = bm_p.faces.new(fv)
-                for i, l in enumerate(nf.loops):
-                    l[uv_p].uv = f.loops[i][uv_s].uv
+                for i, lp in enumerate(nf.loops):
+                    lp[uv_p].uv = f.loops[i][uv_s].uv
             except ValueError:
                 pass
 
@@ -279,7 +279,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
         cam_z = center_char_z + 0.05
 
         cam.location = (cam_x, cam_y, cam_z)
-        
+
         dx = -cam_x
         dy = -cam_y
         dz = center_char_z - cam_z

@@ -45,14 +45,14 @@ def main():
 
         print(f"\n📥 Téléchargement en cours : {remote_path} -> {local_filename}...")
         t0 = time.time()
-        
+
         downloaded = hf_hub_download(
             repo_id=REPO_ID,
             filename=remote_path,
             local_dir=MODELS_DIR,
             local_dir_use_symlinks=False
         )
-        
+
         # Si hf_hub_download l'a placé dans un sous-dossier HighNoise/ ou LowNoise/, le déplacer à la racine de C:\Modeles_LLM
         if downloaded != target_path and os.path.exists(downloaded):
             if os.path.exists(target_path):

@@ -85,18 +85,18 @@ def upscale_smart_lanczos(
     masque de netteté (Unsharp Mask) et gestion propre du canal Alpha.
     """
     has_alpha = image.mode == "RGBA"
-    
+
     if has_alpha:
         r, g, b, a = image.split()
         rgb = Image.merge("RGB", (r, g, b))
-        
+
         rgb_upscaled = rgb.resize((target_width, target_height), Image.Resampling.LANCZOS)
         a_upscaled = a.resize((target_width, target_height), Image.Resampling.LANCZOS)
-        
+
         sharp_rgb = rgb_upscaled.filter(
             ImageFilter.UnsharpMask(radius=unsharp_radius, percent=unsharp_percent, threshold=unsharp_threshold)
         )
-        
+
         r_u, g_u, b_u = sharp_rgb.split()
         return Image.merge("RGBA", (r_u, g_u, b_u, a_upscaled))
     else:
@@ -121,7 +121,7 @@ def upscaler_asset(
     avec repli automatique sur Smart Lanczos si aucun modèle n'est fourni.
     """
     largeur_init, hauteur_init = image_entree.size
-    
+
     if taille_cible and taille_cible > 0:
         largeur_cible = taille_cible
         hauteur_cible = int(hauteur_init * (taille_cible / largeur_init))

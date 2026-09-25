@@ -81,9 +81,9 @@ def lancer(blender, script, args, timeout):
     try:
         proc = subprocess.run(cmd, cwd=RACINE, capture_output=True, text=True,
                               timeout=timeout, encoding="utf-8", errors="replace")
-        marqueurs = [l for l in (proc.stdout or "").splitlines()
-                     if any(m in l for m in ("_OK:", "_JSON:", "GPU indisponible"))]
-        return proc.returncode == 0 and any("SUCCESS:" in l for l in (proc.stdout or "").splitlines()), marqueurs, proc
+        marqueurs = [ligne for ligne in (proc.stdout or "").splitlines()
+                     if any(m in ligne for m in ("_OK:", "_JSON:", "GPU indisponible"))]
+        return proc.returncode == 0 and any("SUCCESS:" in ligne for ligne in (proc.stdout or "").splitlines()), marqueurs, proc
     except subprocess.TimeoutExpired:
         return False, [f"TIMEOUT après {timeout} s"], None
 
@@ -163,7 +163,7 @@ def main():
         for m in marqueurs:
             print(f"    {m[:250]}")
         if not ok and proc is not None:
-            erreurs = [l for l in (proc.stderr or "").splitlines() if "Error" in l or "error" in l]
+            erreurs = [ligne for ligne in (proc.stderr or "").splitlines() if "Error" in ligne or "error" in ligne]
             print(f"    ECHEC (exit {proc.returncode}) — {erreurs[-3:] if erreurs else 'voir stderr'}")
     post = {}
     if resultats.get("turntable_casque", {}).get("ok"):

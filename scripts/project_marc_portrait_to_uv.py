@@ -7,7 +7,7 @@ directement sur la carte UV officielle MakeHuman / MPFB2.
 
 import os
 import sys
-from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+from PIL import Image, ImageFilter
 import numpy as np
 
 for stream in (sys.stdout, sys.stderr):
@@ -41,7 +41,7 @@ def main():
     # Dans marc_portrait.png (1024x1024) :
     # Tête centrée : X: 220..804, Y: 130..750
     face_crop = portrait.crop((220, 130, 804, 750))  # ~584 x 620 px
-    
+
     # Rotation 90° anti-horaire (Top -> Left / Front vers le crâne MakeHuman, Menton vers la droite)
     face_rot = face_crop.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
 
@@ -55,7 +55,7 @@ def main():
     arr_mask = np.zeros((target_h, target_w), dtype=np.float32)
     cx, cy = target_w / 2.0, target_h / 2.0
     rx, ry = target_w * 0.44, target_h * 0.42
-    
+
     for y in range(target_h):
         for x in range(target_w):
             d = np.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2)
@@ -92,7 +92,7 @@ def main():
 
     diff_mpfb = os.path.join(OUT_MPFB_DIR, "marc_novice_diffuse.png")
     diff_local = os.path.join(OUT_LOCAL_DIR, "marc_novice_diffuse.png")
-    
+
     final_diffuse.convert("RGB").save(diff_mpfb, "PNG", optimize=True)
     final_diffuse.convert("RGB").save(diff_local, "PNG", optimize=True)
     print(f"✅ Texture Diffuse avec visage haute fidélité enregistrée : {diff_mpfb}")
@@ -109,7 +109,7 @@ def main():
     # 8. Génération du fichier .mhmat MakeHuman
     mhmat_path = os.path.join(OUT_MPFB_DIR, "marc_novice.mhmat")
     with open(mhmat_path, "w", encoding="utf-8") as f:
-        f.write(f"""# Material file for MakeHuman / MPFB - Marc Novice (Vent-Gris Haute Fidélité)
+        f.write("""# Material file for MakeHuman / MPFB - Marc Novice (Vent-Gris Haute Fidélité)
 name marc_novice
 tag MPFB
 diffuseTexture marc_novice_diffuse.png

@@ -12,8 +12,7 @@ Produit :
 import os
 from pathlib import Path
 from typing import Any, Dict, Tuple
-import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_image_vulkan

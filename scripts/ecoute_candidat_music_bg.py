@@ -59,7 +59,7 @@ def main():
     os.remove(tmp)
     os.remove(wav_ecoute)
 
-    verif = verifier_boucle(brut)
+    verifier_boucle(brut)
     bpm_txt = f"{infos['bpm']:.0f} BPM" if infos.get("bpm") else "ambiante"
     print(f"🎧 cand_{index} : {bpm_txt}, boucle {infos['duree']:.1f} s ({infos['mesures']} mesures), "
           f"départ {infos['depart_s']} s")

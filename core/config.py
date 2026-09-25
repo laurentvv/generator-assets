@@ -8,7 +8,7 @@ import os
 import re
 import unicodedata
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 # Racine du dépôt (parent de core/) — référence pour .env et les chemins relatifs.
 RACINE_DEPOT = Path(__file__).resolve().parents[1]
@@ -282,7 +282,7 @@ def resoudre_upscaler(nom_ou_chemin: Optional[str] = None) -> Optional[str]:
         return os.path.abspath(nom_ou_chemin)
 
     cle = nom_ou_chemin.lower()
-    
+
     # Raccourcis / Alias courants
     alias = {
         "anime": "realesrgan_x4plus_anime_6b",
@@ -514,13 +514,13 @@ def resoudre_yunet_model(chemin: Optional[str] = None) -> str:
 def verifier_prerequis(config: dict) -> bool:
     """Vérifie l'existence des exécutables et des modèles requis."""
     manquants = []
-    
+
     # Exécutables
     if not os.path.exists(config.get("llama_cli", DEFAULT_LLAMA_CLI)):
         manquants.append(f"llama-cli introuvable : {config.get('llama_cli', DEFAULT_LLAMA_CLI)}")
     if not os.path.exists(config.get("sd_cli", DEFAULT_SD_CLI)):
         manquants.append(f"sd-cli introuvable : {config.get('sd_cli', DEFAULT_SD_CLI)}")
-        
+
     # Modèles obligatoires
     fichiers_modeles = [
         ("Modèle LLM", config.get("llm_model", DEFAULT_LLM_MODEL)),
@@ -532,7 +532,7 @@ def verifier_prerequis(config: dict) -> bool:
     for nom, chemin in fichiers_modeles:
         if not os.path.exists(chemin):
             manquants.append(f"{nom} manquant : {chemin}")
-            
+
     if manquants:
         print("⚠️  [Diagnostic] Fichiers manquants détectés :")
         for m in manquants:

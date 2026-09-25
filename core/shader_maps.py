@@ -6,7 +6,7 @@ Module de génération de cartes de shaders techniques pour Godot 4 (Flow Maps, 
 
 import math
 import os
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 import numpy as np
 from PIL import Image
 
@@ -68,7 +68,7 @@ def generer_flowmap(
     """
     Génère une Flow Map (R=Vecteur X, G=Vecteur Y, B=Magnitude, A=255).
     128 = Vecteur 0, 0 = -1.0, 255 = +1.0.
-    
+
     Types disponibles :
     - 'river' : Flux directionnel continu (avec méandres et bruit de turbulence)
     - 'vortex' : Tourbillon / spirale avec aspiration vers le centre
@@ -125,12 +125,12 @@ def generer_flowmap(
                 noise_a = _generer_perlin_noise_2d((h, w), (6, 6))
                 noise_b = _generer_perlin_noise_2d((h, w), (12, 12))
                 combined_noise = noise_a * 0.7 + noise_b * 0.3
-                
+
                 # Gradient orthogonal pour conserver l'incompressibilité
                 grad_y, grad_x = np.gradient(combined_noise)
                 curl_x = -grad_y * 10.0 * turbulence
                 curl_y = grad_x * 10.0 * turbulence
-                
+
                 vx += curl_x
                 vy += curl_y
 
@@ -161,7 +161,7 @@ def exporter_shader_flow_godot(nom_base: str, output_dir: str, mode_2d: bool = F
     chemin_tres = os.path.join(output_dir, f"{nom_base}_material.tres")
 
     shader_type = "canvas_item" if mode_2d else "spatial"
-    
+
     code_shader = f"""shader_type {shader_type};
 // Shader de flux d'eau / lave animé avec Flowmap (Double sampling déphasé)
 // Généré automatiquement par Generator Assets pour Godot 4

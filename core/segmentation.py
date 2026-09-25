@@ -5,7 +5,7 @@ Module de segmentation et détourage IA haute précision (RMBG / BiRefNet via ON
 """
 
 import os
-from typing import List, Optional
+from typing import Optional
 import numpy as np
 from PIL import Image
 
@@ -26,7 +26,7 @@ def _get_onnx_session(model_path: str):
             preferred_providers.append("DmlExecutionProvider")
         if "CPUExecutionProvider" in available:
             preferred_providers.append("CPUExecutionProvider")
-        
+
         session = ort.InferenceSession(model_path, providers=preferred_providers or available)
         _SESSION_CACHE[model_path] = session
     return _SESSION_CACHE[model_path]
@@ -40,12 +40,12 @@ def detourer_ia(
     """
     Détoure une image avec un réseau neuronal de segmentation (RMBG-1.4 / BiRefNet).
     Garantit une découpe nette sans frange blanche, gérant les cheveux, armes et transparences.
-    
+
     Args:
         image: Image PIL source (RGB ou RGBA)
         model_path: Chemin vers le modèle ONNX (ou None pour le chemin par défaut)
         threshold: Seuil de coupure du masque (si nécessaire)
-        
+
     Returns:
         Image PIL en mode RGBA avec le canal alpha détouré
     """
@@ -62,7 +62,7 @@ def detourer_ia(
         # Prétraitement standard RMBG / BiRefNet : 1024x1024 normalisé
         input_size = (1024, 1024)
         img_resized = img_rgb.resize(input_size, Image.BILINEAR)
-        
+
         arr = np.array(img_resized, dtype=np.float32) / 255.0
         # Normalisation standard (mean=[0.5, 0.5, 0.5], std=[1.0, 1.0, 1.0])
         arr = (arr - [0.5, 0.5, 0.5]) / [1.0, 1.0, 1.0]

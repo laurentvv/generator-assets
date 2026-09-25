@@ -13,7 +13,7 @@ racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if racine not in sys.path:
     sys.path.insert(0, racine)
 
-from PIL import Image, ImageEnhance, ImageOps
+from PIL import Image, ImageEnhance
 import numpy as np
 
 for stream in (sys.stdout, sys.stderr):

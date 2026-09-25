@@ -13,7 +13,6 @@ import os
 from typing import Any, Dict
 
 from core.animal_godot import exporter_animal_godot
-from core.config import slugifier_texte
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 

@@ -109,7 +109,7 @@ def main():
     print("📦 TÉLÉCHARGEMENT MINIMAX-MUSIC3 GGUF + AUDIO.CPP (VULKAN)")
     print(f"   Moteur      : {AUDIO_CPP_DIR}")
     print(f"   Modèles     : {MUSIC3_DIR}")
-    print(f"   Total       : ~8.5 Go (mix Q4_0/Q8_0 par défaut)")
+    print("   Total       : ~8.5 Go (mix Q4_0/Q8_0 par défaut)")
     print("=" * 80)
 
     installer_audio_cpp()

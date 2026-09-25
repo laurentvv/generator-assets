@@ -5,7 +5,6 @@ Extrait les coordonnées UV exactes des sommets clés du visage MakeHuman (yeux,
 """
 
 import bpy
-import bmesh
 import importlib
 import sys
 

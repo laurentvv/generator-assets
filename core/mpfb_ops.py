@@ -10,7 +10,6 @@ Permet d'extraire des géométries quads parfaites pour différentes pièces de 
 import json
 import os
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -22,7 +21,6 @@ from core.blender_ops import trouver_blender
 from core.process import run_engine
 from core.config import (
     DEFAULT_MPFB_DATA_DIR,
-    DEFAULT_MPFB_INK_DIR,
     DEFAULT_MPFB_EYES_DIR,
     resoudre_yunet_model,
 )
@@ -371,7 +369,7 @@ for mhclo_path in mhclo_list:
             cl_obj = HumanService.add_mhclo_asset(mhclo_path, human, asset_type="Clothes", material_type="MAKESKIN")
             equipped_objects.append(cl_obj)
             print(f"EQUIPPED_SUCCESS: {{mhclo_path}} -> {{cl_obj.name}}")
-            
+
             # 1. Épaisseur et volume 3D extérieur
             sol = cl_obj.modifiers.new("Solidify", 'SOLIDIFY')
             sol.offset = 1.0
@@ -387,37 +385,37 @@ for mhclo_path in mhclo_list:
             bn = os.path.basename(mhclo_path).replace(".mhclo", "")
             diffuse_p = os.path.join(folder, f"{{bn}}_diffuse.png")
             normal_p = os.path.join(folder, f"{{bn}}_normal.png")
-            
+
             mat = bpy.data.materials.new(name=f"{{bn}}_PBR")
             mat.use_nodes = True
             nodes = mat.node_tree.nodes
             links = mat.node_tree.links
             bsdf = nodes.get("Principled BSDF")
-            
+
             tex_coord = nodes.new('ShaderNodeTexCoord')
             mapping = nodes.new('ShaderNodeMapping')
             mapping.inputs['Scale'].default_value = (2.5, 2.5, 2.5)
             links.new(tex_coord.outputs['UV'], mapping.inputs['Vector'])
-            
+
             if os.path.exists(diffuse_p):
                 img_d = bpy.data.images.load(diffuse_p)
                 t_node = nodes.new('ShaderNodeTexImage')
                 t_node.image = img_d
                 links.new(mapping.outputs['Vector'], t_node.inputs['Vector'])
                 links.new(t_node.outputs['Color'], bsdf.inputs['Base Color'])
-                
+
             if os.path.exists(normal_p):
                 img_n = bpy.data.images.load(normal_p)
                 img_n.colorspace_settings.name = 'Non-Color'
                 n_tex = nodes.new('ShaderNodeTexImage')
                 n_tex.image = img_n
                 links.new(mapping.outputs['Vector'], n_tex.inputs['Vector'])
-                
+
                 n_node = nodes.new('ShaderNodeNormalMap')
                 n_node.inputs['Strength'].default_value = 1.0
                 links.new(n_tex.outputs['Color'], n_node.inputs['Color'])
                 links.new(n_node.outputs['Normal'], bsdf.inputs['Normal'])
-                
+
             bsdf.inputs['Roughness'].default_value = 0.55
             if cl_obj.data.materials:
                 cl_obj.data.materials[0] = mat

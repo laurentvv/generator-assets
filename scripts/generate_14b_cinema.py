@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import subprocess
-from pathlib import Path
 
 # UTF-8 stdout
 for f in (sys.stdout, sys.stderr):
@@ -29,10 +28,10 @@ def run_generation(prompt=PROMPT_DEFAULT, frames=9, steps=8, output_name="dragon
     out_png = os.path.join(OUTPUT_DIR, f"{output_name}_preview.png")
 
     print("=" * 80)
-    print(f"🎬 GÉNÉRATION WAN 2.1 14B (FLAGSHIP CINÉMA)")
+    print("🎬 GÉNÉRATION WAN 2.1 14B (FLAGSHIP CINÉMA)")
     print(f"   Modèle : {os.path.basename(DIFFUSION_14B)} (14 Milliards de paramètres)")
-    print(f"   VRAM allouée : ~9.65 Go sur AMD Radeon RX 6950 XT (16 Go)")
-    print(f"   Encodeur Texte : T5XXL CPU RAM (stabilité numérique FP32)")
+    print("   VRAM allouée : ~9.65 Go sur AMD Radeon RX 6950 XT (16 Go)")
+    print("   Encodeur Texte : T5XXL CPU RAM (stabilité numérique FP32)")
     print(f"   Trames : {frames} | Pas (steps) : {steps} | Résolution : 832x480")
     print(f"   Prompt : {prompt}")
     print("=" * 80)
@@ -69,7 +68,7 @@ def run_generation(prompt=PROMPT_DEFAULT, frames=9, steps=8, output_name="dragon
     # Conformation YouTube Full HD 1080p via AMD AMF
     conform_script = r"C:\GIT\generator-assets\scripts\conform_youtube_hd.py"
     if os.path.exists(conform_script):
-        print(f"\n🚀 Conformation YouTube Full HD 1080p (AMF Hardware)...")
+        print("\n🚀 Conformation YouTube Full HD 1080p (AMF Hardware)...")
         subprocess.run([sys.executable, conform_script, out_webm, out_mp4], check=True)
         print(f"   🎥 Vidéo finale YouTube HD : {out_mp4}")
 

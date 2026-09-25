@@ -16,7 +16,6 @@ import os
 import shutil
 from typing import Any, Dict, List
 
-import numpy as np
 import soundfile
 
 from core.config import ACESTEP15_VARIANTES, DEFAULT_OUTPUT_DIR, slugifier_texte

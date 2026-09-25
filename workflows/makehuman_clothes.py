@@ -9,19 +9,17 @@ habillé avec rendu .png de prévisualisation.
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict, List
 from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_image_vulkan
-from core.image_ops import generer_ao_map, generer_normal_map, generer_roughness_map
+from core.image_ops import generer_ao_map, generer_normal_map
 from core.llm import construire_prompt_coherant
 from core.mpfb_ops import (
     DEFAULT_MPFB_CLOTHES_DIR,
     compiler_vetement_mpfb,
-    creer_scene_personnage_habille,
-    verifier_mpfb_disponible
+    creer_scene_personnage_habille
 )
 from core.upscaler import upscale_esrgan
 from workflows.base import BaseWorkflow, WorkflowRegistry

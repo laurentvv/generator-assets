@@ -43,4 +43,4 @@ bpy.context.scene.camera = cam_obj
 bpy.context.scene.render.engine = 'BLENDER_WORKBENCH'
 bpy.context.scene.render.filepath = r"C:\GIT\generator-assets\godot_assets\inspect_viewport_blend.png"
 bpy.ops.render.render(write_still=True)
-print("✅ Capture viewport enregistrée : C:\GIT\generator-assets\godot_assets\inspect_viewport_blend.png")
+print(r"✅ Capture viewport enregistrée : C:\GIT\generator-assets\godot_assets\inspect_viewport_blend.png")

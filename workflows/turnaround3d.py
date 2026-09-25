@@ -6,7 +6,6 @@ Génère les vues Face et Profil alignées pour servir d'images de référence d
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict
 from PIL import Image, ImageDraw
 
@@ -77,7 +76,7 @@ class Turnaround3DWorkflow(BaseWorkflow):
         largeur_totale = cell_size * 2
         hauteur_totale = cell_size
         planche = Image.new("RGBA", (largeur_totale, hauteur_totale), (30, 30, 35, 255))
-        
+
         # Coller Face à gauche et Profil à droite
         planche.paste(images_vues[0], (0, 0), images_vues[0])
         planche.paste(images_vues[1], (cell_size, 0), images_vues[1])

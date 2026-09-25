@@ -79,8 +79,8 @@ def main():
             print(f"  (Aucun LoRA détecté dans {[d for d in DEFAULT_LORA_DIRS if os.path.exists(d)]})")
             print("  💡 Placez vos fichiers .safetensors dans 'C:\\Modeles_LLM\\loras' ou le dossier 'loras/'")
         else:
-            for l in loras:
-                print(f"  • {l['name'].ljust(30)} ({l['size_mb']} Mo) -> {l['path']}")
+            for lora in loras:
+                print(f"  • {lora['name'].ljust(30)} ({lora['size_mb']} Mo) -> {lora['path']}")
         print()
         sys.exit(0)
 

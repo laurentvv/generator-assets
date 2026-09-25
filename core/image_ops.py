@@ -6,11 +6,9 @@ Détourage flood-fill, centrage, cadrage carré, génération de maps PBR (Norma
 assemblage spritesheet, quantification pixel art, et export de fichiers matériaux Godot (.tres).
 """
 
-import json
 import math
 import os
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
@@ -137,10 +135,10 @@ def generer_normal_map(image: Image.Image, strength: float = 3.5) -> Image.Image
     # Gradients Sobel 3x3
     dx = np.zeros_like(arr)
     dy = np.zeros_like(arr)
-    
+
     dx[:, 1:-1] = (arr[:, 2:] - arr[:, :-2]) * 0.5
     dy[1:-1, :] = (arr[2:, :] - arr[:-2, :]) * 0.5
-    
+
     # Bords
     dx[:, 0] = arr[:, 1] - arr[:, 0]
     dx[:, -1] = arr[:, -1] - arr[:, -2]
@@ -168,15 +166,15 @@ def generer_normal_map(image: Image.Image, strength: float = 3.5) -> Image.Image
 def generer_roughness_map(image: Image.Image, inverser: bool = False, contraste: float = 1.3) -> Image.Image:
     """Génère la map de rugosité (Roughness) à partir des fréquences de texture."""
     gray = image.convert("L")
-    
+
     # Filtre passe-haut pour capter les micro-rugosités
     blur = gray.filter(ImageFilter.GaussianBlur(radius=3))
     high_pass = ImageChops.difference(gray, blur)
     high_pass = ImageOps.autocontrast(high_pass)
-    
+
     # Mélange avec la luminosité de base
     roughness = ImageChops.add(gray, high_pass, scale=1.5, offset=-20)
-    
+
     # Ajustement de contraste
     enhancer = ImageEnhance.Contrast(roughness)
     roughness = enhancer.enhance(contraste)
@@ -206,12 +204,12 @@ def generer_orm_pack(ao_img: Image.Image, roughness_img: Image.Image, metallic_i
     """
     ao = ao_img.convert("L")
     rough = roughness_img.convert("L")
-    
+
     if metallic_img:
         metal = metallic_img.convert("L")
     else:
         metal = Image.new("L", ao.size, 0) # Non métallique par défaut
-        
+
     return Image.merge("RGB", (ao, rough, metal))
 
 
@@ -221,7 +219,7 @@ def exporter_fichier_materiau_godot(nom_base: str, output_dir: str) -> str:
     prêt à être appliqué directement sur n'importe quel Mesh 3D.
     """
     fichier_tres = os.path.join(output_dir, f"{nom_base}_material.tres")
-    
+
     contenu_tres = f"""[gd_resource type="StandardMaterial3D" load_steps=5 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/{nom_base}_albedo.png" id="1"]
@@ -248,14 +246,14 @@ uv1_scale = Vector3(1, 1, 1)
 """
     with open(fichier_tres, "w", encoding="utf-8") as f:
         f.write(contenu_tres)
-        
+
     return fichier_tres
 
 
 def exporter_fichier_skybox_godot(nom_base: str, output_dir: str) -> str:
     """Génère un fichier Godot 4 (.tres) Environment avec Skybox 360° équirectangulaire."""
     fichier_tres = os.path.join(output_dir, f"{nom_base}_sky_env.tres")
-    
+
     contenu_tres = f"""[gd_resource type="Environment" load_steps=3 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/{nom_base}_sky.png" id="1"]
@@ -278,7 +276,7 @@ glow_enabled = true
 """
     with open(fichier_tres, "w", encoding="utf-8") as f:
         f.write(contenu_tres)
-        
+
     return fichier_tres
 
 
@@ -294,29 +292,29 @@ def convertir_pixel_art(
     """Transforme un asset en sprite Pixel Art net avec quantification."""
     rgba = image.convert("RGBA")
     pixel_img = rgba.resize((taille_grille, taille_grille), Image.Resampling.BILINEAR)
-    
+
     r, g, b, a = pixel_img.split()
     rgb_img = Image.merge("RGB", (r, g, b))
-    
+
     palette_colors = PALETTES_RETRO.get(palette_nom.lower(), PALETTES_RETRO["pico8"])
-    
+
     palette_data = []
     for couleur in palette_colors:
         palette_data.extend(couleur)
     palette_data.extend([0] * (768 - len(palette_data)))
-    
+
     palette_img = Image.new("P", (1, 1))
     palette_img.putpalette(palette_data)
-    
+
     rgb_quantifie = rgb_img.quantize(palette=palette_img, dither=Image.Dither.FLOYDSTEINBERG).convert("RGB")
     masque_alpha = a.point(lambda p: 255 if p > 120 else 0)
-    
+
     r_q, g_q, b_q = rgb_quantifie.split()
     pixel_art_final = Image.merge("RGBA", (r_q, g_q, b_q, masque_alpha))
-    
+
     if taille_export > taille_grille:
         pixel_art_final = pixel_art_final.resize((taille_export, taille_export), Image.Resampling.NEAREST)
-        
+
     return pixel_art_final
 
 
@@ -354,10 +352,10 @@ def assembler_spritesheet(
         row = idx // colonnes
         x = col * cell_w
         y = row * cell_h
-        
+
         if img.size != (cell_w, cell_h):
             img = img.resize((cell_w, cell_h), Image.Resampling.LANCZOS)
-            
+
         sheet.paste(img, (x, y), img)
         metadata["frames"].append({
             "name": nom,

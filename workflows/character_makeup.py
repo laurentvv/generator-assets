@@ -11,11 +11,9 @@ et produit les rendus de validation studio Cycles (tête et plein pied).
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from PIL import Image
+from typing import Any, Dict
 
 from core.config import (
-    DEFAULT_MPFB_DATA_DIR,
     DEFAULT_MPFB_EYES_DIR,
     DEFAULT_MPFB_INK_DIR,
     DEFAULT_OUTPUT_DIR,

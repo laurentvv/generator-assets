@@ -6,7 +6,6 @@ Utilise le mode circular padding de sd-cli et produit la tuile ainsi qu'un aper√
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict
 from PIL import Image
 

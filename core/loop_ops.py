@@ -11,7 +11,7 @@ Gère :
 
 import math
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Tuple
 import numpy as np
 from PIL import Image
 
@@ -130,8 +130,8 @@ def assembler_spritesheet_loop(trames: List[Image.Image], colonnes: int = 4) -> 
     atlas = Image.new("RGBA", (tw * colonnes, th * lignes), (0, 0, 0, 0))
     for idx, trame in enumerate(trames):
         c = idx % colonnes
-        l = idx // colonnes
-        atlas.paste(trame, (c * tw, l * th))
+        ligne = idx // colonnes
+        atlas.paste(trame, (c * tw, ligne * th))
 
     return atlas
 

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict
 from PIL import Image
 
-from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.config import DEFAULT_OUTPUT_DIR
 from core.image_ops import centrer_et_recadrer
 from core.segmentation import detourer_ia
 from workflows.base import BaseWorkflow, WorkflowRegistry

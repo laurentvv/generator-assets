@@ -7,8 +7,7 @@ Prend une image de base ou un concept et génère plusieurs déclinaisons (Feu, 
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List
-from PIL import Image
+from typing import Any, Dict
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_image_vulkan

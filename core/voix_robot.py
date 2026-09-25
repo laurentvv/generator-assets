@@ -19,7 +19,7 @@ d'environnement AUDIOCPP_KOKORO_CLI. À revoir si une release embarque espeak.
 """
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from core.config import DEFAULT_MODEL_DIR
 from core.music_ai import convertir_mp3, resoudre_ffmpeg

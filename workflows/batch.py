@@ -7,7 +7,6 @@ Permet de générer des packs complets (10 armes, 5 créatures, etc.) en une seu
 
 import json
 import os
-from pathlib import Path
 from typing import Any, Dict, List
 
 from core.config import DEFAULT_OUTPUT_DIR

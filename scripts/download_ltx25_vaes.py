@@ -1,7 +1,6 @@
 import os
 import subprocess
 import shutil
-import sys
 
 TARGET_DIR = r"C:\Modeles_LLM"
 curl = shutil.which("curl.exe") or "curl"

@@ -14,7 +14,6 @@ import os
 import sys
 import time
 import subprocess
-from pathlib import Path
 from PIL import Image
 
 for f in (sys.stdout, sys.stderr):
@@ -55,7 +54,7 @@ def prepare_input_image(input_path: str) -> str:
     img = Image.open(input_path)
     w, h = img.size
     print(f"🖼️ Image d'entrée source : {input_path} ({w}x{h}, {os.path.getsize(input_path)/(1024*1024):.1f} Mo)")
-    
+
     if (w, h) == (832, 480):
         return input_path
 

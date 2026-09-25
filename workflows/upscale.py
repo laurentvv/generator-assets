@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict
 from PIL import Image
 
-from core.config import DEFAULT_OUTPUT_DIR, resoudre_upscaler, slugifier_texte
+from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.upscaler import upscaler_asset, upscale_video
 from workflows.base import BaseWorkflow, WorkflowRegistry
 

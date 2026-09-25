@@ -6,7 +6,6 @@ Permet de relier plusieurs plans video (avec ou sans audio) sans claquement ni r
 import os
 import sys
 import subprocess
-import json
 
 FFMPEG = r"C:\Program Files\Amuse\ffmpeg.exe"
 
@@ -35,7 +34,7 @@ def concatener_avec_audio_crossfade(clips, out_path, crossfade_sec=0.25):
     # Construction du filtre complexe FFmpeg
     # Concaténation vidéo directe + cascade de filtres acrossfade audio
     n = len(clips)
-    
+
     # 1. Filtre vidéo
     v_inputs = "".join([f"[{i}:v]" for i in range(n)])
     v_filter = f"{v_inputs}concat=n={n}:v=1:a=0[vout]"

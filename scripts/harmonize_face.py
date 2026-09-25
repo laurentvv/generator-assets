@@ -10,7 +10,7 @@ Harmonisation colorimétrique complète du visage de Marc sur la peau MakeHuman 
 
 import os
 import sys
-from PIL import Image, ImageFilter, ImageEnhance
+from PIL import Image, ImageFilter
 import numpy as np
 
 for stream in (sys.stdout, sys.stderr):
@@ -31,7 +31,7 @@ def rgb_to_lab(img_arr):
     mask = rgb > 0.04045
     rgb[mask] = np.power((rgb[mask] + 0.055) / 1.055, 2.4)
     rgb[~mask] = rgb[~mask] / 12.92
-    
+
     # Vers XYZ
     m = np.array([
         [0.412453, 0.357580, 0.180423],
@@ -39,16 +39,16 @@ def rgb_to_lab(img_arr):
         [0.019334, 0.119193, 0.950227]
     ])
     xyz = np.dot(rgb, m.T)
-    
+
     # Vers LAB (D65 white point: 0.95047, 1.00000, 1.08883)
     xyz[:, :, 0] /= 0.95047
     xyz[:, :, 1] /= 1.00000
     xyz[:, :, 2] /= 1.08883
-    
+
     mask_xyz = xyz > 0.008856
     xyz[mask_xyz] = np.power(xyz[mask_xyz], 1.0 / 3.0)
     xyz[~mask_xyz] = (7.787 * xyz[~mask_xyz]) + (16.0 / 116.0)
-    
+
     L = (116.0 * xyz[:, :, 1]) - 16.0
     a = 500.0 * (xyz[:, :, 0] - xyz[:, :, 1])
     b = 200.0 * (xyz[:, :, 1] - xyz[:, :, 2])
@@ -59,17 +59,17 @@ def lab_to_rgb(lab_arr):
     y = (L + 16.0) / 116.0
     x = (a / 500.0) + y
     z = y - (b / 200.0)
-    
+
     for arr in (x, y, z):
         mask = arr**3 > 0.008856
         arr[mask] = arr[mask]**3
         arr[~mask] = (arr[~mask] - 16.0 / 116.0) / 7.787
-        
+
     x *= 0.95047
     y *= 1.00000
     z *= 1.08883
     xyz = np.stack([x, y, z], axis=-1)
-    
+
     m_inv = np.array([
         [ 3.2404542, -1.5371385, -0.4985314],
         [-0.9692660,  1.8760108,  0.0415560],
@@ -77,7 +77,7 @@ def lab_to_rgb(lab_arr):
     ])
     rgb = np.dot(xyz, m_inv.T)
     rgb = np.clip(rgb, 0.0, 1.0)
-    
+
     # Dé-gamma
     mask_rgb = rgb > 0.0031308
     rgb[mask_rgb] = 1.055 * np.power(rgb[mask_rgb], 1.0 / 2.4) - 0.055
@@ -93,7 +93,7 @@ def main():
     w_base, h_base = base_skin.size
 
     portrait = Image.open(PORTRAIT_PATH).convert("RGB")
-    
+
     # 1. Nettoyage de l'ombre peinte sous le nez sur le portrait source (X: 470..555, Y: 485..530)
     # On adoucit la tâche sombre sous le nez pour ne pas créer d'effet moustache
     arr_port = np.array(portrait, dtype=np.float32)
@@ -108,12 +108,12 @@ def main():
     # 2. Alignement rigide
     scale = 171.0 / 187.0
     rot_portrait = clean_portrait.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
-    
+
     w_rot, h_rot = rot_portrait.size
     scaled_w = int(w_rot * scale)
     scaled_h = int(h_rot * scale)
     scaled_portrait = rot_portrait.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS)
-    
+
     eye_in_scaled_x = 360.0 * scale
     eye_in_scaled_y = 512.5 * scale
     paste_x = int(round(1710.1 - eye_in_scaled_x))
@@ -122,25 +122,25 @@ def main():
     # 3. Échantillon de la peau MakeHuman sous le visage pour harmonisation LAB
     # Zone MakeHuman sur la joue : X ~ 1700..1850, Y ~ 850..950
     mh_cheek_crop = base_skin.crop((paste_x + 50, paste_y + 50, paste_x + scaled_w - 50, paste_y + scaled_h - 50))
-    
+
     lab_mh = rgb_to_lab(np.array(mh_cheek_crop))
     lab_port = rgb_to_lab(np.array(scaled_portrait))
-    
+
     # Transfert Reinhard des statistiques de couleur (A et B) vers le portrait
     # Cela aligne parfaitement la couleur de chair (peau pêche claire) tout en gardant les détails de contraste (L)
     mean_mh_a, std_mh_a = np.mean(lab_mh[:, :, 1]), np.std(lab_mh[:, :, 1])
     mean_mh_b, std_mh_b = np.mean(lab_mh[:, :, 2]), np.std(lab_mh[:, :, 2])
-    
+
     mean_port_a, std_port_a = np.mean(lab_port[:, :, 1]), np.std(lab_port[:, :, 1])
     mean_port_b, std_port_b = np.mean(lab_port[:, :, 2]), np.std(lab_port[:, :, 2])
-    
+
     # Harmonisation douce (70% MakeHuman, 30% portrait)
     lab_port[:, :, 1] = ((lab_port[:, :, 1] - mean_port_a) * (std_mh_a / (std_port_a + 1e-5))) * 0.70 + mean_mh_a
     lab_port[:, :, 2] = ((lab_port[:, :, 2] - mean_port_b) * (std_mh_b / (std_port_b + 1e-5))) * 0.70 + mean_mh_b
-    
+
     # Rehaussement de la clarté (L) pour éliminer le masque sombre
     lab_port[:, :, 0] = np.clip(lab_port[:, :, 0] * 1.12 + 5.0, 0, 100)
-    
+
     harmonized_arr = lab_to_rgb(lab_port)
     harmonized_img = Image.fromarray(harmonized_arr)
 

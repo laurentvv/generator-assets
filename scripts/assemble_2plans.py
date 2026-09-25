@@ -118,7 +118,7 @@ def assembler_et_masteriser():
 
     # 3. Mastering Full HD 1080p 60 FPS
     t_master = time.time()
-    print(f"\n🚀 [Étape 2] Mastering Full HD 1080p 60 FPS (AMF Hardware CBR 20M)...")
+    print("\n🚀 [Étape 2] Mastering Full HD 1080p 60 FPS (AMF Hardware CBR 20M)...")
     cmd_master = [
         FFMPEG, "-y",
         "-i", ASSEMBLED_RAW,

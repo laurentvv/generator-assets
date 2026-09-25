@@ -10,11 +10,10 @@ Gère :
 """
 
 import json
-import math
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 
 def extraire_palette_image(image: Image.Image, n_couleurs: int = 6) -> List[Dict[str, Any]]:
@@ -23,7 +22,7 @@ def extraire_palette_image(image: Image.Image, n_couleurs: int = 6) -> List[Dict
     """
     img_rgb = image.convert("RGBA")
     arr = np.array(img_rgb)
-    
+
     # Filtrer les pixels non-transparents
     mask = arr[..., 3] > 40
     pixels = arr[mask][:, :3]
@@ -56,7 +55,7 @@ def analyser_signature_stylistique(image: Image.Image, palette: List[Dict[str, A
     # Analyse de luminosité et saturation
     arr = np.array(image.convert("RGB")).astype(np.float32) / 255.0
     luminance = np.mean(0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2])
-    
+
     ambiance = "dark moody high contrast" if luminance < 0.45 else "vibrant clear lighting"
     style_lock = (
         f"matching exact art style, strict color harmony [{hex_str}], "
@@ -162,7 +161,7 @@ def assembler_planche_coherence(
         x0 = col_idx * taille_cellule + 10
         y0 = 38 + lig_idx * taille_cellule
         var_redim = img_var.convert("RGBA").resize((taille_cellule - 20, taille_cellule - 20), Image.Resampling.LANCZOS)
-        
+
         draw.rectangle([x0, y0, x0 + taille_cellule - 20, y0 + taille_cellule - 20], outline=(80, 120, 180), width=1)
         planche.paste(var_redim, (x0, y0), var_redim)
         draw.text((x0 + 6, y0 + 6), label[:20].upper(), fill=(140, 200, 255))

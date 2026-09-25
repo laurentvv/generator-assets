@@ -11,7 +11,6 @@ import os
 import sys
 import time
 import subprocess
-from pathlib import Path
 from PIL import Image
 
 for f in (sys.stdout, sys.stderr):
@@ -77,7 +76,7 @@ def main():
     t0 = time.time()
     subprocess.run(cmd_wan22, check=True)
     t_gen = time.time() - t0
-    
+
     # sd-cli peut nommer l'image avec un suffixe _0 ou l'extension directe
     if not os.path.exists(RAW_IMG):
         candidates = [
@@ -124,8 +123,10 @@ def main():
     ]
     subprocess.run(cmd_cas, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     if os.path.exists(temp_4k):
-        try: os.remove(temp_4k)
-        except Exception: pass
+        try:
+            os.remove(temp_4k)
+        except Exception:
+            pass
     t_up = time.time() - t1
     print(f"✅ Master 4K Ultra HD produit en {t_up:.1f}s : {MASTER_4K_IMG}")
 

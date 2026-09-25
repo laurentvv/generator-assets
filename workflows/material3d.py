@@ -113,7 +113,7 @@ class Material3DWorkflow(BaseWorkflow):
         if pbr_engine != "sobel":
             try:
                 from core.pbr_deep import estimer_pbr_complet
-                self.log(f"Estimation PBR par Deep Learning (DeepBump ONNX)...")
+                self.log("Estimation PBR par Deep Learning (DeepBump ONNX)...")
                 maps_pbr = estimer_pbr_complet(img_albedo, strength=strength_normal)
                 img_normal = maps_pbr["normal"]
                 img_roughness = maps_pbr["roughness"]

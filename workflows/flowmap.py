@@ -5,9 +5,7 @@ Workflow Flowmap : Génération de Flowmaps vectorielles et Shaders animés (Eau
 """
 
 import os
-from pathlib import Path
 from typing import Any, Dict
-from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.shader_maps import exporter_shader_flow_godot, generer_flowmap

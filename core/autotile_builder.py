@@ -6,8 +6,7 @@ Génère l'atlas d'images PNG et la ressource TileSet (.tres) avec peering bits 
 """
 
 import os
-from typing import Dict, List, Tuple
-import numpy as np
+from typing import Tuple
 from PIL import Image, ImageDraw, ImageFilter
 
 
@@ -20,7 +19,7 @@ def _creer_masque_tuile_3x3(
     Génère un masque Alpha 2D pour une tuile selon l'état de ses 8 voisins (TL, T, TR, R, BR, B, BL, L).
     0 = Biome B (fond), 1 = Biome A (premier plan / terrain principal).
     """
-    tl, t, tr, r, br, b, bl, l = voisins
+    tl, t, tr, r, br, b, bl, gauche = voisins
     mask = Image.new("L", (tile_size, tile_size), 255)
     draw = ImageDraw.Draw(mask)
 
@@ -31,17 +30,17 @@ def _creer_masque_tuile_3x3(
         draw.rectangle([0, 0, tile_size, demi // 2], fill=0)
     if not b:
         draw.rectangle([0, tile_size - demi // 2, tile_size, tile_size], fill=0)
-    if not l:
+    if not gauche:
         draw.rectangle([0, 0, demi // 2, tile_size], fill=0)
     if not r:
         draw.rectangle([tile_size - demi // 2, 0, tile_size, tile_size], fill=0)
 
     # Coins intérieurs / extérieurs
-    if not tl and t and l:
+    if not tl and t and gauche:
         draw.rectangle([0, 0, demi // 2, demi // 2], fill=0)
     if not tr and t and r:
         draw.rectangle([tile_size - demi // 2, 0, tile_size, demi // 2], fill=0)
-    if not bl and b and l:
+    if not bl and b and gauche:
         draw.rectangle([0, tile_size - demi // 2, demi // 2, tile_size], fill=0)
     if not br and b and r:
         draw.rectangle([tile_size - demi // 2, tile_size - demi // 2, tile_size, tile_size], fill=0)
@@ -165,7 +164,7 @@ def exporter_tileset_godot(
         lig = idx // colonnes
         coords = f"Vector2i({col}, {lig})"
 
-        bits_str = [f"0:0/0/terrain_set = 0", f"0:0/0/terrain = 0"]
+        bits_str = ["0:0/0/terrain_set = 0", "0:0/0/terrain = 0"]
         for p_idx, p_name in enumerate(peering_names):
             if voisins[p_idx] == 1:
                 bits_str.append(f"0:0/0/terrains_peering_bit/{p_name} = 0")

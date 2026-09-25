@@ -11,7 +11,7 @@ def extract_frames(video_path, out_dir):
     ffmpeg_exe = r"C:\Program Files\Amuse\ffmpeg.exe"
     if not os.path.exists(ffmpeg_exe):
         ffmpeg_exe = "ffmpeg"
-    
+
     cmd = [
         ffmpeg_exe, "-y",
         "-i", video_path,

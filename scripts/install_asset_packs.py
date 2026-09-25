@@ -7,7 +7,6 @@ dans le répertoire de données MPFB, puis reconstruit l'index et le catalogue d
 
 import glob
 import os
-import shutil
 import sys
 import zipfile
 
@@ -33,7 +32,7 @@ def main():
         return
 
     print(f"📦 {len(zip_files)} packs d'assets détectés.")
-    
+
     total_extracted_files = 0
     for i, zpath in enumerate(zip_files, 1):
         zname = os.path.basename(zpath)

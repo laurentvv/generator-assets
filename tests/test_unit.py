@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from core.config import slugifier_texte
+from core.config import charger_env, slugifier_texte
 from core.music_ai import (
     construire_recette_ducking,
     fabriquer_boucle,
@@ -237,9 +237,6 @@ def test_aiguiller_vetement_repli_categorie(catalogue_factice):
 
 # ==============================================================================
 # core.config — chargeur .env (audit §2.3)
-
-from core.config import charger_env
-
 
 def test_charger_env_lit_cle_valeur_et_commentaires(tmp_path, monkeypatch):
     fichier = tmp_path / ".env"

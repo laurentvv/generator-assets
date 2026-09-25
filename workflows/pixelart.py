@@ -11,7 +11,7 @@ from typing import Any, Dict
 from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
-from core.image_ops import convertir_pixel_art, PALETTES_RETRO
+from core.image_ops import convertir_pixel_art
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
