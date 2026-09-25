@@ -162,19 +162,24 @@ for k, v in plat.items():
 PYEOF
 }
 
-# resoudre_url : renseigne ASSET_URL / ASSET_LABEL depuis la fiche F_* courante.
+# resoudre_url : renseigne ASSET_URL / ASSET_LABEL / ASSET_SHA256 depuis la fiche F_* courante.
+# ASSET_SHA256 : cle 'sha256' du manifeste (asset epingle) ou champ 'digest' de l'API GitHub
+# (release 'latest'/scan) ; vide sur URL directe mouvante (pas de verification possible).
 resoudre_url() {
     if [ -n "${F_URL:-}" ] ; then
-        ASSET_URL="$F_URL" ; ASSET_LABEL="$(basename "$F_URL")" ; return 0
+        ASSET_URL="$F_URL" ; ASSET_LABEL="$(basename "$F_URL")" ; ASSET_SHA256="" ; return 0
     fi
     if [ -n "${F_EPINGLE:-}" ] && [ -n "${F_ASSET:-}" ] ; then
         ASSET_URL="https://github.com/${F_REPO}/releases/download/${F_EPINGLE}/${F_ASSET}"
-        ASSET_LABEL="${F_ASSET} (epingle ${F_EPINGLE})" ; return 0
+        ASSET_LABEL="${F_ASSET} (epingle ${F_EPINGLE})" ; ASSET_SHA256="${F_SHA256:-}" ; return 0
     fi
     local api_json
     if [ "${F_RELEASE:-}" = "latest" ] ; then
         info "Recherche de la derniere release ${F_REPO}..."
         api_json="https://api.github.com/repos/${F_REPO}/releases/latest"
+    elif [ -n "${F_RELEASE:-}" ] ; then
+        info "Resolution de la release epinglee ${F_RELEASE} (${F_REPO})..."
+        api_json="https://api.github.com/repos/${F_REPO}/releases/tags/${F_RELEASE}"
     elif [ -n "${F_SCAN_RELEASES:-}" ] ; then
         info "Scan des ${F_SCAN_RELEASES} dernieres releases ${F_REPO}..."
         api_json="https://api.github.com/repos/${F_REPO}/releases?per_page=${F_SCAN_RELEASES}"
@@ -190,12 +195,35 @@ data = json.load(sys.stdin)
 for rel in (data if isinstance(data, list) else [data]):
     for a in rel.get("assets", []):
         if fnmatch.fnmatch(a.get("name", ""), pat):
-            print("%s\t%s (%s)" % (a["browser_download_url"], a["name"], rel.get("tag_name", "")))
+            print("%s\t%s (%s)\t%s" % (a["browser_download_url"], a["name"], rel.get("tag_name", ""),
+                                       (a.get("digest") or "").replace("sha256:", "")))
             sys.exit(0)
 sys.exit(4)
 ' "${F_ASSET_PATTERN:-}" 2>/dev/null)" || { echo "Aucun asset '${F_ASSET_PATTERN:-}' trouve pour ${F_REPO} (API GitHub injoignable ou rate-limit ?)" ; return 1 ; }
     ASSET_URL="$(printf '%s' "$ligne" | cut -f1)"
     ASSET_LABEL="$(printf '%s' "$ligne" | cut -f2)"
+    ASSET_SHA256="$(printf '%s' "$ligne" | cut -f3)"
+    # Le sha256 du manifeste (connu-bonne, maintenu par le process de maj) prime sur le digest API.
+    ASSET_SHA256="${F_SHA256:-$ASSET_SHA256}"
+}
+
+# Verifie l'empreinte sha256 d'une archive telechargee (échec = installation refusee).
+verifier_sha256() { # $1 = archive, $2 = empreinte attendue (vide = verification sautee)
+    [ -n "$2" ] || { alerte "Pas de sha256 connu pour cet asset : integrite non verifiee." ; return 0 ; }
+    local obtenu=""
+    if command -v sha256sum >/dev/null 2>&1 ; then
+        obtenu="$(sha256sum "$1" | awk '{print $1}')"
+    elif command -v shasum >/dev/null 2>&1 ; then
+        obtenu="$(shasum -a 256 "$1" | awk '{print $1}')"
+    else
+        alerte "sha256sum/shasum introuvable : verification d'integrite sautee."
+        return 0
+    fi
+    if [ "$(printf '%s' "$obtenu" | tr '[:upper:]' '[:lower:]')" != "$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" ] ; then
+        echo "sha256 invalide pour $1 : attendu $2, obtenu $obtenu (asset corrompu ou modifie ?)"
+        return 1
+    fi
+    ok "sha256 verifie ($(printf '%s' "$2" | cut -c1-12)...)"
 }
 
 # Variables d'environnement attendues par core/config.py, par moteur.
@@ -233,7 +261,7 @@ installer_moteur() { # $1 = moteur
         echo "Moteur '$nom' inconnu dans engines_manifest.json" ; return 1
     fi
 
-    unset F_REPO F_URL F_EPINGLE F_ASSET F_RELEASE F_SCAN_RELEASES F_ASSET_PATTERN F_SOUS_DOSSIER F_EXE F_GESTIONNAIRE F_PAQUET 2>/dev/null || true
+    unset F_REPO F_URL F_EPINGLE F_ASSET F_RELEASE F_SCAN_RELEASES F_ASSET_PATTERN F_SHA256 F_SOUS_DOSSIER F_EXE F_GESTIONNAIRE F_PAQUET 2>/dev/null || true
     local k v k_maj
     while IFS='=' read -r k v ; do
         # tr : bash 3.2 de macOS n'a pas ${k^^} ; suppression du \r final
@@ -284,6 +312,7 @@ installer_moteur() { # $1 = moteur
     info "Telechargement $ASSET_URL"
     curl -L --fail --retry 3 --progress-bar -o "$archive" "$ASSET_URL"
     ok "Telecharge ($(( $(stat -c%s "$archive" 2>/dev/null || stat -f%z "$archive") / 1048576 )) Mo)"
+    verifier_sha256 "$archive" "$ASSET_SHA256" || return 1
 
     info "Extraction..."
     case "$archive" in
