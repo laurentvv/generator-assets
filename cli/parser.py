@@ -300,6 +300,30 @@ Exemples de Workflows 3D & 2D :
     return parser
 
 
+def surface_cli(parseur: argparse.ArgumentParser) -> list:
+    """Signature stable de la surface argparse (gel du contrat consommateurs).
+
+    Une entrée par option : flags triés, dest, classe d'action, défaut, choices
+    triés, nargs, nom du type. Le help est volontairement exclu (cosmétique).
+    Alimente le test de gel tests/test_cli_contract.py : toute dérive de dest,
+    de défaut ou de type casse le contrat des dépôts consommateurs
+    (ai-doc2video, video-analys-ia) sans que le test anti-doublon ne le voie.
+    """
+    entrees = []
+    for action in parseur._actions:
+        entrees.append([
+            sorted(action.option_strings),
+            action.dest,
+            type(action).__name__,
+            repr(action.default),
+            sorted(action.choices) if action.choices is not None else None,
+            action.nargs,
+            getattr(action.type, "__name__", None) if action.type is not None else None,
+        ])
+    entrees.sort(key=lambda e: (e[1], e[0]))
+    return entrees
+
+
 def construire_params(args: argparse.Namespace, prompt_texte: str) -> dict:
     """Construit les paramètres du workflow depuis les arguments CLI.
 

@@ -20,6 +20,7 @@ Fige les garanties dont dépendent les dépôts consommateurs (appels subprocess
 Les faux sd-cli sont des monkeypatch de subprocess.run : aucun moteur ni GPU requis.
 """
 
+import difflib
 import inspect
 import json
 import os
@@ -29,6 +30,7 @@ import pytest
 from PIL import Image
 
 import main
+from cli.parser import surface_cli
 from core import diffusion, process, upscaler
 from workflows.base import BaseWorkflow, WorkflowRegistry
 from workflows.batch import BatchWorkflow
@@ -295,3 +297,30 @@ def test_monoplan_ia_porte_toutes_ses_declarations():
     toutes = WorkflowRegistry.parametres_declares()
     flags_agreges = {f for decl in toutes for f in decl["flags"]}
     assert {"--monoplan-frames", "--4k", "--carton-titre"} <= flags_agreges
+
+
+# ============================================================================
+# 7. Gel de la surface CLI complète (audit §2.2 — filet de la migration)
+# ============================================================================
+
+def test_surface_cli_gelee():
+    """GEL de la surface argparse entière (contrat consommateurs) : flags,
+    dests, classes d'action, défauts, choices, nargs, types — le help reste
+    exclu (cosmétique). Toute différence = dérive accidentelle (le test
+    anti-doublon ne voit ni un défaut changé ni un dest perdu). Si le
+    changement est INTENTIONNEL, régénérer le snapshot et le documenter dans
+    le message de commit :
+      uv run python -c "import json ; from cli.parser import construire_parseur, surface_cli ; \
+print(json.dumps(surface_cli(construire_parseur()), indent=1))" > tests/surface_cli.json
+    """
+    chemin = Path(__file__).parent / "surface_cli.json"
+    reference = json.loads(chemin.read_text(encoding="utf-8"))
+    actuelle = surface_cli(main.construire_parseur())
+    if actuelle != reference:
+        diff = difflib.unified_diff(
+            json.dumps(reference, indent=1, ensure_ascii=False).splitlines(keepends=True),
+            json.dumps(actuelle, indent=1, ensure_ascii=False).splitlines(keepends=True),
+            fromfile="surface_gelee", tofile="surface_actuelle",
+        )
+        extrait = "".join(list(diff)[:40])
+        pytest.fail("surface CLI dérivée du gel (tests/surface_cli.json) :\n" + extrait)
