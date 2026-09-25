@@ -18,7 +18,6 @@ et le module interne `ltxav` de LTX mange ~29 Mo de VRAM par trame (plafond
 
 import os
 import shutil
-import subprocess
 import tempfile
 import time
 from typing import Callable, Dict, Optional, Tuple
@@ -26,6 +25,7 @@ from typing import Callable, Dict, Optional, Tuple
 from PIL import Image
 
 from core.config import DEFAULT_MODEL_DIR, DEFAULT_SD_CLI, DEFAULT_FFMPEG as FFMPEG_PATH
+from core.process import run_engine
 
 # Modèles LTX-2.5 Distilled validés (§1.1 / §1.17)
 LTX_DIT = os.path.join(DEFAULT_MODEL_DIR, "LTX-2.5-Distilled-Q4_K_M.gguf")
@@ -110,7 +110,9 @@ def generer_monoplan_ltx(
         "-v",
     ]
     log_fn("[cinéma] Génération monoplan LTX-2.5 ({} trames @ {} fps, seed {})…".format(frames, fps, seed))
-    subprocess.run(commande, check=True)
+    # Sortie non capturée : sd-cli affiche sa progression en direct ; 7200 s = repère
+    # vidéo MEMORY_BANK (65 trames ~ minutes, marge ×3 sur les journées lentes)
+    run_engine(commande, capture=False, check=True, timeout=7200, etiquette="sd-cli LTX")
     if not os.path.exists(sortie):
         candidat = sortie.replace(".webm", "_0.webm")
         if os.path.exists(candidat):
@@ -127,9 +129,9 @@ def ralentir_interp(webm: str, sortie: str, duree_cible: float, fps: int = 24,
     ces coordonnées). taille=None conserve la résolution source : c'est la voie
     4K, où l'entrée est déjà le master upscale IA 3328×1920 (aucun lanczos
     logiciel avant le zoom — le piqué UltraSharp doit rester intact)."""
-    info = subprocess.run(
-        [FFMPEG_PATH, "-i", webm], capture_output=True, text=True, encoding="utf-8",
-        errors="replace",
+    info = run_engine(
+        [FFMPEG_PATH, "-i", webm], check=False, timeout=120,
+        etiquette="ffmpeg probe durée",
     ).stderr
     import re
     m = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.?\d*)", info)
@@ -141,11 +143,11 @@ def ralentir_interp(webm: str, sortie: str, duree_cible: float, fps: int = 24,
               f"minterpolate=fps={fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1")
     if taille:
         filtre += f",scale={taille[0]}:{taille[1]}:flags=lanczos"
-    ok = subprocess.run(
+    ok = run_engine(
         [FFMPEG_PATH, "-y", "-v", "error", "-i", webm, "-vf", filtre,
          "-an", "-c:v", "libx264", "-crf", "12", "-preset", "slow",
          "-pix_fmt", "yuv420p", sortie],
-        capture_output=True,
+        check=False, timeout=3600, etiquette="ffmpeg ralenti minterpolate",
     ).returncode == 0
     if not ok or not os.path.exists(sortie):
         raise RuntimeError(f"Ralenti/interpolation échoué : {sortie}")
@@ -171,9 +173,10 @@ def zoom_pur(video: str, sortie: str, zoom_debut: float = 1.10,
 
     tmp = tempfile.mkdtemp(prefix="cinema_zoom_")
     try:
-        subprocess.run(
+        run_engine(
             [FFMPEG_PATH, "-y", "-v", "error", "-i", video, "-fps_mode", "passthrough",
-             "-q:v", "2", os.path.join(tmp, "f_%04d.png")], capture_output=True, check=True,
+             "-q:v", "2", os.path.join(tmp, "f_%04d.png")],
+            check=True, timeout=600, etiquette="ffmpeg extraction trames",
         )
         pngs = sorted(f for f in os.listdir(tmp) if f.startswith("f_"))
         n = len(pngs)
@@ -194,12 +197,12 @@ def zoom_pur(video: str, sortie: str, zoom_debut: float = 1.10,
             cv2.imwrite(os.path.join(tmp, "s_%04d.png" % (i + 1)), corr,
                         [cv2.IMWRITE_PNG_COMPRESSION, 3])
         filtre_cas = f",cas={cas}" if cas else ""
-        subprocess.run(
+        run_engine(
             [FFMPEG_PATH, "-y", "-v", "error", "-framerate", str(fps), "-start_number", "1",
              "-i", os.path.join(tmp, "s_%04d.png"), "-frames:v", str(n),
              "-vf", "format=yuv420p" + filtre_cas,
              "-c:v", "libx264", "-crf", "16", sortie],
-            capture_output=True, check=True,
+            check=True, timeout=1800, etiquette="ffmpeg zoom encodage",
         )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -254,11 +257,11 @@ def conformer_master_4k(source: str, sortie: str, fps: int = FPS_SORTIE_4K,
     filtre = f"scale={taille[0]}:{taille[1]}:flags=lanczos"
     if cas:
         filtre += f",cas={cas}"
-    ok = subprocess.run(
+    ok = run_engine(
         [FFMPEG_PATH, "-y", "-v", "error", "-i", source, "-vf", filtre,
          "-c:v", "h264_amf", "-b:v", bitrate, "-pix_fmt", "yuv420p",
          "-r", str(fps), "-movflags", "+faststart", sortie],
-        capture_output=True,
+        check=False, timeout=1800, etiquette="ffmpeg conform 4K AMF",
     ).returncode == 0
     if not ok or not os.path.exists(sortie):
         raise RuntimeError(f"Conformation master 4K échouée : {sortie}")
@@ -267,10 +270,10 @@ def conformer_master_4k(source: str, sortie: str, fps: int = FPS_SORTIE_4K,
 
 def muxer_audio(video: str, wav: str, sortie: str) -> str:
     """Colle une piste audio (lit sonore) sur la vidéo, vidéo copiée à l'identique."""
-    subprocess.run(
+    run_engine(
         [FFMPEG_PATH, "-y", "-v", "error", "-i", video, "-i", wav,
          "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-shortest", sortie],
-        capture_output=True, check=True,
+        check=True, timeout=600, etiquette="ffmpeg mux audio",
     )
     return sortie
 
@@ -340,9 +343,9 @@ def _smooth(u: float) -> float:
 def _duree_media(chemin: str) -> float:
     """Durée d'un média via l'en-tête stderr ffmpeg (motif du ralenti §1.17)."""
     import re
-    info = subprocess.run(
-        [FFMPEG_PATH, "-i", chemin], capture_output=True, text=True,
-        encoding="utf-8", errors="replace",
+    info = run_engine(
+        [FFMPEG_PATH, "-i", chemin], check=False, timeout=120,
+        etiquette="ffmpeg probe durée",
     ).stderr
     m = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.?\d*)", info)
     if not m:
@@ -578,10 +581,10 @@ def rendre_titre_beau(fond_png: str, lignes, sortie_png: str,
 
 def extraire_derniere_trame(video: str, png: str) -> str:
     """Extrait la toute dernière trame d'une vidéo en PNG haute qualité."""
-    subprocess.run(
+    run_engine(
         [FFMPEG_PATH, "-y", "-v", "error", "-sseof", "-0.1", "-i", video,
          "-update", "1", "-frames:v", "1", "-q:v", "1", png],
-        capture_output=True, check=True,
+        check=True, timeout=300, etiquette="ffmpeg dernière trame",
     )
     if not os.path.exists(png):
         raise RuntimeError(f"Extraction de la dernière trame échouée : {video}")
@@ -667,7 +670,7 @@ def construire_carton_titre(
         else:
             args += ["-vf", "format=yuv420p"]
         args += ["-c:v", "libx264", "-crf", "16", sortie]
-        subprocess.run(args, capture_output=True, check=True)
+        run_engine(args, check=True, timeout=1800, etiquette="ffmpeg carton encodage")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     if not os.path.exists(sortie):
@@ -680,12 +683,12 @@ def etendre_ambiance(wav: str, duree_totale: float, sortie: str,
     """Étend/recoupe un lit d'ambiance à la durée exacte voulue, fondu de sortie
     compris (boucle interne si la source est trop courte — transparent ici)."""
     st = max(0.0, duree_totale - fondu_sortie)
-    ok = subprocess.run(
+    ok = run_engine(
         [FFMPEG_PATH, "-y", "-v", "error", "-stream_loop", "-1", "-i", wav,
          "-t", f"{duree_totale:.3f}",
          "-af", f"afade=t=out:st={st:.3f}:d={fondu_sortie:.3f}",
          "-c:a", "pcm_s16le", sortie],
-        capture_output=True,
+        check=False, timeout=600, etiquette="ffmpeg extension ambiance",
     ).returncode == 0
     if not ok or not os.path.exists(sortie):
         raise RuntimeError(f"Extension d'ambiance échouée : {sortie}")
@@ -706,7 +709,7 @@ def assembler_finale(base_video: str, carton_video: str, wav_etendu: Optional[st
         args += ["-map", "[v]", "-an"]
     args += ["-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", "-r", str(fps),
              "-movflags", "+faststart", sortie]
-    subprocess.run(args, capture_output=True, check=True)
+    run_engine(args, check=True, timeout=1800, etiquette="ffmpeg assemblage final")
     if not os.path.exists(sortie):
         raise RuntimeError(f"Assemblage final échoué : {sortie}")
     return sortie

@@ -5,14 +5,15 @@ Module d'inférence LLM séquentiel via llama.cpp.
 Assure l'exécution isolée et la libération totale de la VRAM après génération du prompt.
 """
 
-import subprocess
 from typing import Optional
+
 from core.config import (
     DEFAULT_LLAMA_CLI,
     DEFAULT_LLM_MODEL,
     DEFAULT_STYLE_ANCHOR,
     CADRAGE_INSTRUCTIONS
 )
+from core.process import run_engine
 
 
 def construire_prompt_coherant(
@@ -69,12 +70,11 @@ def construire_prompt_coherant(
     ]
 
     try:
-        resultat = subprocess.run(
+        resultat = run_engine(
             commande_llm,
-            capture_output=True,
-            text=True,
             check=True,
-            encoding='utf-8'
+            timeout=600,
+            etiquette="llama-cli enrichissement",
         )
 
         sortie_brute = resultat.stdout

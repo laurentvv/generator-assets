@@ -6,7 +6,6 @@ et les applique directement sur les vêtements 3D du personnage dans Blender san
 """
 
 import os
-import subprocess
 from pathlib import Path
 from typing import Any, Dict
 from PIL import Image
@@ -16,6 +15,7 @@ from core.diffusion import generer_image_vulkan
 from core.image_ops import generer_normal_map, generer_roughness_map
 from core.llm import construire_prompt_coherant
 from core.blender_ops import trouver_blender
+from core.process import run_engine
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
@@ -203,7 +203,8 @@ bpy.ops.export_scene.gltf(
 )
 print(f"🎮 GLB Godot exporté : {glb_file}")
 """
-        res = subprocess.run([blender_bin, "--background", "--python-expr", script_blender], capture_output=True, text=True, encoding="utf-8", errors="replace")
+        res = run_engine([blender_bin, "--background", "--python-expr", script_blender],
+                         check=False, timeout=1800, etiquette="blender outfit")
         self.log(res.stdout)
         
         # 4. Rendu de validation Cycles

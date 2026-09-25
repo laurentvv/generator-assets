@@ -6,13 +6,13 @@ Module de génération de Voxel 3D (Extrusion, Culling des faces internes et Exp
 
 import json
 import os
-import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 import numpy as np
 from PIL import Image
 
 from core.blender_ops import trouver_blender
+from core.process import run_engine
 
 
 def image_vers_grille_voxels(
@@ -205,7 +205,7 @@ bpy.ops.export_scene.gltf(
         f.write(script_blender)
 
     cmd = [blender_exe, "-b", "--python", script_temp]
-    subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", check=True)
+    run_engine(cmd, check=True, timeout=600, etiquette="blender voxel")
 
     # Nettoyage fichiers temporaires
     for temp in (json_temp, script_temp):

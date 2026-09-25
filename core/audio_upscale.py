@@ -22,10 +22,10 @@ refus (la super-résolution n'a plus de sens).
 
 import os
 import shutil
-import subprocess
 from typing import Any, Dict
 
 from core.music_ai import convertir_mp3, resoudre_audiocpp, resoudre_ffmpeg
+from core.process import run_engine
 
 # Paquets GGUF UniverSR (org audio-cpp, 229 Mo chacun — cf. MEMORY_BANK §1.27).
 MODELE_UNIVERSR_AUDIO = os.getenv(
@@ -72,10 +72,10 @@ def detecter_frequence(chemin: str) -> int:
     if not probe:
         voisin = os.path.join(os.path.dirname(resoudre_ffmpeg()), "ffprobe.exe")
         probe = voisin if os.path.exists(voisin) else "ffprobe"
-    out = subprocess.run(
+    out = run_engine(
         [probe, "-v", "error", "-select_streams", "a:0",
          "-show_entries", "stream=sample_rate", "-of", "csv=p=0", chemin],
-        check=True, capture_output=True, text=True, timeout=60,
+        check=True, timeout=60, etiquette="ffprobe fréquence",
     ).stdout.strip()
     return int(out or 0)
 
@@ -131,10 +131,10 @@ def restaurer_universr(
         ffmpeg = resoudre_ffmpeg()
         entree = os.path.splitext(sortie)[0] + f"_entree_{bande}.wav"
         print(f"🎚️ Pré-rééchantillonnage {frequence} → {bande} Hz (bande déclarée au modèle)")
-        subprocess.run(
+        run_engine(
             [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", source,
              "-af", f"aresample={bande}", "-ac", "1", "-c:a", "pcm_s16le", entree],
-            check=True, timeout=600,
+            capture=False, check=True, timeout=600, etiquette="ffmpeg resample bande",
         )
 
     cmd = [
@@ -148,7 +148,8 @@ def restaurer_universr(
     ]
     print(f"🧪 UniverSR ({variante}, bande {bande} Hz, CPU {threads} threads — "
           f"RTF ~13, prévoir plusieurs minutes)")
-    subprocess.run(cmd, check=True, timeout=7200)
+    # Progression en direct : RTF ~13 en CPU (28 s → ~6 min, voix 3 min → ~40 min)
+    run_engine(cmd, capture=False, check=True, timeout=7200, etiquette="audio.cpp universr")
     if entree != source:
         os.remove(entree)
     if not os.path.exists(sortie):

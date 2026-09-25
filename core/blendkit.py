@@ -19,12 +19,12 @@ ne pas tenter de passer par lui.
 
 import json
 import os
-import subprocess
 import urllib.parse
 import urllib.request
 
 from core.config import slugifier_texte
 from core.blender_ops import trouver_blender
+from core.process import run_engine
 
 BLENDERKIT_API = "https://www.blenderkit.com/api/v1"
 MODULE_ADDON = "bl_ext.user_default.blenderkit"
@@ -109,7 +109,7 @@ def executer_job_blender(job: dict, dossier_job: str) -> dict:
         json.dump(job, f, ensure_ascii=False, indent=1)
     chemin_worker = os.path.join("scripts", "blendkit_blender_job.py")
     commande = [blender, "--background", "--python", chemin_worker, "--", chemin_job]
-    processus = subprocess.run(commande, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=3600)
+    processus = run_engine(commande, check=False, timeout=3600, etiquette="blender blendkit")
     for ligne in (processus.stdout or "").splitlines():
         if "[blendkit_workflow]" in ligne:
             print(ligne.strip())

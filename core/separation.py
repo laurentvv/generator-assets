@@ -15,10 +15,10 @@ sur la piste complète Love Like Blood. Produit :
 """
 
 import os
-import subprocess
 from typing import Any, Dict
 
 from core.music_ai import convertir_mp3, resoudre_audiocpp, resoudre_ffmpeg
+from core.process import run_engine
 
 MODELE_HTDEMUCS = os.getenv(
     "HTDEMUCS_MODEL",
@@ -43,20 +43,21 @@ def retirer_voix(chemin_audio: str, dossier_travail: str, backend: str = "vulkan
 
     # 1) Rééchantillonnage 44,1 kHz stéréo (exigé par HTDemucs)
     wav44 = os.path.join(dossier_travail, "source_44k.wav")
-    subprocess.run(
+    run_engine(
         [ffmpeg, "-hide_banner", "-y", "-i", chemin_audio,
          "-ar", str(SR_HDEMUCS), "-ac", "2", "-c:a", "pcm_s16le", wav44],
-        check=True, capture_output=True, timeout=600,
+        check=True, timeout=600, etiquette="ffmpeg rééchantillonnage 44k",
     )
 
     # 2) Séparation en stems (multi-sorties => --out-dir obligatoire)
     stems_dir = os.path.join(dossier_travail, "stems")
     os.makedirs(stems_dir, exist_ok=True)
-    subprocess.run(
+    # Progression HTDemucs en direct (séparation = minutes)
+    run_engine(
         [resoudre_audiocpp(), "--task", "sep", "--family", "htdemucs",
          "--model", MODELE_HTDEMUCS, "--backend", backend, "--threads", "16",
          "--audio", wav44, "--out-dir", stems_dir],
-        check=True, timeout=3600,
+        capture=False, check=True, timeout=3600, etiquette="audio.cpp htdemucs",
     )
     manquants = [s for s in STEMS_INSTRUMENTAL + ("vocals",)
                  if not os.path.exists(os.path.join(stems_dir, f"{s}.wav"))]
@@ -70,10 +71,10 @@ def retirer_voix(chemin_audio: str, dossier_travail: str, backend: str = "vulkan
         entrees += ["-i", os.path.join(stems_dir, f"{s}.wav")]
     filtre = "".join(f"[{i}:a]" for i in range(len(STEMS_INSTRUMENTAL)))
     filtre += f"amix=inputs={len(STEMS_INSTRUMENTAL)}:normalize=0"
-    subprocess.run(
+    run_engine(
         [ffmpeg, "-hide_banner", "-y", *entrees, "-filter_complex", filtre,
          "-c:a", "pcm_s16le", instrumental],
-        check=True, capture_output=True, timeout=600,
+        check=True, timeout=600, etiquette="ffmpeg amix instrumental",
     )
 
     # 4) MP3 d'écoute

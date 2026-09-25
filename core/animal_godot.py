@@ -15,11 +15,11 @@ Sortie : GLB glissable dans Godot (AnimationPlayer généré automatiquement).
 
 import json
 import os
-import subprocess
 import tempfile
 from typing import Dict, List, Optional
 
 from core.blender_ops import trouver_blender
+from core.process import run_engine
 
 # objets parasites standards des fichiers pack (blend 2.79 : caméra/cube/lampe
 # par défaut) — supprimés avant export (jamais de purge « au nom près » d'autre chose)
@@ -82,9 +82,8 @@ def _run_blender(blender: str, script: str) -> str:
         tf.write(script)
         temp = tf.name
     try:
-        res = subprocess.run([blender, "-b", "--python", temp],
-                             capture_output=True, text=True, encoding="utf-8",
-                             errors="replace", timeout=600)
+        res = run_engine([blender, "-b", "--python", temp],
+                         check=False, timeout=600, etiquette="blender animal")
         return res.stdout or ""
     finally:
         if os.path.exists(temp):

@@ -62,6 +62,8 @@ def run_engine(
             commande,
             capture_output=capture,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
             cwd=cwd,

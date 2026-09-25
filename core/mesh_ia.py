@@ -14,13 +14,13 @@ Pipeline : image PNG (détourée idéalement — l'alpha est conservé par trell
 """
 
 import os
-import subprocess
 import tempfile
 import time
 from string import Template
 from typing import Any, Dict, List, Optional, Tuple
 
 from core.config import DEFAULT_MODEL_DIR
+from core.process import EngineError, run_engine
 
 TRELLIS_CLI = os.getenv("TRELLIS_CLI_PATH", r"C:\trellis\trellis-cli.exe")
 TRELLIS_MODELES_DIR = os.getenv("TRELLIS_MODELES_DIR", os.path.join(DEFAULT_MODEL_DIR, "trellis2-gguf"))
@@ -85,7 +85,8 @@ def generer_mesh_trellis(
 
     t0 = time.time()
     # Sortie non capturée : trellis affiche sa barre de progression en direct.
-    subprocess.run(commande, check=True)
+    # 7200 s : repères mesurés 512 = ~11 min, 1024 = ~55 min (MEMORY_BANK), marge ×2
+    run_engine(commande, capture=False, check=True, timeout=7200, etiquette="trellis-cli")
     duree = time.time() - t0
 
     if not os.path.exists(glb_path):
@@ -269,11 +270,11 @@ def reduire_mesh_blender(glb_path: str, glb_sortie: str, faces_cible: int) -> Op
         f.write(_SCRIPT_REDUCTION.substitute())
 
     try:
-        proc = subprocess.run(
+        proc = run_engine(
             [blender, "--background", "--python", script, "--", glb_path, glb_sortie, str(int(faces_cible))],
-            capture_output=True, text=True, timeout=600,
+            check=False, timeout=600, etiquette="blender réduction",
         )
-    except subprocess.TimeoutExpired:
+    except EngineError:
         print("⚠️ Réduction Blender expirée (10 min) : sautée.")
         return None
     finally:
@@ -315,11 +316,11 @@ def rendre_controle_blender(glb_path: str, output_dir: str, nom_base: str) -> Li
 
     prefixe = os.path.join(output_dir, nom_base)
     try:
-        proc = subprocess.run(
+        proc = run_engine(
             [blender, "--background", "--python", script, "--", glb_path, prefixe],
-            capture_output=True, text=True, timeout=600,
+            check=False, timeout=600, etiquette="blender rendus contrôle",
         )
-    except subprocess.TimeoutExpired:
+    except EngineError:
         print("⚠️ Rendu de contrôle Blender expiré (10 min) : sauté.")
         return []
 

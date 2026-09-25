@@ -19,11 +19,11 @@ d'environnement AUDIOCPP_KOKORO_CLI. À revoir si une release embarque espeak.
 """
 
 import os
-import subprocess
 from typing import Any, Dict, Optional
 
 from core.config import DEFAULT_MODEL_DIR
 from core.music_ai import convertir_mp3, resoudre_ffmpeg
+from core.process import run_engine
 
 # Paquet GGUF Kokoro-82M (org audio-cpp, cf. MEMORY_BANK §1.21).
 MODELE_KOKORO = os.getenv(
@@ -85,7 +85,7 @@ def generer_base_kokoro(
     cmd += ["--text", texte]
 
     print(f"🤖 TTS Kokoro (voix {voice_id}, backend {backend}) — binaire : {audiocpp}")
-    subprocess.run(cmd, check=True, timeout=600)
+    run_engine(cmd, capture=False, check=True, timeout=600, etiquette="audio.cpp kokoro")
     if not os.path.exists(sortie):
         raise RuntimeError(f"La génération n'a pas produit {sortie}")
     return {"sortie": sortie, "voice_id": voice_id}
@@ -109,10 +109,10 @@ def appliquer_effet_robot(
         f"asetrate={asetrate},aresample=24000,atempo={tempo},"
         f"aeval='val(0)*sin(2*PI*{ringmod_hz:g}*t)',volume={gain_db:g}dB"
     )
-    subprocess.run(
+    run_engine(
         [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", source,
          "-af", filtre, "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", sortie],
-        check=True, timeout=180,
+        capture=False, check=True, timeout=180, etiquette="ffmpeg effet robot",
     )
     return sortie
 
