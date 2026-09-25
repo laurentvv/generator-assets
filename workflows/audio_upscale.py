@@ -29,6 +29,16 @@ class AudioUpscaleWorkflow(BaseWorkflow):
                    "WAV 48 kHz mono + MP3, RTF ~13")
 
     emoji = "🔊"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée).
+    PARAMETRES = [
+        dict(flags=("--upsr-variante",), dest="upsr_variante", choices=["speech", "audio"], default="speech",
+             help="Variante UniverSR pour audio_upscale : speech = voix (défaut, cas principal) | audio = musique."),
+        dict(flags=("--upsr-rate",), dest="upsr_rate", type=int, default=0,
+             help="Bande d'entrée déclarée à UniverSR en Hz (8000/12000/16000/24000 ; défaut: 0 = auto depuis la fréquence du fichier ; au-dessus de 24000 = refus)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):

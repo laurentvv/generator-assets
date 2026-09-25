@@ -299,6 +299,35 @@ def test_monoplan_ia_porte_toutes_ses_declarations():
     assert {"--monoplan-frames", "--4k", "--carton-titre"} <= flags_agreges
 
 
+def test_famille_audio_migree_en_declarations():
+    """2e famille migrée (audit §2.2) : les 10 workflows audio portent leurs
+    30 flags ; les flags partagés de la famille vivent chez leur premier
+    utilisateur (--duration → sfx, --moteur/--variante/--music-backend… →
+    music_bg). Surface figée par test_surface_cli_gelee."""
+    from workflows import music_bg, sfx, tts_dialogue, voix_robot
+    assert len(sfx.SFXWorkflow.PARAMETRES) == 2          # --duration + --sfx-engine
+    assert len(music_bg.MusicBgWorkflow.PARAMETRES) == 11
+    assert len(voix_robot.VoixRobotWorkflow.PARAMETRES) == 5
+    assert len(tts_dialogue.TTSDialogueWorkflow.PARAMETRES) == 1  # --pitch
+    toutes = WorkflowRegistry.parametres_declares()
+    flags_agreges = {f for decl in toutes for f in decl["flags"]}
+    assert {
+        "--duration", "--sfx-engine", "--ambience-type", "--lufs", "--loop-mode",
+        "--music-backend", "--moteur", "--variante", "--force-bpm", "--tonalite",
+        "--mesure", "--candidats", "--lyrics", "--analyse", "--voix-ref",
+        "--instruct", "--lufs-voix", "--robot-voice", "--robot-pitch",
+        "--robot-ringmod", "--robot-tempo", "--robot-gain", "--upsr-variante",
+        "--upsr-rate", "--style-musique", "--langue", "--negatif", "--scale",
+        "--keep-vocals", "--pitch",
+    } <= flags_agreges
+    # contrat chanson : les défauts None du CLI laissent le workflow appliquer
+    # les siens (xl-turbo, fr), une valeur explicite traverse le filtre
+    args = main.construire_parseur().parse_args(
+        ["-w", "chanson", "paroles", "--langue", "kr", "--variante", "xl-sft", "--duration", "120"]
+    )
+    assert args.langue == "kr" and args.variante == "xl-sft" and args.duration == 120.0
+
+
 # ============================================================================
 # 7. Gel de la surface CLI complète (audit §2.2 — filet de la migration)
 # ============================================================================

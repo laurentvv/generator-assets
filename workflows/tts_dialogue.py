@@ -37,6 +37,15 @@ class TTSDialogueWorkflow(BaseWorkflow):
     description = "Synthèse vocale émotionnelle (TTS / Kokoro) synchronisée avec les portraits RPG et lip-sync Godot"
 
     emoji = "🎙️"
+
+    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). --emotions (partagé avec
+    # rpg_portrait, famille 2D) reste dans la table plate de cli/parser.py.
+    PARAMETRES = [
+        dict(flags=("--pitch",), type=float, default=None,
+             help="Pitch vocal fondamental pour tts_dialogue (défaut workflow : 160 Hz)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         personnage = params.get("prompt") or "guerriere_sanctuaire"
         emotions_str = params.get("emotions", "neutral,happy,angry,sad,hurt")

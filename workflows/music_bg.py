@@ -61,6 +61,39 @@ class MusicBgWorkflow(BaseWorkflow):
     description = "Boucles musicales IA « tech » en fond sonore YouTube (MiniMax-Music3 / ACE-Step 1.5 GGUF Vulkan + bed -30 LUFS + recette ducking)"
 
     emoji = "🎵"
+
+    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
+    # help/défauts repris tels quels, surface inchangée). Flags partagés de la
+    # famille audio hébergés ici : --moteur (aussi voix_off), --variante (aussi
+    # chanson/musique_adn), --music-backend (aussi musique_essence/retrait_voix/
+    # voix_off), --tonalite et --lyrics (aussi musique_adn). ⚠️ --force-bpm expose
+    # dest=force_bpm mais le run lit bpm_force : mismatch historique, à corriger
+    # uniquement avec validation utilisateur (le flag est aujourd'hui inerte).
+    PARAMETRES = [
+        dict(flags=("--lufs",), type=float, default=None,
+             help="LUFS cible du lit musical « bed » pour music_bg (défaut workflow : -30)."),
+        dict(flags=("--loop-mode",), choices=["percussive", "ambient"], default="percussive",
+             help="Stratégie de bouclage music_bg (défaut: percussive, alignée BPM)."),
+        dict(flags=("--music-backend",), choices=["vulkan", "cpu", "auto"], default="vulkan",
+             help="Backend audio.cpp pour music_bg (défaut: vulkan)."),
+        dict(flags=("--moteur",), choices=["acestep", "music3", "qwen3", "voxcpm2", "fish"], default="acestep",
+             help="Moteur : music_bg → acestep (défaut, ACE-Step 1.5) | music3 ; voix_off → qwen3 (clonage+instruct, Apache-2.0) | voxcpm2 (clonage sans transcript, Apache-2.0) | fish (balises expression, licence recherche)."),
+        dict(flags=("--variante",), choices=["turbo", "xl-turbo", "xl-sft"], default=None,
+             help="Variante ACE-Step : défaut = turbo pour music_bg, xl-turbo pour chanson/musique_adn (qualité vocale, recettes validées) ; turbo = DiT 2B distillé, xl-turbo = DiT 4B distillé (~1,8x plus lent), xl-sft = DiT 4B avec CFG."),
+        dict(flags=("--force-bpm",), type=int, default=None,
+             help="Imposer le tempo (ACE-Step uniquement) — ex: 124."),
+        dict(flags=("--tonalite",), default=None,
+             help="Imposer la tonalité (ACE-Step uniquement) — ex: A minor."),
+        dict(flags=("--mesure",), default=None,
+             help="Imposer la signature (ACE-Step uniquement) — ex: 4/4."),
+        dict(flags=("--candidats",), type=int, default=3,
+             help="Nombre de candidats music_bg à générer puis départager (défaut: 3)."),
+        dict(flags=("--lyrics",), default="[Instrumental]",
+             help="Paroles/structure pour music_bg (défaut: [Instrumental])."),
+        dict(flags=("--analyse",), action="store_true",
+             help="Active la QA Music Flamingo sur le bed sélectionné (music_bg)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or PROMPT_TECH_DEFAUT
         # Le flag CLI --duration a un défaut bas (2 s) : toute valeur < 4 s = non renseignée
