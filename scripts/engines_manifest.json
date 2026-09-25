@@ -58,11 +58,11 @@
       "repo": "0xShug0/audio.cpp",
       "plateformes": {
         "windows": {
-          "release": "v0.8.1",
+          "release": "v0.8.2-audio8-perf-hotfix",
           "asset_pattern": "audio-*-bin-windows-x64-vulkan.zip",
           "sous_dossier": "audio-cpp",
           "exe": "audiocpp_cli.exe",
-          "raison_epinglage": "v0.8.1 gardée le 2026-09-24 : v0.8.2 testée puis REJETÉE — crash STATUS_ILLEGAL_INSTRUCTION (0xC000001D) au chargement d'ace_step (runtime.model.variant acestep-v15-turbo), backend vulkan ET cpu, alors que v0.8.1 restaurée depuis backup refonctionne (smoke 12 s turbo OK, RTF 3,25). Rollback effectué le 2026-09-24 ; retenter à partir de v0.8.3 (vérifier les issues amont)."
+          "raison_epinglage": "v0.8.2-audio8-perf-hotfix installée le 2026-09-25 (accord 'go') : le crash ace_step de v0.8.2 pure (STATUS_ILLEGAL_INSTRUCTION au chargement) est CORRIGÉ sur le hotfix — smoke 12 s turbo OK (RTF 3,82/3,53), A/B même jour vs v0.8.1 : moyenne 3,68 vs 3,32 (+11 %, dans la marge de bruit ace_step du poste, v0.8.1 faisait 3,25-3,85 intra-jour le 24/09) → pas de régression nette, sfx stable_audio OK. Retester la prochaine release (v0.8.3+) et enlever le pin si le A/B reste propre."
         },
         "linux": {
           "release": "latest",
