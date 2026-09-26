@@ -41,7 +41,7 @@ checklist de validation et écueils détaillés : [`pipeline_3d_blender.md`](pip
 | `character_makeup` | Couche MakeUp uniquement (sans reconstruire le corps) | `--portrait`, `--character`, `--makeup-only` | ink layer `.png`+`.json` |
 | `makehuman_clothes` | Garde-robe modulaire depuis un thème (`.mhclo` barycentrique) | `prompt`, `--parts` (torso,pants,shoes) | `.mhclo/.obj/.mhmat/.thumb` + scène test |
 | `outfit` | Retexturation PBR de vêtements existants (patrons UV préservés) | `--character`, `--top`, `--shoes` | textures + `.blend`/`.glb` mis à jour + rendu |
-| `pose_control` | Sprite guidé par squelette OpenPose + scène Godot riggée | `prompt`, `--pose` (idle/slash_attack/cast_spell/shield_block/jump/walk) | `_skeleton.png`, `_character.png`, `.tscn`, `_rig.json` |
+| `pose_control` | Sprite guidé par squelette OpenPose (conditionnement **ControlNet réel** depuis le 26/09 : xinsir SDXL, strength 0,9 ; repli prompt seul si le modèle manque) + scène Godot riggée | `prompt`, `--pose` (idle/slash_attack/cast_spell/shield_block/jump/walk) | `_openpose_skeleton.png`, sprite `.png`, `.tscn`, `_rig.json` |
 | `rpg_portrait` | Galerie de portraits multi-émotions + manifeste dialogues | `prompt` ou `-i`, `--emotions` | PNG par émotion, `_portrait_grid.png`, `_dialogue_manifest.json` |
 
 ⚠️ Règles absolues MakeHuman : jamais d'illustration 2D plaquée, jamais écraser les originaux dans
