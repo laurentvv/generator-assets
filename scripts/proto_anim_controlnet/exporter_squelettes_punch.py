@@ -12,9 +12,9 @@ import bpy
 import json
 
 GLB = r"C:\GIT\roblox\assets3d\bunny_quaternius.glb"
-ACTION = "CharacterArmature|Punch"
+ACTION = "CharacterArmature|Run"
 NB_FRAMES = 12
-SORTIE = r"C:\GIT\generator-assets\output\test_anim_controlnet\points_punch.json"
+SORTIE = r"C:\GIT\generator-assets\output\test_anim_controlnet\points_run.json"
 
 # Mapping os Quaternius (.L/.R = côté SUJET) -> keypoints COCO 18 (l_*/r_* = côté sujet).
 # Pas d'os de main chez Quaternius : poignet = queue du LowerArm. Oreilles réelles via Ear1.

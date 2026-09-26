@@ -110,13 +110,13 @@ maintenant **RÉELLEMENT** la génération sur le squelette via **ControlNet Ope
 prérequis amont PR #1752 présent dans nos binaires épinglés) — si le fichier manque, repli
 automatique prompt seul. Pour une **animation de personnage** (sprite multi-frames) : chorégraphie
 d'un rig GLB → keypoints COCO par frame (Blender headless, scripts `scripts/proto_anim_controlnet/`),
-génération frame par frame **txt2img + ControlNet + IP-Adapter Plus sur UNE référence d'apparence**
-(strength 0,7). ⚠️ Écueils mesurés : l'img2img en étoile (init = frame 0) **ancre la pose** (à 0,55
-le personnage ne bouge plus — utiliser txt2img + IP-Adapter) ; une attaque vue de **FACE** est
-foreshortened et illisible en 2D (squelette quasi statique) → projeter le rig en **vue de profil** ;
-la référence IP-Adapter doit être **alignée avec le prompt** (acier clair ↔ « shining steel »), sinon
-dérive (référence sombre à 0,85 → silhouettes noires) ; boucle non cyclique → assembler en GIF
-ping-pong. Coût : ~50 s/frame 768×1024, VRAM ~9 Go.
+génération frame par frame **txt2img + ControlNet 1.0 + IP-Adapter Plus 0.45 sur UNE référence
+d'apparence alignée avec le prompt**. ⚠️ Écueils mesurés : l'img2img en étoile (init = frame 0) **ancre
+la pose** (à 0,55 le personnage ne bouge plus — utiliser txt2img + IP-Adapter) ; **l'IP-Adapter trop
+fort (≥ 0,7) écrase aussi la pose** (convergence vers la pose de la référence → personnage immobile)
+→ rester ≤ 0,5 pour une action dynamique ; choisir une chorégraphie **cyclique et lisible de profil**
+(Run > Punch — une attaque vue de FACE est foreshortened, squelette 2D quasi statique) ; boucle non
+cyclique → assembler en GIF ping-pong. Coût : ~50 s/frame 768×1024, VRAM ~9 Go.
 
 → Le guide détaillé (règles absolues UV/`.mhclo`, catalogue bilingue 177 modèles) est dans
 [`GUIDE_AGENT_IA_HABILLAGE.md`](../../../GUIDE_AGENT_IA_HABILLAGE.md) — le lire pour tout travail MakeHuman.

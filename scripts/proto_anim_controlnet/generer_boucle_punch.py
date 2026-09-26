@@ -28,18 +28,18 @@ from core.diffusion import generer_image_vulkan
 from core.pose_ops import dessiner_squelette_openpose
 
 DOSSIER = os.path.join("output", "test_anim_controlnet")
-CHEMIN_POINTS = os.path.join(DOSSIER, "points_punch.json")
+CHEMIN_POINTS = os.path.join(DOSSIER, "points_run.json")
 SDXL = r"C:/Modeles_LLM/juggernautXL_ragnarok.safetensors"
 CONTROLNET = r"C:/Modeles_LLM/controlnet_openpose_sdxl_xinsir.safetensors"
 IP_ADAPTER = r"C:/Modeles_LLM/ip-adapter-plus_sdxl_vit-h.safetensors"
 CLIP_VISION = r"C:/Modeles_LLM/clip_vision_h.safetensors"
-PROMPT = ("fantasy knight in shining steel plate armor, sword slash attack, dynamic action, "
+PROMPT = ("fantasy knight in shining steel plate armor, running, dynamic action, "
           "full body, game character sprite, isolated on plain white background")
 L, H = 768, 1024
 MARGE = 0.10          # fraction de marge autour du bbox de la séquence
-FORCE_POSE = 0.9      # --control-strength (recette validée)
+FORCE_POSE = 1.0      # --control-strength (recette validée)
 FORCE_APPARENCE = 0.55  # img2img depuis la frame 0 (topologie étoile)
-FORCE_IP = 0.7        # --ip-adapter-strength : verrou d'apparence sans ancrer la pose
+FORCE_IP = 0.45        # --ip-adapter-strength : verrou d'apparence sans ancrer la pose
 REFERENCE_APPARENCE = os.path.join(DOSSIER, "reference_apparence.png")  # chevalier statique validé
 SEED = 42
 
@@ -114,15 +114,14 @@ def assembler():
     if len(fichiers) < 12:
         return
     frames = [Image.open(os.path.join(DOSSIER, f)).convert("RGB") for f in fichiers]
-    # GIF boucle ping-pong (l'action Punch n'est pas cyclique : 0..11..1 évite le saut)
-    aller = frames + frames[-2:0:-1]
-    aller[0].save(os.path.join(DOSSIER, "boucle_punch.gif"), save_all=True,
-                  append_images=aller[1:], duration=120, loop=0)
+    # GIF boucle directe (Run = cycle : frame 12 == frame 0)
+    frames[0].save(os.path.join(DOSSIER, "boucle_run.gif"), save_all=True,
+                   append_images=frames[1:], duration=100, loop=0)
     # bande horizontale
     bande = Image.new("RGB", (L // 2 * len(frames), H // 2), "white")
     for i, f in enumerate(frames):
         bande.paste(f.resize((L // 2, H // 2)), (i * L // 2, 0))
-    bande.save(os.path.join(DOSSIER, "bande_punch.png"), "PNG")
+    bande.save(os.path.join(DOSSIER, "bande_run.png"), "PNG")
     print("GIF + bande assemblés")
 
 
