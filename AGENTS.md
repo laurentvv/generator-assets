@@ -1,204 +1,137 @@
-# AGENTS.md — Conventions pour agents IA (dépôt generator-assets)
+# AGENTS.md — generator-assets (fabrique média IA locale)
 
-## 🎯 Contexte d'usage (buts finaux)
+> Instructions pour tout agent IA de codage travaillant dans ce dépôt.
+> Structure : **bloc commun** (délimité, resynchronisable) + **spécifique projet** (libre).
 
-**Fabrique locale universelle de médias générés par IA — tout projet nécessitant image, son, vidéo ou musique.** Deux productions principales actuelles :
-1. **Un jeu sous Godot** — assets générés : matériaux PBR, maillages, objets 3D IA image→GLB (workflow `mesh_ia`, TRELLIS.2), boucles musicales OGG (workflow `music_bg`), ambiances, sprites ;
-2. **Une chaîne YouTube générée à 100 % en IA à partir de documentations sysadmin** — voix off (TTS) + lits musicaux −30 LUFS avec ducking automatique + vidéos IA (Wan/LTX/MiniMax-H3) + masters 4K conformés YouTube.
+<!-- BEGIN:agents-commun v1.0 — bloc partagé entre dépôts (agents-kit). Ne pas éditer à la main : resynchroniser via scripts/sync_agents.py -->
+<!-- Le script remplace uniquement ce qui se trouve entre les marqueurs BEGIN/END ; tout le contenu spécifique du dépôt est préservé -->
 
-Tout nouveau besoin média (autre jeu, autre chaîne, habillage, démo…) est un cas d'usage légitime. Les composants doivent rester génériques et réutilisables ; toute évolution doit servir un projet concret (ou l'outillage qui les maintient : veille, docs, téléchargement).
+## §1 Environnement
 
-## 🌐 Dépôts consommateurs (écosystème, 15 Sept 2026)
+- Machine : **Windows 11**. Shell du dépôt : **Git Bash** *(adapter au §7 si PowerShell 7 — n'utiliser QUE les commandes du shell déclaré)*.
+- Python : **`uv` uniquement** — jamais `pip install`, jamais `requirements.txt` (`uv add` / `uv run`).
+- Chemins machine : jamais en dur dans le code — passer par la configuration du projet (config.py / .env / section dédiée).
+- Contexte long (architecture, leçons détaillées, écosystème) : voir `PROJECT_MEMORY.md` ou `docs/` du dépôt — AGENTS.md reste volontairement court.
 
-Cette fabrique est appelée par **deux dépôts voisins** (chemins locaux `C:\GIT\`) :
+## §2 État sur disque = source de vérité
 
-| Dépôt | Comment il nous appelle | Usage |
+Ne jamais se fier à la seule fenêtre de contexte : elle s'altère, se compresse, s'efface. L'état du travail vit dans **quatre fichiers** (défaut : racine du dépôt ; variantes admises si déclarées au §7 : `.agents/`, `memory-bank/`). À chaque initialisation, plantage ou redémarrage : les lire pour reconstruire son état de façon déterministe.
+
+| Fichier | Rôle | Cycle de vie |
 |---|---|---|
-| **`ai-doc2video`** (usine vidéo YouTube, [laurentvv/ai-doc2video](https://github.com/laurentvv/ai-doc2video)) | `generator_assets_bridge.py` (subprocess CLI) | Workflow `monoplan_ia` (hooks cinématiques MP4 1080p), `sfx` (ambiances), maintenance qwentts via `scripts/manage_qwentts.py` |
-| **`video-analys-ia`** (laboratoire d'analyse vidéo, [laurentvv/video-analys-ia](https://github.com/laurentvv/video-analys-ia)) | `generer_assets_ia.py` (subprocess CLI, pattern du bridge ci-dessus) | Stickers de substitution (`-w generate --segmenter none`), animation I2V d'une frame extraite (`-w video -i <frame>`), monoplans — pour des reproductions d'animations mesurées sans contenu protégé |
+| `feature_list.json` | Fonctionnalités **actives** (pending / in_progress) uniquement. | Mis à jour à chaque changement de statut ; les `completed` partent en `feature_list_archive.json` (garder court — lu chaque session). |
+| `contract.md` | Contrat de validation : assertions strictes et testables (15-30 critères). | **Figé** avant la première ligne de code ; plus modifiable par le générateur. |
+| `progress.md` | Tableau de bord du sprint en cours (objectif + jalons). | Mis à jour à la fin de chaque itération. |
+| `log.md` | Journal chronologique **append-only**. | Une entrée au début et à la fin de chaque action. |
 
-**Contrat implicite** (les deux consommateurs le respectent, à préserver en cas d'évolution du CLI) :
-- `scripts/check_charge_systeme.py` exécuté **avant toute génération vidéo** (exit 1 = on ne lance pas) ;
-- prompts toujours **en anglais** ;
-- `--seed` fixé pour la reproductibilité A/B ;
-- appels en subprocess avec `check=True` depuis le répertoire de ce dépôt.
+**Formats** :
 
-L'écosystème complet (avec `YouTubeToMP3` pour l'ingestion) est cartographié dans la boussole d'`ai-doc2video` : `AGENTS.md` § « Écosystème Inter-Dépôts ».
+`feature_list.json` — `"status"` ∈ `pending | in_progress | completed` (+ extensions projet autorisées, ex. `awaiting_playtest` — les déclarer au §7) :
 
-## 📚 Documentation des outils locaux : À MAINTENIR SYSTÉMATIQUEMENT
+```json
+{ "features": [ { "id": "F-01", "name": "…", "description": "périmètre technique",
+  "status": "pending | in_progress | completed", "dependencies": [] } ] }
+```
 
-Les outils installés hors du dépôt possèdent des **README personnalisés** (écrits pour ce poste,
-pas les README GitHub d'origine). **Toute nouvelle connaissance sur ces outils doit y être
-consignée immédiatement** (nouvelle version installée, commande validée, écueil rencontré,
-benchmark mesuré) :
+`log.md` — **budget ~200 caractères par entrée** (le détail va dans le commit) :
 
-| Fichier | Outil | Contenu |
+```markdown
+## [AAAA-MM-JJ] init | Initialisation du workspace et négociation du contrat.md
+## [AAAA-MM-JJ] gen  | Écriture du script principal et génération des structures JSON.
+## [AAAA-MM-JJ] eval | Échec de la validation du contrat sur le critère 2.
+```
+
+`type` ∈ `init | gen | eval | fix | sync | done | err` (+ extensions projet).
+
+**Rotation du log** (budget contexte) : `log.md` ne contient que le mois courant. Au changement de mois (ou au-delà de ~150 Ko), déplacer l'historique vers `docs/journal/log_AAAA-MM[_JJ-JJ].md` — rien n'est effacé, l'archive reste grepable. **Au bootstrap : ne lire que `log.md` (court) ; les archives uniquement par `grep` ciblé.** *Variante B (à déclarer au §7) : historisation événementielle en base (DuckDB/SQLite) à la place du fichier plat — même discipline, zéro journal .md.*
+
+## §3 Boucle d'exécution
+
+1. **Bootstrap** — vérifier les 4 fichiers ; absents → les créer ; présents → les lire (budget : actives de `feature_list.json`, `progress.md`, `contract.md`, `log.md` en entier). Ne PAS lire les archives sauf `grep` ciblé.
+2. **Action** — avant d'exécuter une tâche, écrire la ligne dans `log.md`.
+3. **Gate** — une vérification statique en échec **interdit** la synchronisation du ledger (compiler/linter au vert d'abord — ne jamais annoncer « check OK » sans l'avoir lancé).
+4. **Synchronisation** — après chaque écriture ou test, mettre à jour le fichier de statut associé.
+5. **Erreurs** — en cas d'exception ou d'interruption, l'état valide = dernière entrée du `log.md` + assertions de `progress.md`.
+
+## §4 Git & livraison
+
+- **Jamais de travail ni de push direct sur `main`** : branche `feat/…` ou `fix/…` avant toute modification.
+- Une fois la PR soumise : **s'arrêter** (pas de boucle d'attente) ; merge uniquement sur instruction explicite.
+- **Jamais `git reset --hard` sur un working tree vivant** — annulation d'un commit de test : `git reset --soft HEAD~1` puis purge ciblée.
+- Push uniquement sur demande explicite de l'utilisateur.
+- **Checklist avant commit** : tests/linters au vert · aucun secret dans le diff · doc maintenue à jour · ledger synchronisé.
+
+## §5 Sécurité & intégrité
+
+- **Aucun secret** dans le code, les commits, les logs ni l'écran (chemins utilisateur, e-mails, jetons) → env vars / figurants fictifs.
+- **Jamais supprimer** les fichiers d'état, bases, archives ou données métier. Toute suppression ambiguë : **reformuler la liste** à l'utilisateur et faire confirmer AVANT d'exécuter.
+- **Jamais éteindre/redémarrer/mettre en veille la machine** sans demande formelle explicite.
+- **Actions irréversibles ou externes** (publication, upload, écriture PROD, envoi de messages) : générer d'abord les artefacts de contrôle, puis attendre l'accord explicite dans le chat.
+
+## §6 Vérité & validation
+
+- « Vérifié » = **exécuté réellement** (exit 0) ou **inspecté visuellement** (capture/rendu regardés) — jamais déduit du code, des intentions ou des logs.
+- Toute affirmation factuelle (chiffre, couleur, présence d'un asset) est étayée par une mesure ou une capture conservée en preuve.
+- Après une correction : re-valider par le **chemin complet réel**, pas par un harnais qui le court-circuite.
+- Documentation : toute évolution de comportement → mettre à jour la doc maintenue du dépôt avant de clore la tâche.
+
+<!-- END:agents-commun -->
+
+---
+
+## §7 Spécifique projet
+
+### Mission / périmètre
+
+**Fabrique locale universelle de médias générés par IA** — tout projet nécessitant image, son, vidéo ou musique. Productions principales : le jeu Godot *L'Héritier du Vide* (PBR, maillages IA `mesh_ia`/TRELLIS.2, boucles OGG `music_bg`) et la chaîne YouTube d'`ai-doc2video` (TTS, lits musicaux −30 LUFS, vidéos Wan/LTX/MiniMax-H3, masters 4K). Tout nouveau besoin média est un cas d'usage légitime ; les composants restent génériques et réutilisables, toute évolution sert un projet concret (ou l'outillage de maintenance : veille, docs, téléchargement).
+
+### Emplacements déclarés (écarts au commun)
+
+- **Ledger non instancié** : mémoire opérationnelle = `docs/MEMORY_BANK.md` (stacks validées + écueils, une section par domaine) + `docs/veille_journal.md` — écart déclaré.
+- Shell : Git Bash · `uv run python main.py -w <workflow>`.
+
+### Écosystème — consommateurs (contrat implicite à préserver)
+
+| Consommateur | Comment il appelle | Usage |
 |---|---|---|
-| `C:\audio-cpp\README.md` | audio.cpp (Vulkan) | Version installée + notes de release, familles de modèles (ace_step, minimax_music3…), commandes validées, écueils (`--model` = chemin du .gguf, q8_0 ace_step KO, paquets XL sur ModelScope), scripts de mise à jour |
-| `C:\ffmpeg\README.md` | FFmpeg 9.0.1 (build custom) | Optimisations machine (AMF, SVT-AV1, libfdk-aac), recettes validées (bed −30 LUFS loudnorm 2 passes, ducking sidechaincompress, OGG), rebuild MSYS2 |
-| `C:\SD\README.md` | sd-cli / stable-diffusion.cpp (Vulkan) | Release (commit) installée, familles de modèles (Flux, SDXL+LoRAs, Wan 2.1/2.2, LTX-2.5, MiniMax-H3, upscalers), commandes validées (img/vid_gen/upscale), procédure maj + rollback |
-| `C:\trellis\README.md` | trellis.cpp (Vulkan) | Version installée (`version.json`, lu par la veille), GGUF TRELLIS.2 requis (10 fichiers, 16,4 Go, `C:\Modeles_LLM\trellis2-gguf`), commandes validées (image → GLB PBR, workflow `mesh_ia`), perfs mesurées (512 = ~11 min, 1024 = ~55 min), procédure maj + rollback |
+| `C:\GIT\ai-doc2video` | `generator_assets_bridge.py` (subprocess CLI) | `monoplan_ia` (hooks), `sfx`, **maintenance qwentts** (`scripts/manage_qwentts.py` — ce dépôt GÈRE `C:\IA\qwentts.cpp` depuis le 2026-09-12 : maj git, backups `C:\IA\qwentts_backups` ×5, build Vulkan, smoke test, rollback auto ; jamais modifier le clone à la main) |
+| `C:\GIT\video-analys-ia` | `generer_assets_ia.py` (pattern du bridge) | stickers de substitution, I2V d'une frame, monoplans |
 
-Ne pas confondre avec les README de dépôts clonés (ex. `C:\llama.cpp\README.md` = README GitHub,
-ne pas modifier). Autres emplacements d'outils : `C:\SD` (sd-cli), `C:\Modeles_LLM` (modèles GGUF),
-`C:\IA\qwentts.cpp` (qwen-tts — **géré par CE dépôt** (récupéré d'`ai-doc2video` le 2026-09-12 soir) :
-`uv run python scripts/manage_qwentts.py --check|--models|--update|--backup|--rollback` — maj git,
-sauvegardes `C:\IA\qwentts_backups` (5 conservées), build Vulkan, smoke test, rollback auto ;
-ne jamais modifier le clone à la main ; notes dans MEMORY_BANK §1.20).
+Contrat : `scripts/check_charge_systeme.py` exécuté **avant toute génération vidéo** (exit 1 = on ne lance pas) · prompts **en anglais** · `--seed` fixé (A/B reproductible) · subprocess `check=True` depuis ce répertoire.
 
-## 🗂️ Documentation du dépôt
+### Commandes clés
 
-- `README.md` — catalogue des workflows et statuts (mettre à jour à chaque évolution).
-- `.agents/skills/generator-assets/` — **skill IA de génération** (créé et testé le 2026-09-17,
-  cf. README § « AI-Ready ») : porte d'entrée de tout agent pour la génération — routage
-  besoin→workflow (40), garde-fous (charge système, prompts EN, seed), recettes validées,
-  écueils courants (ex. contournement build sd-cli LTX/H3). **À maintenir en sync avec le
-  catalogue réel** :
-  - nouveau workflow, option ou recette qui change → `SKILL.md` (table de routage + recettes)
-    et `references/catalogue_workflows.md` ;
-  - évolution du pipeline 3D (prérequis Blender/MPFB/BlendKit, standards game-ready Godot,
-    budgets tris/LOD, écueils Blender) → `references/pipeline_3d_blender.md` (créé le 2026-09-17
-    en adaptant la partie moteur-agnostique du pack blender-skills arjun988, MIT — cloné dans
-    `C:\GIT\blender-skills`) ;
-  - statut de validation qui évolue (testé non validé → validé, ou rejeté) → refléter dans les
-    deux fichiers ;
-  - écueil opérationnel majeur découvert (build moteur cassée, contournement requis) → l'ajouter
-    au bloc écueils du SKILL.md et le retirer quand il est résolu (sinon les agents suivent une
-    recette obsolète). Le workspace d'éval
-    `.agents/skills/generator-assets-workspace/` (runs de test, benchmark) peut être purgé
-    lors des itérations ultérieures — seuls `SKILL.md` et `references/` sont nécessaires en
-    production.
-- `docs/MEMORY_BANK.md` — **banque mémoire des stacks validées et écueils** (une section par
-  domaine, ex. §1.10 Music3, §1.11 ACE-Step) : y consigner tout apprentissage opérationnel.
-- `docs/veille_journal.md` — **journal de veille** : chaque nouveauté de stack détectée par la
-  veille y est consignée avec son impact projet. **À lire au démarrage d'une session** pour
-  connaître les évolutions récentes des outils (nouveaux modèles disponibles, correctifs,
-  changements cassants).
-- `docs/Générateurs Musique en Boucle.md` — analyse de fond + implémentation retenue.
+```bash
+uv run python main.py -w <workflow>                        # exécution d'un workflow
+uv run python scripts/check_charge_systeme.py             # CPU/GPU/RAM/VRAM AVANT génération lourde
+uv run python scripts/veille_versions.py                  # veille (état output/veille/, rapport seul)
+uv run python scripts/manage_qwentts.py --check           # santé du moteur TTS
+uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # gros téléchargements HF (~10×)
+```
 
-## 🔧 Règles du dépôt
+### Invariants métier (à ne jamais casser)
 
-- Environnement : `uv` (Python 3.11+), Windows, Git Bash. Commandes : `uv run python main.py -w <workflow>`.
-- Philosophie : **moteurs C++ Vulkan + GGUF, zéro PyTorch** (sd-cli, llama.cpp, audio.cpp).
-- GPU : AMD RX 6950 XT 16 Go (RDNA2, pas de CUDA) — tout nouveau moteur doit tourner en Vulkan/CPU.
-- **Avant tout lancement de génération lourde** (audio.cpp, sd-cli, trellis.cpp) :
-  `uv run python scripts/check_charge_systeme.py` — vérifie CPU/GPU/RAM/VRAM (exit 1 =
-  machine occupée → attendre un créneau libre, jamais lancer sur une machine chargée ; cf.
-  smoke test v0.7.3 du 2026-09-08 : RTF mesuré 3,3× trop lent à cause d'une contention GPU).
-  Seuils ajustables (`--cpu-threshold`, `--gpu-threshold`, `--ram-threshold`, `--vram-threshold`, `--duration`).
-- Code : docstrings et logs en français, identifiants en anglais, prompts modèles en anglais.
-- Journalisation (audit §2.8) : les messages de **diagnostic** (étapes techniques, commandes
-  moteurs, avertissements, mesures) passent par `logging` — `logger = logging.getLogger(__name__)`,
-  configuration via `core.journal.configurer_journal()` (appelée par main.py, `--verbose` = DEBUG) ;
-  les `print()` restent réservés aux **sorties utilisateur** (menus interactifs, listes,
-  récapitulatifs). Tout nouveau module suit ce découpage dès l'écriture.
-- Gros téléchargements HF/ModelScope : `scripts/telecharger_gros_fichier_parallele.py <url> <dest>`
-  (contourne le bridage CDN mono-connexion, ~10× plus rapide).
-- Veille versions (audio.cpp, sd-cli, trellis.cpp + GGUF TRELLIS.2 sur HF, FFmpeg, Python,
-  paquets, modèles GGUF + org audio-cpp sur HF, **nouveaux modèles LLM/VLM GGUF tendance
-  sur HF** (top trending en diff, baseline 2026-09-07), llama.cpp, **sa3.cpp** (port C++/GGML
-  de Stable Audio 3 — Vulkan, zéro PyTorch — releases en info, pas installé ; famille
-  stable_audio déjà couverte par audio.cpp), **outils système versionnés**
-  (SDK Vulkan LunarG — prérequis de tous les builds natifs, détection via
-  sdk.lunarg.com ; Blender — pipeline skins MPFB ; Godot — moteur du jeu ;
-  uv ; CMake — alertes info une seule fois par version amont, jamais de maj
-  automatique), **écosystème ComfyUI**
-  (releases du cœur + commits de repos clés H3/LTX + nouveaux repos topic:comfyui en diff,
-  baseline 2026-09-09 — source d'idées de workflows, rapport de recherche :
-  `docs/recherche_comfyui_2026-09-09.md`)) : `uv run python scripts/veille_versions.py` — état dans
-  `output/veille/`, rapport uniquement (jamais de mise à jour automatique). Déclenchement
-  **automatique à l'ouverture de session** (pas de cron) : le hook SessionStart relance la
-  veille en arrière-plan si la dernière date de plus de 20 h (fraîcheur lue sur la date de
-  `output/veille/rapports.log`, log de fond : `output/veille/veille_arriere_plan.log`) ;
-  le script alimente `output/veille/maj_en_attente.json`. Lancement manuel toujours
-  possible à la demande : « lance la veille » en session.
-- Hook SessionStart ZCode (`.zcode/config.json` → `scripts/hook_session_start.py`) : à chaque
-  nouvelle session du projet, les entrées des 7 derniers jours de `docs/veille_journal.md`
-  sont injectées automatiquement dans le contexte, ainsi que les mises à jour en attente
-  lues dans `output/veille/maj_en_attente.json` (voir 🔄 Process de mise à jour) et 
-  Validé en session réelle le 2026-09-07 ; premier usage : approuver le hook via la bannière
-  « Review » (gate de confiance des hooks de scope projet). Test manuel :
-  `uv run python scripts/hook_session_start.py`. (Le bloc de surveillance de l'issue sd-cli
-  #1946 y a été retiré le 2026-09-13 : régression corrigée par PR #1958, release master-864
-  installée et validée — cf. MEMORY_BANK §1.19.)
-- 🎯 **Instruction permanente (2026-09-07) : dès que la veille signale un NOUVEAU modèle de
-  musique/audio potentiellement compatible, lancer le test sans attendre d'accord** (sources :
-  section veille `hf-modeles-gguf` pipeline `text-to-audio`, nouvelles familles dans audio.cpp,
-  miroir ModelScope). Recette de test de référence : candidat gothic rock 30 s — description
-  sobre « German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass,
-  chiming chorus guitars », 83 BPM + « C# minor » imposés (`--request-option`), graine 42
-  (exemples : `output/test_acestep_sft/`). Téléchargement via le downloader parallèle si gros
-  fichier. Soumettre à l'écoute utilisateur, consigner le verdict dans MEMORY_BANK (statut
-  « testé, non validé » — jamais de workflow avant validation, cf. règle ci-dessus).
-  Contexte : plafond réalisme instrumental rock d'ACE-Step (§1.11) ; objectif = un moteur
-  musical GGUF Vulkan rendant basse/batterie/guitares crédibles.
-- 🛡️ **Modèles : vérifier la retéléchargeabilité AVANT toute suppression dans `C:\Modeles_LLM`,
-  et si l'accord utilisateur n'est pas 100 % explicite (ambiguïté possible), REFORMULER la liste
-  validée avant d'exécuter** (incident 2026-09-08 : consigne mal interprétée → 4 modèles supprimés
-  au lieu de 0, heureusement restaurés depuis HF).
-  Lister tous les repos de l'org, pas seulement le repo principal — certains modèles vivent dans
-  des repos dédiés hors `audio.cpp-gguf` (ex. `audio-cpp/MiniMax-Music3-GGUF`,
-  `audio-cpp/VibeVoice-7B-GGUF`) :
-  `curl -s "https://huggingface.co/api/models?author=audio-cpp"` (+ miroir ModelScope au besoin).
-  En cas de doute, demander. Fichiers irremplaçables (retirés de partout) : **aucun à ce jour**
-  (constat 2026-09-06 ; tenir cette liste à jour si la veille signale un retrait réel).
-- 🧩 **Tout test réalisé avec l'utilisateur et VALIDÉ par l'utilisateur doit devenir un workflow**
-  (`main.py -w <nom>`) : encapsuler la recette gagnante (code dans `core/` + `workflows/`,
-  enregistrement, README §Workflows, MEMORY_BANK, **skill `.agents/skills/generator-assets/`
-  — routing + recette**) — jamais la laisser en script autonome ou
-  commande CLI ad hoc. Réciproque : **ne PAS créer de workflow pour un test non validé** —
-  le consigner d'abord dans MEMORY_BANK (statut « testé, non validé ») et attendre la
-  validation utilisateur (ex. essence SA3 / cover ACE-Step, en attente le 2026-09-06).
-- ⚡ **`h3_ref2va` : TOUJOURS utiliser/proposer le mode `--turbo`** (LoRA distillé 8 steps,
-  VALIDÉ utilisateur le 2026-09-09 — « très bonne qualité, son très bien » : ~38 min vs
-  ~70 min pour 22 frames, sampling −64 %, raccord référence ≥ baseline ; MEMORY_BANK §1.16).
-  La recette de base 20 steps (sans `--turbo`) ne sert qu'en A/B qualité ou sur demande
-  explicite. `scripts/proto_endless_h3.py` (boucle 18 chunks, NON validée) l'utilise déjà :
-  ~11,5 h au lieu de ~21 h, et le raccord chunk→chunk est le point critique à juger en premier.
+- **Philosophie : moteurs C++ Vulkan + GGUF, zéro PyTorch** (sd-cli, llama.cpp, audio.cpp, trellis.cpp). GPU AMD RX 6950 XT 16 Go (RDNA2, **pas de CUDA**) — tout nouveau moteur doit tourner Vulkan/CPU.
+- **Avant tout lancement lourd** (audio.cpp, sd-cli, trellis.cpp) : `check_charge_systeme.py` (RTF mesuré 3,3× trop lent sur GPU en contention, 2026-09-08). Jamais sur une machine chargée.
+- **README personnalisés des outils hors dépôt à maintenir systématiquement** (toute nouvelle connaissance y est consignée immédiatement) : `C:\audio-cpp\README.md` · `C:\ffmpeg\README.md` · `C:\SD\README.md` · `C:\trellis\README.md` (ne pas confondre avec les README de clones tiers, ex. `C:\llama.cpp`).
+- **Skill** `.agents/skills/generator-assets/` : à maintenir en sync avec le catalogue réel (nouveau workflow/option/recette → `SKILL.md` + `references/catalogue_workflows.md` ; pipeline 3D → `references/pipeline_3d_blender.md` ; écueil majeur → bloc écueils, retiré quand résolu).
+- **Code** : docstrings/logs en français, identifiants en anglais, prompts EN. Diagnostic via `logging` (`core.journal.configurer_journal()`) ; `print()` réservé aux sorties utilisateur.
+- **Modèles `C:\Modeles_LLM`** : vérifier la retéléchargeabilité AVANT toute suppression (lister TOUTE l'org : `curl -s "https://huggingface.co/api/models?author=audio-cpp"`) ; accord ambigu → **reformuler la liste** avant d'exécuter (incident 2026-09-08 : 4 modèles supprimés au lieu de 0).
+- **Tout test VALIDÉ par l'utilisateur devient un workflow** (`main.py -w`, code `core/`+`workflows/`, README, MEMORY_BANK, skill) ; réciproquement : jamais de workflow pour un test non validé (statut « testé, non validé » dans MEMORY_BANK).
+- **`h3_ref2va` : toujours `--turbo`** (VALIDÉ 2026-09-09, ~38 min vs ~70 min pour 22 frames) ; base 20 steps seulement en A/B ou demande explicite.
 
-## 🔄 Process de mise à jour (à exécuter quand la veille signale une nouveauté)
+### Veille & mises à jour
 
-Règles générales : **une seule mise à jour à la fois** • vérifier qu'aucun `audiocpp_cli.exe` /
-`ffmpeg.exe` ne tourne avant de toucher aux binaires • tester après chaque mise à jour •
-mettre à jour les README d'outils (voir §Documentation) • commit/push des fichiers du dépôt
-(docs, uv.lock). Jamais de mise à jour en plein batch de génération.
+- **Veille automatique à l'ouverture de session** (hook SessionStart ZCode, relance si > 20 h) : audio.cpp, sd-cli, trellis.cpp + GGUF HF, FFmpeg, Python, paquets, LLM/VLM GGUF tendance, llama.cpp, sa3.cpp, outils système versionnés, écosystème ComfyUI. Rapport seul — **jamais de mise à jour automatique**.
+- **Instruction permanente (2026-09-07)** : dès que la veille signale un NOUVEAU modèle musique/audio compatible, **lancer le test sans attendre** (recette gothic rock 30 s, 83 BPM C# minor, graine 42) puis soumettre à l'écoute ; verdict dans MEMORY_BANK.
+- **`output/veille/maj_en_attente.json`** : une maj appliquée/obsolète → retirer IMMÉDIATEMENT son entrée + consigner dans `docs/veille_journal.md` (avant→après, commit, vérification). Sinon le hook la resignale à chaque session.
+- **Process de maj** : une seule à la fois · aucun binaire en cours (`audiocpp_cli.exe`/`ffmpeg.exe`) · smoke test après · maj des README d'outils + skill + `scripts/engines_manifest.json` (épinglage installateurs) · commit/push docs. Procédures détaillées et rollbacks par composant : tableau dans l'historique git de ce fichier (ex. `C:\audio-cpp\update.ps1`, `C:\SD\backups\`, `manage_qwentts.py --rollback`).
 
-📝 **Suivi des majs en attente** (`output/veille/maj_en_attente.json`) : fichier maintenu par
-le script de veille (`_sauver_maj_en_attente`) — une nouveauté y entre au moment de sa
-détection et disparaît automatiquement quand la version installée rattrape la dernière vue ;
-l'agent peut aussi y retirer une entrée refusée, appliquée ou devenue obsolète.
-Retrait DURABLE (décision utilisateur « on attend cette version », ex. sd-cli
-master-859 le 2026-09-12) : purger l'entrée suffit — le 🆕 ne se déclenche qu'une
-fois par version amont (`derniere_vue` dans l'état de la veille), la mention ne
-reprendra que si une version POSTÉRIEURE apparaît ; consigner la décision (et le
-contenu réel de la version ignorée) dans `docs/veille_journal.md`.
-**Instruction permanente (2026-09-11) : dès qu'une maj listée est appliquée en session
-(ou devient obsolète), retirer IMMÉDIATEMENT son entrée de ce fichier** — sinon le hook
-SessionStart la resignale à chaque session et redemande à l'utilisateur une maj déjà
-faite — **et consigner l'application dans `docs/veille_journal.md` avec les infos de
-version complètes** (avant→après, commit, résultat de la vérification post-maj).
-Lisible à chaque session
-via le hook SessionStart, qui le signale à l'agent ; cela ne change rien à la règle :
-**jamais de mise à jour sans accord explicite**. Quand une session y voit des nouveautés
-absentes de `docs/veille_journal.md`, les y ajouter (format journal, avec détail du
-changelog depuis les notes archivées) puis commit/push (docs uniquement).
+### Pièges & leçons (format daté)
 
-| Composant | Procédure | Vérification post-maj | Rollback |
-|---|---|---|---|
-| **audio.cpp** | 1) Lire les notes archivées (`output/veille/notes/audio-cpp_<tag>.md`) — repérer nouvelles familles de modèles et correctifs `ace_step`. 2) `C:\audio-cpp\update.ps1` (sauvegarde auto + test `--list-devices` intégré). 3) `ls C:\audio-cpp\model_specs` → nouvelles familles ? | Smoke test : 1 génération 12 s `--family ace_step` turbo (`--model` = chemin du .gguf) ; comparer RTF | `C:\audio-cpp\backups\backup_<version>_<date>/` (3 dernières conservées) |
-| **sd-cli** | 1) Lire les notes archivées (`output/veille/notes/sd-cli_<tag>.md`) — depuis le 2026-09-12 elles sont auto-complétées par la liste des commits entre versions quand la release amont n'a pas de changelog (cas des snapshots master de leejet ; les notes antérieures peuvent être vides, le compare se refait à la main via `gh api repos/leejet/stable-diffusion.cpp/compare/<ancien>...<nouveau>`). 2) Télécharger l'asset `sd-master-<sha>-bin-win-vulkan-x64.zip` de la release GitHub. 3) Sauvegarder `.exe`/`.dll` dans `C:\SD\backups\` puis extraire par-dessus `C:\SD\`. | Smoke test : 1 image Flux steps 4 + `sd-cli.exe --version` (nouveau commit) | `C:\SD\backups\backup_<date>/` |
-| **FFmpeg** | `MSYSTEM=UCRT64 /c/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh'` (détecte, rebuild, teste AMF tout seul ; MSYS2 déplacé de `C:\ffmpeg\msys64` vers `C:\msys64` le 2026-09-09, `C:\msys64\ucrt64\bin` au PATH utilisateur) | `ffmpeg -version` + une mesure `loudnorm` rapide (pipeline music_bg) | `C:\ffmpeg\dist.bak/` |
-| **Paquets Python** | 1) `uv pip list --outdated` (revue rapide : rien de cassant ?). 2) `uv lock --upgrade && uv sync` | `uv run python -c "import core, workflows"` + `main.py --help` | `git checkout -- uv.lock && uv sync` |
-| **Modèles GGUF (ACE-Step…)** | `uv run python scripts/download_acestep15_gguf.py <variante>` (si bridage CDN → `scripts/telecharger_gros_fichier_parallele.py`) | Smoke test 1 génération de la variante ; consigner taille/RTF dans MEMORY_BANK | Supprimer le .gguf (les autres variantes sont indépendantes) |
-| **qwentts.cpp** | Veille commits amont (source `qwentts.cpp`) → sur 🆕 et accord utilisateur : `uv run python scripts/manage_qwentts.py --update` (backup binaire + git pull + build Vulkan + smoke test + rollback auto intégrés). Modèles : `--models` / `--download-model <fichier> [--force]` (catalogue HF `Serveurperso/Qwen3-TTS-GGUF`) | `uv run python scripts/manage_qwentts.py --check` (git/binaires/modèles/sauvegardes) ; `--models --verify-hash` si modèles touchés | `uv run python scripts/manage_qwentts.py --rollback [nom]` (sauvegardes `C:\IA\qwentts_backups`, 5 conservées) |
-| **Python (interpréteur)** | Uniquement sur besoin explicite : `uv python install 3.12.x` puis mettre à jour `.python-version` | `uv sync` complet + import tests | Ancien interpréteur conservé par uv |
-| **llama.cpp / autres** | Selon l'outil (repo dédié) ; même logique : notes → maj → smoke test → README | — | — |
+- **[2026-09-08] suppression de modèles** — consigne ambiguë mal interprétée : reformulation obligatoire avant exécution.
+- **[2026-09-08] contention GPU** — RTF 3,3× dégradé sur machine chargée : gate charge système avant toute génération.
 
-Après TOUTE mise à jour : mettre à jour `C:\audio-cpp\README.md` / `C:\ffmpeg\README.md` /
-`C:\SD\README.md` (section version + notes de release), `docs/MEMORY_BANK.md` si un écueil
-ou une perf change, **le skill `.agents/skills/generator-assets/`** si une recette ou un écueil
-change (ex. contournement LTX/H3 `SD_CLI_PATH=C:\SD-6b3edaa` à retirer du SKILL.md quand le
-fix amont sera installé et re-validé), **`scripts/engines_manifest.json`** (épinglage des
-installateurs `scripts/install_windows.ps1` et `scripts/install_unix.sh` : nouvelle version
-épinglée ou retour à `latest` selon le cas, par plateforme),
-puis commit/push côté dépôt.
+### Renvois
+
+- `README.md` (catalogue des workflows) · `docs/MEMORY_BANK.md` · `docs/veille_journal.md` (à lire au démarrage) · skill `.agents/skills/generator-assets/`.
