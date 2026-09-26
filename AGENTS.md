@@ -87,59 +87,59 @@ Never rely on the context window alone: it degrades, gets compressed, gets erase
 
 ---
 
-## §7 Spécifique projet
+## §7 Project-specific
 
-### Mission / périmètre
+### Mission / scope
 
-**Fabrique locale universelle de médias générés par IA** — tout projet nécessitant image, son, vidéo ou musique. Productions principales : le jeu Godot *L'Héritier du Vide* (PBR, maillages IA `mesh_ia`/TRELLIS.2, boucles OGG `music_bg`) et la chaîne YouTube d'`ai-doc2video` (TTS, lits musicaux −30 LUFS, vidéos Wan/LTX/MiniMax-H3, masters 4K). Tout nouveau besoin média est un cas d'usage légitime ; les composants restent génériques et réutilisables, toute évolution sert un projet concret (ou l'outillage de maintenance : veille, docs, téléchargement).
+**Universal local factory of AI-generated media** — any project needing image, sound, video or music. Main productions: the Godot game *L'Héritier du Vide* (PBR, AI meshes `mesh_ia`/TRELLIS.2, OGG loops `music_bg`) and the `ai-doc2video` YouTube channel (TTS, music beds −30 LUFS, Wan/LTX/MiniMax-H3 videos, 4K masters). Any new media need is a legitimate use case; components stay generic and reusable, every evolution serves a concrete project (or maintenance tooling: watch, docs, downloads).
 
-### Emplacements déclarés (écarts au commun)
+### Declared locations (deviations from the common block)
 
-- **Ledger non instancié** : mémoire opérationnelle = `docs/MEMORY_BANK.md` (stacks validées + écueils, une section par domaine) + `docs/veille_journal.md` — écart déclaré.
-- Shell : Git Bash · `uv run python main.py -w <workflow>`.
+- **Ledger not instantiated**: operational memory = `docs/MEMORY_BANK.md` (validated stacks + pitfalls, one section per domain) + `docs/veille_journal.md` — declared deviation.
+- Shell: Git Bash · `uv run python main.py -w <workflow>`.
 
-### Écosystème — consommateurs (contrat implicite à préserver)
+### Ecosystem — consumers (implicit contract to preserve)
 
-| Consommateur | Comment il appelle | Usage |
+| Consumer | How it calls | Usage |
 |---|---|---|
-| `C:\GIT\ai-doc2video` | `generator_assets_bridge.py` (subprocess CLI) | `monoplan_ia` (hooks), `sfx`, **maintenance qwentts** (`scripts/manage_qwentts.py` — ce dépôt GÈRE `C:\IA\qwentts.cpp` depuis le 2026-09-12 : maj git, backups `C:\IA\qwentts_backups` ×5, build Vulkan, smoke test, rollback auto ; jamais modifier le clone à la main) |
-| `C:\GIT\video-analys-ia` | `generer_assets_ia.py` (pattern du bridge) | stickers de substitution, I2V d'une frame, monoplans |
+| `C:\GIT\ai-doc2video` | `generator_assets_bridge.py` (CLI subprocess) | `monoplan_ia` (hooks), `sfx`, **qwentts maintenance** (`scripts/manage_qwentts.py` — this repo MANAGES `C:\IA\qwentts.cpp` since 2026-09-12: git updates, backups `C:\IA\qwentts_backups` ×5, Vulkan build, smoke test, auto rollback; never modify the clone by hand) |
+| `C:\GIT\video-analys-ia` | `generer_assets_ia.py` (bridge pattern) | replacement stickers, single-frame I2V, monoplans |
 
-Contrat : `scripts/check_charge_systeme.py` exécuté **avant toute génération vidéo** (exit 1 = on ne lance pas) · prompts **en anglais** · `--seed` fixé (A/B reproductible) · subprocess `check=True` depuis ce répertoire.
+Contract: `scripts/check_charge_systeme.py` run **before any video generation** (exit 1 = do not launch) · prompts **in English** · fixed `--seed` (reproducible A/B) · subprocess `check=True` from this directory.
 
-### Commandes clés
+### Key commands
 
 ```bash
-uv run python main.py -w <workflow>                        # exécution d'un workflow
-uv run python scripts/check_charge_systeme.py             # CPU/GPU/RAM/VRAM AVANT génération lourde
-uv run python scripts/veille_versions.py                  # veille (état output/veille/, rapport seul)
-uv run python scripts/manage_qwentts.py --check           # santé du moteur TTS
-uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # gros téléchargements HF (~10×)
+uv run python main.py -w <workflow>                        # run a workflow
+uv run python scripts/check_charge_systeme.py             # CPU/GPU/RAM/VRAM BEFORE heavy generation
+uv run python scripts/veille_versions.py                  # watch (state output/veille/, report only)
+uv run python scripts/manage_qwentts.py --check           # TTS engine health
+uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # big HF downloads (~10×)
 ```
 
-### Invariants métier (à ne jamais casser)
+### Business invariants (never break)
 
-- **Philosophie : moteurs C++ Vulkan + GGUF, zéro PyTorch** (sd-cli, llama.cpp, audio.cpp, trellis.cpp). GPU AMD RX 6950 XT 16 Go (RDNA2, **pas de CUDA**) — tout nouveau moteur doit tourner Vulkan/CPU.
-- **Avant tout lancement lourd** (audio.cpp, sd-cli, trellis.cpp) : `check_charge_systeme.py` (RTF mesuré 3,3× trop lent sur GPU en contention, 2026-09-08). Jamais sur une machine chargée.
-- **README personnalisés des outils hors dépôt à maintenir systématiquement** (toute nouvelle connaissance y est consignée immédiatement) : `C:\audio-cpp\README.md` · `C:\ffmpeg\README.md` · `C:\SD\README.md` · `C:\trellis\README.md` (ne pas confondre avec les README de clones tiers, ex. `C:\llama.cpp`).
-- **Skill** `.agents/skills/generator-assets/` : à maintenir en sync avec le catalogue réel (nouveau workflow/option/recette → `SKILL.md` + `references/catalogue_workflows.md` ; pipeline 3D → `references/pipeline_3d_blender.md` ; écueil majeur → bloc écueils, retiré quand résolu).
-- **Code** : docstrings/logs en français, identifiants en anglais, prompts EN. Diagnostic via `logging` (`core.journal.configurer_journal()`) ; `print()` réservé aux sorties utilisateur.
-- **Modèles `C:\Modeles_LLM`** : vérifier la retéléchargeabilité AVANT toute suppression (lister TOUTE l'org : `curl -s "https://huggingface.co/api/models?author=audio-cpp"`) ; accord ambigu → **reformuler la liste** avant d'exécuter (incident 2026-09-08 : 4 modèles supprimés au lieu de 0).
-- **Tout test VALIDÉ par l'utilisateur devient un workflow** (`main.py -w`, code `core/`+`workflows/`, README, MEMORY_BANK, skill) ; réciproquement : jamais de workflow pour un test non validé (statut « testé, non validé » dans MEMORY_BANK).
-- **`h3_ref2va` : toujours `--turbo`** (VALIDÉ 2026-09-09, ~38 min vs ~70 min pour 22 frames) ; base 20 steps seulement en A/B ou demande explicite.
+- **Philosophy: C++ Vulkan engines + GGUF, zero PyTorch** (sd-cli, llama.cpp, audio.cpp, trellis.cpp). GPU AMD RX 6950 XT 16 GB (RDNA2, **no CUDA**) — any new engine must run Vulkan/CPU.
+- **Before any heavy launch** (audio.cpp, sd-cli, trellis.cpp): `check_charge_systeme.py` (measured RTF 3.3× too slow on a contended GPU, 2026-09-08). Never on a loaded machine.
+- **Custom READMEs of out-of-repo tools maintained systematically** (any new knowledge is recorded there immediately): `C:\audio-cpp\README.md` · `C:\ffmpeg\README.md` · `C:\SD\README.md` · `C:\trellis\README.md` (do not confuse with third-party clone READMEs, e.g. `C:\llama.cpp`).
+- **Skill** `.agents/skills/generator-assets/`: keep in sync with the real catalogue (new workflow/option/recipe → `SKILL.md` + `references/catalogue_workflows.md`; 3D pipeline → `references/pipeline_3d_blender.md`; major pitfall → pitfalls block, removed once solved).
+- **Code**: docstrings/logs in French, identifiers in English, prompts EN. Diagnosis via `logging` (`core.journal.configurer_journal()`); `print()` reserved for user-facing output.
+- **Models `C:\Modeles_LLM`**: check re-downloadability BEFORE any deletion (list the WHOLE org: `curl -s "https://huggingface.co/api/models?author=audio-cpp"`); ambiguous instruction → **restate the list** before executing (incident 2026-09-08: 4 models deleted instead of 0).
+- **Every test VALIDATED by the user becomes a workflow** (`main.py -w`, code `core/`+`workflows/`, README, MEMORY_BANK, skill); conversely: never a workflow for an unvalidated test (status "tested, not validated" in MEMORY_BANK).
+- **`h3_ref2va`: always `--turbo`** (VALIDATED 2026-09-09, ~38 min vs ~70 min for 22 frames); 20-step base only in A/B or explicit request.
 
-### Veille & mises à jour
+### Watch & updates
 
-- **Veille automatique à l'ouverture de session** (hook SessionStart ZCode, relance si > 20 h) : audio.cpp, sd-cli, trellis.cpp + GGUF HF, FFmpeg, Python, paquets, LLM/VLM GGUF tendance, llama.cpp, sa3.cpp, outils système versionnés, écosystème ComfyUI. Rapport seul — **jamais de mise à jour automatique**.
-- **Instruction permanente (2026-09-07)** : dès que la veille signale un NOUVEAU modèle musique/audio compatible, **lancer le test sans attendre** (recette gothic rock 30 s, 83 BPM C# minor, graine 42) puis soumettre à l'écoute ; verdict dans MEMORY_BANK.
-- **`output/veille/maj_en_attente.json`** : une maj appliquée/obsolète → retirer IMMÉDIATEMENT son entrée + consigner dans `docs/veille_journal.md` (avant→après, commit, vérification). Sinon le hook la resignale à chaque session.
-- **Process de maj** : une seule à la fois · aucun binaire en cours (`audiocpp_cli.exe`/`ffmpeg.exe`) · smoke test après · maj des README d'outils + skill + `scripts/engines_manifest.json` (épinglage installateurs) · commit/push docs. Procédures détaillées et rollbacks par composant : tableau dans l'historique git de ce fichier (ex. `C:\audio-cpp\update.ps1`, `C:\SD\backups\`, `manage_qwentts.py --rollback`).
+- **Automatic watch at session open** (ZCode SessionStart hook, rerun if > 20 h): audio.cpp, sd-cli, trellis.cpp + GGUF HF, FFmpeg, Python, packages, trending LLM/VLM GGUF, llama.cpp, sa3.cpp, versioned system tools, ComfyUI ecosystem. Report only — **never automatic updates**.
+- **Standing instruction (2026-09-07)**: as soon as the watch flags a NEW compatible music/audio model, **run the test without waiting** (gothic rock recipe 30 s, 83 BPM C# minor, seed 42) then submit for listening; verdict in MEMORY_BANK.
+- **`output/veille/maj_en_attente.json`**: an update applied/obsolete → remove its entry IMMEDIATELY + record in `docs/veille_journal.md` (before→after, commit, verification). Otherwise the hook re-flags it at every session.
+- **Update process**: one at a time · no running binary (`audiocpp_cli.exe`/`ffmpeg.exe`) · smoke test after · update tool READMEs + skill + `scripts/engines_manifest.json` (installer pinning) · commit/push docs. Detailed procedures and per-component rollbacks: table in this file's git history (e.g. `C:\audio-cpp\update.ps1`, `C:\SD\backups\`, `manage_qwentts.py --rollback`).
 
-### Pièges & leçons (format daté)
+### Pitfalls & lessons (dated format)
 
-- **[2026-09-08] suppression de modèles** — consigne ambiguë mal interprétée : reformulation obligatoire avant exécution.
-- **[2026-09-08] contention GPU** — RTF 3,3× dégradé sur machine chargée : gate charge système avant toute génération.
+- **[2026-09-08] model deletion** — ambiguous instruction misread: mandatory restatement before execution.
+- **[2026-09-08] GPU contention** — RTF degraded 3.3× on a loaded machine: system-load gate before any generation.
 
-### Renvois
+### References
 
-- `README.md` (catalogue des workflows) · `docs/MEMORY_BANK.md` · `docs/veille_journal.md` (à lire au démarrage) · skill `.agents/skills/generator-assets/`.
+- `README.md` (workflow catalogue) · `docs/MEMORY_BANK.md` · `docs/veille_journal.md` (read at startup) · skill `.agents/skills/generator-assets/`.
