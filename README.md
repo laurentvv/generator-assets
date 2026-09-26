@@ -392,6 +392,18 @@ All clips generated 100% locally on AMD RX 6950 XT (Vulkan/GGUF, no CUDA). **GIF
 
 ---
 
+### 6. Pose-Controlled Character Animation (ControlNet + IP-Adapter) — 🕺
+Choreography from a rigged GLB (`CharacterArmature|Punch`, Quaternius) is exported frame-by-frame as OpenPose COCO-18 skeleton maps (fixed camera, fixed scale across the whole sequence), then every frame is generated locally with **SDXL + ControlNet OpenPose** (pose conditioning) + **IP-Adapter Plus** (appearance lock on a single reference render). 12 frames @ 768×1024, seed 42, ~50 s/frame on RX 6950 XT (Vulkan, sd-cli).
+
+<img src="docs/exemples/personnages/planche_pose_controlnet.png" width="82%" alt="Skeleton choreography vs ControlNet-generated knight frames" />
+
+| 🕺 Animated result (ping-pong GIF) |
+| :---: |
+| <img src="docs/exemples/personnages/boucle_punch_pingpong.gif" width="36%" alt="Pose-controlled knight animation (GIF)" /> |
+| *The armor stays identical across all frames (IP-Adapter lock) while the motion follows the skeleton exactly (ControlNet 0.9) — prototype: `scripts/proto_anim_controlnet/`* |
+
+---
+
 <span id="models"></span>
 ## 🤖 AI Models & LoRA Library
 

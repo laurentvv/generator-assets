@@ -78,6 +78,10 @@ def generer_image_vulkan(
     control_image: Optional[str] = None,
     control_net: Optional[str] = None,
     control_strength: float = 0.9,
+    ip_adapter: Optional[str] = None,
+    ip_adapter_image: Optional[str] = None,
+    ip_adapter_strength: float = 1.0,
+    clip_vision: Optional[str] = None,
     circular: bool = False,
     hires: bool = False,
     hires_scale: float = 2.0,
@@ -101,6 +105,10 @@ def generer_image_vulkan(
         raise FileNotFoundError(f"Image de contrôle ControlNet introuvable : {control_image}")
     if (control_image or control_net) and not (control_image and control_net):
         raise ValueError("ControlNet : control_image et control_net doivent être fournis ensemble.")
+    if ip_adapter and not (ip_adapter_image and clip_vision):
+        raise ValueError("IP-Adapter : ip_adapter, ip_adapter_image et clip_vision doivent être fournis ensemble.")
+    if ip_adapter_image and not os.path.exists(ip_adapter_image):
+        raise FileNotFoundError(f"Image de référence IP-Adapter introuvable : {ip_adapter_image}")
 
     chemin_temporaire = output_path is None
     if chemin_temporaire:
@@ -114,6 +122,8 @@ def generer_image_vulkan(
     mode_str = "Img2Img" if init_img else ("Seamless Tile" if circular else "Txt2Img")
     if control_image and control_net:
         mode_str += " + ControlNet"
+    if ip_adapter:
+        mode_str += " + IP-Adapter"
     if loras:
         mode_str += f" + {len(loras)} LoRA(s)"
 
@@ -176,6 +186,14 @@ def generer_image_vulkan(
             "--control-image", control_image,
             "--control-net", control_net,
             "--control-strength", str(control_strength)
+        ])
+
+    if ip_adapter and ip_adapter_image and clip_vision:
+        commande.extend([
+            "--ip-adapter", ip_adapter,
+            "--ip-adapter-image", ip_adapter_image,
+            "--ip-adapter-strength", str(ip_adapter_strength),
+            "--clip_vision", clip_vision
         ])
 
     if circular:

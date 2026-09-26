@@ -101,8 +101,22 @@ validation, écueils MPFB/BlendKit) : [`references/pipeline_3d_blender.md`](refe
 | Portrait 2D → corps 3D complet (.blend/.glb, makeup, rig Mixamo, rendus Cycles) | `character3d` / `character_makeup` |
 | Vêtements modulairesquad MakeHuman depuis un thème | `makehuman_clothes` |
 | Recoloration/retexturation de la garde-robe d'un personnage existant | `outfit` |
-| Sprite guidé par pose OpenPose + scène Godot riggée | `pose_control` |
+| Sprite guidé par pose OpenPose (ControlNet réel, validé 26/09) + scène Godot riggée | `pose_control` |
 | Galerie de portraits multi-émotions pour dialogues RPG | `rpg_portrait` |
+
+**Recette pose/animation validée (2026-09-26, MEMORY_BANK §1.29)** : `pose_control` conditionne
+maintenant **RÉELLEMENT** la génération sur le squelette via **ControlNet OpenPose SDXL xinsir**
+(`C:\Modeles_LLM\controlnet_openpose_sdxl_xinsir.safetensors`, 2,5 Go, `--control-strength 0.9`,
+prérequis amont PR #1752 présent dans nos binaires épinglés) — si le fichier manque, repli
+automatique prompt seul. Pour une **animation de personnage** (sprite multi-frames) : chorégraphie
+d'un rig GLB → keypoints COCO par frame (Blender headless, scripts `scripts/proto_anim_controlnet/`),
+génération frame par frame **txt2img + ControlNet + IP-Adapter Plus sur UNE référence d'apparence**
+(strength 0,7). ⚠️ Écueils mesurés : l'img2img en étoile (init = frame 0) **ancre la pose** (à 0,55
+le personnage ne bouge plus — utiliser txt2img + IP-Adapter) ; une attaque vue de **FACE** est
+foreshortened et illisible en 2D (squelette quasi statique) → projeter le rig en **vue de profil** ;
+la référence IP-Adapter doit être **alignée avec le prompt** (acier clair ↔ « shining steel »), sinon
+dérive (référence sombre à 0,85 → silhouettes noires) ; boucle non cyclique → assembler en GIF
+ping-pong. Coût : ~50 s/frame 768×1024, VRAM ~9 Go.
 
 → Le guide détaillé (règles absolues UV/`.mhclo`, catalogue bilingue 177 modèles) est dans
 [`GUIDE_AGENT_IA_HABILLAGE.md`](../../../GUIDE_AGENT_IA_HABILLAGE.md) — le lire pour tout travail MakeHuman.

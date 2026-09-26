@@ -71,6 +71,9 @@ DEFAULT_SD_MODEL = os.getenv("SD_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "f
 DEFAULT_CLIP_L = os.getenv("SD_CLIP_L_PATH", os.path.join(DEFAULT_MODEL_DIR, "clip_l.safetensors"))
 DEFAULT_T5XXL = os.getenv("SD_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "t5xxl_fp16.safetensors"))
 DEFAULT_VAE = os.getenv("SD_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "ae.safetensors"))
+# ControlNet OpenPose SDXL (recette validée 2026-09-26, MEMORY_BANK §1.29 : juggernautXL + xinsir)
+DEFAULT_CONTROLNET_POSE = os.getenv("SD_CONTROLNET_POSE_PATH", os.path.join(DEFAULT_MODEL_DIR, "controlnet_openpose_sdxl_xinsir.safetensors"))
+DEFAULT_SDXL_MODEL = os.getenv("SD_XL_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "juggernautXL_ragnarok.safetensors"))
 
 # Modèles Vidéo (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))

@@ -14,7 +14,7 @@ import os
 from typing import Any, Dict
 from PIL import Image
 
-from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.config import DEFAULT_CONTROLNET_POSE, DEFAULT_OUTPUT_DIR, DEFAULT_SDXL_MODEL, slugifier_texte
 from core.diffusion import generer_image_vulkan
 from core.image_ops import post_process_asset
 from core.llm import construire_prompt_coherant
@@ -52,6 +52,7 @@ class PoseControlWorkflow(BaseWorkflow):
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         taille = params.get("size", 512) or 512
         nom_base = params.get("output") or f"{slugifier_texte(concept)}_{pose_nom}"
+        chemin_controlnet = self.config.get("controlnet_pose", DEFAULT_CONTROLNET_POSE)
 
         os.makedirs(output_dir, exist_ok=True)
 
@@ -81,8 +82,11 @@ class PoseControlWorkflow(BaseWorkflow):
                 sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
-            # 3. Rendu par diffusion
-            img_brute = generer_image_vulkan(
+            # 3. Rendu par diffusion — conditionnement ControlNet RÉEL quand le modèle
+            # ControlNet OpenPose est présent (recette validée 2026-09-26, MEMORY_BANK §1.29 :
+            # le squelette impose la pose au lieu d'orienter seulement le prompt) ;
+            # sinon repli historique prompt seul (squelette = artefact Marker2D uniquement).
+            kwargs_rendu = dict(
                 prompt=prompt_complet,
                 sd_cli=self.config.get("sd_cli"),
                 sd_model=self.config.get("sd_model"),
@@ -96,6 +100,20 @@ class PoseControlWorkflow(BaseWorkflow):
                 seed=params.get("seed", -1),
                 loras=params.get("loras")
             )
+            if os.path.exists(chemin_squelette) and os.path.exists(chemin_controlnet):
+                # Le ControlNet xinsir est SDXL uniquement (refus sd-cli sur Flux) :
+                # bascule sur le checkpoint SDXL validé avec la recette.
+                modele_controlnet = self.config.get("controlnet_sd_model", DEFAULT_SDXL_MODEL)
+                if os.path.exists(modele_controlnet):
+                    self.log(f"Conditionnement ControlNet OpenPose : {os.path.basename(chemin_controlnet)}"
+                             f" + modèle SDXL {os.path.basename(modele_controlnet)}")
+                    kwargs_rendu.update(sd_model=modele_controlnet, control_image=chemin_squelette,
+                                        control_net=chemin_controlnet, control_strength=0.9)
+                else:
+                    self.log(f"⚠️ Checkpoint SDXL introuvable ({modele_controlnet}) — génération prompt seul.")
+            else:
+                self.log("⚠️ ControlNet OpenPose absent — génération prompt seul (pose non garantie).")
+            img_brute = generer_image_vulkan(**kwargs_rendu)
 
         # 4. Détourage et centrage
         img_propre = post_process_asset(img_brute, redimensionner=taille)
