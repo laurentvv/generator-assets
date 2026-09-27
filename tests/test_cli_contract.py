@@ -433,9 +433,9 @@ def test_flags_cross_familles_restant_en_table_plate():
     parseur (aucun propriétaire unique) : garde-fou du final de migration."""
     parseur = main.construire_parseur()
     titres = [g.title for g in parseur._action_groups]
-    assert "Options partagées entre familles de workflows" in titres
+    assert "Options shared across workflow families" in titres
     groupe = next(g for g in parseur._action_groups
-                  if g.title == "Options partagées entre familles de workflows")
+                  if g.title == "Options shared across workflow families")
     flags = {f for a in groupe._group_actions for f in a.option_strings}
     assert flags == {
         "--factor", "--mode", "--columns", "--frames", "--emotions", "--fps",

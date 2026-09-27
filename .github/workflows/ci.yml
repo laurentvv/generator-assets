@@ -21,11 +21,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Sync dependencies (lock figé)
+      - name: Sync dependencies (frozen lock)
         run: uv sync --frozen
 
-      - name: Lint — règles bloquantes (syntaxe + noms indéfinis)
+      - name: Lint — blocking rules (syntax + undefined names)
         run: uv run --no-sync ruff check .
 
-      - name: Tests (aucun moteur requis — faux exécutables et signaux synthétiques)
+      - name: Tests (no engine required — fake executables and synthetic signals)
         run: uv run --no-sync pytest tests/ -v
