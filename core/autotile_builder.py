@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module de génération d'atlas d'Autotile 47 tuiles (Terrain Minimal 3x3 / Wang Tiles) pour Godot 4.
-Génère l'atlas d'images PNG et la ressource TileSet (.tres) avec peering bits pré-configurés.
+47-tile Autotile atlas generation module (Minimal 3x3 Terrain / Wang Tiles) for Godot 4.
+Generates the PNG image atlas and the TileSet resource (.tres) with pre-configured peering bits.
 """
 
 import os
@@ -16,8 +16,8 @@ def _creer_masque_tuile_3x3(
     radius: float = 0.5
 ) -> Image.Image:
     """
-    Génère un masque Alpha 2D pour une tuile selon l'état de ses 8 voisins (TL, T, TR, R, BR, B, BL, L).
-    0 = Biome B (fond), 1 = Biome A (premier plan / terrain principal).
+    Generates a 2D Alpha mask for a tile based on the state of its 8 neighbors (TL, T, TR, R, BR, B, BL, L).
+    0 = Biome B (background), 1 = Biome A (foreground / main terrain).
     """
     tl, t, tr, r, br, b, bl, gauche = voisins
     mask = Image.new("L", (tile_size, tile_size), 255)
@@ -25,7 +25,7 @@ def _creer_masque_tuile_3x3(
 
     demi = tile_size // 2
 
-    # Si un côté cardinal est vide (0), découper la bordure
+    # If a cardinal side is empty (0), cut the border
     if not t:
         draw.rectangle([0, 0, tile_size, demi // 2], fill=0)
     if not b:
@@ -35,7 +35,7 @@ def _creer_masque_tuile_3x3(
     if not r:
         draw.rectangle([tile_size - demi // 2, 0, tile_size, tile_size], fill=0)
 
-    # Coins intérieurs / extérieurs
+    # Inner / outer corners
     if not tl and t and gauche:
         draw.rectangle([0, 0, demi // 2, demi // 2], fill=0)
     if not tr and t and r:
@@ -45,33 +45,33 @@ def _creer_masque_tuile_3x3(
     if not br and b and r:
         draw.rectangle([tile_size - demi // 2, tile_size - demi // 2, tile_size, tile_size], fill=0)
 
-    # Lissage léger des transitions
+    # Light smoothing of the transitions
     mask_smooth = mask.filter(ImageFilter.GaussianBlur(radius=max(1, tile_size // 32)))
     return mask_smooth
 
 
-# Liste des 47 configurations canoniques de voisins pour le Minimal 3x3 Godot 4
-# Format des 8 voisins : (TL, T, TR, R, BR, B, BL, L)
+# List of the 47 canonical neighbor configurations for the Godot 4 Minimal 3x3
+# Format of the 8 neighbors: (TL, T, TR, R, BR, B, BL, L)
 CONFIGS_47_TUILES = [
-    # 0-7 : Plein, isolés et fins
-    (1, 1, 1, 1, 1, 1, 1, 1), # 0 : Plein centre
-    (0, 0, 0, 0, 0, 0, 0, 0), # 1 : Îlot isolé
-    (0, 1, 0, 0, 0, 1, 0, 0), # 2 : Ligne verticale
-    (0, 0, 0, 1, 0, 0, 0, 1), # 3 : Ligne horizontale
-    (0, 1, 0, 0, 0, 0, 0, 0), # 4 : Bout haut
-    (0, 0, 0, 1, 0, 0, 0, 0), # 5 : Bout droite
-    (0, 0, 0, 0, 0, 1, 0, 0), # 6 : Bout bas
-    (0, 0, 0, 0, 0, 0, 0, 1), # 7 : Bout gauche
-    # 8-15 : Bordures cardinales simples
-    (0, 0, 0, 1, 1, 1, 1, 1), # 8 : Bord haut
-    (1, 1, 0, 0, 0, 1, 1, 1), # 9 : Bord droite
-    (1, 1, 1, 1, 0, 0, 0, 1), # 10 : Bord bas
-    (0, 1, 1, 1, 1, 1, 0, 0), # 11 : Bord gauche
-    (0, 0, 0, 1, 1, 1, 0, 0), # 12 : Coin externe haut-gauche
-    (0, 0, 0, 0, 0, 1, 1, 1), # 13 : Coin externe haut-droite
-    (1, 1, 0, 0, 0, 0, 0, 1), # 14 : Coin externe bas-droite
-    (0, 1, 1, 1, 0, 0, 0, 0), # 15 : Coin externe bas-gauche
-    # 16-23 : T-junctions et croix
+    # 0-7: Full, isolated and thin
+    (1, 1, 1, 1, 1, 1, 1, 1), # 0: Full center
+    (0, 0, 0, 0, 0, 0, 0, 0), # 1: Isolated islet
+    (0, 1, 0, 0, 0, 1, 0, 0), # 2: Vertical line
+    (0, 0, 0, 1, 0, 0, 0, 1), # 3: Horizontal line
+    (0, 1, 0, 0, 0, 0, 0, 0), # 4: Top end
+    (0, 0, 0, 1, 0, 0, 0, 0), # 5: Right end
+    (0, 0, 0, 0, 0, 1, 0, 0), # 6: Bottom end
+    (0, 0, 0, 0, 0, 0, 0, 1), # 7: Left end
+    # 8-15: Simple cardinal borders
+    (0, 0, 0, 1, 1, 1, 1, 1), # 8: Top border
+    (1, 1, 0, 0, 0, 1, 1, 1), # 9: Right border
+    (1, 1, 1, 1, 0, 0, 0, 1), # 10: Bottom border
+    (0, 1, 1, 1, 1, 1, 0, 0), # 11: Left border
+    (0, 0, 0, 1, 1, 1, 0, 0), # 12: Top-left outer corner
+    (0, 0, 0, 0, 0, 1, 1, 1), # 13: Top-right outer corner
+    (1, 1, 0, 0, 0, 0, 0, 1), # 14: Bottom-right outer corner
+    (0, 1, 1, 1, 0, 0, 0, 0), # 15: Bottom-left outer corner
+    # 16-23: T-junctions and crosses
     (0, 0, 0, 1, 1, 1, 1, 1),
     (1, 1, 1, 1, 0, 1, 1, 1),
     (1, 1, 1, 1, 1, 1, 0, 1),
@@ -80,16 +80,16 @@ CONFIGS_47_TUILES = [
     (1, 1, 1, 0, 0, 1, 1, 1),
     (1, 1, 1, 1, 0, 0, 1, 1),
     (1, 1, 1, 1, 1, 0, 0, 1),
-    # 24-31 : Coins internes (concaves)
-    (0, 1, 1, 1, 1, 1, 1, 1), # 24 : Coin interne TL
-    (1, 1, 0, 1, 1, 1, 1, 1), # 25 : Coin interne TR
-    (1, 1, 1, 1, 0, 1, 1, 1), # 26 : Coin interne BR
-    (1, 1, 1, 1, 1, 1, 0, 1), # 27 : Coin interne BL
-    (0, 1, 0, 1, 1, 1, 1, 1), # 28 : Double coin interne haut
-    (1, 1, 0, 1, 0, 1, 1, 1), # 29 : Double coin interne droite
-    (1, 1, 1, 1, 0, 1, 0, 1), # 30 : Double coin interne bas
-    (0, 1, 1, 1, 1, 1, 0, 1), # 31 : Double coin interne gauche
-    # 32-39 : Diagonales et combinaisons complexes
+    # 24-31: Inner corners (concave)
+    (0, 1, 1, 1, 1, 1, 1, 1), # 24: TL inner corner
+    (1, 1, 0, 1, 1, 1, 1, 1), # 25: TR inner corner
+    (1, 1, 1, 1, 0, 1, 1, 1), # 26: BR inner corner
+    (1, 1, 1, 1, 1, 1, 0, 1), # 27: BL inner corner
+    (0, 1, 0, 1, 1, 1, 1, 1), # 28: Double inner corner top
+    (1, 1, 0, 1, 0, 1, 1, 1), # 29: Double inner corner right
+    (1, 1, 1, 1, 0, 1, 0, 1), # 30: Double inner corner bottom
+    (0, 1, 1, 1, 1, 1, 0, 1), # 31: Double inner corner left
+    # 32-39: Diagonals and complex combinations
     (0, 1, 0, 1, 0, 1, 1, 1),
     (1, 1, 0, 1, 0, 1, 0, 1),
     (0, 1, 1, 1, 0, 1, 0, 1),
@@ -98,7 +98,7 @@ CONFIGS_47_TUILES = [
     (1, 0, 1, 1, 1, 1, 1, 1),
     (1, 1, 1, 1, 1, 0, 1, 1),
     (1, 1, 1, 0, 1, 1, 1, 1),
-    # 40-46 : Remplissages d'angles
+    # 40-46: Corner fills
     (1, 1, 1, 1, 1, 1, 1, 0),
     (0, 0, 1, 1, 1, 1, 1, 1),
     (1, 1, 0, 0, 1, 1, 1, 1),
@@ -115,7 +115,7 @@ def generer_atlas_47_tuiles(
     tile_size: int = 128,
     colonnes: int = 8
 ) -> Image.Image:
-    """Compose la planche atlas de 47 tuiles avec transitions propres entre les deux biomes."""
+    """Composes the 47-tile atlas board with clean transitions between the two biomes."""
     lignes = (len(CONFIGS_47_TUILES) + colonnes - 1) // colonnes
     atlas_w = colonnes * tile_size
     atlas_h = lignes * tile_size
@@ -133,7 +133,7 @@ def generer_atlas_47_tuiles(
 
         mask = _creer_masque_tuile_3x3(voisins, tile_size=tile_size)
 
-        # Fond = Biome B, Premier plan = Biome A masqué
+        # Background = Biome B, Foreground = masked Biome A
         tuile_composite = tile_b.copy()
         tuile_composite.paste(tile_a, (0, 0), mask)
 
@@ -148,10 +148,10 @@ def exporter_tileset_godot(
     tile_size: int = 128,
     colonnes: int = 8
 ) -> str:
-    """Génère la ressource TileSet (.tres) Godot 4 avec TerrainSet et peering bits 3x3 minimal configurés."""
+    """Generates the Godot 4 TileSet resource (.tres) with the minimal 3x3 TerrainSet and peering bits configured."""
     chemin_tres = os.path.join(output_dir, f"{nom_base}_tileset.tres")
 
-    # Mappage des peering bits Godot 4 :
+    # Godot 4 peering bits mapping:
     # 0 = top_left, 1 = top, 2 = top_right, 3 = right, 4 = bottom_right, 5 = bottom, 6 = bottom_left, 7 = left
     peering_names = [
         "top_left_corner", "top_side", "top_right_corner", "right_side",
@@ -169,7 +169,7 @@ def exporter_tileset_godot(
             if voisins[p_idx] == 1:
                 bits_str.append(f"0:0/0/terrains_peering_bit/{p_name} = 0")
 
-        # Configuration de la tuile dans la source TileSetAtlasSource
+        # Tile configuration in the TileSetAtlasSource source
         tuile_block = f"""{coords}/0 = 0
 {coords}/0/terrain_set = 0
 {coords}/0/terrain = 0"""

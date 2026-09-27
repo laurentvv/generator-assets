@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module d'analyse stylistique, cohérence d'assets (IP-Adapter) et extraction de palettes de couleurs pour Godot 4.
-Gère :
-- L'extraction de palettes dominantes (K-Means / Quantification)
-- L'exportation de palettes Godot 4 (.tres), Aseprite/GIMP (.gpl) et JSON
-- L'analyse de la signature de style et la construction d'ancres visuelles verrouillées
-- L'assemblage de planches de cohérence visuelle
+Style analysis, asset consistency (IP-Adapter) and color palette extraction module for Godot 4.
+Handles:
+- Dominant palette extraction (K-Means / Quantization)
+- Godot 4 (.tres), Aseprite/GIMP (.gpl) and JSON palette export
+- Style signature analysis and locked visual anchor construction
+- Visual consistency board assembly
 """
 
 import json
@@ -18,18 +18,18 @@ from PIL import Image, ImageDraw
 
 def extraire_palette_image(image: Image.Image, n_couleurs: int = 6) -> List[Dict[str, Any]]:
     """
-    Extrait les N couleurs les plus représentatives de l'image (ignorant la transparence).
+    Extracts the N most representative colors of the image (ignoring transparency).
     """
     img_rgb = image.convert("RGBA")
     arr = np.array(img_rgb)
 
-    # Filtrer les pixels non-transparents
+    # Filter the non-transparent pixels
     mask = arr[..., 3] > 40
     pixels = arr[mask][:, :3]
     if len(pixels) < 100:
         pixels = arr.reshape(-1, 4)[:, :3]
 
-    # Quantification via Pillow
+    # Quantization via Pillow
     img_opaque = Image.fromarray(pixels.reshape(-1, 1, 3))
     quantisee = img_opaque.quantize(colors=n_couleurs, method=Image.Quantize.MEDIANCUT)
     palette_raw = quantisee.getpalette()[:n_couleurs * 3]
@@ -48,11 +48,11 @@ def extraire_palette_image(image: Image.Image, n_couleurs: int = 6) -> List[Dict
 
 
 def analyser_signature_stylistique(image: Image.Image, palette: List[Dict[str, Any]]) -> str:
-    """Construit un prompt de verrouillage de style (Style Lock Anchor) à partir de la palette."""
+    """Builds a style lock prompt (Style Lock Anchor) from the palette."""
     hex_list = [c["hex"] for c in palette[:4]]
     hex_str = ", ".join(hex_list)
 
-    # Analyse de luminosité et saturation
+    # Luminance and saturation analysis
     arr = np.array(image.convert("RGB")).astype(np.float32) / 255.0
     luminance = np.mean(0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2])
 
@@ -65,7 +65,7 @@ def analyser_signature_stylistique(image: Image.Image, palette: List[Dict[str, A
 
 
 def generer_image_palette_preview(palette: List[Dict[str, Any]], largeur: int = 512, hauteur: int = 80) -> Image.Image:
-    """Crée un bandeau visuel affichant les pastilles de couleur et leurs codes hexadécimaux."""
+    """Creates a visual banner showing the color swatches and their hexadecimal codes."""
     img = Image.new("RGBA", (largeur, hauteur), (25, 25, 30, 255))
     draw = ImageDraw.Draw(img)
 
@@ -77,7 +77,7 @@ def generer_image_palette_preview(palette: List[Dict[str, Any]], largeur: int = 
         x1 = x0 + swatch_w
         rgb = tuple(col["rgb"])
         draw.rectangle([x0 + 4, 6, x1 - 4, hauteur - 24], fill=rgb, outline=(60, 60, 70))
-        # Texte HEX
+        # HEX text
         draw.text((x0 + 6, hauteur - 18), col["hex"], fill=(220, 220, 230))
 
     return img
@@ -88,14 +88,14 @@ def exporter_palette_godot(
     output_dir: str,
     palette: List[Dict[str, Any]]
 ) -> Tuple[str, str, str, str]:
-    """Exporte la palette en ressource Godot 4 (.tres), format Aseprite (.gpl), JSON et aperçu PNG."""
+    """Exports the palette as a Godot 4 resource (.tres), Aseprite format (.gpl), JSON and PNG preview."""
     os.makedirs(output_dir, exist_ok=True)
     chemin_tres = os.path.join(output_dir, f"{nom_base}_palette.tres")
     chemin_gpl = os.path.join(output_dir, f"{nom_base}.gpl")
     chemin_json = os.path.join(output_dir, f"{nom_base}_palette.json")
     chemin_png = os.path.join(output_dir, f"{nom_base}_palette_preview.png")
 
-    # 1. Ressource Gradient Godot 4
+    # 1. Godot 4 Gradient resource
     n = len(palette)
     offsets = [round(i / max(n - 1, 1), 3) for i in range(n)]
     colors_str = ", ".join([col["color_godot"] for col in palette])
@@ -134,7 +134,7 @@ def assembler_planche_coherence(
     variantes: List[Tuple[str, Image.Image]],
     taille_cellule: int = 256
 ) -> Image.Image:
-    """Crée une planche récapitulative de cohérence visuelle avec l'image de référence."""
+    """Creates a visual consistency summary board with the reference image."""
     nb_vars = len(variantes)
     nb_colonnes = 1 + min(nb_vars, 4)
     nb_lignes = 1 + (nb_vars - 1) // 4 if nb_vars > 4 else 1
@@ -145,16 +145,16 @@ def assembler_planche_coherence(
     planche = Image.new("RGBA", (largeur_totale, hauteur_totale), (20, 20, 25, 255))
     draw = ImageDraw.Draw(planche)
 
-    # Titre
+    # Title
     draw.text((16, 12), "IP-ADAPTER STYLE CONSISTENCY BOARD (GODOT 4)", fill=(240, 200, 80))
 
-    # Image de référence à gauche
+    # Reference image on the left
     ref_redim = image_ref.convert("RGBA").resize((taille_cellule - 20, taille_cellule - 20), Image.Resampling.LANCZOS)
     draw.rectangle([10, 38, taille_cellule - 10, 38 + taille_cellule - 20], outline=(220, 160, 40), width=2)
     planche.paste(ref_redim, (10, 38), ref_redim)
     draw.text((14, 42), "REFERENCE", fill=(255, 200, 50))
 
-    # Variantes cohérentes
+    # Consistent variants
     for idx, (label, img_var) in enumerate(variantes):
         col_idx = 1 + (idx % 4)
         lig_idx = idx // 4

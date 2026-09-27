@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module de génération de Voxel 3D (Extrusion, Culling des faces internes et Export .GLB pour Godot 4).
+3D Voxel generation module (Extrusion, interior face culling and .GLB export for Godot 4).
 """
 
 import json
@@ -21,14 +21,14 @@ def image_vers_grille_voxels(
     mode_relief: bool = True
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Transforme une image RGBA en volume 3D discret (occupancy et couleurs RGB).
+    Transforms an RGBA image into a discrete 3D volume (occupancy and RGB colors).
 
     Returns:
-        occupancy: array 3D booléen (H, W, D)
-        colors: array 4D float32 (H, W, D, 3) dans [0, 1]
+        occupancy: 3D boolean array (H, W, D)
+        colors: 4D float32 array (H, W, D, 3) in [0, 1]
     """
     img_rgba = image.convert("RGBA")
-    # Redimensionnement vers la résolution de grille
+    # Resize to the grid resolution
     img_resized = img_rgba.resize((grid_size, grid_size), Image.Resampling.NEAREST)
     arr = np.array(img_resized)
 
@@ -47,7 +47,7 @@ def image_vers_grille_voxels(
         for x in range(w):
             if alpha[y, x] > 30:
                 if mode_relief:
-                    # Épaisseur variable selon la luminance
+                    # Variable thickness based on luminance
                     val_lum = lum[y, x]
                     demi_prof = max(1, int(round(val_lum * (d / 2.0))))
                     z_min = max(0, d // 2 - demi_prof)
@@ -71,21 +71,21 @@ def exporter_voxel_glb(
     voxel_scale: float = 0.05
 ) -> str:
     """
-    Génère un fichier .glb optimisé avec Vertex Colors via Blender Headless.
-    Seules les faces extérieures visibles sont créées (culled interior faces).
+    Generates an optimized .glb file with Vertex Colors via Blender Headless.
+    Only the visible outer faces are created (interior faces culled).
     """
     os.makedirs(output_dir, exist_ok=True)
     chemin_glb = os.path.join(output_dir, f"{nom_base}.glb")
     blender_exe = trouver_blender()
 
     if not blender_exe:
-        raise RuntimeError("Blender est requis pour l'exportation des modèles 3D Voxel .glb.")
+        raise RuntimeError("Blender is required for exporting Voxel .glb 3D models.")
 
-    # Extraction des quads visibles
+    # Extraction of the visible quads
     h, w, d = occupancy.shape
 
-    # Définition des 6 faces d'un cube unitaire centré en (0,0,0)
-    # Normale: (+X, -X, +Y, -Y, +Z, -Z)
+    # Definition of the 6 faces of a unit cube centered at (0,0,0)
+    # Normal: (+X, -X, +Y, -Y, +Z, -Z)
     cube_faces = [
         # +X (right)
         {"dir": (0, 1, 0), "verts": [(0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (0.5, 0.5, 0.5), (0.5, -0.5, 0.5)]},
@@ -113,18 +113,18 @@ def exporter_voxel_glb(
                     continue
 
                 col = colors[y, x, z].tolist()
-                # Coordonnées 3D centrées
+                # Centered 3D coordinates
                 pos_x = (x - w / 2.0) * voxel_scale
                 pos_y = -(y - h / 2.0) * voxel_scale
                 pos_z = (z - d / 2.0) * voxel_scale
 
-                # Tester les 6 voisins
+                # Test the 6 neighbors
                 for f_info in cube_faces:
                     dy, dx_dir, dz = f_info["dir"]
                     ny, nx, nz = y + dy, x + dx_dir, z + dz
-                    # Si le voisin est hors limites ou vide, la face est visible !
+                    # If the neighbor is out of bounds or empty, the face is visible!
                     if ny < 0 or ny >= h or nx < 0 or nx >= w or nz < 0 or nz >= d or not occupancy[ny, nx, nz]:
-                        # Ajouter les 4 sommets
+                        # Add the 4 vertices
                         face_indices = []
                         for vx, vy, vz in f_info["verts"]:
                             all_verts.append((pos_x + vx * voxel_scale, pos_y + vy * voxel_scale, pos_z + vz * voxel_scale))
@@ -164,14 +164,14 @@ colors = data["colors"]
 mesh.from_pydata(verts, [], faces)
 mesh.update()
 
-# Ajouter Vertex Colors
+# Add Vertex Colors
 vcol = mesh.color_attributes.new(name="Color", type='FLOAT_COLOR', domain='CORNER')
 for loop_idx, loop in enumerate(mesh.loops):
     face_idx = loop_idx // 4
     col = colors[face_idx]
     vcol.data[loop_idx].color = (col[0], col[1], col[2], 1.0)
 
-# Matériau avec Vertex Color pour Godot
+# Material with Vertex Color for Godot
 mat = bpy.data.materials.new(name="VoxelMaterial")
 mat.use_nodes = True
 nodes = mat.node_tree.nodes
@@ -205,7 +205,7 @@ bpy.ops.export_scene.gltf(
     cmd = [blender_exe, "-b", "--python", script_temp]
     run_engine(cmd, check=True, timeout=600, etiquette="blender voxel")
 
-    # Nettoyage fichiers temporaires
+    # Temporary file cleanup
     for temp in (json_temp, script_temp):
         if os.path.exists(temp):
             os.remove(temp)
