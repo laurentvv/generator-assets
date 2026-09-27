@@ -1,6 +1,6 @@
 {
-  "name": "Pack Environnement de Donjon",
-  "description": "Tuiles de sol seamless et accessoires de décor",
+  "name": "Dungeon Environment Pack",
+  "description": "Seamless floor tiles and scenery props",
   "assets": [
     {
       "workflow": "tileable",

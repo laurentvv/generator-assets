@@ -1,6 +1,6 @@
 {
-  "name": "Pack Démo Batch — Rétro & Procédural",
-  "description": "4 assets en une seule exécution : 2 pixel-art (palettes grid-size différents) + 2 flowmaps (types et angles différents). 100% procédural, quelques secondes au total.",
+  "name": "Batch Demo Pack — Retro & Procedural",
+  "description": "4 assets in a single run: 2 pixel-art (different grid-size palettes) + 2 flowmaps (different types and angles). 100% procedural, a few seconds in total.",
   "assets": [
     {
       "workflow": "pixelart",
