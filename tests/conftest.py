@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Configuration pytest : rend le répertoire du projet importable (main, core, workflows)."""
+"""Pytest configuration: makes the project directory importable (main, core, workflows)."""
 
 import sys
 from pathlib import Path
