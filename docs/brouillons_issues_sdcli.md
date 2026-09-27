@@ -1,22 +1,22 @@
-# Feature requests sd-cli — PUBLIÉES le 2026-09-09 (compte laurentvv)
+# sd-cli feature requests — PUBLISHED on 2026-09-09 (laurentvv account)
 
-| Issue | Titre | Lien |
+| Issue | Title | Link |
 |---|---|---|
 | **#1951** | MiniMax-H3 Ref2VA: expose reference video resolution (+ long-term: latent tail carry-over for chunk chaining) | https://github.com/leejet/stable-diffusion.cpp/issues/1951 |
 | **#1952** | MiniMax-H3: feed reference images to the Qwen text encoder (semantic/timed `<Picture N>`) | https://github.com/leejet/stable-diffusion.cpp/issues/1952 |
 | **#1953** | Wan 2.2 VACE support in vid_gen (reference-to-video / video editing) | https://github.com/leejet/stable-diffusion.cpp/issues/1953 |
 
-**Suivi** : pas de surveillance automatique dédiée — la veille « écosystème ComfyUI » et les
-sessions vérifieront les réponses au besoin (même mécanique que le suivi de l'issue #1946
-du hook SessionStart, à envisager si une réponse arrive).
+**Follow-up**: no dedicated automatic monitoring — the "ComfyUI ecosystem" watch and
+sessions will check the answers as needed (same mechanism as the issue #1946 tracking
+of the SessionStart hook, to consider if an answer arrives).
 
 ---
 
-## Archives des corps publiés (inchangés ci-dessous, hors préambule)
+## Archive of the published bodies (unchanged below, preamble aside)
 
 ---
 
-## Brouillon 1 — Ref2VA: reference resolution control + latent tail carry-over for long-video chaining
+## Draft 1 — Ref2VA: reference resolution control + latent tail carry-over for long-video chaining
 
 **Title:** MiniMax-H3 Ref2VA: expose reference video resolution (+ long-term: latent tail carry-over for chunk chaining)
 
@@ -32,7 +32,7 @@ Happy to A/B test patches on this machine (Vulkan, 16 GB VRAM) — the single-ch
 
 ---
 
-## Brouillon 2 — Images sémantiques (horodatées) dans le prompt via le text-encoder Qwen
+## Draft 2 — Semantic (timestamped) images in the prompt via the Qwen text encoder
 
 **Title:** MiniMax-H3: feed reference images to the Qwen text encoder (semantic/timed `<Picture N>`), separate from VAE-encoded references
 
@@ -44,7 +44,7 @@ Open question on my side: does the `qwen3vl_32b_minimax_h3` GGUF keep the vision
 
 ---
 
-## Brouillon 3 — Support VACE (Wan 2.2)
+## Draft 3 — VACE support (Wan 2.2)
 
 **Title:** Wan 2.2 VACE support in vid_gen (reference-to-video / video editing)
 
@@ -54,7 +54,7 @@ Would VACE weights be in scope for `vid_gen` (GGUF quants of the VACE-enabled Wa
 
 ---
 
-### Rappel process (après publication)
+### Process reminder (after publication)
 
-- ✅ Fait le 2026-09-09 : référencées dans `docs/recherche_comfyui_2026-09-09.md` §8 et
-  `docs/MEMORY_BANK.md` §1.16 (liens + numéros).
+- ✅ Done on 2026-09-09: referenced in `docs/recherche_comfyui_2026-09-09.md` §8 and
+  `docs/MEMORY_BANK.md` §1.16 (links + numbers).

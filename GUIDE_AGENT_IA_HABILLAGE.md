@@ -1,35 +1,35 @@
-# 🤖 Guide Agent IA : Pipeline d'Habillage & Texturation 3D MakeHuman / MPFB
+# 🤖 AI Agent Guide: MakeHuman / MPFB 3D Outfitting & Texturing Pipeline
 
-Ce document est destiné aux **Agents IA de codage** et développeurs. Il décrit l'architecture et les bonnes pratiques pour l'habillage 3D et la texturation des personnages MakeHuman / MPFB dans Blender et Godot 4.
-
----
-
-## 🎯 Architecture & Principes Fondamentaux
-
-### 1. Structure d'un Vêtement MakeHuman
-Un vêtement MakeHuman est un système 3D complet composé de :
-- **Maillage 3D (`.obj`)** : Géométrie 3D avec un dépliage UV spécifique (patron de couture 2D : face, dos, manches, poches).
-- **Lien Barycentrique (`.mhclo`)** : Lie chaque sommet du vêtement aux sommets du corps humain pour s'adapter à toutes les morphologies sans collision.
-- **Descripteur de Matériau (`.mhmat`)** : Configuration des shaders et textures.
-- **Cartes de Textures UV (`_diffuse.png`, `_normal.png`)** : Patrons de couture 2D peints avec détails localisés (coutures, boutons, poches, boucles).
+This document is intended for **AI coding agents** and developers. It describes the architecture and best practices for 3D outfitting and texturing of MakeHuman / MPFB characters in Blender and Godot 4.
 
 ---
 
-## 🛠️ Méthode Canonique de Personnalisation : Transformation de Patrons UV
+## 🎯 Architecture & Core Principles
 
-Pour créer de nouvelles tenues (ex: tenue médiévale, armure de cuir, bure de moine) :
+### 1. Structure of a MakeHuman Garment
+A MakeHuman garment is a complete 3D system made of:
+- **3D Mesh (`.obj`)**: 3D geometry with a specific UV unwrap (2D sewing pattern: front, back, sleeves, pockets).
+- **Barycentric Link (`.mhclo`)**: Ties each garment vertex to the vertices of the human body so it fits every body shape without collision.
+- **Material Descriptor (`.mhmat`)**: Shader and texture configuration.
+- **UV Texture Maps (`_diffuse.png`, `_normal.png`)**: 2D sewing patterns painted with localized details (seams, buttons, pockets, buckles).
 
-### ⚠️ Règle Absolue : Ne Jamais Projeter d'Illustration 2D Plate
-- Ne pas coller une image 2D vue de face sur un vêtement 3D (risque de fausses mains, ceintures étirées sur le dos et les fesses).
-- Ne jamais écraser les fichiers MakeHuman originaux dans `%APPDATA%\...\mpfb\data\data\clothes`.
+---
 
-### ✅ Le Workflow Validé (`scripts/retexture_uv_garment.py`) :
-1. **Partir du vrai patron UV MakeHuman** (`male_worksuit01_diffuse.png`, `shoes01_diffuse.png`, etc.).
-2. **Conserver 100% de la disposition UV** : Les poches, boutons, bretelles et découpes restent exactement à leurs coordonnées.
-3. **Transformer la matière** : Conversion du tissu (ex: denim bleu -> toile de jute beige/chanvre médiéval, boucles métalliques -> fer forgé/bronze).
-4. **Générer la Normal Map PBR** : Création du micro-relief des mailles et coutures.
-5. **Sauvegarder dans le projet** : Isolation des assets dans `godot_assets/textures/<nom_personnage>/`.
-6. **Assigner dans Blender** : Création d'un matériau PBR indépendant et export GLB automatique pour Godot 4.
+## 🛠️ Canonical Customization Method: UV Pattern Transformation
+
+To create new outfits (e.g. medieval outfit, leather armor, monk's habit):
+
+### ⚠️ Absolute Rule: Never Project a Flat 2D Illustration
+- Do not paste a front-view 2D image onto a 3D garment (risk of phantom hands, belts stretched across the back and buttocks).
+- Never overwrite the original MakeHuman files in `%APPDATA%\...\mpfb\data\data\clothes`.
+
+### ✅ The Validated Workflow (`scripts/retexture_uv_garment.py`):
+1. **Start from the real MakeHuman UV pattern** (`male_worksuit01_diffuse.png`, `shoes01_diffuse.png`, etc.).
+2. **Keep 100% of the UV layout**: Pockets, buttons, straps and cutouts stay exactly at their coordinates.
+3. **Transform the material**: Fabric conversion (e.g. blue denim -> beige burlap/medieval hemp, metal buckles -> wrought iron/bronze).
+4. **Generate the PBR Normal Map**: Creation of the micro-relief of the weave and seams.
+5. **Save into the project**: Assets isolated in `godot_assets/textures/<nom_personnage>/`.
+6. **Assign in Blender**: Creation of an independent PBR material and automatic GLB export for Godot 4.
 
 ```bash
 uv run python scripts/retexture_uv_garment.py
@@ -37,46 +37,46 @@ uv run python scripts/retexture_uv_garment.py
 
 ---
 
-## 🗄️ Base de Données & Aiguillage IA Bilingue (FR / EN) (`core/clothes_catalog.py`)
+## 🗄️ Database & Bilingual AI Routing (FR / EN) (`core/clothes_catalog.py`)
 
-Le module [`core/clothes_catalog.py`](file:///C:/GIT/generator-assets/core/clothes_catalog.py) scanne tous les dossiers de vêtements MakeHuman et construit une base de données JSON enrichie de mots-clés sémantiques **en français et en anglais** :
-- **Fichier Catalogue** : [`data/clothes_catalog.json`](file:///C:/GIT/generator-assets/data/clothes_catalog.json) (**177 modèles 3D indexés** avec tags, genres, catégories, barbes, robes de moine, capes, armures, bottes, chemises, chapeaux, chemins `.mhclo`, `.obj`, et patrons `.png`).
-- **Aiguilleur IA Sémantique Bilingue** : La fonction `aiguiller_modele_vetement(prompt, category, gender)` associe automatiquement n'importe quel concept en **anglais ou français** (ex: *"rustic medieval peasant overalls"*, *"monk robe"*, *"viking beard"*, *"heavy leather boots"*, *"veste chic femme"*) au meilleur modèle 3D existant.
+The [`core/clothes_catalog.py`](file:///C:/GIT/generator-assets/core/clothes_catalog.py) module scans all MakeHuman clothing folders and builds a JSON database enriched with semantic keywords **in both French and English**:
+- **Catalog File**: [`data/clothes_catalog.json`](file:///C:/GIT/generator-assets/data/clothes_catalog.json) (**177 indexed 3D models** with tags, genders, categories, beards, monk robes, capes, armors, boots, shirts, hats, `.mhclo` and `.obj` paths, and `.png` patterns).
+- **Bilingual Semantic AI Router**: The `aiguiller_modele_vetement(prompt, category, gender)` function automatically matches any concept in **English or French** (e.g. *"rustic medieval peasant overalls"*, *"monk robe"*, *"viking beard"*, *"heavy leather boots"*, *"veste chic femme"*) to the best existing 3D model.
 
-Pour reconstruire ou rafraîchir l'index du catalogue :
+To rebuild or refresh the catalog index:
 ```bash
 uv run python core/clothes_catalog.py
 ```
 
 ---
 
-## 🚀 Commandes CLI Disponibles
+## 🚀 Available CLI Commands
 
-### 1. Workflow Outfit 100% Automatisé (`main.py -w outfit`)
-Génère et applique des matières sans raccord (Albedo + Normal + Roughness) sur les vêtements d'un personnage :
+### 1. 100% Automated Outfit Workflow (`main.py -w outfit`)
+Generates and applies seamless materials (Albedo + Normal + Roughness) on a character's garments:
 ```bash
 uv run python main.py -w outfit --character marc_novice --top "rustic medieval beige burlap tunic" --shoes "dark worn medieval leather boots"
 ```
 
-### 2. Compilation MakeClothes Universelle (`makeclothes_from_mesh.py`)
-Compile n'importe quel maillage 3D externe (issu d'une IA 3D ou modélisé en Quads) en asset MakeHuman officiel :
+### 2. Universal MakeClothes Compilation (`makeclothes_from_mesh.py`)
+Compiles any external 3D mesh (from a 3D AI or modeled in Quads) into an official MakeHuman asset:
 ```bash
 uv run python scripts/makeclothes_from_mesh.py --mesh "assets/models/cape.obj" --name "cape_voyageur" --category "clothes"
 ```
 
-### 3. Pipeline Complet Personnage Canonique (`character_pipeline.py`)
-Génère la peau propre avec cicatrices/cernes organiques, construit la morphologie MakeHuman, exporte le `.blend` et `.glb` :
+### 3. Complete Canonical Character Pipeline (`character_pipeline.py`)
+Generates clean skin with organic scars/dark circles, builds the MakeHuman morphology, exports the `.blend` and `.glb`:
 ```bash
 uv run python scripts/character_pipeline.py --portrait "assets/portraits/marc_portrait.png" --recipe-script "poc_3d/create_marc_mpfb2.py" --name marc_novice
 ```
 
 ---
 
-## 📂 Organisation des Fichiers
+## 📂 File Organization
 
-| Asset | Emplacement | Description |
+| Asset | Location | Description |
 | :--- | :--- | :--- |
-| **Scène Blender Éditables** | `godot_assets/<nom_perso>.blend` | Scène complète avec entité MakeHuman dynamique et shaders PBR. |
-| **Export Godot 4** | `godot_assets/<nom_perso>.glb` | Modèle de jeu optimisé prêt pour l'intégration Godot 4. |
-| **Textures Personnalisées** | `godot_assets/textures/<nom_perso>/` | Diffuse UV, Normal Maps et textures de tissus isolées. |
-| **Rendu Studio de Validation** | `godot_assets/<nom_perso>_beauty_render.png` | Rendu Cycles sous éclairage 3 points calibré. |
+| **Editable Blender Scenes** | `godot_assets/<nom_perso>.blend` | Full scene with dynamic MakeHuman entity and PBR shaders. |
+| **Godot 4 Export** | `godot_assets/<nom_perso>.glb` | Optimized game model ready for Godot 4 integration. |
+| **Custom Textures** | `godot_assets/textures/<nom_perso>/` | Diffuse UV, Normal Maps and isolated fabric textures. |
+| **Validation Studio Render** | `godot_assets/<nom_perso>_beauty_render.png` | Cycles render under calibrated 3-point lighting. |
