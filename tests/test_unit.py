@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tests unitaires des fonctions pures (audit §2.5) — aucun moteur ni GPU requis.
+"""Unit tests of the pure functions (audit §2.5) — no engine nor GPU required.
 
-Modules couverts : core.config (slugifier), core.music_ai (BPM, boucles,
-ducking, normalisation), core.shader_maps (flowmap), core.loop_ops (boucle
-temporelle, spritesheet), core.autotile_builder (atlas 47 tuiles),
-core.clothes_catalog (routage bilingue sur catalogue factice).
+Modules covered: core.config (slugifier), core.music_ai (BPM, loops,
+ducking, normalization), core.shader_maps (flowmap), core.loop_ops (temporal
+loop, spritesheet), core.autotile_builder (47-tile atlas),
+core.clothes_catalog (bilingual routing over a fake catalog).
 """
 
 import json
@@ -35,7 +35,7 @@ SR = 48000
 
 
 def _clics(bpm: float, duree_s: float, sr: int = SR) -> np.ndarray:
-    """Signal de clics métronomiques (pic sinus décroissant) à un BPM donné."""
+    """Signal of metronome clicks (decaying sine peak) at a given BPM."""
     n = int(duree_s * sr)
     audio = np.zeros((n, 1))
     periode = int(60.0 / bpm * sr)
@@ -55,7 +55,7 @@ def test_slugifier_texte_accent_ponctuation():
 def test_slugifier_texte_longueur_et_vide():
     long = slugifier_texte("a" * 200, max_longueur=20)
     assert len(long) == 20
-    assert slugifier_texte("   ") == "asset_render"  # repli documenté
+    assert slugifier_texte("   ") == "asset_render"  # documented fallback
 
 
 # ============================================================================
@@ -68,7 +68,7 @@ def test_estimer_bpm_clics_120():
 
 
 def test_estimer_bpm_signal_sans_dynamique_renvoie_none():
-    # Énergie identique dans chaque fenêtre (DC) : aucun flux d'onsets → None
+    # Identical energy in every window (DC): no onset flux → None
     audio = np.full((int(8.0 * SR), 1), 0.4)
     assert estimer_bpm(audio, SR) is None
 
@@ -78,7 +78,7 @@ def test_fabriquer_boucle_percussive_duree_en_mesures():
     boucle, infos = fabriquer_boucle_percussive(audio, SR, bpm=120.0, duree_cible=12.0)
     assert infos["strategie"] == "percussive"
     assert boucle.ndim == 2 and boucle.shape[0] / SR >= 12.0
-    # longueur = nombre entier de mesures de 4 temps à 120 BPM (2 s par mesure)
+    # length = whole number of 4-beat bars at 120 BPM (2 s per bar)
     mesures = boucle.shape[0] / SR / 2.0
     assert abs(mesures - round(mesures)) < 0.02
 
@@ -88,11 +88,11 @@ def test_fabriquer_boucle_ambiante_crossfade():
     audio = np.column_stack([0.5 * np.sin(2 * np.pi * 110 * t)])
     boucle, infos = fabriquer_boucle_ambiante(audio, SR, crossfade_s=1.0)
     assert infos["strategie"] == "ambiante" and infos["bpm"] is None
-    assert boucle.shape[0] < audio.shape[0]  # le crossfade consomme la queue
+    assert boucle.shape[0] < audio.shape[0]  # the crossfade consumes the tail
 
 
 def test_fabriquer_boucle_bascule_ambiante_sans_pulsation():
-    # DC : aucun BPM fiable → fondu long plus sûr (contrat documenté)
+    # DC: no reliable BPM → long fade safer (documented contract)
     audio = np.full((int(12.0 * SR), 1), 0.4)
     boucle, infos = fabriquer_boucle(audio, SR, duree_cible=6.0)
     assert infos["strategie"] == "ambiante"
@@ -115,16 +115,16 @@ def test_construire_recette_ducking_chaine_ffmpeg():
     cmd = construire_recette_ducking("voix.wav", "musique.ogg", "mix.wav", volume_musique=0.8)
     for fragment in ("sidechaincompress", "amix=inputs=2", "normalize=0", "stream_loop", "volume=0.8"):
         assert fragment in cmd
-    # deux inputs dans le même ordre que la chaîne de filtres
+    # two inputs in the same order as the filter chain
     assert cmd.index("voix.wav") < cmd.index("musique.ogg") < cmd.index("mix.wav")
 
 
 def test_construire_recette_ducking_executable_par_ffmpeg(tmp_path):
-    """La recette produite est une commande ffmpeg valide (binaire réel si présent)."""
+    """The produced recipe is a valid ffmpeg command (real binary if present)."""
     import shutil
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
-        pytest.skip("ffmpeg absent du PATH")
+        pytest.skip("ffmpeg absent from PATH")
     sr = 48000
     t = np.linspace(0, 2.0, int(2.0 * sr), endpoint=False)
     voix = 0.5 * np.sin(2 * np.pi * 440 * t)
@@ -149,12 +149,12 @@ def test_generer_flowmap_river_dimensions_et_alpha():
     img = generer_flowmap(type_flux="river", resolution=128, angle_deg=90.0)
     assert img.size == (128, 128) and img.mode == "RGBA"
     alpha = img.getchannel("A")
-    assert alpha.getextrema() == (255, 255)  # A toujours opaque
+    assert alpha.getextrema() == (255, 255)  # A always opaque
 
 
 def test_generer_flowmap_vortex_aspiration_vers_le_centre():
-    """Vortex : l'aspiration se resserre — magnitude du vecteur forte au centre,
-    décroissante vers le bord (canal R/G = composantes du vecteur autour de 128)."""
+    """Vortex: the suction tightens — vector magnitude strong at the center,
+    decreasing toward the edge (R/G channel = vector components around 128)."""
     img = generer_flowmap(type_flux="vortex", resolution=64).convert("RGB")
     a = np.asarray(img, dtype=np.float64)
     h, w = a.shape[:2]
@@ -204,7 +204,7 @@ def test_generer_atlas_47_tuiles_dimensions():
 
 
 # ============================================================================
-# core.clothes_catalog (catalogue factice)
+# core.clothes_catalog (fake catalog)
 # ============================================================================
 
 @pytest.fixture
@@ -230,7 +230,7 @@ def test_aiguiller_vetement_filtre_genre_francais(catalogue_factice):
 
 
 def test_aiguiller_vetement_repli_categorie(catalogue_factice):
-    # aucun score positif pour "shoes" sans mot-clé → repli catalog.get("shoes01") → None ici
+    # no positive score for "shoes" without a keyword → fallback catalog.get("shoes01") → None here
     item = aiguiller_modele_vetement("something", category="shoes", catalog_path=catalogue_factice)
     assert item is None
 
@@ -241,12 +241,12 @@ def test_aiguiller_vetement_repli_categorie(catalogue_factice):
 def test_charger_env_lit_cle_valeur_et_commentaires(tmp_path, monkeypatch):
     fichier = tmp_path / ".env"
     fichier.write_text(
-        "# commentaire\n"
-        "TEST_ENV_A=valeur simple\n"
-        'TEST_ENV_B="valeur quotée"\n'
+        "# comment\n"
+        "TEST_ENV_A=simple value\n"
+        'TEST_ENV_B="quoted value"\n'
         "export TEST_ENV_C=c\n"
         "\n"
-        "ligne invalide sans séparateur\n",
+        "invalid line without separator\n",
         encoding="utf-8",
     )
     monkeypatch.delenv("TEST_ENV_A", raising=False)
@@ -254,26 +254,26 @@ def test_charger_env_lit_cle_valeur_et_commentaires(tmp_path, monkeypatch):
     monkeypatch.delenv("TEST_ENV_C", raising=False)
     charger_env(fichier)
     import os
-    assert os.environ["TEST_ENV_A"] == "valeur simple"
-    assert os.environ["TEST_ENV_B"] == "valeur quotée"
+    assert os.environ["TEST_ENV_A"] == "simple value"
+    assert os.environ["TEST_ENV_B"] == "quoted value"
     assert os.environ["TEST_ENV_C"] == "c"
 
 
 def test_charger_env_n_ecrase_pas_la_variable_existante(tmp_path, monkeypatch):
     fichier = tmp_path / ".env"
-    fichier.write_text("TEST_ENV_EXISTANTE=du_fichier\n", encoding="utf-8")
-    monkeypatch.setenv("TEST_ENV_EXISTANTE", "du_shell")
+    fichier.write_text("TEST_ENV_EXISTANTE=from_file\n", encoding="utf-8")
+    monkeypatch.setenv("TEST_ENV_EXISTANTE", "from_shell")
     charger_env(fichier)
     import os
-    assert os.environ["TEST_ENV_EXISTANTE"] == "du_shell"
+    assert os.environ["TEST_ENV_EXISTANTE"] == "from_shell"
 
 
 def test_charger_env_fichier_absent_sans_erreur(tmp_path):
-    charger_env(tmp_path / "inexistant.env")  # ne doit pas lever
+    charger_env(tmp_path / "nonexistent.env")  # must not raise
 
 
 # ==============================================================================
-# core.journal — journalisation structurée (audit §2.8)
+# core.journal — structured logging (audit §2.8)
 
 def test_configurer_journal_niveau_fichier_et_idempotence(tmp_path):
     import logging
@@ -286,15 +286,15 @@ def test_configurer_journal_niveau_fichier_et_idempotence(tmp_path):
         configurer_journal("DEBUG", fichier=log_fichier)
         racine = logging.getLogger()
         assert racine.level == logging.DEBUG
-        assert len(racine.handlers) == 2  # console stderr + fichier
+        assert len(racine.handlers) == 2  # stderr console + file
 
-        logging.getLogger("test.journal").debug("entrée %s", "debug")
+        logging.getLogger("test.journal").debug("entry %s", "debug")
         contenu = log_fichier.read_text(encoding="utf-8")
-        assert "entrée debug" in contenu
+        assert "entry debug" in contenu
         assert "DEBUG" in contenu
         assert "test.journal" in contenu
 
-        # idempotence : ré-appeler remplace les handlers au lieu d'empiler
+        # idempotence: calling again replaces the handlers instead of stacking
         configurer_journal("INFO")
         racine = logging.getLogger()
         assert racine.level == logging.INFO
@@ -309,7 +309,7 @@ def test_configurer_journal_niveau_fichier_et_idempotence(tmp_path):
 
 
 def test_run_engine_journalise_la_commande(caplog):
-    # la commande exécutée passe désormais par logging (core.process), pas par print
+    # the executed command now goes through logging (core.process), not print
     import logging
     import sys
     from core.process import run_engine
