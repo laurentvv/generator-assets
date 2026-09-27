@@ -1,93 +1,93 @@
-# 🧪 Prototype « endless » H3 Ref2VA — séquence vidéo longue par chunks
+# 🧪 H3 Ref2VA "endless" prototype — long video sequence by chunks
 
-> **Statut : PRÉPARÉ, NON LANCÉ, NON VALIDÉ.** Ce document décrit le prototype de
-> boucle multi-chunks MiniMax-H3 Ref2VA (pendant CLI du nœud ComfyUI
+> **Status: PREPARED, NOT LAUNCHED, NOT VALIDATED.** This document describes the
+> multi-chunk MiniMax-H3 Ref2VA loop prototype (CLI twin of the ComfyUI node
 > [HR-Endless-Sampler](https://github.com/hradec/ComfyUI-HR-Endless-Sampler)).
-> La brique unitaire (1 chunk) est **validée** → workflow `h3_ref2va`, lancé par ce
-> prototype en mode `--turbo` (LoRA distillé 8 steps, validé le 2026-09-09 — ~38 min/chunk,
-> raccord référence supérieur ; MEMORY_BANK §1.16). **La boucle elle-même n'a jamais été jugée** : les raccords
-> chunk→chunk sont le point non validé. Ne deviendra un workflow qu'après
-> validation utilisateur du résultat (règle AGENTS.md).
+> The unit brick (1 chunk) is **validated** → `h3_ref2va` workflow, launched by this
+> prototype in `--turbo` mode (distilled 8-step LoRA, validated 2026-09-09 — ~38 min/chunk,
+> better reference splice; MEMORY_BANK §1.16). **The loop itself has never been judged**: chunk→chunk
+> splices are the unvalidated point. Will become a workflow only after
+> user validation of the result (AGENTS.md rule).
 >
-> **Leviers intégrés (2026-09-09, défauts = recette validée — à sonder, pas à déployer)** :
-> `--ref-audio-sec` (fenêtre audio « qui remonte » découpée dans la timeline complète —
-> leçon Motion-Context) • `--ref-frames` (5 = trames de réf exactement sur le raccord,
-> cf. troncature sd-cli 12→5 premières trames) • `--ref-scale` (downscale réf, actif
-> seulement sous la taille nominale sd-cli 768×432). Détail : MEMORY_BANK §1.16.
+> **Integrated levers (2026-09-09, defaults = validated recipe — to probe, not to deploy)**:
+> `--ref-audio-sec` ("reaching-back" audio window cut from the full timeline —
+> Motion-Context lesson) • `--ref-frames` (5 = ref frames exactly on the splice,
+> cf. sd-cli truncation 12→5 first frames) • `--ref-scale` (ref downscale, active
+> only under the nominal sd-cli size 768×432). Detail: MEMORY_BANK §1.16.
 
-## 📏 Ce que ça produit (estimations mesurées, RX 6950 XT / 16 Go / 31,8 Go RAM, mode turbo)
+## 📏 What it produces (measured estimates, RX 6950 XT / 16 GB / 31.8 GB RAM, turbo mode)
 
-| Fenêtre | Résultat attendu |
+| Window | Expected result |
 |---|---|
-| **24 h** | ~34-36 chunks de 22 frames → **31-33 s de vidéo continue avec audio** (864×480, webm) |
-| ~1 h 15 | 2 chunks → de quoi juger **le premier raccord** (recommandé comme 1re étape) |
+| **24 h** | ~34-36 chunks of 22 frames → **31-33 s of continuous video with audio** (864×480, webm) |
+| ~1 h 15 | 2 chunks → enough to judge **the first splice** (recommended as a 1st step) |
 
-Coût d'un chunk en turbo (~38 min, validé 2026-09-09) : encodage VAE de la référence
-~14,5 min (CPU/swap) • Qwen3-VL ~1,5 min • sampling 8 steps ~18 min (134 s/step,
-graph-cut) • décodage ~4,2 min. (Recette de base 20 steps : ~70 min/chunk — voir
-MEMORY_BANK §1.16 pour l'A/B.)
+Cost of one chunk in turbo (~38 min, validated 2026-09-09): reference VAE encoding
+~14.5 min (CPU/swap) • Qwen3-VL ~1.5 min • 8-step sampling ~18 min (134 s/step,
+graph-cut) • decoding ~4.2 min. (Base 20-step recipe: ~70 min/chunk — see
+MEMORY_BANK §1.16 for the A/B.)
 
-**Bonus turbo pour CETTE boucle** : le raccord référence est **meilleur** qu'en recette
-de base (frame 1 quasi identique à la dernière frame de la réf — le point critique
-d'un chaînage chunk→chunk). Le risque n° 1 du proto en est réduit.
+**Turbo bonus for THIS loop**: the reference splice is **better** than in the base
+recipe (frame 1 nearly identical to the ref's last frame — the critical point
+of chunk→chunk chaining). The proto's #1 risk is reduced.
 
-**Leviers intégrés au proto (options, non validés — A/B à faire sur 2 chunks avant généralisation)** :
+**Levers integrated into the proto (options, not validated — A/B to do on 2 chunks before generalizing)**:
 
-| Option | Défaut (= recette validée) | Variante à sonder | Effet attendu |
+| Option | Default (= validated recipe) | Variant to probe | Expected effect |
 |---|---|---|---|
-| `--ref-audio-sec` | 0.5 | 4-6 | Fenêtre audio finissant au raccord, découpée dans la timeline (source + chunks joués) → le modèle « continue la piste » au lieu d'en écrire une qui ressemble (leçon Motion-Context). Continuité musicale chunk→chunk. |
-| `--ref-frames` | 12 | 5 | sd-cli n'encode que les 5 PREMIÈRES trames du dossier (troncature 17k+5) : en fournir exactement 5 les met sur le raccord + encodage VAE réf ÷ ~2,4 (chunk ~30 min). |
-| `--ref-scale` | 1.0 | 0.15 (4K) / 0.85 (864-wide) | Downscale réf aligné 32 px — n'a d'effet QUE sous la taille nominale interne sd-cli (768×432) : latent réf plus petit → attention moins chère (équivalent `video_continuation_res`). Réf plus douce. |
+| `--ref-audio-sec` | 0.5 | 4-6 | Audio window ending at the splice, cut from the timeline (source + played chunks) → the model "continues the track" instead of writing one that resembles it (Motion-Context lesson). Chunk→chunk musical continuity. |
+| `--ref-frames` | 12 | 5 | sd-cli only encodes the 5 FIRST frames of the folder (17k+5 truncation): providing exactly 5 puts them on the splice + ref VAE encoding ÷ ~2.4 (chunk ~30 min). |
+| `--ref-scale` | 1.0 | 0.15 (4K) / 0.85 (864-wide) | 32 px-aligned ref downscale — only has an effect UNDER sd-cli's internal nominal size (768×432): smaller ref latent → cheaper attention (equivalent of `video_continuation_res`). Softer ref. |
 
-**Leviers restants hors proto** : résolution de sortie ÷2 → ~45-60 s/24 h •
-**RAM 64 Go = le vrai déblocage** (fin du swap VAE + DiT résident GPU
-→ chunk ~10-15 min → **1,5-2,5 min/24 h**). Comparaison : Wan 2.2 sur 24 h ≈ 6-9 min
-mais plans indépendants, sans continuité ni audio.
+**Remaining levers outside the proto**: output resolution ÷2 → ~45-60 s/24 h •
+**64 GB RAM = the real unlock** (end of the VAE swap + GPU-resident DiT
+→ chunk ~10-15 min → **1.5-2.5 min/24 h**). Comparison: Wan 2.2 over 24 h ≈ 6-9 min
+but independent shots, without continuity nor audio.
 
-## 🚀 Lancement (quand décidé, machine LIBRE)
+## 🚀 Launch (when decided, FREE machine)
 
 ```bash
-# 1. Vérifier la charge (règle AGENTS.md) — exit 1 = attendre
+# 1. Check the load (AGENTS.md rule) — exit 1 = wait
 uv run python scripts/check_charge_systeme.py
 
-# 2. Lancer la boucle détachée (survit à la fermeture de session)
+# 2. Launch the detached loop (survives session close)
 mkdir -p output/endless_dragon_24h
 nohup uv run python scripts/proto_endless_h3.py --output-dir output/endless_dragon_24h \
   > output/endless_dragon_24h/boucle.log 2>&1 & disown
 ```
 
-Le script (`scripts/proto_endless_h3.py`) : storyboard de 18 prompts éditable en tête
-de fichier (marche → feu → envol → lac → falaises → grotte → trésor → sommeil),
-pré-extraction de la référence de chaque chunk (trames + WAV via ffmpeg, passés au
-workflow en dossier de trames + `--ref-audio`), reprise automatique au premier chunk
-manquant, 3 essais/chunk espacés de 15 min
-(absorbe un check_charge refusant), fenêtre 23 h (`--deadline-min`), concat finale
-automatique (`endless_final.webm`, `-c copy`).
+The script (`scripts/proto_endless_h3.py`): 18-prompt storyboard editable at the top
+of the file (walk → fire → take-off → lake → cliffs → cave → treasure → sleep),
+pre-extraction of each chunk's reference (frames + WAV via ffmpeg, passed to the
+workflow as a frames folder + `--ref-audio`), automatic resume at the first missing
+chunk, 3 attempts/chunk spaced 15 min apart
+(absorbs a refusing check_charge), 23 h window (`--deadline-min`), final automatic
+concat (`endless_final.webm`, `-c copy`).
 
-## 👀 Surveillance & arrêt
+## 👀 Monitoring & stop
 
 ```bash
-tail -f output/endless_dragon_24h/boucle.log      # journal en direct
-ls output/endless_dragon_24h/chunk_*.webm         # avancement (1 chunk ≈ 38 min en turbo)
+tail -f output/endless_dragon_24h/boucle.log      # live journal
+ls output/endless_dragon_24h/chunk_*.webm         # progress (1 chunk ≈ 38 min in turbo)
 ```
 
-**Critère go/no-go (1er raccord, ~1 h 15)** : extraire la dernière frame du chunk_01 et
-la première du chunk_02 — si le dragon mute ou saute franchement, arrêter (inutile de
-brûler 11 h sur une dérive). Micro-sauts possibles : Ref2VA en CLI n'a pas de boundary
-keyframe (incompatible `--init-img`), la référence seule porte la continuité.
-**Protocole suggéré** : sonder les 3 variantes du tableau ci-dessus sur 2 chunks chacune
-(3 × ~1 h 15) — configs : (a) défaut, (b) `--ref-audio-sec 5`, (c) `--ref-frames 5
---ref-audio-sec 5` — juger les raccords (œil + oreille) et ne lancer les 18 chunks
-qu'avec la config gagnante.
+**Go/no-go criterion (1st splice, ~1 h 15)**: extract the last frame of chunk_01 and
+the first of chunk_02 — if the dragon mutates or clearly jumps, stop (no point
+burning 11 h on a drift). Micro-jumps are possible: Ref2VA in CLI has no boundary
+keyframe (incompatible with `--init-img`), the reference alone carries the continuity.
+**Suggested protocol**: probe the 3 variants of the table above on 2 chunks each
+(3 × ~1 h 15) — configs: (a) default, (b) `--ref-audio-sec 5`, (c) `--ref-frames 5
+--ref-audio-sec 5` — judge the splices (eye + ear) and launch the 18 chunks
+only with the winning config.
 
-**Arrêt d'urgence** (tout ce qui est généré est conservé) :
+**Emergency stop** (everything already generated is kept):
 ```bash
 powershell -NoProfile -Command 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match "proto_endless_h3|h3_ref2va" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }; Get-Process sd-cli -ErrorAction SilentlyContinue | Stop-Process -Force'
 ```
 
-## ✅ Après un run conclu
+## ✅ After a conclusive run
 
-1. Juger `endless_final.webm` (œil + oreille, continuité vidéo ET audio sur les raccords).
-2. Consigner le verdict dans MEMORY_BANK §1.16 (nombre de chunks, dérive observée, timings).
-3. Si validé → transformer la boucle en workflow `video_endless` (AGENTS.md : tout test
-   validé devient un workflow) ; si non validé → noter les écueils et les leviers.
+1. Judge `endless_final.webm` (eye + ear, video AND audio continuity across splices).
+2. Record the verdict in MEMORY_BANK §1.16 (chunk count, observed drift, timings).
+3. If validated → turn the loop into a `video_endless` workflow (AGENTS.md: every
+   validated test becomes a workflow); if not validated → note the pitfalls and levers.
