@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module d'opérations d'images avancées pour assets 2D & 3D (Godot Engine).
-Détourage flood-fill, centrage, cadrage carré, génération de maps PBR (Normal, Roughness, Height, AO, ORM),
-assemblage spritesheet, quantification pixel art, et export de fichiers matériaux Godot (.tres).
+Advanced image operations module for 2D & 3D assets (Godot Engine).
+Flood-fill background removal, centering, square cropping, PBR map generation (Normal, Roughness, Height, AO, ORM),
+spritesheet assembly, pixel-art quantization, and Godot material file (.tres) export.
 """
 
 import math
@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
-# Palettes rétro célèbres pour le workflow Pixel Art
+# Famous retro palettes for the Pixel Art workflow
 PALETTES_RETRO = {
     "pico8": [
         (0, 0, 0), (29, 43, 83), (126, 37, 83), (0, 135, 81),
@@ -37,12 +37,12 @@ PALETTES_RETRO = {
 
 
 # ==============================================================================
-# 1. Détourage & Centrage (2D)
+# 1. Background Removal & Centering (2D)
 # ==============================================================================
 def detourer_fond_blanc(image: Image.Image, tolerance: int = 60) -> Image.Image:
     """
-    Détoure le fond blanc par flood-fill depuis les 4 coins extérieurs.
-    Préserve intactes les zones blanches internes des objets.
+    Removes the white background by flood-fill from the 4 outer corners.
+    Keeps the internal white areas of the objects intact.
     """
     rgb = image.convert("RGB")
     largeur, hauteur = rgb.size
@@ -67,7 +67,7 @@ def centrer_et_recadrer(
     redimensionner: int = 512,
     marge_ratio: float = 0.06
 ) -> Image.Image:
-    """Détecte la boîte englobante et centre l'objet dans un canevas carré avec marge."""
+    """Detects the bounding box and centers the object in a square canvas with margin."""
     boite = image_rgba.getbbox()
     if boite:
         contenu = image_rgba.crop(boite)
@@ -94,7 +94,7 @@ def post_process_asset(
     segmenter: str = "auto"
 ) -> Image.Image:
     """
-    Combine le détourage (IA RMBG/BiRefNet ou Flood-fill), le recadrage centré et le redimensionnement.
+    Combines background removal (RMBG/BiRefNet AI or Flood-fill), centered cropping and resizing.
     """
     if segmenter == "none":
         if redimensionner and redimensionner > 0 and image.size != (redimensionner, redimensionner):
@@ -107,27 +107,27 @@ def post_process_asset(
             from core.segmentation import detourer_ia
             detouree = detourer_ia(image)
         except Exception as e:
-            print(f"⚠️ [ImageOps] Fallback sur détourage floodfill : {e}")
+            print(f"⚠️ [ImageOps] Falling back to floodfill background removal: {e}")
             detouree = detourer_fond_blanc(image, tolerance=tolerance)
 
     return centrer_et_recadrer(detouree, redimensionner=redimensionner, marge_ratio=marge_ratio)
 
 
 # ==============================================================================
-# 2. Génération de Maps PBR pour la 3D (Normal, Roughness, Height, AO, ORM)
+# 2. PBR Map Generation for 3D (Normal, Roughness, Height, AO, ORM)
 # ==============================================================================
 def generer_height_map(image: Image.Image) -> Image.Image:
-    """Génère une map de hauteur/déplacement en niveaux de gris équilibrés."""
+    """Generates a balanced grayscale height/displacement map."""
     gray = image.convert("L")
-    # Légère égalisation pour étaler les contrastes
+    # Slight equalization to spread the contrasts
     enhanced = ImageOps.autocontrast(gray, cutoff=2)
     return enhanced
 
 
 def generer_normal_map(image: Image.Image, strength: float = 3.5) -> Image.Image:
     """
-    Calcule une Tangent-Space Normal Map (format OpenGL compatible Godot 4)
-    via gradients Sobel horizontaux et verticaux.
+    Computes a Tangent-Space Normal Map (OpenGL format, Godot 4 compatible)
+    via horizontal and vertical Sobel gradients.
     """
     height_map = generer_height_map(image)
     arr = np.array(height_map, dtype=np.float32) / 255.0
@@ -139,7 +139,7 @@ def generer_normal_map(image: Image.Image, strength: float = 3.5) -> Image.Image
     dx[:, 1:-1] = (arr[:, 2:] - arr[:, :-2]) * 0.5
     dy[1:-1, :] = (arr[2:, :] - arr[:-2, :]) * 0.5
 
-    # Bords
+    # Edges
     dx[:, 0] = arr[:, 1] - arr[:, 0]
     dx[:, -1] = arr[:, -1] - arr[:, -2]
     dy[0, :] = arr[1, :] - arr[0, :]
@@ -155,7 +155,7 @@ def generer_normal_map(image: Image.Image, strength: float = 3.5) -> Image.Image
     ny /= norm
     nz /= norm
 
-    # Encodage OpenGL (X+ vers la droite, Y+ vers le haut, Z+ vers l'extérieur)
+    # OpenGL encoding (X+ to the right, Y+ up, Z+ outward)
     r = ((nx * 0.5 + 0.5) * 255).astype(np.uint8)
     g = (((-ny) * 0.5 + 0.5) * 255).astype(np.uint8)
     b = ((nz * 0.5 + 0.5) * 255).astype(np.uint8)
@@ -164,18 +164,18 @@ def generer_normal_map(image: Image.Image, strength: float = 3.5) -> Image.Image
 
 
 def generer_roughness_map(image: Image.Image, inverser: bool = False, contraste: float = 1.3) -> Image.Image:
-    """Génère la map de rugosité (Roughness) à partir des fréquences de texture."""
+    """Generates the roughness map from texture frequencies."""
     gray = image.convert("L")
 
-    # Filtre passe-haut pour capter les micro-rugosités
+    # High-pass filter to capture micro-roughness
     blur = gray.filter(ImageFilter.GaussianBlur(radius=3))
     high_pass = ImageChops.difference(gray, blur)
     high_pass = ImageOps.autocontrast(high_pass)
 
-    # Mélange avec la luminosité de base
+    # Blend with the base luminance
     roughness = ImageChops.add(gray, high_pass, scale=1.5, offset=-20)
 
-    # Ajustement de contraste
+    # Contrast adjustment
     enhancer = ImageEnhance.Contrast(roughness)
     roughness = enhancer.enhance(contraste)
 
@@ -186,7 +186,7 @@ def generer_roughness_map(image: Image.Image, inverser: bool = False, contraste:
 
 
 def generer_ao_map(image: Image.Image, force: float = 1.5) -> Image.Image:
-    """Génère une map d'occlusion ambiante (Ambient Occlusion) pour les ombres de creux."""
+    """Generates an ambient occlusion map for crevice shadows."""
     gray = image.convert("L")
     blur = gray.filter(ImageFilter.GaussianBlur(radius=8))
     ao = ImageChops.multiply(gray, blur)
@@ -197,10 +197,10 @@ def generer_ao_map(image: Image.Image, force: float = 1.5) -> Image.Image:
 
 def generer_orm_pack(ao_img: Image.Image, roughness_img: Image.Image, metallic_img: Optional[Image.Image] = None) -> Image.Image:
     """
-    Assemble une texture ORM combinée pour Godot 4 :
-    - Rouge (R) = Ambient Occlusion
-    - Vert (G)  = Roughness
-    - Bleu (B)  = Metallic (noir par défaut pour les matériaux diélectriques/pierre/bois)
+    Assembles a combined ORM texture for Godot 4:
+    - Red (R)   = Ambient Occlusion
+    - Green (G) = Roughness
+    - Blue (B)  = Metallic (black by default for dielectric/stone/wood materials)
     """
     ao = ao_img.convert("L")
     rough = roughness_img.convert("L")
@@ -208,15 +208,15 @@ def generer_orm_pack(ao_img: Image.Image, roughness_img: Image.Image, metallic_i
     if metallic_img:
         metal = metallic_img.convert("L")
     else:
-        metal = Image.new("L", ao.size, 0) # Non métallique par défaut
+        metal = Image.new("L", ao.size, 0) # Non-metallic by default
 
     return Image.merge("RGB", (ao, rough, metal))
 
 
 def exporter_fichier_materiau_godot(nom_base: str, output_dir: str) -> str:
     """
-    Génère un fichier de ressource Godot 4 (.tres) StandardMaterial3D
-    prêt à être appliqué directement sur n'importe quel Mesh 3D.
+    Generates a Godot 4 StandardMaterial3D resource file (.tres)
+    ready to be applied directly to any 3D Mesh.
     """
     fichier_tres = os.path.join(output_dir, f"{nom_base}_material.tres")
 
@@ -251,7 +251,7 @@ uv1_scale = Vector3(1, 1, 1)
 
 
 def exporter_fichier_skybox_godot(nom_base: str, output_dir: str) -> str:
-    """Génère un fichier Godot 4 (.tres) Environment avec Skybox 360° équirectangulaire."""
+    """Generates a Godot 4 (.tres) Environment file with 360° equirectangular Skybox."""
     fichier_tres = os.path.join(output_dir, f"{nom_base}_sky_env.tres")
 
     contenu_tres = f"""[gd_resource type="Environment" load_steps=3 format=3]
@@ -281,7 +281,7 @@ glow_enabled = true
 
 
 # ==============================================================================
-# 3. Assemblage & Pixel Art
+# 3. Assembly & Pixel Art
 # ==============================================================================
 def convertir_pixel_art(
     image: Image.Image,
@@ -289,7 +289,7 @@ def convertir_pixel_art(
     taille_export: int = 512,
     palette_nom: str = "pico8"
 ) -> Image.Image:
-    """Transforme un asset en sprite Pixel Art net avec quantification."""
+    """Turns an asset into a sharp Pixel Art sprite with quantization."""
     rgba = image.convert("RGBA")
     pixel_img = rgba.resize((taille_grille, taille_grille), Image.Resampling.BILINEAR)
 
@@ -323,9 +323,9 @@ def assembler_spritesheet(
     noms: List[str],
     colonnes: Optional[int] = None
 ) -> Tuple[Image.Image, dict]:
-    """Assemble une liste d'images dans une feuille de sprites avec JSON Godot 4."""
+    """Assembles a list of images into a sprite sheet with a Godot 4 JSON."""
     if not images:
-        raise ValueError("Aucune image à assembler.")
+        raise ValueError("No image to assemble.")
 
     nb_images = len(images)
     cell_w, cell_h = images[0].size
@@ -370,7 +370,7 @@ def assembler_spritesheet(
 
 
 def creer_apercu_tuilage(image: Image.Image, rep_x: int = 3, rep_y: int = 3) -> Image.Image:
-    """Génère une grille 3x3 pour vérifier le raccord parfait d'une texture seamless."""
+    """Generates a 3x3 grid to check the perfect tiling of a seamless texture."""
     w, h = image.size
     apercu = Image.new(image.mode, (w * rep_x, h * rep_y))
     for i in range(rep_x):

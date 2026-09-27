@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module de rendu par diffusion via stable-diffusion.cpp (Flux.1 & SDXL en Vulkan).
-Supporte Txt2Img, Img2Img, High-Res Fix, Circular Seamless, et l'injection de LoRAs.
-Détecte automatiquement les modèles Flux.1 (GGUF + Encoders) et SDXL / SD 1.5 (Checkpoints Safetensors).
+Diffusion rendering module via stable-diffusion.cpp (Flux.1 & SDXL on Vulkan).
+Supports Txt2Img, Img2Img, High-Res Fix, Circular Seamless, and LoRA injection.
+Automatically detects Flux.1 models (GGUF + Encoders) and SDXL / SD 1.5 (Safetensors Checkpoints).
 """
 
 import os
@@ -31,13 +31,13 @@ from core.process import run_engine
 
 
 def est_modele_flux(sd_model_path: str) -> bool:
-    """Détecte si le modèle spécifié est un modèle Flux (GGUF ou nom contenant flux)."""
+    """Detects whether the given model is a Flux model (GGUF or name containing flux)."""
     nom = os.path.basename(sd_model_path).lower()
     return "flux" in nom or nom.endswith(".gguf")
 
 
 def formater_prompt_avec_loras(prompt: str, loras: Optional[List[Union[str, Tuple[str, float]]]] = None) -> str:
-    """Ajoute les balises <lora:nom:poids> au prompt si des LoRAs sont spécifiés."""
+    """Adds the <lora:name:weight> tags to the prompt when LoRAs are specified."""
     if not loras:
         return prompt
 
@@ -91,31 +91,31 @@ def generer_image_vulkan(
     output_path: Optional[str] = None
 ) -> Image.Image:
     """
-    Exécute sd-cli.exe sous Vulkan avec support des LoRAs et bascule auto Flux / SDXL.
-    Support du ControlNet image (control_image + control_net requis ensemble ;
-    recette validée le 2026-09-26 : SDXL juggernautXL + ControlNet OpenPose xinsir,
-    A/B avec/sans en output/test_controlnet/). Sans output_path, le rendu passe par
-    un fichier temporaire unique (tempfile), supprimé après lecture : compatible avec
-    plusieurs exécutions en parallèle et insensible aux restes d'un appel précédent.
+    Runs sd-cli.exe under Vulkan with LoRA support and automatic Flux / SDXL switching.
+    Image ControlNet support (control_image + control_net required together;
+    recipe validated on 2026-09-26: SDXL juggernautXL + ControlNet OpenPose xinsir,
+    A/B with/without in output/test_controlnet/). Without output_path, the render goes
+    through a unique temporary file (tempfile), removed after reading: compatible with
+    several parallel runs and insensitive to leftovers from a previous call.
     """
     prompt_final = formater_prompt_avec_loras(prompt, loras)
     is_flux = est_modele_flux(sd_model)
 
     if control_image and not os.path.exists(control_image):
-        raise FileNotFoundError(f"Image de contrôle ControlNet introuvable : {control_image}")
+        raise FileNotFoundError(f"ControlNet control image not found: {control_image}")
     if (control_image or control_net) and not (control_image and control_net):
-        raise ValueError("ControlNet : control_image et control_net doivent être fournis ensemble.")
+        raise ValueError("ControlNet: control_image and control_net must be provided together.")
     if ip_adapter and not (ip_adapter_image and clip_vision):
-        raise ValueError("IP-Adapter : ip_adapter, ip_adapter_image et clip_vision doivent être fournis ensemble.")
+        raise ValueError("IP-Adapter: ip_adapter, ip_adapter_image and clip_vision must be provided together.")
     if ip_adapter_image and not os.path.exists(ip_adapter_image):
-        raise FileNotFoundError(f"Image de référence IP-Adapter introuvable : {ip_adapter_image}")
+        raise FileNotFoundError(f"IP-Adapter reference image not found: {ip_adapter_image}")
 
     chemin_temporaire = output_path is None
     if chemin_temporaire:
         descripteur, output_path = tempfile.mkstemp(suffix=".png", prefix="ga_rendu_")
         os.close(descripteur)
-        # sd-cli doit créer le fichier lui-même : on retire l'amorce vide pour
-        # qu'une image obsolète ne puisse jamais être relue en cas d'échec.
+        # sd-cli must create the file itself: we remove the empty placeholder so
+        # a stale image can never be read back on failure.
         os.remove(output_path)
 
     moteur_nom = "Flux.1" if is_flux else "SDXL / SD"
@@ -128,7 +128,7 @@ def generer_image_vulkan(
         mode_str += f" + {len(loras)} LoRA(s)"
 
     cfg_effectif = cfg_scale if cfg_scale != 1.0 or is_flux else 7.0
-    print(f"[{moteur_nom} - {mode_str}] Lancement de sd-cli ({width}x{height}, steps={steps}, cfg={cfg_effectif})...")
+    print(f"[{moteur_nom} - {mode_str}] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_effectif})...")
 
     if is_flux:
         commande = [
@@ -151,7 +151,7 @@ def generer_image_vulkan(
             "-v"
         ]
     else:
-        # Checkpoint monolithique SDXL ou SD 1.5 (.safetensors)
+        # Monolithic SDXL or SD 1.5 checkpoint (.safetensors)
         commande = [
             sd_cli,
             "-m", sd_model,
@@ -168,7 +168,7 @@ def generer_image_vulkan(
             "-v"
         ]
 
-    # Gestion du dossier LoRA
+    # LoRA folder handling
     dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
     if os.path.exists(dossier_lora_effectif):
         commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
@@ -209,11 +209,11 @@ def generer_image_vulkan(
     try:
         run_engine(commande, timeout=1800, capture=False, check=True, etiquette=f"sd-cli {moteur_nom}")
         if not os.path.exists(output_path):
-            raise FileNotFoundError(f"Le fichier de sortie {output_path} n'a pas été produit.")
-        # .copy() charge les pixels en mémoire avant la suppression du temporaire.
+            raise FileNotFoundError(f"The output file {output_path} was not produced.")
+        # .copy() loads the pixels into memory before the temporary file is removed.
         return Image.open(output_path).copy()
     except Exception as e:
-        print(f"❌ Erreur lors du rendu ({moteur_nom}) via sd-cli : {e}")
+        print(f"❌ Error during the render ({moteur_nom}) via sd-cli: {e}")
         raise
     finally:
         if chemin_temporaire and os.path.exists(output_path):
@@ -251,9 +251,9 @@ def generer_video_vulkan(
     output_path: str = "godot_assets/output_video.webm"
 ) -> str:
     """
-    Génère une séquence vidéo (.webm ou séquence d'images) via stable-diffusion.cpp
-    en exploitant l'accélération matérielle Vulkan (Wan 2.1/2.2, LTX-2.3/2.5, MiniMax-H3).
-    Supporte Text-to-Video (T2V), Image-to-Video (I2V), First & Last Frame (FLF2V), et Video-to-Video (V2V).
+    Generates a video sequence (.webm or image sequence) via stable-diffusion.cpp
+    leveraging Vulkan hardware acceleration (Wan 2.1/2.2, LTX-2.3/2.5, MiniMax-H3).
+    Supports Text-to-Video (T2V), Image-to-Video (I2V), First & Last Frame (FLF2V), and Video-to-Video (V2V).
     """
     modele_effectif = resoudre_modele_video(model_path)
     vae_effectif = resoudre_vae_video(vae_path)
@@ -269,7 +269,7 @@ def generer_video_vulkan(
     elif control_video_dir:
         mode_str = "V2V (Video-to-Video Control)"
 
-    print(f"[Vidéo Vulkan - {mode_str}] Génération ({width}x{height}, {video_frames} trames @ {fps} fps, steps={steps})...")
+    print(f"[Vulkan Video - {mode_str}] Generating ({width}x{height}, {video_frames} frames @ {fps} fps, steps={steps})...")
 
     commande = [
         sd_cli,
@@ -307,8 +307,8 @@ def generer_video_vulkan(
     if control_video_dir and os.path.exists(control_video_dir):
         commande.extend(["--control-video", control_video_dir])
 
-    # Optimisation VRAM : les modèles 1.3B tiennent à 100% dans la VRAM (16 Go).
-    # On n'active --offload-to-cpu que pour les modèles lourds (14B) ou si explicitement requis.
+    # VRAM optimization: the 1.3B models fit 100% in VRAM (16 GB).
+    # --offload-to-cpu is only enabled for heavy models (14B) or when explicitly required.
     activer_offload = offload_to_cpu and ("14b" in modele_effectif.lower())
     if activer_offload:
         commande.append("--offload-to-cpu")
@@ -323,21 +323,21 @@ def generer_video_vulkan(
         commande.extend(["-s", "-1"])
 
     try:
-        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli vidéo")
+        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli video")
         if not os.path.exists(output_path):
-            raise FileNotFoundError(f"La vidéo de sortie {output_path} n'a pas été produite.")
-        print(f"✅ Vidéo générée avec succès : {output_path}")
+            raise FileNotFoundError(f"The output video {output_path} was not produced.")
+        print(f"✅ Video generated successfully: {output_path}")
         return output_path
     except Exception as e:
-        print(f"❌ Erreur lors de la génération vidéo via sd-cli : {e}")
+        print(f"❌ Error during video generation via sd-cli: {e}")
         raise
 
 
 def arrondir_grille_h3(video_frames: int) -> int:
-    """Arrondit un nombre de trames à la grille MiniMax-H3 « 5 + 17k » (minimum 5).
+    """Rounds a frame count to the MiniMax-H3 "5 + 17k" grid (minimum 5).
 
-    H3 n'accepte que les comptes de trames 5, 22, 39, 56… ; sd-cli arrondit
-    lui-même à la hausse, on le fait ici pour que les logs et sorties soient exacts.
+    H3 only accepts frame counts 5, 22, 39, 56…; sd-cli rounds up by itself,
+    we do it here so logs and outputs are exact.
     """
     if video_frames <= 5:
         return 5
@@ -370,18 +370,18 @@ def generer_video_ref2va_h3(
     log_fn=print
 ) -> str:
     """
-    Génère une vidéo AVEC audio via MiniMax-H3 Ref2VA : une vidéo de référence
-    (dossier de trames à 24 fps) + son WAV appairé conditionnent le DiT (balises
-    <Video 1> / <Audio 1> dans le prompt). Recette validée le 2026-09-09
-    (RX 6950 XT 16 Go / 31,8 Go RAM) — cf. MEMORY_BANK §1.16 :
-      • placement mémoire obligatoire : DiT sur GPU plafonné (--max-vram, sinon
-        device lost), Qwen3-VL 32B et VAE vidéo sur CPU (sinon OOM VRAM) ;
-      • grille de trames « 5 + 17k » (22/39/56…), 24 fps imposé par le modèle ;
-      • Ref2VA incompatible avec --init-img/--end-img (la référence porte la
-        continuité) ; flow-shift géré en interne par H3 (ne pas l'imposer).
-      • `lora` = LoRA à charger en at_runtime (format « nom[:poids] », résolu dans
-        lora_dir ou DEFAULT_LORA_DIRS) — ex. le turbo distillé 8 steps validé
-        (sampling −64 %, total −46 %, qualité/raccord ≥ baseline, §1.16).
+    Generates a video WITH audio via MiniMax-H3 Ref2VA: a reference video
+    (folder of frames at 24 fps) + its paired WAV condition the DiT (tags
+    <Video 1> / <Audio 1> in the prompt). Recipe validated on 2026-09-09
+    (RX 6950 XT 16 GB / 31.8 GB RAM) — see MEMORY_BANK §1.16:
+      • mandatory memory placement: DiT on GPU with a cap (--max-vram, else
+        device lost), Qwen3-VL 32B and video VAE on CPU (else VRAM OOM);
+      • frame grid "5 + 17k" (22/39/56…), 24 fps imposed by the model;
+      • Ref2VA incompatible with --init-img/--end-img (the reference carries
+        the continuity); flow-shift handled internally by H3 (do not impose it).
+      • `lora` = LoRA to load as at_runtime (format "name[:weight]", resolved in
+        lora_dir or DEFAULT_LORA_DIRS) — e.g. the validated 8-step distilled turbo
+        (sampling −64%, total −46%, quality/match ≥ baseline, §1.16).
     """
     modele = model_path or DEFAULT_H3_REF2VA_MODEL
     vae = vae_path or DEFAULT_H3_VIDEO_VAE
@@ -391,25 +391,25 @@ def generer_video_ref2va_h3(
     manquants = [p for p in (modele, vae, audio_vae, llm) if not os.path.exists(p)]
     if manquants:
         raise FileNotFoundError(
-            "Modèles MiniMax-H3 Ref2VA manquants : " + "; ".join(manquants)
-            + " — téléchargement : repo HF leejet/MiniMax-H3-GGUF (DiT ref2va) et Comfy-Org/MiniMax-H3 (VAEs)"
+            "Missing MiniMax-H3 Ref2VA models: " + "; ".join(manquants)
+            + " — download: HF repo leejet/MiniMax-H3-GGUF (ref2va DiT) and Comfy-Org/MiniMax-H3 (VAEs)"
         )
     if not ref_video_dir or not os.path.isdir(ref_video_dir):
-        raise ValueError(f"Dossier de trames de référence invalide : {ref_video_dir}")
+        raise ValueError(f"Invalid reference frame folder: {ref_video_dir}")
     if ref_audio_path and not os.path.exists(ref_audio_path):
-        raise FileNotFoundError(f"WAV de référence introuvable : {ref_audio_path}")
+        raise FileNotFoundError(f"Reference WAV not found: {ref_audio_path}")
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
-    # Grille 5+17k et canevas aligné 32 px (H3 arrondit sinon à la hausse)
+    # 5+17k grid and 32 px-aligned canvas (otherwise H3 rounds up)
     frames_grille = arrondir_grille_h3(video_frames)
     w_aligne = max(32, (width + 31) // 32 * 32)
     h_aligne = max(32, (height + 31) // 32 * 32)
 
     n_ref = len([f for f in os.listdir(ref_video_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))])
     log_fn(
-        f"[H3 Ref2VA] {w_aligne}x{h_aligne}, {frames_grille} trames @ 24 fps, "
-        f"steps={steps}, cfg={cfg_scale}, seed={seed}, réf={n_ref} trames"
+        f"[H3 Ref2VA] {w_aligne}x{h_aligne}, {frames_grille} frames @ 24 fps, "
+        f"steps={steps}, cfg={cfg_scale}, seed={seed}, ref={n_ref} frames"
         + (f" + audio {os.path.basename(ref_audio_path)}" if ref_audio_path else "")
         + (f" + LoRA {lora}" if lora else "")
     )
@@ -448,21 +448,21 @@ def generer_video_ref2va_h3(
     if lora:
         dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
         if not os.path.isdir(dossier_lora_effectif):
-            raise FileNotFoundError(f"Dossier de LoRAs introuvable : {dossier_lora_effectif}")
+            raise FileNotFoundError(f"LoRA folder not found: {dossier_lora_effectif}")
         commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
 
     if dry_run:
-        log_fn(f"[H3 Ref2VA] DRY-RUN — commande construite ({len(commande)} args), non exécutée :")
+        log_fn(f"[H3 Ref2VA] DRY-RUN — command built ({len(commande)} args), not executed:")
         log_fn("  " + " ".join(f'"{c}"' if " " in c else c for c in commande))
         return output_path
 
     try:
         run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli H3 Ref2VA")
         if not os.path.exists(output_path):
-            raise FileNotFoundError(f"La vidéo de sortie {output_path} n'a pas été produite.")
-        log_fn(f"✅ Vidéo H3 Ref2VA générée : {output_path}")
+            raise FileNotFoundError(f"The output video {output_path} was not produced.")
+        log_fn(f"✅ H3 Ref2VA video generated: {output_path}")
         return output_path
     except Exception as e:
-        log_fn(f"❌ Erreur lors de la génération H3 Ref2VA via sd-cli : {e}")
+        log_fn(f"❌ Error during H3 Ref2VA generation via sd-cli: {e}")
         raise
 

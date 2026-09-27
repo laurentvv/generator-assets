@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Export game-ready d'un animal packé (blend riggé, ex. Quaternius) → GLB Godot.
+Game-ready export of a packed animal (rigged blend, e.g. Quaternius) → Godot GLB.
 
-Recette VALIDÉE utilisateur le 2026-09-18 (campagne RIG IA, MEMORY_BANK §1.28) :
-le mocap natif des packs rendu en boucle = qualité « parfait » ; ce module
-encapsule la chaîne d'export : purge des parasites du fichier d'origine
-(Camera/Cube/Light des blends 2.79), renommage des actions en `AN_*`
-(convention clips du dépôt), export glTF un clip par action, puis vérification
-par ré-import (os + clips).
+Recipe VALIDATED by the user on 2026-09-18 (AI RIG campaign, MEMORY_BANK §1.28):
+the packs' native mocap rendered in a loop = "perfect" quality; this module
+encapsulates the export chain: purging the parasites of the original file
+(Camera/Cube/Light from the 2.79 blends), renaming the actions to `AN_*`
+(repository clip convention), glTF export one clip per action, then verification
+by re-import (bones + clips).
 
-Sortie : GLB glissable dans Godot (AnimationPlayer généré automatiquement).
+Output: GLB drop-in ready for Godot (AnimationPlayer generated automatically).
 """
 
 import json
@@ -21,8 +21,8 @@ from typing import Dict, List, Optional
 from core.blender_ops import trouver_blender
 from core.process import run_engine
 
-# objets parasites standards des fichiers pack (blend 2.79 : caméra/cube/lampe
-# par défaut) — supprimés avant export (jamais de purge « au nom près » d'autre chose)
+# standard parasite objects of pack files (blend 2.79: default camera/cube/lamp
+# objects) — removed before export (never purge anything else by name)
 PARASITES_STANDARDS = ("Camera", "Cube", "Light", "Lamp")
 
 
@@ -31,21 +31,21 @@ def _script_export(chemin_blend: str, sortie_glb: str, prefixe: str) -> str:
     return f"""
 import bpy
 
-# ouverture du blend pack (le workflow tourne sur une instance headless dediee)
+# open the pack blend (the workflow runs on a dedicated headless instance)
 bpy.ops.wm.open_mainfile(filepath=r"{blend_ouvert}")
 
-# purge des parasites standards du fichier pack
+# purge the standard parasites of the pack file
 for nom in {PARASITES_STANDARDS!r}:
     o = bpy.data.objects.get(nom)
     if o:
         bpy.data.objects.remove(o, do_unlink=True)
 
-# renommage des actions en clips AN_* (convention depot)
+# rename the actions to AN_* clips (repository convention)
 for a in bpy.data.actions:
     if not a.name.startswith({prefixe!r}):
         a.name = {prefixe!r} + a.name
 
-# selection armatures + meshes uniquement (pas les vides/cameras residuelles)
+# select armatures + meshes only (no residual empties/cameras)
 for o in bpy.context.scene.objects:
     o.select_set(o.type in {{'ARMATURE', 'MESH'}})
 bpy.context.view_layer.objects.active = next(
@@ -93,22 +93,22 @@ def _run_blender(blender: str, script: str) -> str:
 def exporter_animal_godot(chemin_blend: str, sortie_glb: str,
                           prefixe: str = "AN_",
                           actions_filtre: Optional[List[str]] = None) -> Dict:
-    """Exporte un blend d'animal packé en GLB Godot (clips AN_*), vérifié.
+    """Exports a packed animal blend to a verified Godot GLB (AN_* clips).
 
-    actions_filtre : liste optionnelle de noms d'actions à garder (ex.
-    ['Gallop', 'Walk']) — les autres sont purgées avant export.
-    Retour : dict {glb, os, clips, meshes} ou lève RuntimeError.
+    actions_filtre: optional list of action names to keep (e.g.
+    ['Gallop', 'Walk']) — the others are purged before export.
+    Returns: dict {glb, os, clips, meshes} or raises RuntimeError.
     """
     blender = trouver_blender()
     if not blender:
-        raise RuntimeError("Blender introuvable (core/blender_ops.trouver_blender).")
+        raise RuntimeError("Blender not found (core/blender_ops.trouver_blender).")
     chemin_blend = os.path.abspath(chemin_blend)
     sortie_glb = os.path.abspath(sortie_glb)
     if not os.path.exists(chemin_blend):
-        raise FileNotFoundError(f"Blend source introuvable : {chemin_blend}")
+        raise FileNotFoundError(f"Source blend not found: {chemin_blend}")
     os.makedirs(os.path.dirname(sortie_glb) or ".", exist_ok=True)
 
-    # purge optionnelle d'actions (renommage fait dans le script d'export)
+    # optional action purge (renaming done in the export script)
     if actions_filtre:
         purge = f"""
 import bpy
@@ -123,9 +123,9 @@ print("PURGE_ACTIONS_OK")
     sortie = _run_blender(blender, _script_export(chemin_blend, sortie_glb, prefixe))
     if "EXPORT_OK" not in sortie:
         extrait = [ligne for ligne in sortie.splitlines() if ligne.strip()][-5:]
-        raise RuntimeError("Export GLB échoué : " + " | ".join(extrait))
+        raise RuntimeError("GLB export failed: " + " | ".join(extrait))
     if not os.path.exists(sortie_glb):
-        raise RuntimeError(f"GLB non produit : {sortie_glb}")
+        raise RuntimeError(f"GLB not produced: {sortie_glb}")
 
     verif = _run_blender(blender, _script_verif(sortie_glb))
     rapport = {}
@@ -134,6 +134,6 @@ print("PURGE_ACTIONS_OK")
             rapport = json.loads(ligne[len("VERIF_JSON:"):])
             break
     if not rapport:
-        raise RuntimeError("Vérification ré-import sans résultat (GLB illisible ?)")
+        raise RuntimeError("Re-import verification returned no result (unreadable GLB?)")
     rapport.update({"glb": sortie_glb, "source": chemin_blend})
     return rapport

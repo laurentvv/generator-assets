@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Génération musicale par « essence » d'une référence (Stable Audio 3 Medium, init_audio).
+Music generation from the "essence" of a reference track (Stable Audio 3 Medium, init_audio).
 
-Capacité validée par l'utilisateur les 2026-09-08/09 sur la référence Love Like Blood :
-le conditionnement audio (init_audio) transmet le groove/timbre de la référence là où
-le prompt texte seul sort du pop. Échelles validées : plateau 0,40-0,45 à graine fixe
-(0,5+ = loterie selon la graine, ≤0,35 = zone quasi-copie avec bave du chant source).
-La bave de voix se retire ensuite via HTDemucs (core.separation.retirer_voix).
+Capability validated by the user on 2026-09-08/09 against the Love Like Blood reference:
+audio conditioning (init_audio) carries over the groove/timbre of the reference where a
+text-only prompt drifts into pop. Validated scales: 0.40-0.45 plateau at fixed seed
+(0.5+ = seed-dependent lottery, <=0.35 = near-copy zone with vocal bleed from the source).
+The vocal bleed is then removed via HTDemucs (core.separation.retirer_voix).
 
-Écueils intégrés :
-- SA3 n'a pas d'options planner (bpm/keyscale) — tempo/tonalité passent dans le texte
-- la sortie SA3 est en 44,1 kHz stéréo (prête pour HTDemucs, aucun rééchantillonnage)
+Integrated pitfalls:
+- SA3 has no planner options (bpm/keyscale) — tempo/key go into the text prompt
+- SA3 output is 44.1 kHz stereo (ready for HTDemucs, no resampling)
 """
 
 import os
@@ -26,7 +26,7 @@ MODELE_SA3_MEDIUM = os.getenv(
     os.path.join("C:\\Modeles_LLM", "Stable-Audio-3-Medium-GGUF", "stable-audio-3-medium-f16.gguf"),
 )
 
-# Plateau validé le 2026-09-09 (graine 42) : 0,40 et 0,45 (réf 30 ou 60 s) tiennent l'essence.
+# Plateau validated on 2026-09-09 (seed 42): 0.40 and 0.45 (30 or 60 s ref) hold the essence.
 DEFAULT_SCALE = 0.45
 
 
@@ -40,18 +40,18 @@ def generer_essence_sa3(
     backend: str = "vulkan",
 ) -> Dict[str, Any]:
     """
-    Génère `duree` secondes de musique à l'essence de `reference` (mode init_audio).
-    Retourne {wav, mp3, rtf}. Le chant de la référence peut baver dans la sortie
-    (échelles basses) — passer le résultat par retirer_voix pour un instrumental pur.
+    Generates `duree` seconds of music with the essence of `reference` (init_audio mode).
+    Returns {wav, mp3, rtf}. The reference vocals may bleed into the output
+    (low scales) — pass the result through retirer_voix for a pure instrumental.
     """
     if not os.path.exists(MODELE_SA3_MEDIUM):
         raise FileNotFoundError(
-            f"Paquet SA3 Medium introuvable : {MODELE_SA3_MEDIUM} — le télécharger depuis "
+            f"SA3 Medium package not found: {MODELE_SA3_MEDIUM} — download it from "
             f"audio-cpp/audio.cpp-gguf (Stable-Audio-3-Medium-GGUF/stable-audio-3-medium-f16.gguf, "
-            f"5,43 Gio ; téléchargeur parallèle recommandé)."
+            f"5.43 GiB; parallel downloader recommended)."
         )
     if not os.path.exists(reference):
-        raise FileNotFoundError(f"Référence audio introuvable : {reference}")
+        raise FileNotFoundError(f"Audio reference not found: {reference}")
 
     sortie_wav = os.path.abspath(sortie_wav)
     os.makedirs(os.path.dirname(sortie_wav), exist_ok=True)
@@ -70,7 +70,7 @@ def generer_essence_sa3(
     )
     if res.returncode != 0 or not os.path.exists(sortie_wav):
         extrait = (res.stderr or res.stdout or "").strip()[-400:]
-        raise RuntimeError(f"Génération SA3 échouée (exit {res.returncode}) : {extrait}")
+        raise RuntimeError(f"SA3 generation failed (exit {res.returncode}): {extrait}")
 
     rtf = None
     m = re.search(r"metrics\.rtf=([\d.]+)", res.stdout)
