@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Video : Génération de cinématiques, clips animés et VFX vidéo (.webm) pour Godot 4.
-Exploite l'accélération matérielle Vulkan de stable-diffusion.cpp (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3).
+Video Workflow: generation of cinematics, animated clips and video VFX (.webm) for Godot 4.
+Leverages the Vulkan hardware acceleration of stable-diffusion.cpp (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3).
 
-Supporte :
-  • T2V (Text-to-Video) : Génération de vidéo à partir d'une description textuelle.
-  • I2V (Image-to-Video) : Animation d'une image fixe (--input).
-  • FLF2V (First & Last Frame) : Interpolation fluide entre deux images clés (--input et --end-img).
-  • V2V (Video Control) : Transfert de style / guidage par dossier de trames (--control-video).
+Supports:
+  • T2V (Text-to-Video): video generation from a textual description.
+  • I2V (Image-to-Video): animation of a still image (--input).
+  • FLF2V (First & Last Frame): smooth interpolation between two keyframes (--input and --end-img).
+  • V2V (Video Control): style transfer / guidance from a frame folder (--control-video).
 """
 
 import os
@@ -22,30 +22,30 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class VideoWorkflow(BaseWorkflow):
-    """Génération de cinématiques et clips vidéo (.webm) via stable-diffusion.cpp sous Vulkan."""
+    """Generation of cinematics and video clips (.webm) via stable-diffusion.cpp on Vulkan."""
 
     name = "video"
-    description = "Génération vidéo IA native (.webm) via Wan 2.1 / LTX / MiniMax sous Vulkan (T2V, I2V, FLF2V)"
+    description = "Native AI video generation (.webm) via Wan 2.1 / LTX / MiniMax on Vulkan (T2V, I2V, FLF2V)"
 
     emoji = "🎬"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --frames, --fps,
-    # --width/--height restent dans la table plate (partagés entre familles :
-    # anim_loop/vfx_flipbook 2D, h3_ref2va, skybox, asset_blendkit).
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). --frames, --fps,
+    # --width/--height stay in the flat table (shared across families:
+    # 2D anim_loop/vfx_flipbook, h3_ref2va, skybox, asset_blendkit).
     PARAMETRES = [
         dict(flags=("--end-img",),
-             help="Image clé de fin pour l'interpolation vidéo FLF2V (workflow video)."),
+             help="End keyframe for FLF2V video interpolation (video workflow)."),
         dict(flags=("--control-video",),
-             help="Dossier de trames de guidage vidéo V2V (workflow video)."),
+             help="Frame folder for V2V video guidance (video workflow)."),
         dict(flags=("--flow-shift",), type=float, default=3.0,
-             help="Facteur de shift flow-matching pour modèles Wan/SD3 (défaut: 3.0)."),
+             help="Flow-matching shift factor for Wan/SD3 models (default: 3.0)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt:
-            raise ValueError("Le paramètre 'prompt' est requis pour le workflow video.")
+            raise ValueError("The 'prompt' parameter is required for the video workflow.")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         os.makedirs(output_dir, exist_ok=True)
@@ -68,7 +68,7 @@ class VideoWorkflow(BaseWorkflow):
         cfg_scale = float(params.get("cfg_scale", 6.0))
         flow_shift = float(params.get("flow_shift", 3.0))
 
-        self.log(f"Lancement de la génération vidéo ({frames} trames @ {fps} fps, résolution {width}x{height})...")
+        self.log(f"Starting the video generation ({frames} frames @ {fps} fps, resolution {width}x{height})...")
 
         video_path = generer_video_vulkan(
             prompt=prompt,
@@ -94,7 +94,7 @@ class VideoWorkflow(BaseWorkflow):
             output_path=video_output_path
         )
 
-        # Génération facultative d'une ressource / script Godot 4 VideoStreamPlayer
+        # Optional generation of a Godot 4 VideoStreamPlayer resource / scene
         godot_scene_path = os.path.splitext(video_output_path)[0] + "_player.tscn"
         try:
             rel_video_name = os.path.basename(video_output_path)
@@ -109,7 +109,7 @@ grow_vertical = 2
 autoplay = true
 loop = true
 expand = true
-# Chargez votre ressource vidéo WebM / Theora :
+# Load your WebM / Theora video resource:
 # stream = ExtResource("res://assets/{rel_video_name}")
 """
             with open(godot_scene_path, "w", encoding="utf-8") as f:
@@ -117,11 +117,11 @@ expand = true
         except Exception:
             pass
 
-        # Super-résolution IA optionnelle post-génération (--upscale)
+        # Optional AI super-resolution after generation (--upscale)
         upscaled_video_path = None
         if params.get("upscale"):
             facteur_up = float(params.get("factor", 2.0))
-            self.log(f"🚀 [Post-Processing] Upscaling IA de la vidéo ({facteur_up}x) via ESRGAN / Lanczos...")
+            self.log(f"🚀 [Post-Processing] AI upscaling of the video ({facteur_up}x) via ESRGAN / Lanczos...")
             upscale_out = os.path.splitext(video_output_path)[0] + f"_upscaled_{int(facteur_up)}x.mp4"
             try:
                 upscaled_video_path = upscale_video(
@@ -135,7 +135,7 @@ expand = true
                     log_fn=self.log
                 )
             except Exception as e:
-                self.log(f"Avertissement lors de l'upscaling vidéo post-génération : {e}", emoji="⚠️")
+                self.log(f"Warning during post-generation video upscaling: {e}", emoji="⚠️")
 
         return {
             "prompt": prompt,

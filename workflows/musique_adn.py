@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Musique ADN : nouvelle musique avec l'ADN (BPM + tonalité) d'une
-référence audio — détection automatique, contraintes IMPOSÉES au planner LM
-d'ACE-Step 1.5 (xl-turbo par défaut). Méthode validée le 2026-09-06
-(llb_xl_adn : BPM rendu 83,3 vs 83,3 source ; seule recette validée par
-l'utilisateur — cf. MEMORY_BANK §1.11 pour la carte honnête des essais).
+Musique ADN Workflow: new music with the DNA (BPM + key) of an
+audio reference — automatic detection, constraints ENFORCED on the LM planner
+of ACE-Step 1.5 (xl-turbo by default). Method validated on 2026-09-06
+(llb_xl_adn: rendered BPM 83.3 vs 83.3 source; the only recipe validated by the
+user — see MEMORY_BANK §1.11 for the honest map of the attempts).
 
-Le style se décrit en texte (EN, sobre) ; le workflow verrouille les nombres
-(BPM/tonalité détectés sur la référence, ou forcés via --tonalite).
+The style is described in text (EN, sober); the workflow locks the numbers
+(BPM/key detected on the reference, or forced via --tonalite).
 """
 
 import os
@@ -27,63 +27,63 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class MusiqueAdnWorkflow(BaseWorkflow):
-    """Nouvelle musique avec le BPM + la tonalité détectés d'une référence (ACE-Step 1.5, Vulkan)."""
+    """New music with the BPM + key detected from a reference (ACE-Step 1.5, Vulkan)."""
 
     name = "musique_adn"
-    description = ("Générer une NOUVELLE musique avec l'ADN d'une référence (BPM + tonalité "
-                   "auto, imposés au planner ACE-Step 1.5 xl-turbo) — style décrit en texte")
+    description = ("Generate NEW music with the DNA of a reference (BPM + key "
+                   "auto, enforced on the ACE-Step 1.5 xl-turbo planner) — style described in text")
 
     emoji = "🧬"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --variante vit dans
-    # music_bg ; --langue dans chanson ; --tonalite et --lyrics (partagés) dans
+    # CLI declaration (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). --variante lives in
+    # music_bg; --langue in chanson; --tonalite and --lyrics (shared) in
     # music_bg.
     PARAMETRES = [
         dict(flags=("--negatif",), default=None,
-             help="Prompt négatif EN pour musique_adn — ex: 'pop, soft, mellow, gentle'."),
+             help="EN negative prompt for musique_adn — e.g.: 'pop, soft, mellow, gentle'."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         reference = params.get("input")
         if not reference or not os.path.exists(reference):
-            raise ValueError("Référence audio introuvable : la passer via -i <audio> (MP3/WAV).")
+            raise ValueError("Audio reference not found: pass it via -i <audio> (MP3/WAV).")
         style = (params.get("prompt") or "").strip()
         if not style:
-            raise ValueError("Fournir la description du style EN (paramètre positionnel).")
+            raise ValueError("Provide the EN style description (positional parameter).")
 
         duree = float(params.get("duration") or 0) or 60.0
         if duree < 10.0:
             duree = 60.0
         variante = params.get("variante") or "xl-turbo"
         if variante not in ACESTEP15_VARIANTES:
-            raise ValueError(f"Variante inconnue : {variante} (choix : {', '.join(ACESTEP15_VARIANTES)})")
+            raise ValueError(f"Unknown variant: {variante} (choices: {', '.join(ACESTEP15_VARIANTES)})")
         langue = params.get("langue") or "fr"
         negatif = params.get("negatif") or None
         graine = params.get("seed")
         graine = int(graine) if graine is not None and int(graine) >= 0 else -1
 
-        # Paroles optionnelles : --lyrics pointant un fichier .txt
+        # Optional lyrics: --lyrics pointing to a .txt file
         paroles = "[Instrumental]"
         brut_lyrics = params.get("lyrics") or ""
         if brut_lyrics and os.path.isfile(brut_lyrics) and brut_lyrics.lower().endswith(".txt"):
             with open(brut_lyrics, encoding="utf-8") as f:
                 paroles = f.read().strip() or paroles
-            self.log(f"Paroles chargées depuis {brut_lyrics}", "📄")
+            self.log(f"Lyrics loaded from {brut_lyrics}", "📄")
 
-        self.log(f"Analyse de la référence : {reference}", "🔍")
+        self.log(f"Reference analysis: {reference}", "🔍")
         chemin_wav = convertir_en_wav(reference)
         audio, sr = charger_audio(chemin_wav)
         bpm = estimer_bpm(audio, sr)
         if bpm is None:
-            raise ValueError("Aucun tempo détecté dans la référence (audio non pulsatif ?).")
+            raise ValueError("No tempo detected in the reference (non-pulsative audio?).")
         bpm = int(round(bpm))
         tonalite = params.get("tonalite") or detecter_tonalite(audio, sr)
-        self.log(f"ADN détecté : {bpm} BPM • {tonalite} • {len(audio) / sr:.0f} s analysées", "🧬")
+        self.log(f"DNA detected: {bpm} BPM • {tonalite} • {len(audio) / sr:.0f} s analyzed", "🧬")
 
-        # Recette validée : description SOBRE + nombres imposés (le suffixe
-        # « instrumental » seulement sans paroles — l'ajouter avec des paroles
-        # contredit le planner).
+        # Validated recipe: SOBER description + enforced numbers (the
+        # "instrumental" suffix only without lyrics — adding it with lyrics
+        # contradicts the planner).
         if paroles == "[Instrumental]":
             description = f"{style}, {bpm} BPM, {tonalite}, completely instrumental, no vocals"
         else:
@@ -93,7 +93,7 @@ class MusiqueAdnWorkflow(BaseWorkflow):
         sortie = os.path.join("output", "music_chanson", f"{nom}.wav")
         os.makedirs(os.path.dirname(sortie), exist_ok=True)
 
-        self.log(f"Génération {duree:.0f} s • {variante} • BPM {bpm} + {tonalite} imposés au planner", "🎵")
+        self.log(f"Generating {duree:.0f} s • {variante} • BPM {bpm} + {tonalite} enforced on the planner", "🎵")
         chemin, backend = generer_musique_acestep(
             description=description,
             chemin_sortie=sortie,
@@ -108,5 +108,5 @@ class MusiqueAdnWorkflow(BaseWorkflow):
             log=lambda m: self.log(m, "🎵"),
         )
         mp3 = convertir_mp3(chemin, chemin.replace(".wav", ".mp3"), 224)
-        self.log(f"Musique prête : {mp3} (backend {backend}) — ADN : {bpm} BPM / {tonalite}", "🎧")
+        self.log(f"Music ready: {mp3} (backend {backend}) — DNA: {bpm} BPM / {tonalite}", "🎧")
         return {"wav": chemin, "mp3": mp3, "bpm": bpm, "tonalite": tonalite, "backend": backend}

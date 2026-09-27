@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow SpriteSheet : Génération multi-vues et assemblage de feuille de sprites pour Godot.
-Génère les angles (face, profil droit, dos, profil gauche), effectue le détourage et assemble la grille.
+SpriteSheet workflow: multi-view generation and sprite sheet assembly for Godot.
+Generates the angles (front, right profile, back, left profile), performs the cutout and assembles the grid.
 """
 
 import json
@@ -26,13 +26,13 @@ ANGLES_4 = [
 @WorkflowRegistry.register
 class SpriteSheetWorkflow(BaseWorkflow):
     name = "spritesheet"
-    description = "Génération d'une planche de sprites multi-angles (Face, Profils, Dos) avec export JSON Godot"
+    description = "Multi-angle sprite sheet generation (Front, Profiles, Back) with Godot JSON export"
 
     emoji = "📊"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:
-            raise ValueError("Le paramètre 'prompt' est requis pour le workflow spritesheet.")
+            raise ValueError("The 'prompt' parameter is required for the spritesheet workflow.")
 
         nom_base = params.get("output") or slugifier_texte(concept)
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
@@ -42,13 +42,13 @@ class SpriteSheetWorkflow(BaseWorkflow):
         seed = params.get("seed", 42)
 
         os.makedirs(output_dir, exist_ok=True)
-        self.log(f"Création d'une planche de sprites pour '{concept}' (4 angles, taille cellule={cell_size}px)...")
+        self.log(f"Creating a sprite sheet for '{concept}' (4 angles, cell size={cell_size}px)...")
 
         images_angles = []
         noms_angles = []
 
         for nom_angle, description_angle in ANGLES_4:
-            self.log(f"Génération de la vue : {nom_angle.upper()}...")
+            self.log(f"Generating view: {nom_angle.upper()}...")
 
             prompt_angle = construire_prompt_coherant(
                 concept=f"{concept}, {nom_angle} angle",
@@ -60,7 +60,7 @@ class SpriteSheetWorkflow(BaseWorkflow):
                 sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
-            # Rendu Flux.1 (avec même graine de base pour assurer la cohérence)
+            # Flux.1 render (with the same base seed to ensure consistency)
             img_brute = generer_image_vulkan(
                 prompt=prompt_angle,
                 sd_cli=self.config.get("sd_cli"),
@@ -84,8 +84,8 @@ class SpriteSheetWorkflow(BaseWorkflow):
             images_angles.append(img_traitee)
             noms_angles.append(f"{nom_base}_{nom_angle}")
 
-        # Assemblage en grille
-        self.log("Assemblage de la feuille de sprites et génération du JSON Godot...")
+        # Grid assembly
+        self.log("Assembling the sprite sheet and generating the Godot JSON...")
         sheet_img, metadata = assembler_spritesheet(images_angles, noms_angles, colonnes=colonnes)
 
         chemin_sheet = os.path.join(output_dir, f"{nom_base}_spritesheet.png")
@@ -95,8 +95,8 @@ class SpriteSheetWorkflow(BaseWorkflow):
         with open(chemin_json, "w", encoding="utf-8") as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
 
-        self.log(f"Planche de sprites sauvegardée : {chemin_sheet}", emoji="✅")
-        self.log(f"Métadonnées Godot sauvegardées : {chemin_json}", emoji="📄")
+        self.log(f"Sprite sheet saved: {chemin_sheet}", emoji="✅")
+        self.log(f"Godot metadata saved: {chemin_json}", emoji="📄")
 
         return {
             "spritesheet_path": chemin_sheet,

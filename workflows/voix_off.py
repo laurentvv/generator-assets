@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Voix Off : lecture expressive d'un texte par TTS local (audio.cpp Vulkan),
-avec clonage d'une voix de référence française si fournie.
+Voice-Over Workflow: expressive reading of a text by local TTS (audio.cpp Vulkan),
+with cloning of a French reference voice if provided.
 
-Moteurs : qwen3-tts 1.7B (défaut si référence, Apache-2.0, expression --instruct),
-VoxCPM2 (défaut sans référence, Apache-2.0, clonage sans transcript),
-Fish S2-Pro (balises inline [whisper]/[excited], licence recherche).
+Engines: qwen3-tts 1.7B (default with a reference, Apache-2.0, --instruct expression),
+VoxCPM2 (default without reference, Apache-2.0, cloning without transcript),
+Fish S2-Pro (inline tags [whisper]/[excited], research licence).
 
-Pipeline : contrôle/normalisation du niveau de la référence (écart ≤ 2026-09-06 :
-enregistrement à -39 LUFS → normalisation -18 LUFS), transcription ASR auto si le
-moteur l'exige, génération, normalisation finale -16 LUFS (standard dialogue
-YouTube) + MP3 d'écoute.
+Pipeline: level control/normalization of the reference (gap ≤ 2026-09-06:
+recording at -39 LUFS → normalization -18 LUFS), automatic ASR transcription if the
+engine requires it, generation, final normalization -16 LUFS (YouTube dialogue
+standard) + listening MP3.
 """
 
 import os
@@ -24,50 +24,50 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class VoixOffWorkflow(BaseWorkflow):
-    """Voix off clonée/expressive (qwen3-tts / VoxCPM2 / Fish S2-Pro GGUF, Vulkan) normalisée pour YouTube."""
+    """Cloned/expressive voice-over (qwen3-tts / VoxCPM2 / Fish S2-Pro GGUF, Vulkan) normalized for YouTube."""
 
     name = "voix_off"
-    description = ("Lecture expressive d'un texte par TTS local (audio.cpp Vulkan) avec "
-                   "clonage vocal optionnel — qwen3-tts/VoxCPM2 (Apache-2.0) ou Fish S2-Pro, "
-                   "sortie normalisée -16 LUFS + MP3")
+    description = ("Expressive reading of a text by local TTS (audio.cpp Vulkan) with "
+                   "optional voice cloning — qwen3-tts/VoxCPM2 (Apache-2.0) or Fish S2-Pro, "
+                   "normalized output -16 LUFS + MP3")
 
     emoji = "🎙️"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --moteur (partagé avec
-    # music_bg) vit dans music_bg.
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). --moteur (shared with
+    # music_bg) lives in music_bg.
     PARAMETRES = [
         dict(flags=("--voix-ref",), default=None,
-             help="Référence vocale à cloner pour voix_off (WAV/MP3/M4A ; niveau contrôlé/normalisé automatiquement)."),
+             help="Voice reference to clone for voix_off (WAV/MP3/M4A; level automatically controlled/normalized)."),
         dict(flags=("--instruct",), default=None,
-             help="Consigne de style/émotion pour qwen3-tts (voix_off) — ex: 'energetic YouTube narrator tone'."),
+             help="Style/emotion instruction for qwen3-tts (voix_off) — e.g.: 'energetic YouTube narrator tone'."),
         dict(flags=("--lufs-voix",), type=float, default=-16.0,
-             help="LUFS cible de la voix off (défaut: -16, standard dialogue YouTube)."),
+             help="Target LUFS of the voice-over (default: -16, YouTube dialogue standard)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        # Le texte : paramètre prompt (texte lui-même) OU chemin d'un fichier .txt
+        # The text: prompt parameter (the text itself) OR path of a .txt file
         brut = (params.get("prompt") or "").strip()
         if not brut:
-            raise ValueError("Fournir le texte à lire (paramètre positionnel) ou un fichier .txt.")
+            raise ValueError("Provide the text to read (positional parameter) or a .txt file.")
         if os.path.isfile(brut) and brut.lower().endswith(".txt"):
             with open(brut, encoding="utf-8") as f:
                 texte = f.read().strip()
-            self.log(f"Texte chargé depuis {brut} ({len(texte)} caractères)", "📄")
+            self.log(f"Text loaded from {brut} ({len(texte)} characters)", "📄")
         else:
             texte = brut
         if not texte:
-            raise ValueError("Le texte à lire est vide.")
+            raise ValueError("The text to read is empty.")
 
-        # Moteur : --moteur est partagé avec music_bg (défaut 'acestep') → toute
-        # valeur hors moteurs voix = choix automatique.
+        # Engine: --moteur is shared with music_bg (default 'acestep') → any
+        # value outside the voice engines = automatic choice.
         moteur = params.get("moteur")
         if moteur not in MOTEURS:
             moteur = None
         voix_ref = params.get("voix_ref") or None
         if not moteur:
             moteur = "qwen3" if voix_ref else "voxcpm2"
-            self.log(f"Moteur automatique : {moteur}", "🎚️")
+            self.log(f"Automatic engine: {moteur}", "🎚️")
 
         instruct = params.get("instruct") or None
         lufs = float(params.get("lufs_voix") or -16.0)
@@ -75,15 +75,15 @@ class VoixOffWorkflow(BaseWorkflow):
         seed = params.get("seed")
 
         nom = slugifier_texte(params.get("output") or "voix_off")[:60]
-        # Par convention (comme music_bg), les pistes de production vont dans output/
+        # By convention (like music_bg), production tracks go into output/
         output_dir = params.get("output_dir") or ""
         if not output_dir or output_dir == DEFAULT_OUTPUT_DIR:
             output_dir = "output/voix_off"
         dossier = os.path.join(output_dir, nom)
         os.makedirs(dossier, exist_ok=True)
 
-        self.log(f"Moteur {moteur} ({MOTEURS[moteur]['licence']}) — "
-                 f"clonage {'activé' if voix_ref else 'désactivé'}", "🎙️")
+        self.log(f"Engine {moteur} ({MOTEURS[moteur]['licence']}) — "
+                 f"cloning {'enabled' if voix_ref else 'disabled'}", "🎙️")
         brut_wav = os.path.join(dossier, "voix_off_brut.wav")
         res = generer_voix_off(
             texte=texte,
@@ -96,5 +96,5 @@ class VoixOffWorkflow(BaseWorkflow):
             dossier_travail=dossier,
         )
         finals = finaliser_voix(brut_wav, lufs_cible=lufs)
-        self.log(f"Voix prête : {finals['wav']} ({finals['lufs']} LUFS) — écoute : {finals['mp3']}", "✅")
+        self.log(f"Voice ready: {finals['wav']} ({finals['lufs']} LUFS) — listening: {finals['mp3']}", "✅")
         return {**res, **finals}

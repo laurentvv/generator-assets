@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Voxel 3D : Transformation de sprites 2D ou concepts en modèles 3D Voxel (.GLB) pour Godot 4 & GridMap.
+Voxel 3D workflow: turning 2D sprites or concepts into Voxel 3D models (.GLB) for Godot 4 & GridMap.
 """
 
 import os
@@ -21,32 +21,32 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class Voxel3DWorkflow(BaseWorkflow):
-    """Génération de Modèles 3D Voxel (.GLB) avec Vertex Colors pour Godot 4."""
+    """Voxel 3D model (.GLB) generation with vertex colors for Godot 4."""
 
     name = "voxel3d"
-    description = "Modèles 3D Voxel maillés (.GLB) optimisés (Crossy Road, Minecraft, GridMap Godot 4)"
+    description = "Optimized meshed Voxel 3D models (.GLB) (Crossy Road, Minecraft, Godot 4 GridMap)"
 
     emoji = "🧊"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --grid-size (partagé
-    # avec pixelart) vit dans pixelart.
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --grid-size (shared
+    # with pixelart) lives in pixelart.
     PARAMETRES = [
         dict(flags=("--voxel-depth",), type=int, default=4,
-             help="Épaisseur en voxels pour l'extrusion 3D (workflow voxel3d)."),
+             help="Thickness in voxels for the 3D extrusion (voxel3d workflow)."),
         dict(flags=("--voxel-scale",), type=float, default=0.05,
-             help="Taille d'un voxel en unités Godot (workflow voxel3d)."),
+             help="Size of one voxel in Godot units (voxel3d workflow)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if not verifier_blender():
-            raise RuntimeError("Blender 4.x / 5.x est requis pour exécuter le workflow voxel3d.")
+            raise RuntimeError("Blender 4.x / 5.x is required to run the voxel3d workflow.")
 
         concept = params.get("prompt")
         input_image = params.get("input")
 
         if not concept and not input_image:
-            raise ValueError("Le workflow voxel3d nécessite un 'prompt' ou une image '-i / --input'.")
+            raise ValueError("The voxel3d workflow requires a 'prompt' or an image '-i / --input'.")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         grid_size = int(params.get("grid_size", 32))
@@ -56,11 +56,11 @@ class Voxel3DWorkflow(BaseWorkflow):
         os.makedirs(output_dir, exist_ok=True)
 
         if input_image and os.path.exists(input_image):
-            self.log(f"Chargement du sprite source : {input_image}...")
+            self.log(f"Loading the source sprite: {input_image}...")
             img_src = Image.open(input_image).convert("RGBA")
             nom_base = params.get("output") or f"{Path(input_image).stem}_voxel"
         else:
-            self.log(f"Génération d'un asset pour Voxel 3D : '{concept}'...")
+            self.log(f"Generating a Voxel 3D asset: '{concept}'...")
             nom_base = params.get("output") or f"{slugifier_texte(concept)}_voxel"
 
             style_voxel = (
@@ -93,8 +93,8 @@ class Voxel3DWorkflow(BaseWorkflow):
             )
             img_src = post_process_asset(img_brute, redimensionner=grid_size * 4)
 
-        # 1. Voxelisation
-        self.log(f"Discrétisation en volume voxel ({grid_size}x{grid_size}x{voxel_depth})...")
+        # 1. Voxelization
+        self.log(f"Discretizing into a voxel volume ({grid_size}x{grid_size}x{voxel_depth})...")
         occupancy, colors = image_vers_grille_voxels(
             img_src,
             grid_size=grid_size,
@@ -103,10 +103,10 @@ class Voxel3DWorkflow(BaseWorkflow):
         )
 
         nb_voxels = np.sum(occupancy)
-        self.log(f"Volume généré : {nb_voxels} voxels actifs.")
+        self.log(f"Volume generated: {nb_voxels} active voxels.")
 
-        # 2. Culling des faces & Export Blender GLB
-        self.log("Optimisation géométrique et export GLB via Blender Headless...")
+        # 2. Face culling & Blender GLB export
+        self.log("Geometric optimization and GLB export via Blender Headless...")
         chemin_glb = exporter_voxel_glb(
             nom_base=nom_base,
             output_dir=output_dir,
@@ -115,8 +115,8 @@ class Voxel3DWorkflow(BaseWorkflow):
             voxel_scale=voxel_scale
         )
 
-        self.log(f"Modèle 3D Voxel exporté avec succès dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Modèle 3D GLB : {chemin_glb}", emoji="💎")
+        self.log(f"Voxel 3D model exported successfully to '{output_dir}/':", emoji="🎉")
+        self.log(f"  • GLB 3D model: {chemin_glb}", emoji="💎")
 
         return {
             "glb": chemin_glb,

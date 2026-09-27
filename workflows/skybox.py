@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Skybox : Génération de ciel / panorama 360° équirectangulaire pour Godot 3D.
-Génère une image 2:1 (ex: 2048x1024) avec boucle horizontale et exporte la ressource Environment (.tres).
+Skybox workflow: generating an equirectangular 360° sky / panorama for Godot 3D.
+Generates a 2:1 image (e.g.: 2048x1024) with horizontal looping and exports the Environment resource (.tres).
 """
 
 import os
@@ -19,23 +19,23 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class SkyboxWorkflow(BaseWorkflow):
     name = "skybox"
-    description = "Génération d'Environnement Skybox 360° équirectangulaire et fichier Environment Godot 4"
+    description = "Equirectangular 360° Skybox Environment generation and Godot 4 Environment file"
 
     emoji = "🌌"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:
-            raise ValueError("Le paramètre 'prompt' est requis pour le workflow skybox.")
+            raise ValueError("The 'prompt' parameter is required for the skybox workflow.")
 
         nom_base = params.get("output") or f"{slugifier_texte(concept)}_sky"
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
-        # `or` indispensable : via le CLI, main.py fournit désormais width/height
-        # à None quand les flags ne sont pas passés (même garde que pixelart).
+        # `or` required: via the CLI, main.py now provides width/height
+        # as None when the flags are not passed (same guard as pixelart).
         largeur = int(params.get("width") or 2048)
         hauteur = int(params.get("height") or 1024)
 
         os.makedirs(output_dir, exist_ok=True)
-        self.log(f"Génération d'un panorama 360° pour '{concept}' ({largeur}x{hauteur})...")
+        self.log(f"Generating a 360° panorama for '{concept}' ({largeur}x{hauteur})...")
 
         style_skybox = (
             "360 degree equirectangular panorama projection, seamless spherical environment map, "
@@ -52,7 +52,7 @@ class SkyboxWorkflow(BaseWorkflow):
             sans_llm=params.get("sans_llm", params.get("no_llm", True))
         )
 
-        # Rendu 2:1
+        # 2:1 render
         img_sky = generer_image_vulkan(
             prompt=prompt_complet,
             sd_cli=self.config.get("sd_cli"),
@@ -71,18 +71,18 @@ class SkyboxWorkflow(BaseWorkflow):
             loras=params.get("loras")
         )
 
-        # Agrandir à la taille demandée (ex: 2048x1024)
+        # Upscale to the requested size (e.g.: 2048x1024)
         if (largeur, hauteur) != img_sky.size:
             img_sky = img_sky.resize((largeur, hauteur), Image.Resampling.LANCZOS)
 
         chemin_sky = os.path.join(output_dir, f"{nom_base}.png")
         img_sky.save(chemin_sky, "PNG")
 
-        # Exporter la ressource Environment Godot 4
+        # Export the Godot 4 Environment resource
         chemin_tres = exporter_fichier_skybox_godot(nom_base, output_dir)
 
-        self.log(f"Texture Skybox 360° sauvegardée : {chemin_sky}", emoji="🌌")
-        self.log(f"Ressource Environment Godot 4 prête : {chemin_tres}", emoji="💎")
+        self.log(f"360° Skybox texture saved: {chemin_sky}", emoji="🌌")
+        self.log(f"Godot 4 Environment resource ready: {chemin_tres}", emoji="💎")
 
         return {
             "sky_texture": chemin_sky,
