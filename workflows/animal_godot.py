@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Animal Game-Ready : blend d'animal packé (riggé, ex. Quaternius CC0)
-→ GLB Godot avec clips AN_* (recette VALIDÉE utilisateur le 2026-09-18 :
-gallop natif « parfait », MEMORY_BANK §1.28).
+Animal Game-Ready workflow: packed animal .blend (rigged, e.g. Quaternius CC0)
+→ Godot GLB with AN_* clips (recipe VALIDATED by the user on 2026-09-18:
+native gallop "perfect", MEMORY_BANK §1.28).
 
-La qualité vient des animations NATIVES du pack (mocap) — ne pas tenter un
-retarget vers un autre rig sans besoin explicite (tenté, non retenu).
+The quality comes from the pack's NATIVE animations (mocap) — do not attempt a
+retarget to another rig without an explicit need (tried, not retained).
 """
 
 import os
@@ -18,42 +18,42 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class AnimalGodotWorkflow(BaseWorkflow):
-    """Animal packé → GLB Godot game-ready (clips AN_*, vérifié)."""
+    """Packed animal → Godot game-ready GLB (AN_* clips, verified)."""
 
     name = "animal_godot"
-    description = ("Animal packé riggé (.blend) → GLB Godot game-ready : purge "
-                   "parasites, clips renommés AN_* (1 par action native), "
-                   "vérifié par ré-import (recette validée 2026-09-18)")
+    description = ("Rigged packed animal (.blend) → Godot game-ready GLB: junk "
+                   "purge, clips renamed AN_* (1 per native action), "
+                   "verified by re-import (recipe validated 2026-09-18)")
 
     emoji = "🐺"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--animal-prefixe",), dest="animal_prefixe", default="AN_",
-             help="Préfixe des clips d'animation pour animal_godot (défaut : AN_)."),
+             help="Animation clip prefix for animal_godot (default: AN_)."),
         dict(flags=("--animal-actions",), dest="animal_actions", nargs="*", default=None,
-             help="Actions natives à garder pour animal_godot (défaut : toutes)."),
+             help="Native actions to keep for animal_godot (default: all)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):
             raise ValueError(
-                f"Blend d'animal riggé introuvable : {source} — passer un .blend "
-                f"contenant armature + mesh skinné (ex. pack Quaternius) via -i."
+                f"Rigged animal .blend not found: {source} — pass a .blend "
+                f"containing armature + skinned mesh (e.g. Quaternius pack) via -i."
             )
 
         sortie = params.get("output") or os.path.splitext(source)[0] + "_godot.glb"
         prefixe = params.get("animal_prefixe") or "AN_"
         actions = params.get("animal_actions") or None
 
-        self.log(f"Export game-ready : {os.path.basename(source)} → {os.path.basename(sortie)}")
+        self.log(f"Game-ready export: {os.path.basename(source)} → {os.path.basename(sortie)}")
         rapport = exporter_animal_godot(
             source, sortie, prefixe=prefixe, actions_filtre=actions,
         )
 
-        self.log(f"GLB vérifié : {rapport['os']} os, {len(rapport['clips'])} clips, "
+        self.log(f"GLB verified: {rapport['os']} bones, {len(rapport['clips'])} clips, "
                  f"{rapport['meshes']} meshes", "✅")
         self.log("Clips : " + ", ".join(rapport["clips"]), "🎬")
         return rapport

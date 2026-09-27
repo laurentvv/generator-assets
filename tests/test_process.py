@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tests de core/process.py : helper d'exécution des moteurs externes.
+"""Tests of core/process.py: external engine execution helper.
 
-Utilise de vrais sous-processus `python -c` (aucun mock, aucun moteur requis).
+Uses real `python -c` subprocesses (no mock, no engine required).
 """
 
 import sys
@@ -13,20 +13,20 @@ from core.process import EngineError, run_engine
 
 
 def test_succes_retourne_le_processus():
-    res = run_engine([sys.executable, "-c", "print('allo du moteur')"], timeout=60, etiquette="test")
+    res = run_engine([sys.executable, "-c", "print('hello from the engine')"], timeout=60, etiquette="test")
     assert res.returncode == 0
-    assert "allo du moteur" in res.stdout
+    assert "hello from the engine" in res.stdout
 
 
 def test_code_nonzero_leve_engineerror_avec_stderr():
     with pytest.raises(EngineError) as excinfo:
         run_engine(
-            [sys.executable, "-c", "import sys; print('la panne moteur', file=sys.stderr); raise SystemExit(3)"],
+            [sys.executable, "-c", "import sys; print('engine failure', file=sys.stderr); raise SystemExit(3)"],
             timeout=60,
             etiquette="test",
         )
     assert excinfo.value.code == 3
-    assert "la panne moteur" in excinfo.value.stderr_fin
+    assert "engine failure" in excinfo.value.stderr_fin
     assert excinfo.value.commande[-1].startswith("import sys")
 
 
@@ -43,13 +43,13 @@ def test_timeout_leve_engineerror():
 
 
 def test_log_path_ecrit_stdout_et_stderr(tmp_path):
-    log = tmp_path / "logs" / "moteur.log"
+    log = tmp_path / "logs" / "engine.log"
     run_engine(
-        [sys.executable, "-c", "print('ligne visible'); import sys; print('bruit', file=sys.stderr)"],
+        [sys.executable, "-c", "print('visible line'); import sys; print('noise', file=sys.stderr)"],
         log_path=str(log),
         timeout=60,
     )
     contenu = log.read_text(encoding="utf-8")
-    assert "ligne visible" in contenu
-    assert "bruit" in contenu
+    assert "visible line" in contenu
+    assert "noise" in contenu
     assert "--- stderr ---" in contenu

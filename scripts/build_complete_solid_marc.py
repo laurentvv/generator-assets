@@ -22,7 +22,7 @@ HumanService = dynamic_import("mpfb.services.humanservice", "HumanService")
 AssetService = dynamic_import("mpfb.services.assetservice", "AssetService")
 TargetService = dynamic_import("mpfb.services.targetservice", "TargetService")
 
-# 1. Création du corps enfant 8 ans
+# 1. Creating the 8-year-old child body
 macros = {
     "gender": 1.0, "age": 0.17, "muscle": 0.3, "weight": 0.25,
     "proportions": 0.5, "height": 0.5,
@@ -36,7 +36,7 @@ bpy.context.view_layer.update()
 skin_path = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data\skins\marc_novice\marc_novice.mhmat"
 HumanService.set_character_skin(skin_path, basemesh, skin_type="GAMEENGINE")
 
-# Déconnexion alpha skin
+# Alpha skin disconnect
 for mat in basemesh.data.materials:
     if mat and mat.node_tree:
         bsdf = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
@@ -48,7 +48,7 @@ for mat in basemesh.data.materials:
         if an:
             mat.node_tree.nodes.remove(an)
 
-# 3. Ajout des assets tête
+# 3. Adding the head assets
 for subdir, fname, atype in [
     ("eyes",      "low-poly.mhclo",     "Eyes"),
     ("eyebrows",  "eyebrow001.mhclo",   "Eyebrows"),
@@ -61,7 +61,7 @@ for subdir, fname, atype in [
     if p:
         HumanService.add_mhclo_asset(p, basemesh, asset_type=atype, material_type="GAMEENGINE")
 
-# 4. Ajout des vêtements SANS supprimer le corps
+# 4. Adding clothes WITHOUT deleting the body
 suit_p = AssetService.find_asset_absolute_path("male_worksuit01.mhclo", asset_subdir="clothes")
 shoes_p = AssetService.find_asset_absolute_path("shoes01.mhclo", asset_subdir="clothes")
 if suit_p:
@@ -85,7 +85,7 @@ for obj in [o for o in bpy.data.objects if o.type == 'MESH']:
         me.name = old_me.name
         bpy.data.meshes.remove(old_me)
 
-# 6. Calibrage à 1.18m : on applique le scale et le translate globalement sur tous les meshes
+# 6. Calibrating to 1.18 m: apply the scale and translate globally on all meshes
 all_mesh_objs = [o for o in bpy.data.objects if o.type == 'MESH']
 all_verts = [o.matrix_world @ v.co for o in all_mesh_objs for v in o.data.vertices]
 z_min, z_max = min(p.z for p in all_verts), max(p.z for p in all_verts)
@@ -96,7 +96,7 @@ h_reelle = z_max - z_min
 target_h = 1.18
 scale_f = target_h / h_reelle
 
-# Mise à l'échelle uniforme
+# Uniform scaling
 for o in all_mesh_objs:
     o.scale *= scale_f
 
@@ -122,7 +122,7 @@ for o in all_mesh_objs:
 bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
 bpy.context.view_layer.update()
 
-# Application des textures PBR Paysan sur les vêtements
+# Applying the Paysan PBR textures onto the clothes
 GA_ASSETS = r"C:\GIT\generator-assets\godot_assets"
 PEASANT_CFG = {
     "torso_scale": 3.5, "torso_roughness": 0.85, "torso_normal_str": 1.4,
@@ -188,4 +188,4 @@ bpy.context.collection.objects.link(light)
 bpy.context.scene.render.engine = 'BLENDER_WORKBENCH'
 bpy.context.scene.render.filepath = r"C:\GIT\generator-assets\godot_assets\inspect_viewport_blend_fixed.png"
 bpy.ops.render.render(write_still=True)
-print("✅ Modèle complet généré sans décapitation ni découpe !")
+print("✅ Complete model generated with no decapitation or clipping!")

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Génération musicale IA locale : MiniMax-Music3 GGUF via audio.cpp (Vulkan),
-fabrication de boucles sans couture et préparation de lits musicaux (« beds »)
-discrets derrière une voix off.
+Local AI music generation: MiniMax-Music3 GGUF via audio.cpp (Vulkan),
+manufacturing of seamless loops and preparation of discreet musical beds
+behind a voice-over.
 
-Chaîne de traitement :
-1. Génération audio.cpp  → WAV stéréo 32 kHz (fallback CPU si Vulkan échoue)
-2. Fabrication de la boucle → percussive (alignée BPM/mesures) ou ambiante (crossfade 1 s)
-3. Post-traitement « lit derrière voix » → highpass 80 Hz + creux présence -3 dB @ 2.8 kHz
-4. Exports → WAV 48 kHz PCM16 pleine + « bed » normalisé LUFS + OGG boucle + MP3
+Processing chain:
+1. audio.cpp generation → 32 kHz stereo WAV (CPU fallback if Vulkan fails)
+2. Loop manufacturing → percussive (BPM/bar-aligned) or ambient (1 s crossfade)
+3. "Bed behind voice" post-processing → 80 Hz highpass + -3 dB presence dip @ 2.8 kHz
+4. Exports → full 48 kHz PCM16 WAV + LUFS-normalized "bed" + loop OGG + MP3
 """
 
 import hashlib
@@ -42,11 +42,11 @@ SEUIL_SILENCE_RMS = 1e-4
 
 
 # ==============================================================================
-# Résolution des exécutables
+# Executable resolution
 # ==============================================================================
 
 def resoudre_audiocpp(chemin: Optional[str] = None) -> str:
-    """Résout le chemin de audiocpp_cli.exe (env, défaut, recherche récursive, PATH)."""
+    """Resolves the audiocpp_cli.exe path (env, default, recursive search, PATH)."""
     candidats = [chemin, DEFAULT_AUDIOCPP_CLI] if chemin else [DEFAULT_AUDIOCPP_CLI]
     for c in candidats:
         if c and os.path.exists(c):
@@ -63,14 +63,14 @@ def resoudre_audiocpp(chemin: Optional[str] = None) -> str:
 
 
 def resoudre_ffmpeg() -> str:
-    """Résout le chemin de ffmpeg (défaut Amuse, sinon PATH)."""
+    """Resolves the ffmpeg path (Amuse default, else PATH)."""
     if os.path.exists(DEFAULT_FFMPEG):
         return DEFAULT_FFMPEG
     return shutil.which("ffmpeg") or DEFAULT_FFMPEG
 
 
 # ==============================================================================
-# Génération MiniMax-Music3 via audio.cpp
+# MiniMax-Music3 generation via audio.cpp
 # ==============================================================================
 
 def generer_musique_music3(
@@ -85,14 +85,14 @@ def generer_musique_music3(
     timeout_s: int = 2400,
 ) -> Tuple[str, str]:
     """
-    Génère un extrait musical via audiocpp_cli (famille minimax_music3).
-    Retourne (chemin_wav, backend_utilisé). Bascule sur CPU si Vulkan échoue.
+    Generates a music excerpt via audiocpp_cli (minimax_music3 family).
+    Returns (wav_path, backend_used). Falls back to CPU if Vulkan fails.
     """
     exe = resoudre_audiocpp()
     if not os.path.exists(exe):
         raise FileNotFoundError(
-            f"audiocpp_cli.exe introuvable : {exe}\n"
-            "→ Lancez : uv run python scripts/download_music3_gguf.py"
+            f"audiocpp_cli.exe not found: {exe}\n"
+            "→ Run: uv run python scripts/download_music3_gguf.py"
         )
 
     dossier_modele = resoudre_modele_musique()
@@ -116,7 +116,7 @@ def generer_musique_music3(
     backends = ["vulkan", "cpu"] if backend in ("vulkan", "auto") else ["cpu"]
     essais = []
     for b in backends:
-        # Vulkan : 2 tentatives (un reset du pilote GPU AMD est récupérable)
+        # Vulkan: 2 attempts (an AMD GPU driver reset is recoverable)
         nb_fois = 2 if b == "vulkan" else 1
         for _ in range(nb_fois):
             essais.append((b, True))
@@ -126,7 +126,7 @@ def generer_musique_music3(
     derniere_erreur: Optional[str] = None
     for i, (backend_cible, avec_graine) in enumerate(essais):
         if i > 0:
-            log(f"🔄 Nouvel essai : backend={backend_cible}, graine={'oui' if avec_graine else 'non'}...")
+            log(f"🔄 New attempt: backend={backend_cible}, seed={'yes' if avec_graine else 'no'}...")
             time.sleep(5.0)
         cmd = _construire(backend_cible, avec_graine)
         try:
@@ -135,16 +135,16 @@ def generer_musique_music3(
                 etiquette="audio.cpp music3",
             )
         except EngineError:
-            # timeout : essai suivant (backend CPU / sans graine)
-            derniere_erreur = f"timeout après {timeout_s}s"
+            # timeout: next attempt (CPU backend / without seed)
+            derniere_erreur = f"timeout after {timeout_s}s"
             continue
 
         erreurs = (resultat.stderr or "") + (resultat.stdout or "")
         if resultat.returncode == 0 and os.path.exists(chemin_sortie) and os.path.getsize(chemin_sortie) > 4096:
-            # Garde-fou anti-silence : le modèle peut s'effondrer en queue de morceau
+            # Anti-silence guard: the model can collapse at the end of the piece
             audio, sr = soundfile.read(chemin_sortie, always_2d=True)
             if float(np.sqrt((audio ** 2).mean())) < SEUIL_SILENCE_RMS:
-                derniere_erreur = "sortie quasiment silencieuse (effondrement du modèle)"
+                derniere_erreur = "near-silent output (model collapse)"
                 os.remove(chemin_sortie)
                 continue
             for ligne in (resultat.stdout or "").splitlines():
@@ -153,18 +153,18 @@ def generer_musique_music3(
             return chemin_sortie, backend_cible
 
         if "seed" in erreurs.lower() and avec_graine:
-            # Option graine refusée par cette build → réessai sans (déjà dans la liste)
-            derniere_erreur = f"option seed refusée :: {erreurs.strip()[-300:]}"
+            # Seed option refused by this build → retry without it (already in the list)
+            derniere_erreur = f"seed option refused :: {erreurs.strip()[-300:]}"
             continue
 
         extrait = erreurs.strip()[-600:]
         derniere_erreur = f"code {resultat.returncode} :: {extrait}"
 
-    raise RuntimeError(f"Génération MiniMax-Music3 impossible. Dernière erreur : {derniere_erreur}")
+    raise RuntimeError(f"MiniMax-Music3 generation failed. Last error: {derniere_erreur}")
 
 
 # ==============================================================================
-# Génération ACE-Step 1.5 via audio.cpp (famille ace_step)
+# ACE-Step 1.5 generation via audio.cpp (ace_step family)
 # ==============================================================================
 
 LYRICS_INSTRUMENTAL = ("", "[instrumental]", "[Instrumental]", "instrumental")
@@ -188,35 +188,35 @@ def generer_musique_acestep(
     timeout_s: int = 2400,
 ) -> Tuple[str, str]:
     """
-    Génère un extrait musical via audiocpp_cli (famille ace_step, ACE-Step 1.5
-    bf16). Retourne (chemin_wav, backend_utilisé). Bascule sur CPU si
-    Vulkan échoue.
+    Generates a music excerpt via audiocpp_cli (ace_step family, ACE-Step 1.5
+    bf16). Returns (wav_path, backend_used). Falls back to CPU if
+    Vulkan fails.
 
-    Variantes : turbo (DiT 2B distillé, défaut) | xl-turbo (DiT 4B distillé,
-    ~1,8× plus lent) | xl-sft (DiT 4B avec CFG, plus de pas requis).
+    Variants: turbo (distilled DiT 2B, default) | xl-turbo (distilled DiT 4B,
+    ~1.8× slower) | xl-sft (DiT 4B with CFG, more steps required).
 
-    Spécificités ACE-Step 1.5 :
-    - lyrics vide = instrumental natif (pas de méta-tag à passer)
-    - 8 pas suffisent pour les variantes distillées (turbo)
-    - BPM / tonalité / signature peuvent être imposés au planner (request
-      options bpm / keyscale / timesignature) → boucles alignées au mesure
-      garanties, au lieu d'estimer le tempo a posteriori
+    ACE-Step 1.5 specifics:
+    - empty lyrics = native instrumental (no meta-tag to pass)
+    - 8 steps are enough for the distilled variants (turbo)
+    - BPM / key / time signature can be imposed on the planner (request
+      options bpm / keyscale / timesignature) → guaranteed bar-aligned
+      loops, instead of estimating the tempo afterwards
     """
     exe = resoudre_audiocpp()
     if not os.path.exists(exe):
         raise FileNotFoundError(
-            f"audiocpp_cli.exe introuvable : {exe}\n"
-            "→ Lancez : uv run python scripts/download_music3_gguf.py"
+            f"audiocpp_cli.exe not found: {exe}\n"
+            "→ Run: uv run python scripts/download_music3_gguf.py"
         )
 
-    # Le paquet est monolithique : audio.cpp exige le chemin du .gguf lui-même
-    # (les configs/tokenizers sont embarqués dans le fichier — embedded_sidecars).
+    # The package is monolithic: audio.cpp requires the .gguf path itself
+    # (configs/tokenizers are embedded in the file — embedded_sidecars).
     gguf = resoudre_gguf_acestep15(variante)
     if not os.path.exists(gguf):
         raise FileNotFoundError(
-            f"GGUF ACE-Step 1.5 ({variante}) introuvable : {gguf}\n"
-            "→ Lancez : uv run python scripts/download_acestep15_gguf.py\n"
-            "  (variantes XL : miroir ModelScope, voir docs/MEMORY_BANK.md §1.11)"
+            f"ACE-Step 1.5 GGUF ({variante}) not found: {gguf}\n"
+            "→ Run: uv run python scripts/download_acestep15_gguf.py\n"
+            "  (XL variants: ModelScope mirror, see docs/MEMORY_BANK.md §1.11)"
         )
     _, dit_model_path = ACESTEP15_VARIANTES[variante]
     os.makedirs(os.path.dirname(os.path.abspath(chemin_sortie)), exist_ok=True)
@@ -232,12 +232,12 @@ def generer_musique_acestep(
             "--text", description,
             "--duration-seconds", f"{int(round(duree))}",
             "--num-inference-steps", str(int(etapes)),
-            # Un seul morceau par processus : libérer la VRAM de graphe est gratuit
+            # One piece per process: freeing graph VRAM is free
             "--session-option", "ace_step.mem_saver=true",
             "--out", chemin_sortie,
         ]
         if dit_model_path:
-            # Les paquets GGUF sont spécifiques à une variante : il faut la nommer
+            # GGUF packages are variant-specific: it must be named
             cmd += ["--load-option", f"ace_step.dit_model_path={dit_model_path}"]
         if not instrumental:
             cmd += ["--lyrics", lyrics, "--language", langue]
@@ -256,13 +256,13 @@ def generer_musique_acestep(
     backends = ["vulkan", "cpu"] if backend in ("vulkan", "auto") else ["cpu"]
     essais = []
     for b in backends:
-        # Vulkan : 2 tentatives (un reset du pilote GPU AMD est récupérable)
+        # Vulkan: 2 attempts (an AMD GPU driver reset is recoverable)
         essais += [b] * (2 if b == "vulkan" else 1)
 
     derniere_erreur: Optional[str] = None
     for i, backend_cible in enumerate(essais):
         if i > 0:
-            log(f"🔄 Nouvel essai : backend={backend_cible}...")
+            log(f"🔄 New attempt: backend={backend_cible}...")
             time.sleep(5.0)
         cmd = _construire(backend_cible)
         try:
@@ -271,16 +271,16 @@ def generer_musique_acestep(
                 etiquette="audio.cpp acestep",
             )
         except EngineError:
-            # timeout : essai suivant (backend CPU)
-            derniere_erreur = f"timeout après {timeout_s}s"
+            # timeout: next attempt (CPU backend)
+            derniere_erreur = f"timeout after {timeout_s}s"
             continue
 
         erreurs = (resultat.stderr or "") + (resultat.stdout or "")
         if resultat.returncode == 0 and os.path.exists(chemin_sortie) and os.path.getsize(chemin_sortie) > 4096:
-            # Garde-fou anti-silence (même risque d'effondrement que Music3)
+            # Anti-silence guard (same collapse risk as Music3)
             audio, _sr = soundfile.read(chemin_sortie, always_2d=True)
             if float(np.sqrt((audio ** 2).mean())) < SEUIL_SILENCE_RMS:
-                derniere_erreur = "sortie quasiment silencieuse (effondrement du modèle)"
+                derniere_erreur = "near-silent output (model collapse)"
                 os.remove(chemin_sortie)
                 continue
             for ligne in (resultat.stdout or "").splitlines():
@@ -291,15 +291,15 @@ def generer_musique_acestep(
         extrait = erreurs.strip()[-600:]
         derniere_erreur = f"code {resultat.returncode} :: {extrait}"
 
-    raise RuntimeError(f"Génération ACE-Step 1.5 impossible. Dernière erreur : {derniere_erreur}")
+    raise RuntimeError(f"ACE-Step 1.5 generation failed. Last error: {derniere_erreur}")
 
 
 # ==============================================================================
-# DSP : chargement, BPM, bouclage, post-traitement
+# DSP: loading, BPM, looping, post-processing
 # ==============================================================================
 
 def charger_audio(chemin: str) -> Tuple[np.ndarray, int]:
-    """Charge un fichier audio en tableau float [échantillons, canaux]."""
+    """Loads an audio file into a float array [samples, channels]."""
     audio, sr = soundfile.read(chemin, always_2d=True, dtype="float64")
     return audio, sr
 
@@ -309,7 +309,7 @@ def _mono(audio: np.ndarray) -> np.ndarray:
 
 
 def estimer_bpm(audio: np.ndarray, sr: int) -> Optional[float]:
-    """Estime le tempo (BPM) par autocorrélation de l'enveloppe d'onsets (60-180 BPM)."""
+    """Estimates the tempo (BPM) by autocorrelation of the onset envelope (60-180 BPM)."""
     mono = _mono(audio)
     hop, fen = 256, 1024
     n_frames = max(2, (len(mono) - fen) // hop)
@@ -339,7 +339,7 @@ def estimer_bpm(audio: np.ndarray, sr: int) -> Optional[float]:
 
 
 def _trouver_passage_zero(audio: np.ndarray, index: int, sr: int, fenetre_ms: float = 10.0) -> int:
-    """Snappe un index sur le passage par zéro le plus proche (± fenetre_ms)."""
+    """Snaps an index onto the nearest zero crossing (± fenetre_ms)."""
     mono = _mono(audio)
     rayon = int(fenetre_ms / 1000.0 * sr)
     debut, fin = max(0, index - rayon), min(len(mono) - 1, index + rayon)
@@ -354,9 +354,9 @@ def _trouver_passage_zero(audio: np.ndarray, index: int, sr: int, fenetre_ms: fl
 
 def _zone_stable(audio: np.ndarray, sr: int, seuil_rel: float = 0.5) -> Tuple[int, int]:
     """
-    Délimite la zone d'énergie stable (en échantillons) : ignore les intros/outros
-    en fondu que produit souvent le modèle. Le seuil est relatif à la médiane de
-    l'énergie du cœur du morceau (20 %-80 %).
+    Delimits the stable energy zone (in samples): ignores the faded intros/outros
+    the model often produces. The threshold is relative to the median energy of
+    the heart of the piece (20%-80%).
     """
     mono = _mono(audio)
     fen = max(1, int(0.05 * sr))
@@ -381,7 +381,7 @@ def _zone_stable(audio: np.ndarray, sr: int, seuil_rel: float = 0.5) -> Tuple[in
 
 
 def _rms_db_cumul(cumsum_carres: np.ndarray, debut: int, fin: int) -> float:
-    """RMS (dB) d'une tranche via somme cumulée des carrés (O(1))."""
+    """RMS (dB) of a slice via cumulative sum of squares (O(1))."""
     n = max(1, fin - debut)
     energie = float(cumsum_carres[fin] - cumsum_carres[debut]) / n
     return 10.0 * np.log10(max(energie, 1e-12))
@@ -391,12 +391,12 @@ def fabriquer_boucle_percussive(
     audio: np.ndarray, sr: int, bpm: float, duree_cible: float = 12.0
 ) -> Tuple[np.ndarray, Dict]:
     """
-    Recherche du meilleur point de boucle : parmi toutes les fenêtres d'un nombre
-    entier de mesures (durée ≥ duree_cible, jusqu'à +30 %), retient celle dont la
-    tête et la queue s'apparient le mieux en énergie (couture), en pénalisant les
-    extrémités trop faibles (intro/outro en fondu) et les trous profonds.
-    Extrémités snappées sur passages par zéro + micro-fondu equal-power 20 ms :
-    la longueur exacte en mesures garantit la continuité rythmique.
+    Search for the best loop point: among all windows of a whole number of
+    bars (duration ≥ duree_cible, up to +30%), keeps the one whose head and
+    tail match best in energy (seam), penalizing too-weak ends (faded
+    intro/outro) and deep holes. Ends snapped to zero crossings + 20 ms
+    equal-power micro-fade: the exact length in bars guarantees rhythmic
+    continuity.
     """
     duree_mesure = 4.0 * 60.0 / bpm
     mono = _mono(audio)
@@ -410,8 +410,8 @@ def fabriquer_boucle_percussive(
         candidats_k = [max(1, int(np.floor(n_total / ech_mesure)))]
 
     cumsum = np.concatenate([[0.0], np.cumsum(mono.astype(np.float64) ** 2)])
-    # Plusieurs largeurs de fenêtre aux bords : une seule (200 ms) peut masquer un
-    # fondu très court en tête ou en queue
+    # Several window widths at the edges: a single one (200 ms) can mask a very
+    # short fade at the head or tail
     fen_bords = [int(w * sr) for w in (0.05, 0.1, 0.2, 0.5)]
     hop = max(1, int(0.05 * sr))
     fen_trou = int(1.0 * sr)
@@ -421,17 +421,17 @@ def fabriquer_boucle_percussive(
     ])
 
     pas = max(1, int(0.02 * sr))
-    # La recherche est restreinte à la zone d'énergie stable : ACE-Step (comme
-    # tout modèle compositionnel) termine ses morceaux par un fondu de sortie de
-    # plusieurs secondes — une fenêtre qui s'y termine produit une couture
-    # catastrophique (queue quasi silencieuse).
+    # The search is restricted to the stable energy zone: ACE-Step (like any
+    # other compositional model) ends its pieces with a several-second output
+    # fade — a window ending there produces a catastrophic seam
+    # (near-silent tail).
     debut_stable, fin_stable = _zone_stable(audio, sr)
     meilleur = None
     for k in candidats_k:
         longueur = int(round(k * ech_mesure))
         bornes = range(debut_stable, min(fin_stable, n_total) - longueur + 1, pas)
         if not len(bornes):
-            # Zone stable trop courte pour k mesures → recherche sur tout l'audio
+            # Stable zone too short for k bars → search over the whole audio
             bornes = range(0, n_total - longueur + 1, pas)
         for debut in bornes:
             fin = debut + longueur
@@ -485,8 +485,8 @@ def fabriquer_boucle_ambiante(
     audio: np.ndarray, sr: int, crossfade_s: float = 1.0
 ) -> Tuple[np.ndarray, Dict]:
     """
-    Boucle ambiante découpée dans la zone d'énergie stable :
-    fondu enchaîné equal-power long (~1 s) queue→tête.
+    Ambient loop cut from the stable energy zone:
+    long (~1 s) equal-power crossfade tail→head.
     """
     debut_stable, fin_stable = _zone_stable(audio, sr)
     segment = audio[debut_stable:fin_stable]
@@ -512,17 +512,17 @@ def fabriquer_boucle_ambiante(
 def fabriquer_boucle(
     audio: np.ndarray, sr: int, duree_cible: float = 12.0, mode: str = "percussive"
 ) -> Tuple[np.ndarray, Dict]:
-    """Fabrique la boucle sans couture ; bascule en ambiante si aucun BPM fiable."""
+    """Builds the seamless loop; falls back to ambient if no reliable BPM."""
     if mode == "percussive":
         bpm = estimer_bpm(audio, sr)
         if bpm is not None:
             return fabriquer_boucle_percussive(audio, sr, bpm, duree_cible)
-        # Pas de pulsatilité détectée → fondu long plus sûr
+        # No pulsatility detected → longer crossfade is safer
     return fabriquer_boucle_ambiante(audio, sr)
 
 
 def _biquad_peaking(sr: int, f0: float, q: float, gain_db: float) -> Tuple[np.ndarray, np.ndarray]:
-    """Filtre biquad peak EQ (formules RBJ Audio EQ Cookbook)."""
+    """Peak EQ biquad filter (RBJ Audio EQ Cookbook formulas)."""
     a_amp = 10.0 ** (gain_db / 40.0)
     w0 = 2.0 * np.pi * f0 / sr
     alpha = np.sin(w0) / (2.0 * q)
@@ -537,9 +537,9 @@ def _biquad_peaking(sr: int, f0: float, q: float, gain_db: float) -> Tuple[np.nd
 
 def post_traiter_lit_voix(audio: np.ndarray, sr: int) -> np.ndarray:
     """
-    Prépare le lit musical pour rester discret derrière une voix (masculine) :
-    - highpass 80 Hz (2e ordre) : libère le registre grave de la voix
-    - creux -3 dB @ 2.8 kHz (Q=1) : libère la zone de présence/intelligibilité
+    Prepares the musical bed to stay discreet behind a (male) voice:
+    - 80 Hz highpass (2nd order): frees the voice's low register
+    - -3 dB dip @ 2.8 kHz (Q=1): frees the presence/intelligibility zone
     """
     sos = scipy.signal.butter(2, 80.0, btype="highpass", fs=sr, output="sos")
     audio = scipy.signal.sosfiltfilt(sos, audio, axis=0)
@@ -549,7 +549,7 @@ def post_traiter_lit_voix(audio: np.ndarray, sr: int) -> np.ndarray:
 
 
 def ressampler(audio: np.ndarray, sr_orig: int, sr_cible: int = SR_CIBLE) -> Tuple[np.ndarray, int]:
-    """Rééchantillonne au rapport rationnel (ex. 32 kHz → 48 kHz = 3:2)."""
+    """Resamples at the rational ratio (e.g. 32 kHz → 48 kHz = 3:2)."""
     if sr_orig == sr_cible:
         return audio, sr_cible
     g = gcd(sr_orig, sr_cible)
@@ -558,7 +558,7 @@ def ressampler(audio: np.ndarray, sr_orig: int, sr_cible: int = SR_CIBLE) -> Tup
 
 
 def normaliser_pic(audio: np.ndarray, pic_dbfs: float = -1.0) -> np.ndarray:
-    """Normalise le pic à pic_dbfs (défaut -1 dBFS, anti-clipping)."""
+    """Normalizes the peak to pic_dbfs (default -1 dBFS, anti-clipping)."""
     pic = float(np.abs(audio).max())
     if pic < 1e-9:
         return audio
@@ -567,25 +567,25 @@ def normaliser_pic(audio: np.ndarray, pic_dbfs: float = -1.0) -> np.ndarray:
 
 
 # ==============================================================================
-# Mesure LUFS & exports via ffmpeg
+# LUFS measurement & exports via ffmpeg
 # ==============================================================================
 
 def mesurer_lufs(chemin: str, filtre_amont: Optional[str] = None) -> Dict[str, float]:
-    """Mesure l'intensité intégrée (LUFS) et paramètres loudnorm via ffmpeg.
+    """Measures the integrated loudness (LUFS) and loudnorm parameters via ffmpeg.
 
-    `filtre_amont` (ex. un limiteur) est appliqué AVANT la mesure — permet de mesurer
-    le signal tel qu'il entrera dans l'étape de normalisation.
+    `filtre_amont` (e.g. a limiter) is applied BEFORE the measurement — allows
+    measuring the signal as it will enter the normalization step.
     """
     ffmpeg = resoudre_ffmpeg()
     chaine = f"{filtre_amont},loudnorm=print_format=json" if filtre_amont else "loudnorm=print_format=json"
     cmd = [ffmpeg, "-hide_banner", "-i", chemin, "-af", chaine, "-f", "null", "-"]
     resultat = run_engine(
-        cmd, check=False, timeout=120, etiquette="ffmpeg loudnorm mesure",
+        cmd, check=False, timeout=120, etiquette="ffmpeg loudnorm measure",
     )
     texte = resultat.stderr or ""
     correspondances = re.findall(r"\{[^{}]*\"input_i\"[^{}]*\}", texte, flags=re.DOTALL)
     if not correspondances:
-        raise RuntimeError(f"Impossible de mesurer le LUFS de {chemin}")
+        raise RuntimeError(f"Cannot measure the LUFS of {chemin}")
 
     brut = json.loads(correspondances[-1])
     return {
@@ -599,7 +599,7 @@ def mesurer_lufs(chemin: str, filtre_amont: Optional[str] = None) -> Dict[str, f
 
 
 def exporter_bed_lufs(chemin_source: str, chemin_sortie: str, lufs_cible: float = -30.0) -> Dict[str, float]:
-    """Normalise un WAV vers lufs_cible (loudnorm 2 passes, mode linéaire quand possible)."""
+    """Normalizes a WAV to lufs_cible (2-pass loudnorm, linear mode when possible)."""
     ffmpeg = resoudre_ffmpeg()
     mesures = mesurer_lufs(chemin_source)
 
@@ -614,12 +614,12 @@ def exporter_bed_lufs(chemin_source: str, chemin_sortie: str, lufs_cible: float 
     )
     cmd = [ffmpeg, "-hide_banner", "-y", "-i", chemin_source, "-af", filtre,
            "-ar", str(SR_CIBLE), "-c:a", "pcm_s16le", chemin_sortie]
-    run_engine(cmd, check=True, timeout=180, etiquette="ffmpeg normalisation bed")
+    run_engine(cmd, check=True, timeout=180, etiquette="ffmpeg bed normalization")
     return mesurer_lufs(chemin_sortie)
 
 
 def convertir_mp3(chemin_source: str, chemin_sortie: str, debit_k: int = 192) -> str:
-    """Convertit vers MP3 (aperçu léger pour écoute rapide)."""
+    """Converts to MP3 (light preview for quick listening)."""
     ffmpeg = resoudre_ffmpeg()
     cmd = [ffmpeg, "-hide_banner", "-y", "-i", chemin_source, "-c:a", "libmp3lame",
            "-b:a", f"{debit_k}k", chemin_sortie]
@@ -629,10 +629,10 @@ def convertir_mp3(chemin_source: str, chemin_sortie: str, debit_k: int = 192) ->
 
 def convertir_ogg(chemin_source: str, chemin_sortie: str, qualite: int = 5) -> str:
     """
-    Convertit vers OGG Vorbis via ffmpeg.
-    ⚠️ Ne PAS utiliser soundfile pour l'OGG : son libsndfile fait un stack
-    overflow C (exit 127 silencieux) sur les fichiers de plus de quelques
-    secondes — crash confirmé sous Windows sur ce poste.
+    Converts to OGG Vorbis via ffmpeg.
+    ⚠️ Do NOT use soundfile for the OGG: its libsndfile does a C stack
+    overflow (silent exit 127) on files longer than a few seconds —
+    confirmed crash under Windows on this machine.
     """
     ffmpeg = resoudre_ffmpeg()
     cmd = [ffmpeg, "-hide_banner", "-y", "-i", chemin_source, "-c:a", "libvorbis",
@@ -642,7 +642,7 @@ def convertir_ogg(chemin_source: str, chemin_sortie: str, qualite: int = 5) -> s
 
 
 # ==============================================================================
-# Validation des boucles
+# Loop validation
 # ==============================================================================
 
 def _rms_db(audio: np.ndarray) -> float:
@@ -652,8 +652,8 @@ def _rms_db(audio: np.ndarray) -> float:
 
 def verifier_boucle(chemin: str) -> Dict:
     """
-    Vérifie qu'un WAV boucle proprement : continuité de couture (RMS 100 ms
-    début vs fin), absence de clipping, durée, LUFS.
+    Checks that a WAV loops cleanly: seam continuity (100 ms RMS
+    start vs end), no clipping, duration, LUFS.
     """
     audio, sr = charger_audio(chemin)
     fen = int(0.1 * sr)
@@ -675,7 +675,7 @@ def verifier_boucle(chemin: str) -> Dict:
 
 
 def empreinte_fichier(chemin: str) -> str:
-    """Empreinte MD5 (détection de générations identiques quand la graine n'est pas supportée)."""
+    """MD5 fingerprint (detects identical generations when the seed is unsupported)."""
     h = hashlib.md5()
     with open(chemin, "rb") as f:
         for bloc in iter(lambda: f.read(1024 * 1024), b""):
@@ -684,7 +684,7 @@ def empreinte_fichier(chemin: str) -> str:
 
 
 # ==============================================================================
-# Analyse optionnelle Music Flamingo (compréhension musicale via llama.cpp)
+# Optional Music Flamingo analysis (music understanding via llama.cpp)
 # ==============================================================================
 
 PROMPT_ANALYSE = (
@@ -700,16 +700,16 @@ def analyser_boucle_flamingo(
     chemin_wav: str, log: Callable[[str], None] = print, timeout_s: int = 900
 ) -> Optional[Dict]:
     """
-    QA optionnelle d'une boucle via Music Flamingo (llama-cli + mmproj audio).
-    Retourne un dict d'analyse ou None si indisponible (jamais bloquant).
-    ⚠️ Licence NVIDIA non commerciale.
+    Optional QA of a loop via Music Flamingo (llama-cli + audio mmproj).
+    Returns an analysis dict or None if unavailable (never blocking).
+    ⚠️ Non-commercial NVIDIA licence.
     """
     manquants = [
         c for c in (DEFAULT_LLAMA_CLI, DEFAULT_MUSIC_FLAMINGO_LM, DEFAULT_MUSIC_FLAMINGO_MMPROJ)
         if not os.path.exists(c)
     ]
     if manquants:
-        log(f"⚠️ Analyse Music Flamingo ignorée (fichiers manquants : {manquants})")
+        log(f"⚠️ Music Flamingo analysis skipped (missing files: {manquants})")
         return None
 
     cmd = [
@@ -725,21 +725,21 @@ def analyser_boucle_flamingo(
             etiquette="llama-cli flamingo",
         )
     except EngineError:
-        log("⚠️ Analyse Music Flamingo : timeout, ignorée.")
+        log("⚠️ Music Flamingo analysis: timeout, skipped.")
         return None
 
     sortie = resultat.stdout or ""
     erreurs = (resultat.stderr or "").lower()
     if resultat.returncode != 0:
         if "audio" in erreurs and ("unrecognized" in erreurs or "unknown argument" in erreurs):
-            log("⚠️ Analyse Music Flamingo : ce llama-cli ne supporte pas l'entrée audio (--audio), ignorée.")
+            log("⚠️ Music Flamingo analysis: this llama-cli does not support audio input (--audio), skipped.")
         else:
-            log("⚠️ Analyse Music Flamingo : échec llama-cli, ignorée.")
+            log("⚠️ Music Flamingo analysis: llama-cli failure, skipped.")
         return None
 
     correspondance = re.search(r"\{.*\}", sortie, flags=re.DOTALL)
     if not correspondance:
-        log("⚠️ Analyse Music Flamingo : réponse illisible, ignorée.")
+        log("⚠️ Music Flamingo analysis: unreadable response, skipped.")
         return None
     try:
         return json.loads(correspondance.group(0))
@@ -748,16 +748,16 @@ def analyser_boucle_flamingo(
 
 
 # ==============================================================================
-# Recette de mixage sous voix (ducking sidechain)
+# Under-voice mixing recipe (sidechain ducking)
 # ==============================================================================
 
 def construire_recette_ducking(
     chemin_voix: str, chemin_musique: str, chemin_sortie: str, volume_musique: float = 1.0
 ) -> str:
     """
-    Commande ffmpeg prête à l'emploi : la boucle est répétée à la durée de la
-    voix et automatiquement atténuée quand la voix parle (sidechaincompress),
-    puis mixée (amix sans re-normalisation).
+    Ready-to-use ffmpeg command: the loop is repeated for the voice duration
+    and automatically attenuated when the voice speaks (sidechaincompress),
+    then mixed (amix without re-normalization).
     """
     return (
         f'ffmpeg -y -i "{chemin_voix}" -stream_loop -1 -i "{chemin_musique}" -filter_complex '

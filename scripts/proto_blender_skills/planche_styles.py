@@ -1,6 +1,6 @@
-"""Assemble la planche de contact des rendus de style (vague 3) — chemins relatifs au dépôt.
+"""Assembles the contact sheet of the style renders (wave 3) — paths relative to the repo.
 
-Usage : uv run python scripts/proto_blender_skills/planche_styles.py
+Usage: uv run python scripts/proto_blender_skills/planche_styles.py
 """
 
 import os
@@ -13,11 +13,11 @@ OUT = os.path.join(RACINE, "output", "test_blender_skills")
 TUILES = [
     ("style_toon.png", "toon/cel"),
     ("style_psx.png", "PS1 + fog"),
-    ("style_wear.png", "usure arêtes"),
-    ("style_rust.png", "rouille"),
-    ("style_moss.png", "mousse"),
-    ("style_water.png", "taches d'eau"),
-    ("style_panel.png", "variation panneaux"),
+    ("style_wear.png", "edge wear"),
+    ("style_rust.png", "rust"),
+    ("style_moss.png", "moss"),
+    ("style_water.png", "water stains"),
+    ("style_panel.png", "panel variation"),
     ("cloth_drap.png", "cloth sim"),
     ("beauty_casque_composite.png", "beauty + composite"),
 ]
@@ -32,7 +32,7 @@ def main():
     for i, (fichier, label) in enumerate(TUILES):
         chemin = os.path.join(OUT, fichier)
         if not os.path.exists(chemin):
-            print(f"manquant : {fichier}")
+            print(f"missing: {fichier}")
             continue
         im = Image.open(chemin).convert("RGB")
         im.thumbnail((RES, RES))
@@ -42,7 +42,7 @@ def main():
         planche.paste(im, (x, y + BANDEAU))
     sortie = os.path.join(OUT, "planche_styles.png")
     planche.save(sortie)
-    print(f"planche OK : {sortie}")
+    print(f"contact sheet OK: {sortie}")
 
 
 if __name__ == "__main__":

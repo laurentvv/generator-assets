@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 blend_portrait_details_clean.py
-Transfert de détails haute fidélité par incrustation douce (Luminance Overlay / Soft Light) :
-1. Préserve à 100% le teint naturel et homogène de la peau MakeHuman.
-2. Incruste les cicatrices, le grain, le regard et les traits de Marc sans aucun masque sombre ni tâche.
-3. Résultat photo-réaliste, propre et parfaitement intégré en 3D.
+High-fidelity detail transfer through soft embedding (Luminance Overlay / Soft Light):
+1. Preserves 100% of the natural, even skin tone of the MakeHuman skin.
+2. Embeds Marc's scars, grain, gaze and features without any dark mask or blotch.
+3. Photorealistic, clean and perfectly integrated result in 3D.
 """
 
 import os
@@ -24,7 +24,7 @@ OUT_LOCAL_DIR = r"C:\GIT\generator-assets\godot_assets\skins\marc_novice"
 
 def main():
     print("=" * 65)
-    print(" 🎨 TRANSFERT DE DÉTAILS ET HARMONISATION NATURELLE DU VISAGE")
+    print(" 🎨 DETAIL TRANSFER AND NATURAL HARMONIZATION OF THE FACE")
     print("=" * 65)
 
     base_skin = Image.open(BASE_SKIN_PATH).convert("RGBA")
@@ -32,7 +32,7 @@ def main():
 
     portrait = Image.open(PORTRAIT_PATH).convert("RGBA")
 
-    # 1. Calibrage rigide sur les trous UV MakeHuman
+    # 1. Rigid calibration on the MakeHuman UV holes
     scale = 171.0 / 187.0
     rot_portrait = portrait.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
 
@@ -46,15 +46,15 @@ def main():
     paste_x = int(round(1710.1 - eye_in_scaled_x))
     paste_y = int(round(1058.5 - eye_in_scaled_y))
 
-    # 2. Découpe de la zone sous-jacente MakeHuman
+    # 2. Cropping of the underlying MakeHuman area
     mh_face_area = base_skin.crop((paste_x, paste_y, paste_x + scaled_w, paste_y + scaled_h))
 
-    # 3. Fusion en mode "Soft Light" / Luminance pour injecter les cicatrices et traits sans noircir
-    # Conversion en numpy float [0..1]
+    # 3. "Soft Light" / Luminance blending to inject scars and features without darkening
+    # Conversion to numpy float [0..1]
     mh_arr = np.array(mh_face_area, dtype=np.float32)[:, :, :3] / 255.0
     port_arr = np.array(scaled_portrait, dtype=np.float32)[:, :, :3] / 255.0
 
-    # Normalisation de la luminance du portrait pour matcher la peau MakeHuman
+    # Portrait luminance normalization to match the MakeHuman skin
     mean_mh = np.mean(mh_arr)
     mean_port = np.mean(port_arr)
     port_normalized = np.clip(port_arr * (mean_mh / (mean_port + 1e-5)), 0.0, 1.0)
@@ -66,11 +66,11 @@ def main():
         2.0 * mh_arr * (1.0 - port_normalized) + np.sqrt(mh_arr) * (2.0 * port_normalized - 1.0)
     )
 
-    # Mix 75% Soft Light + 25% détails directs pour garder la netteté des cicatrices
+    # Mix 75% Soft Light + 25% direct details to keep the scars sharp
     blended_face = np.clip((soft_light * 0.70 + port_normalized * 0.30) * 255.0, 0, 255).astype(np.uint8)
     blended_face_img = Image.fromarray(blended_face).convert("RGBA")
 
-    # 4. Masque d'estompage ultra-doux (feathering circulaire étendu)
+    # 4. Ultra-soft feathering mask (extended circular feathering)
     mask = Image.new("L", (scaled_w, scaled_h), 0)
     arr_mask = np.zeros((scaled_h, scaled_w), dtype=np.float32)
     cx = 420.6
@@ -91,11 +91,11 @@ def main():
 
     mask = Image.fromarray(arr_mask.astype(np.uint8)).filter(ImageFilter.GaussianBlur(radius=10))
 
-    # 5. Collage final sur la texture de peau MakeHuman
+    # 5. Final paste onto the MakeHuman skin texture
     final_diffuse = base_skin.copy()
     final_diffuse.paste(blended_face_img, (paste_x, paste_y), mask)
 
-    # 6. Sauvegarde des textures
+    # 6. Saving the textures
     for d in [OUT_MPFB_DIR, OUT_LOCAL_DIR]:
         os.makedirs(d, exist_ok=True)
 
@@ -103,7 +103,7 @@ def main():
     diff_local = os.path.join(OUT_LOCAL_DIR, "marc_novice_diffuse.png")
     final_diffuse.convert("RGB").save(diff_mpfb, "PNG", optimize=True)
     final_diffuse.convert("RGB").save(diff_local, "PNG", optimize=True)
-    print(f"✅ Texture diffuse parfaitement harmonisée : {diff_mpfb}")
+    print(f"✅ Perfectly harmonized diffuse texture: {diff_mpfb}")
 
     # Normal Map
     racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -115,12 +115,12 @@ def main():
     norm_local = os.path.join(OUT_LOCAL_DIR, "marc_novice_normal.png")
     norm_img.save(norm_mpfb, "PNG")
     norm_img.save(norm_local, "PNG")
-    print(f"✅ Normal Map enregistrée : {norm_mpfb}")
+    print(f"✅ Normal Map saved: {norm_mpfb}")
 
     # .mhmat
     mhmat_path = os.path.join(OUT_MPFB_DIR, "marc_novice.mhmat")
     with open(mhmat_path, "w", encoding="utf-8") as f:
-        f.write("""# Material file for MakeHuman / MPFB - Marc Novice Harmonisé
+        f.write("""# Material file for MakeHuman / MPFB - Marc Novice Harmonized
 name marc_novice
 tag MPFB
 diffuseTexture marc_novice_diffuse.png

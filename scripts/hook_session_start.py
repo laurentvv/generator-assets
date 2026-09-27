@@ -1,17 +1,17 @@
-"""Hook SessionStart ZCode : injecte le journal de veille et les majs en attente dans la session.
+"""ZCode SessionStart hook: injects the watch journal and the pending updates into the session.
 
-Appelé automatiquement par ZCode à chaque démarrage de session sur ce workspace
-(config : .zcode/config.json, événement SessionStart). Fait trois choses, sans
-jamais bloquer la session (sortie vide et code 0 si rien à signaler) :
-1. si la dernière veille date de plus de VEILLE_MAX_HEURES, relance
-   scripts/veille_versions.py en arrière-plan (process détaché, sortie dans
-   output/veille/veille_arriere_plan.log) — les nouveautés seront visibles
-   dans la session suivante ;
-2. injecte dans le contexte les mises à jour en attente (output/veille/
-   maj_en_attente.json, maintenu par le script de veille — voir AGENTS.md)
-   et les entrées des 7 derniers jours de docs/veille_journal.md ;
+Called automatically by ZCode at every session start on this workspace
+(config: .zcode/config.json, SessionStart event). Does three things, without
+ever blocking the session (empty output and code 0 if nothing to report):
+1. if the last watch is older than VEILLE_MAX_HEURES, relaunches
+   scripts/veille_versions.py in the background (detached process, output to
+   output/veille/veille_arriere_plan.log) — new items will be visible
+   in the next session;
+2. injects into the context the pending updates (output/veille/
+   maj_en_attente.json, maintained by the watch script — see AGENTS.md)
+   and the entries of the last 7 days of docs/veille_journal.md;
 
-Test manuel : uv run python scripts/hook_session_start.py
+Manual test: uv run python scripts/hook_session_start.py
 """
 
 import json
@@ -24,39 +24,39 @@ import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
 
-# Fenêtre de remontée et limites de taille pour ne pas gonfler le contexte
+# Reporting window and size limits to avoid inflating the context
 JOURNAI_MAX_JOURS = 7
 ENTREE_MAX_CHARS = 400
 TOTAL_MAX_CHARS = 4000
 MAJ_MAX_ITEMS = 10
 MAJ_ITEM_MAX_CHARS = 300
 MAJ_MAX_CHARS = 1500
-VEILLE_MAX_HEURES = 20  # au-delà, le hook relance la veille en arrière-plan
+VEILLE_MAX_HEURES = 20  # beyond that, the hook relaunches the watch in the background
 
-# Issue sd-cli à surveiller (régression master-848-9cdb6b6 : crash silencieux
-# Flux + encodeurs séparés sur Vulkan/AMD ; contexte dans docs/veille_journal.md
-# du 2026-09-07 et C:\SD\README.md). Ne plus surveiller qu'après installation
-# d'une release corrigée (supprimer alors bloc + état + cette entrée AGENTS.md).
-ISSUE_API_TIMEOUT = 5  # secondes ; le hook ne doit jamais bloquer la session
+# sd-cli issue to watch (regression master-848-9cdb6b6: silent crash of
+# Flux + separate encoders on Vulkan/AMD; context in docs/veille_journal.md
+# of 2026-09-07 and C:\SD\README.md). Stop watching only after installing
+# a fixed release (then remove the block + state + this AGENTS.md entry).
+ISSUE_API_TIMEOUT = 5  # seconds; the hook must never block the session
 ISSUE_BLOC_MAX_CHARS = 900
 COMMENTAIRE_MAX_CHARS = 280
 
-# En-tête du journal : entrées sous forme « - **AAAA-MM-JJ • source • ... »
+# Journal header: entries in the form "- **YYYY-MM-DD • source • ..."
 RE_ENTREE = re.compile(r"^- \*\*(\d{4}-\d{2}-\d{2})")
 
 
 def projet_dir() -> Path:
-    """Répertoire du projet : variable ZCODE_PROJECT_DIR fournie par le hook, sinon emplacement du script."""
+    """Project directory: ZCODE_PROJECT_DIR variable provided by the hook, otherwise the script location."""
     env_dir = os.environ.get("ZCODE_PROJECT_DIR") or os.environ.get("CLAUDE_PROJECT_DIR")
     return Path(env_dir) if env_dir else Path(__file__).resolve().parent.parent
 
 
 def relancer_veille_si_necessaire(projet: Path) -> bool:
-    """Relance la veille en arrière-plan si la dernière date de plus de VEILLE_MAX_HEURES.
+    """Relaunches the watch in the background if the last one is older than VEILLE_MAX_HEURES.
 
-    Le frais de la dernière veille se lit sur la date de output/veille/rapports.log
-    (appendu à chaque run, même sans nouveauté). Le process est détaché : la
-    session démarre instantanément, la veille complète en tâche de fond.
+    The freshness of the last watch is read from the date of output/veille/rapports.log
+    (appended at every run, even without new items). The process is detached: the
+    session starts instantly, the full watch completes in the background.
     """
     marqueur = projet / "output" / "veille" / "rapports.log"
     if marqueur.is_file() and (time.time() - marqueur.stat().st_mtime) < VEILLE_MAX_HEURES * 3600:
@@ -79,7 +79,7 @@ def relancer_veille_si_necessaire(projet: Path) -> bool:
 
 
 def bloc_maj_en_attente(projet: Path) -> str | None:
-    """Bloc « mises à jour en attente » lu depuis output/veille/maj_en_attente.json (aucun accès réseau)."""
+    """'Pending updates' block read from output/veille/maj_en_attente.json (no network access)."""
     fichier = projet / "output" / "veille" / "maj_en_attente.json"
     if not fichier.is_file():
         return None
@@ -95,26 +95,26 @@ def bloc_maj_en_attente(projet: Path) -> str | None:
         if item.get("details"):
             base = item["details"]
         elif item.get("installee") or item.get("disponible"):
-            base = f"installée {item.get('installee', '?')} → disponible {item.get('disponible', '?')}"
+            base = f"installed {item.get('installee', '?')} → available {item.get('disponible', '?')}"
             if item.get("action"):
-                base += f" ; action : {item['action']}"
+                base += f" ; action: {item['action']}"
         else:
             base = json.dumps(item, ensure_ascii=False)
         if item.get("notes") and item["notes"] not in base:
-            base += f" ; notes : {item['notes']}"
+            base += f" ; notes: {item['notes']}"
         lignes.append(f"- {item.get('source', '?')} : {base}"[:MAJ_ITEM_MAX_CHARS])
     texte = (
-        f"⚠️ MISES À JOUR EN ATTENTE (dernière détection {donnees.get('detecte_le', '?')}) — "
-        "CONSIGNE : mentionne-les à l'utilisateur dès ta première réponse (ex. « au passage, "
-        "tu as des majs en attente : … »), même si sa question porte sur autre chose, et "
-        "propose de les appliquer selon le process « 🔄 Process de mise à jour » d'AGENTS.md "
-        "(une composante à la fois, JAMAIS sans son accord explicite) :\n" + "\n".join(lignes)
+        f"⚠️ PENDING UPDATES (last detection {donnees.get('detecte_le', '?')}) — "
+        "INSTRUCTION: mention them to the user in your very first reply (e.g. \"by the way, "
+        "you have pending updates: …\"), even if their question is about something else, and "
+        "offer to apply them following the \"🔄 Update process\" of AGENTS.md "
+        "(one component at a time, NEVER without their explicit approval):\n" + "\n".join(lignes)
     )
     return texte[:MAJ_MAX_CHARS]
 
 
 def api_github(chemin: str) -> dict | list | None:
-    """Appel GET non authentifié à l'API GitHub (dépôt public), None si indisponible."""
+    """Unauthenticated GET call to the GitHub API (public repo), None if unavailable."""
     url = f"https://api.github.com/{chemin}"
     try:
         requete = urllib.request.Request(
@@ -127,7 +127,7 @@ def api_github(chemin: str) -> dict | list | None:
 
 
 def extraire_entrees(journal: Path, limite: date) -> list[str]:
-    """Retourne les entrées du journal postérieures à la limite, tronquées à ENTREE_MAX_CHARS."""
+    """Returns the journal entries newer than the limit, truncated to ENTREE_MAX_CHARS."""
     entrees: list[str] = []
     courant: str | None = None
     for ligne in journal.read_text(encoding="utf-8").splitlines():
@@ -144,7 +144,7 @@ def extraire_entrees(journal: Path, limite: date) -> list[str]:
 
 
 def bloc_journal(projet: Path) -> str | None:
-    """Bloc « journal de veille » : entrées des JOURNAI_MAX_JOURS derniers jours."""
+    """'Watch journal' block: entries of the last JOURNAI_MAX_JOURS days."""
     journal = projet / "docs" / "veille_journal.md"
     if not journal.is_file():
         return None
@@ -153,8 +153,8 @@ def bloc_journal(projet: Path) -> str | None:
     if not entrees:
         return None
     return (
-        f"Journal de veille de la stack ({JOURNAI_MAX_JOURS} derniers jours) — "
-        f"détail complet dans docs/veille_journal.md :\n" + "\n".join(entrees)
+        f"Stack watch journal (last {JOURNAI_MAX_JOURS} days) — "
+        f"full detail in docs/veille_journal.md:\n" + "\n".join(entrees)
     )
 
 
@@ -163,13 +163,13 @@ def main() -> int:
     relancee = relancer_veille_si_necessaire(projet)
     parties = [b for b in (bloc_maj_en_attente(projet), bloc_journal(projet)) if b]
     if relancee:
-        parties.insert(0, "🔁 Veille relancée en arrière-plan (dernière vérification > 20 h) — "
-                          "les nouveautés détectées seront visibles dans la prochaine session.")
+        parties.insert(0, "🔁 Watch relaunched in the background (last check > 20 h) — "
+                          "new items detected will be visible in the next session.")
     if not parties:
         return 0
     contexte = "\n\n".join(parties)
     if len(contexte) > TOTAL_MAX_CHARS:
-        contexte = contexte[:TOTAL_MAX_CHARS].rstrip() + "\n[… voir docs/veille_journal.md]"
+        contexte = contexte[:TOTAL_MAX_CHARS].rstrip() + "\n[… see docs/veille_journal.md]"
 
     json.dump(
         {

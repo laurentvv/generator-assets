@@ -1,7 +1,7 @@
 """
 chain_audio_video.py
-Module d'enchainement audio-video avance avec fondus enchaines sonores (crossfade).
-Permet de relier plusieurs plans video (avec ou sans audio) sans claquement ni rupture sonore.
+Advanced audio-video chaining module with sound crossfades.
+Allows linking several video shots (with or without audio) without pops or audio breaks.
 """
 import os
 import sys
@@ -11,11 +11,11 @@ FFMPEG = r"C:\Program Files\Amuse\ffmpeg.exe"
 
 def concatener_avec_audio_crossfade(clips, out_path, crossfade_sec=0.25):
     """
-    Concatène plusieurs clips vidéo en préservant et mixant harmonieusement leurs pistes audio.
-    Applique un fondu enchaîné (acrossfade) entre chaque segment audio pour une transition cinématographique.
+    Concatenates several video clips while preserving and harmoniously mixing their audio tracks.
+    Applies an audio crossfade (acrossfade) between each segment for a cinematic transition.
     """
     if not clips:
-        print("Erreur : Aucun clip fourni.")
+        print("Error: No clip provided.")
         return None
 
     if len(clips) == 1:
@@ -23,23 +23,23 @@ def concatener_avec_audio_crossfade(clips, out_path, crossfade_sec=0.25):
         subprocess.run([FFMPEG, "-y", "-i", clips[0], "-c", "copy", out_path], check=True)
         return out_path
 
-    print(f"\n🔗 [Enchaînement Audio-Vidéo] Assemblage de {len(clips)} plans...")
-    print(f"   Fondu enchaîné audio : {crossfade_sec*1000:.0f} ms entre chaque plan")
+    print(f"\n🔗 [Audio-Video chaining] Assembling {len(clips)} shots...")
+    print(f"   Audio crossfade: {crossfade_sec*1000:.0f} ms between each shot")
 
-    # Vérifier la présence d'audio dans les clips via ffprobe
+    # Check audio presence in the clips via ffprobe
     inputs = []
     for c in clips:
         inputs.extend(["-i", c])
 
-    # Construction du filtre complexe FFmpeg
-    # Concaténation vidéo directe + cascade de filtres acrossfade audio
+    # Building the FFmpeg complex filter
+    # Direct video concatenation + audio acrossfade filter cascade
     n = len(clips)
 
-    # 1. Filtre vidéo
+    # 1. Video filter
     v_inputs = "".join([f"[{i}:v]" for i in range(n)])
     v_filter = f"{v_inputs}concat=n={n}:v=1:a=0[vout]"
 
-    # 2. Filtre audio cascade
+    # 2. Cascade audio filter
     # [0:a][1:a] acrossfade=d=0.25 [a1]; [a1][2:a] acrossfade=d=0.25 [a2]...
     a_filters = []
     last_a = "[0:a]"
@@ -66,11 +66,11 @@ def concatener_avec_audio_crossfade(clips, out_path, crossfade_sec=0.25):
 
     try:
         subprocess.run(cmd, check=True)
-        print(f"✅ Séquence audio-vidéo assemblée avec succès : {out_path}")
+        print(f"✅ Audio-video sequence assembled successfully: {out_path}")
         return out_path
     except subprocess.CalledProcessError:
-        # Si un des clips n'avait pas d'audio, fallback en concaténation vidéo pure
-        print("⚠️ Pas de piste audio complète détectée sur tous les clips : fallback vidéo pure.")
+        # If one of the clips had no audio, fall back to pure video concatenation
+        print("⚠️ No complete audio track detected on all clips: pure video fallback.")
         concat_txt = os.path.join(os.path.dirname(out_path), "concat_list.txt")
         with open(concat_txt, "w", encoding="utf-8") as f:
             for c in clips:

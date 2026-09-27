@@ -1,14 +1,14 @@
-# Git LFS — assets binaires de godot_assets/ (audit §2.7, plan d'audit refactor P1)
+# Git LFS — binary assets of godot_assets/ (audit §2.7, refactor audit plan P1)
 #
-# Les générations vivent dans output/ (ignoré par git) ; godot_assets/ ne reçoit
-# que les assets de référence VALIDÉS. Leurs versions binaires passent par LFS
-# pour ne pas faire grossir indéfiniment l'historique du dépôt git.
-# Les fichiers TEXTE de godot_assets/ (.tres, .tscn, .json, .mhmat) restent
-# hors LFS : diff lisibles.
+# Generations live in output/ (ignored by git); godot_assets/ only receives
+# VALIDATED reference assets. Their binary versions go through LFS
+# so the git history does not grow indefinitely.
+# The TEXT files of godot_assets/ (.tres, .tscn, .json, .mhmat) stay
+# out of LFS: readable diffs.
 #
-# Prérequis : git lfs install (une fois par clone) — sinon les filtres
-# filter.lfs.required=true font échouer explicitement plutôt que corrompre.
-# Nouveau type binaire de référence → ajouter sa ligne ici.
+# Prerequisite: git lfs install (once per clone) — otherwise the
+# filter.lfs.required=true filters fail explicitly rather than corrupt.
+# New reference binary type → add its line here.
 
 godot_assets/**/*.png   filter=lfs diff=lfs merge=lfs -text
 godot_assets/**/*.glb   filter=lfs diff=lfs merge=lfs -text

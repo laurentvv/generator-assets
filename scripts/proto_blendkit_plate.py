@@ -1,10 +1,10 @@
-"""Test Blendkit headless : scene CC0 -> plaque 1080p (NON valide, pas un workflow).
+"""Headless Blendkit test: CC0 scene -> 1080p plate (NOT validated, not a workflow).
 
-Execute DANS Blender en mode background :
+Run INSIDE Blender in background mode:
   blender.exe --background --python scripts/proto_blendkit_plate.py -- <out_dir> <search_json> <asset_index> [engine]
 
-engine = eevee (defaut) | cycles | workbench. La cle API du compte connecte est lue
-dans les preferences de l'addon avant toute reinitialisation, jamais logguee.
+engine = eevee (default) | cycles | workbench. The connected account's API key is read
+from the addon preferences before any reinitialization, never logged.
 """
 
 import bpy
@@ -26,9 +26,9 @@ def log(message: str) -> None:
 def telecharger_scene(api_key: str, asset: dict, blend_path: str) -> None:
     blend_file = next((f_ for f_ in asset["files"] if f_["fileType"] == "blend"), None)
     if blend_file is None:
-        raise RuntimeError("aucun fichier .blend dans cet asset")
+        raise RuntimeError("no .blend file in this asset")
     if os.path.isfile(blend_path) and os.path.getsize(blend_path) > 0:
-        log(f".blend déjà en cache: {blend_path}")
+        log(f".blend already cached: {blend_path}")
         return
     req = urllib.request.Request(
         f"{BLENDERKIT_API}/downloads/{blend_file['id']}/?scene_uuid={uuid_mod.uuid4()}",
@@ -38,16 +38,16 @@ def telecharger_scene(api_key: str, asset: dict, blend_path: str) -> None:
         dl = json.load(r)
     signed_url = dl.get("filePath")
     if not signed_url:
-        raise RuntimeError(f"pas de filePath dans la réponse: {str(dl)[:200]}")
-    log("téléchargement de la scène en cours...")
+        raise RuntimeError(f"no filePath in the response: {str(dl)[:200]}")
+    log("downloading the scene...")
     req_file = urllib.request.Request(signed_url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req_file, timeout=1800) as r, open(blend_path, "wb") as f:
         f.write(r.read())
-    log(f".blend téléchargé: {os.path.getsize(blend_path) / 1e6:.1f} Mo")
+    log(f".blend downloaded: {os.path.getsize(blend_path) / 1e6:.1f} MB")
 
 
 def choisir_engine(scene: bpy.types.Scene, souhaite: str) -> str:
-    """Affecte le moteur demande ; l'enum RNA ne listant pas tout, on teste l'affectation."""
+    """Assigns the requested engine; the RNA enum not listing everything, we test the assignment."""
     for candidat in (souhaite, "CYCLES", "BLENDER_EEVEE", "BLENDER_WORKBENCH"):
         if not candidat:
             continue
@@ -73,8 +73,8 @@ def configurer_cycles_gpu(scene: bpy.types.Scene) -> None:
             d.use = d.type != "CPU"
             log(f"device cycles: {d.name} ({d.type}) use={d.use}")
         scene.cycles.device = "GPU"
-    except Exception as e:  # noqa: BLE001 - on garde CPU en dernier recours
-        log(f"config GPU impossible ({e}), Cycles en CPU")
+    except Exception as e:  # noqa: BLE001 - CPU kept as a last resort
+        log(f"GPU config impossible ({e}), Cycles on CPU")
 
 
 def main() -> int:
@@ -90,14 +90,14 @@ def main() -> int:
     prefs = bpy.context.preferences.addons.get(ADDON_MODULE)
     api_key = getattr(prefs.preferences, "api_key", "") if prefs else ""
     if not api_key:
-        log("ERREUR: aucune clé API (compte non connecté ?)")
+        log("ERROR: no API key (account not signed in?)")
         return 2
-    log(f"clé API lue ({len(api_key)} caractères, masquée)")
+    log(f"API key read ({len(api_key)} characters, masked)")
 
     with open(search_json_path, "r", encoding="utf-8") as f:
         meta = json.load(f)
     asset = meta["results"][asset_index]
-    log(f"scène cible: {asset['displayName']} (license={asset['license']})")
+    log(f"target scene: {asset['displayName']} (license={asset['license']})")
 
     blend_path = os.path.join(out_dir, "source_scene.blend")
     telecharger_scene(api_key, asset, blend_path)
@@ -105,17 +105,17 @@ def main() -> int:
     bpy.ops.wm.open_mainfile(filepath=blend_path)
     scene = bpy.context.scene
     log(
-        f"scène ouverte: {len(bpy.data.objects)} objets, {len(bpy.data.cameras)} caméras, "
-        f"{len(bpy.data.lights)} lumières, animations={len(bpy.data.actions)}"
+        f"scene opened: {len(bpy.data.objects)} objects, {len(bpy.data.cameras)} cameras, "
+        f"{len(bpy.data.lights)} lights, animations={len(bpy.data.actions)}"
     )
 
     cams = [o for o in bpy.data.objects if o.type == "CAMERA"]
     if not cams:
-        log("ERREUR: aucune caméra dans la scène")
+        log("ERROR: no camera in the scene")
         return 4
-    log(f"caméras: {[c.name for c in cams]}")
+    log(f"cameras: {[c.name for c in cams]}")
 
-    # Les scènes anciennes crament en Standard : AgX + exposure négative pour la sonde
+    # Old scenes burn in Standard: AgX + negative exposure for the probe
     vt = scene.view_settings
     for name in ("AgX", "Filmic", "Standard"):
         if name in [i.identifier for i in vt.bl_rna.properties["view_transform"].enum_items]:
@@ -128,7 +128,7 @@ def main() -> int:
     scene.render.resolution_y = 1080
 
     engine = choisir_engine(scene, {"eevee": "BLENDER_EEVEE", "cycles": "CYCLES", "workbench": "BLENDER_WORKBENCH"}.get(engine_souhaite, ""))
-    log(f"moteur: {engine}")
+    log(f"engine: {engine}")
     scene.render.engine = engine
     if engine == "CYCLES":
         configurer_cycles_gpu(scene)
@@ -150,13 +150,13 @@ def main() -> int:
 
     if scene.camera is None:
         scene.camera = cams[0]
-        log(f"caméra choisie: {cams[0].name}")
+        log(f"chosen camera: {cams[0].name}")
     else:
-        log(f"caméra de la scène: {scene.camera.name}")
+        log(f"scene camera: {scene.camera.name}")
 
     scene.render.filepath = os.path.join(out_dir, "plaque_1080p.png")
     bpy.ops.render.render(write_still=True)
-    log(f"rendu OK -> {scene.render.filepath}")
+    log(f"render OK -> {scene.render.filepath}")
     return 0
 
 

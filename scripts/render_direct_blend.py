@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 render_direct_blend.py
-Rendu studio Cycles direct depuis la scène .blend native avec les shaders PBR.
+Direct Cycles studio render from the native .blend scene with the PBR shaders.
 """
 
 import bpy
@@ -11,7 +11,7 @@ OUT_PNG = r"C:\GIT\generator-assets\godot_assets\marc_novice_beauty_render.png"
 
 bpy.ops.wm.open_mainfile(filepath=BLEND_FILE)
 
-# Setup de studio
+# Studio setup
 all_objs = [o for o in bpy.data.objects if o.type == 'MESH']
 all_verts = [o.matrix_world @ v.co for o in all_objs for v in o.data.vertices]
 z_max = max(p.z for p in all_verts)
@@ -44,7 +44,7 @@ f = bpy.data.objects.new("Fill", f_data)
 bpy.context.collection.objects.link(f)
 f.location = (-0.45, y_center - 0.95, head_z)
 
-# Camera cadrant torse + tête
+# Camera framing torso + head
 cam_data = bpy.data.cameras.new("Cam")
 cam_data.lens = 50.0
 cam = bpy.data.objects.new("Cam", cam_data)
@@ -60,4 +60,4 @@ bpy.context.scene.render.resolution_x = 1024
 bpy.context.scene.render.resolution_y = 1024
 bpy.context.scene.render.filepath = OUT_PNG
 bpy.ops.render.render(write_still=True)
-print(f"✅ Rendu studio direct terminé : {OUT_PNG}")
+print(f"✅ Direct studio render done: {OUT_PNG}")

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Journalisation structurée du dépôt (audit §2.8).
+"""Structured logging of the repo (audit §2.8).
 
-Convention du dépôt :
-- messages destinés à l'UTILISATEUR (menus interactifs, listes, récapitulatifs,
-  emojis de progression) : print() sur stdout — inchangés ;
-- messages de DIAGNOSTIC (étapes techniques, avertissements, erreurs
-  contextuelles, mesures) : logging via ``logger = logging.getLogger(__name__)``
-  — horodatés, typés, filtrables par niveau, dupliquables vers un fichier ;
-- ``configurer_journal()`` est appelé par main.py (``--verbose`` → DEBUG) ;
-  les scripts autonomes qui veulent les mêmes entrées l'appellent aussi.
+Repo convention:
+- messages for the USER (interactive menus, lists, recaps,
+  progress emojis): print() on stdout — unchanged;
+- DIAGNOSTIC messages (technical steps, warnings, contextual
+  errors, measurements): logging via ``logger = logging.getLogger(__name__)``
+  — timestamped, typed, filterable by level, duplicable to a file;
+- ``configurer_journal()`` is called by main.py (``--verbose`` → DEBUG);
+  standalone scripts that want the same entries call it too.
 """
 
 import logging
@@ -24,14 +24,14 @@ def configurer_journal(
     niveau: str = "INFO",
     fichier: Optional[Union[str, Path]] = None,
 ) -> None:
-    """Configure la journalisation du dépôt (console stderr + fichier optionnel).
+    """Configure the repo's logging (stderr console + optional file).
 
-    Idempotent : ré-appeler REMPLACE les handlers au lieu d'empiler (utile en
-    tests et dans les scripts qui reconfigurent).
+    Idempotent: calling again REPLACES the handlers instead of stacking (useful in
+    tests and in scripts that reconfigure).
 
-    - ``niveau`` : "DEBUG", "INFO" (défaut), "WARNING"… ;
-    - ``fichier`` : si fourni, duplique les entrées horodatées (date complète)
-      dans ce fichier — runs de fond et batchs (ex. ``output/batch_<date>.log``).
+    - ``niveau``: "DEBUG", "INFO" (default), "WARNING"…;
+    - ``fichier``: if provided, duplicates the timestamped entries (full date)
+      into that file — background runs and batches (e.g. ``output/batch_<date>.log``).
     """
     racine = logging.getLogger()
     racine.setLevel(getattr(logging, str(niveau).upper(), logging.INFO))

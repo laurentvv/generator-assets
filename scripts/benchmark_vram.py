@@ -1,7 +1,7 @@
 """
 benchmark_vram.py
-Mesure et profilage précis de la consommation VRAM en temps réel via les compteurs Windows PDH.
-Permet d'identifier avec certitude le pic mémoire (Peak VRAM) et la marge de sécurité avant saturation.
+Precise measurement and profiling of VRAM consumption in real time via Windows PDH counters.
+Makes it possible to identify with certainty the memory peak (Peak VRAM) and the safety margin before saturation.
 """
 import os
 import sys
@@ -62,7 +62,7 @@ class VRAMMonitor:
         self.peak_bytes = 0
         self.thread = threading.Thread(target=self._monitor, daemon=True)
         self.thread.start()
-        time.sleep(1.2) # Laisser typeperf s'initialiser
+        time.sleep(1.2) # Let typeperf initialize
 
     def stop(self):
         self.running = False
@@ -76,14 +76,14 @@ class VRAMMonitor:
 
 def benchmark_config(width, height, frames, label, steps=1):
     print("=" * 70)
-    print(f"🔍 TEST VRAM : {label} ({width}x{height}, {frames} trames, {steps} step)")
+    print(f"🔍 VRAM TEST: {label} ({width}x{height}, {frames} frames, {steps} step)")
     print("=" * 70)
 
     monitor = VRAMMonitor()
     monitor.start()
 
     vram_init_gb = monitor.current_bytes / (1024**3)
-    print(f"   VRAM au repos avant lancement : {vram_init_gb:.2f} Go")
+    print(f"   VRAM at rest before launch: {vram_init_gb:.2f} GB")
 
     cmd = [
         SD_CLI,
@@ -120,15 +120,15 @@ def benchmark_config(width, height, frames, label, steps=1):
     marge_gb = TOTAL_VRAM_GB - peak_gb
     pct = (peak_gb / TOTAL_VRAM_GB) * 100
 
-    statut = "🟢 SÛR (Excellente marge)"
+    statut = "🟢 SAFE (Excellent headroom)"
     if peak_gb > 13.5:
-        statut = "🟡 ATTENTION (Zone limite)"
+        statut = "🟡 CAUTION (Borderline zone)"
     if res.returncode != 0 or peak_gb > 15.0:
-        statut = "🔴 RISQUE DE SATURATION"
+        statut = "🔴 SATURATION RISK"
 
-    print(f"   📊 PIC VRAM MESURÉ : {peak_gb:.2f} Go / 16 Go ({pct:.1f}%)")
-    print(f"   🛡️ Marge de sécurité restante : {marge_gb:.2f} Go libres")
-    print(f"   ⏱️ Durée du test : {duree:.1f}s | Statut : {statut}")
+    print(f"   📊 MEASURED VRAM PEAK: {peak_gb:.2f} GB / 16 GB ({pct:.1f}%)")
+    print(f"   🛡️ Remaining safety headroom: {marge_gb:.2f} GB free")
+    print(f"   ⏱️ Test duration: {duree:.1f}s | Status: {statut}")
 
     return {
         "label": label,
@@ -144,37 +144,37 @@ def benchmark_config(width, height, frames, label, steps=1):
 
 def main():
     print("=" * 80)
-    print("🚀 BENCHMARK VRAM RÉEL : AMD RADEON RX 6950 XT (16 Go VRAM)")
-    print("   Objectif : Mesurer la saturation exacte pour chaque nombre de trames & résolutions")
+    print("🚀 REAL VRAM BENCHMARK: AMD RADEON RX 6950 XT (16 GB VRAM)")
+    print("   Goal: Measure the exact saturation for each frame count & resolution")
     print("=" * 80)
 
     configs = [
-        (832, 480, 5,  "832x480 Standard (5 trames)"),
-        (832, 480, 9,  "832x480 Modéré (9 trames)"),
-        (832, 480, 17, "832x480 Étendu (17 trames)"),
-        (640, 360, 17, "640x360 Éco (17 trames)"),
-        (640, 360, 25, "640x360 Éco (25 trames)"),
-        (640, 360, 33, "640x360 Éco (33 trames)")
+        (832, 480, 5,  "832x480 Standard (5 frames)"),
+        (832, 480, 9,  "832x480 Moderate (9 frames)"),
+        (832, 480, 17, "832x480 Extended (17 frames)"),
+        (640, 360, 17, "640x360 Eco (17 frames)"),
+        (640, 360, 25, "640x360 Eco (25 frames)"),
+        (640, 360, 33, "640x360 Eco (33 frames)")
     ]
 
     results = []
     for w, h, frames, label in configs:
         res = benchmark_config(w, h, frames, label, steps=1)
         results.append(res)
-        time.sleep(2) # Pause de refroidissement et vidage VRAM
+        time.sleep(2) # Cooling pause and VRAM flush
 
     with open(REPORT_JSON, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
     print("\n" + "=" * 80)
-    print("📋 TABLEAU FINAL DE TÉLÉMÉTRIE VRAM (RÉSULTATS DE MESURE RÉELLE)")
+    print("📋 FINAL VRAM TELEMETRY TABLE (REAL MEASUREMENT RESULTS)")
     print("=" * 80)
-    print(f"{'Configuration':<22} | {'Trames':<7} | {'Pic VRAM':<10} | {'Marge Libre':<12} | {'Statut'}")
+    print(f"{'Configuration':<22} | {'Trames':<7} | {'Peak VRAM':<10} | {'Free Headroom':<12} | {'Status'}")
     print("-" * 80)
     for r in results:
-        print(f"{r['resolution']:<22} | {r['trames']:<7} | {r['peak_vram_gb']:>5.2f} Go   | {r['marge_libre_gb']:>5.2f} Go libre | {r['statut']}")
+        print(f"{r['resolution']:<22} | {r['trames']:<7} | {r['peak_vram_gb']:>5.2f} GB   | {r['marge_libre_gb']:>5.2f} GB free | {r['statut']}")
     print("=" * 80)
-    print(f"Rapport sauvegardé dans : {REPORT_JSON}")
+    print(f"Report saved to: {REPORT_JSON}")
 
 if __name__ == "__main__":
     main()

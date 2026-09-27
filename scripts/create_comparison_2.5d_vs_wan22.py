@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 scripts/create_comparison_2.5d_vs_wan22.py
-Génération d'un comparatif vidéo split-screen 50/50 en 4K Ultra HD (3840x2160) :
-- Gauche : Animation 2.5D (raw_clip_01.mp4 - Motion Camera & Zoom)
-- Droite : Animation IA (Wan 2.2 MoE 28B + Super-Résolution 4K CAS 0.75)
+Generation of a 50/50 split-screen 4K Ultra HD (3840x2160) video comparison:
+- Left: 2.5D animation (raw_clip_01.mp4 - Camera Motion & Zoom)
+- Right: AI animation (Wan 2.2 MoE 28B + 4K CAS 0.75 super-resolution)
 """
 
 import os
@@ -23,19 +23,19 @@ OUTPUT_SHEET = r"C:\GIT\generator-assets\output\ansible_nexus\comparatif_split_c
 
 def main():
     if not os.path.exists(REF_25D):
-        raise FileNotFoundError(f"Vidéo 2.5D introuvable : {REF_25D}")
+        raise FileNotFoundError(f"2.5D video not found: {REF_25D}")
     if not os.path.exists(WAN_4K):
-        raise FileNotFoundError(f"Vidéo Wan 2.2 4K introuvable : {WAN_4K}")
+        raise FileNotFoundError(f"Wan 2.2 4K video not found: {WAN_4K}")
 
     print("=" * 80)
-    print("🎬 [CRÉATION DU COMPARATIF SPLIT-SCREEN 4K]")
-    print(f"   Vidéo 2.5D   : {REF_25D}")
-    print(f"   Vidéo Wan 2.2: {WAN_4K}")
-    print(f"   Sortie Split : {OUTPUT_SPLIT}")
+    print("🎬 [CREATING THE 4K SPLIT-SCREEN COMPARISON]")
+    print(f"   2.5D video   : {REF_25D}")
+    print(f"   Wan 2.2 video: {WAN_4K}")
+    print(f"   Split output : {OUTPUT_SPLIT}")
     print("=" * 80)
 
-    # Filtre FFmpeg : Split-screen 50/50 côte à côte (1920x2160 gauche + 1920x2160 droite = 3840x2160)
-    # avec bande séparatrice cyan et libellés texte
+    # FFmpeg filter: 50/50 side-by-side split screen (1920x2160 left + 1920x2160 right = 3840x2160)
+    # with a cyan separator bar and text labels
     filter_complex = (
         "[0:v]scale=3840:2160,crop=1920:2160:0:0,"
         "drawtext=text='Animation 2.5D (Motion Design)':fontcolor=white:fontsize=52:box=1:boxcolor=black@0.6:boxborderw=10:x=50:y=50[left];"
@@ -57,11 +57,11 @@ def main():
         OUTPUT_SPLIT
     ]
 
-    print("🚀 Encodage matériel AMF de la vidéo split-screen 4K...")
+    print("🚀 AMF hardware encoding of the 4K split-screen video...")
     subprocess.run(cmd, check=True)
-    print(f"✅ Vidéo split-screen générée : {OUTPUT_SPLIT}")
+    print(f"✅ Split-screen video generated: {OUTPUT_SPLIT}")
 
-    # Capture d'une planche contact comparative à mi-parcours (t = 2.75s)
+    # Capture of a comparative contact sheet at midpoint (t = 2.75s)
     cmd_snap = [
         FFMPEG, "-y",
         "-ss", "00:00:02.75",
@@ -70,7 +70,7 @@ def main():
         OUTPUT_SHEET
     ]
     subprocess.run(cmd_snap, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"📸 Planche de capture comparative enregistrée : {OUTPUT_SHEET}")
+    print(f"📸 Comparative capture sheet saved: {OUTPUT_SHEET}")
 
 if __name__ == "__main__":
     main()

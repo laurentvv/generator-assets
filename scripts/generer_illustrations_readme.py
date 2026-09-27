@@ -6,13 +6,13 @@ os.makedirs('docs/exemples/workflows_2d', exist_ok=True)
 os.makedirs('docs/exemples/workflows_3d', exist_ok=True)
 os.makedirs('docs/exemples/workflows_audio', exist_ok=True)
 
-# 1. Copie des planches mesh_ia vers docs/exemples/workflows_3d/
+# 1. Copy of the mesh_ia sheets to docs/exemples/workflows_3d/
 for f in ['casque_512_planche.png', 'casque_1024_planche.png']:
     src = os.path.join('output', 'trellis_smoke', f)
     dst = os.path.join('docs', 'exemples', 'workflows_3d', f)
     if os.path.exists(src):
         shutil.copy2(src, dst)
-        print(f"Copie {src} -> {dst}")
+        print(f"Copy {src} -> {dst}")
 
 # 2. TTS Dialogue Visemes
 try:
@@ -42,11 +42,11 @@ try:
         draw.text((vx - 18, 120), tc, fill=(130, 140, 160))
 
     img_tts.save('docs/exemples/workflows_audio/tts_dialogue_visemes.png')
-    print("TTS dialogue visemes genere")
+    print("TTS dialogue visemes generated")
 except Exception as e:
-    print("Erreur TTS visemes:", e)
+    print("TTS visemes error:", e)
 
-# 3. Rembg : Comparatif Avant / Apres
+# 3. Rembg: Before / After comparison
 try:
     casque = Image.open('godot_assets/casque.png').convert('RGBA').resize((240, 240))
     fond_brut = Image.new('RGB', (240, 240), (45, 48, 55))
@@ -63,21 +63,21 @@ try:
 
     comp = Image.new('RGBA', (560, 310), (16, 18, 24, 255))
     c_draw = ImageDraw.Draw(comp)
-    c_draw.text((20, 12), "REMBG : Detourage Neural BiRefNet / RMBG-1.4 (Zero Frange Blanche)", fill=(240, 240, 250))
+    c_draw.text((20, 12), "REMBG: Neural Cutout BiRefNet / RMBG-1.4 (Zero White Fringe)", fill=(240, 240, 250))
     comp.paste(fond_brut, (20, 42))
     c_draw.rectangle([18, 40, 262, 284], outline=(90, 60, 60), width=2)
-    c_draw.text((20, 290), "1. Image Brute (Fond Uni)", fill=(220, 160, 160))
+    c_draw.text((20, 290), "1. Raw Image (Flat Background)", fill=(220, 160, 160))
 
     comp.paste(damier, (300, 42))
     c_draw.rectangle([298, 40, 542, 284], outline=(60, 180, 120), width=2)
-    c_draw.text((300, 290), "2. Detourage Alpha Net (0 halo)", fill=(120, 240, 180))
+    c_draw.text((300, 290), "2. Clean Alpha Cutout (0 halo)", fill=(120, 240, 180))
 
     comp.save('docs/exemples/workflows_2d/rembg_comparatif.png')
-    print("Rembg comparatif genere")
+    print("Rembg comparison generated")
 except Exception as e:
-    print("Erreur Rembg:", e)
+    print("Rembg error:", e)
 
-# 4. UI 9-Slice : Demonstration de l etirement
+# 4. UI 9-Slice: stretching demonstration
 try:
     cadre = Image.open('godot_assets/cadre_portrait_combat.png').convert('RGBA')
     m = 64
@@ -106,23 +106,23 @@ try:
 
     ui_sheet = Image.new('RGBA', (820, 310), (16, 18, 24, 255))
     u_draw = ImageDraw.Draw(ui_sheet)
-    u_draw.text((20, 12), "UI 9-SLICE : Preservation des Coins Ornementaux & Etirement Vectoriel Godot 4", fill=(240, 240, 250))
+    u_draw.text((20, 12), "UI 9-SLICE: Ornamental Corner Preservation & Godot 4 Vector Stretching", fill=(240, 240, 250))
 
     c_res = cadre.resize((220, 220), Image.Resampling.LANCZOS)
     ui_sheet.paste(c_res, (20, 45), c_res)
     u_draw.rectangle([18, 43, 242, 267], outline=(80, 90, 120), width=1)
-    u_draw.text((20, 275), "Source Carree (512x512)", fill=(160, 175, 200))
+    u_draw.text((20, 275), "Square Source (512x512)", fill=(160, 175, 200))
 
     ui_sheet.paste(stretched, (275, 45), stretched)
     u_draw.rectangle([273, 43, 797, 287], outline=(220, 160, 60), width=2)
-    u_draw.text((275, 292), "NinePatchRect Etire (520x240) - Coins 100% Intacts", fill=(255, 200, 100))
+    u_draw.text((275, 292), "NinePatchRect Stretched (520x240) - Corners 100% Intact", fill=(255, 200, 100))
 
     ui_sheet.save('docs/exemples/workflows_2d/ui_9slice_demo.png')
-    print("UI 9-Slice demo genere")
+    print("UI 9-Slice demo generated")
 except Exception as e:
-    print("Erreur UI 9-slice:", e)
+    print("UI 9-slice error:", e)
 
-# 5. ESRGAN Upscale Comparatif
+# 5. ESRGAN Upscale Comparison
 try:
     c_orig = Image.open('godot_assets/casque.png').convert('RGBA')
     c_up = Image.open('godot_assets/casque_esrgan_4x.png').convert('RGBA')
@@ -134,16 +134,16 @@ try:
 
     up_img = Image.new('RGBA', (560, 320), (16, 18, 24, 255))
     u_draw = ImageDraw.Draw(up_img)
-    u_draw.text((20, 12), "UPSCALE : Real-ESRGAN Vulkan 4x-UltraSharp (Zoom 400% sur Micro-Details)", fill=(240, 240, 250))
+    u_draw.text((20, 12), "UPSCALE: Real-ESRGAN Vulkan 4x-UltraSharp (400% Zoom on Micro-Details)", fill=(240, 240, 250))
     up_img.paste(crop_orig, (20, 42))
     u_draw.rectangle([18, 40, 272, 294], outline=(120, 60, 60), width=2)
-    u_draw.text((20, 300), "1. Original Pixelise (Zoom 4x Nearest)", fill=(220, 140, 140))
+    u_draw.text((20, 300), "1. Pixelated Original (4x Nearest Zoom)", fill=(220, 140, 140))
 
     up_img.paste(crop_up, (290, 42))
     u_draw.rectangle([288, 40, 542, 294], outline=(60, 200, 120), width=2)
-    u_draw.text((290, 300), "2. 4x-UltraSharp (Aretes Nettoyées)", fill=(120, 240, 160))
+    u_draw.text((290, 300), "2. 4x-UltraSharp (Cleaned Edges)", fill=(120, 240, 160))
 
     up_img.save('docs/exemples/workflows_2d/upscale_comparatif_zoom.png')
-    print("Upscale comparatif zoom genere")
+    print("Upscale zoom comparison generated")
 except Exception as e:
-    print("Erreur Upscale comparatif:", e)
+    print("Upscale comparison error:", e)

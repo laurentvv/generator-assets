@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Music BG : Boucles Musicales IA en Fond Sonore (audio.cpp Vulkan).
-Moteurs disponibles : MiniMax-Music3 (défaut) ou ACE-Step 1.5 Turbo (MIT,
-contraintes BPM/tonalité/mesure imposables au planner).
-Produit :
-- Boucle sans couture WAV 48 kHz PCM16 (alignée BPM/mesures ou crossfade ambiante)
-- Version « bed » normalisée (défaut -30 LUFS) prête derrière une voix off
-- Aperçus OGG (boucle Godot/lecture) et MP3 192k
-- Recette ffmpeg de ducking (sidechaincompress) pour mixer sous une voix
-- QA optionnelle par Music Flamingo (llama-cli, analyse uniquement, licence non commerciale)
+Music BG Workflow: AI Background Music Loops (audio.cpp Vulkan).
+Available engines: MiniMax-Music3 (default) or ACE-Step 1.5 Turbo (MIT,
+BPM/key/measure constraints enforceable on the planner).
+Produces:
+- Seamless WAV 48 kHz PCM16 loop (BPM/measure-aligned or ambient crossfade)
+- Normalized "bed" version (default -30 LUFS) ready behind a voice-over
+- OGG previews (Godot loop/playback) and 192k MP3
+- ffmpeg ducking recipe (sidechaincompress) to mix under a voice
+- Optional QA by Music Flamingo (llama-cli, analysis only, non-commercial licence)
 """
 
 import os
@@ -40,7 +40,7 @@ from core.music_ai import (
 )
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
-# Prompt par défaut : boucle « tech » discrète pour fond YouTube derrière une voix
+# Default prompt: discreet "tech" loop for a YouTube background behind a voice
 PROMPT_TECH_DEFAUT = (
     "subtle minimal techno groove, soft pulsing analog synth bass, muffled kick, "
     "airy hi-hats, clean dark pads, instrumental only, steady understated momentum, no vocals"
@@ -54,69 +54,69 @@ MOTEURS = {
 
 @WorkflowRegistry.register
 class MusicBgWorkflow(BaseWorkflow):
-    """Génération de boucles musicales IA (MiniMax-Music3 ou ACE-Step 1.5 GGUF, Vulkan) calibrées comme fond sonore derrière une voix off."""
+    """Generation of AI music loops (MiniMax-Music3 or ACE-Step 1.5 GGUF, Vulkan) calibrated as background behind a voice-over."""
 
     name = "music_bg"
-    description = "Boucles musicales IA « tech » en fond sonore YouTube (MiniMax-Music3 / ACE-Step 1.5 GGUF Vulkan + bed -30 LUFS + recette ducking)"
+    description = "\"Tech\" AI music loops as YouTube background (MiniMax-Music3 / ACE-Step 1.5 GGUF Vulkan + -30 LUFS bed + ducking recipe)"
 
     emoji = "🎵"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). Flags partagés de la
-    # famille audio hébergés ici : --moteur (aussi voix_off), --variante (aussi
-    # chanson/musique_adn), --music-backend (aussi musique_essence/retrait_voix/
-    # voix_off), --tonalite et --lyrics (aussi musique_adn). ⚠️ --force-bpm expose
-    # dest=force_bpm mais le run lit bpm_force : mismatch historique, à corriger
-    # uniquement avec validation utilisateur (le flag est aujourd'hui inerte).
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). Shared flags of the
+    # audio family hosted here: --moteur (also voix_off), --variante (also
+    # chanson/musique_adn), --music-backend (also musique_essence/retrait_voix/
+    # voix_off), --tonalite and --lyrics (also musique_adn). ⚠️ --force-bpm exposes
+    # dest=force_bpm but the run reads bpm_force: historical mismatch, to be fixed
+    # only with user validation (the flag is currently inert).
     PARAMETRES = [
         dict(flags=("--lufs",), type=float, default=None,
-             help="LUFS cible du lit musical « bed » pour music_bg (défaut workflow : -30)."),
+             help="Target LUFS of the \"bed\" music bed for music_bg (workflow default: -30)."),
         dict(flags=("--loop-mode",), choices=["percussive", "ambient"], default="percussive",
-             help="Stratégie de bouclage music_bg (défaut: percussive, alignée BPM)."),
+             help="music_bg looping strategy (default: percussive, BPM-aligned)."),
         dict(flags=("--music-backend",), choices=["vulkan", "cpu", "auto"], default="vulkan",
-             help="Backend audio.cpp pour music_bg (défaut: vulkan)."),
+             help="audio.cpp backend for music_bg (default: vulkan)."),
         dict(flags=("--moteur",), choices=["acestep", "music3", "qwen3", "voxcpm2", "fish"], default="acestep",
-             help="Moteur : music_bg → acestep (défaut, ACE-Step 1.5) | music3 ; voix_off → qwen3 (clonage+instruct, Apache-2.0) | voxcpm2 (clonage sans transcript, Apache-2.0) | fish (balises expression, licence recherche)."),
+             help="Engine: music_bg → acestep (default, ACE-Step 1.5) | music3 ; voix_off → qwen3 (cloning+instruct, Apache-2.0) | voxcpm2 (cloning without transcript, Apache-2.0) | fish (expression tags, research licence)."),
         dict(flags=("--variante",), choices=["turbo", "xl-turbo", "xl-sft"], default=None,
-             help="Variante ACE-Step : défaut = turbo pour music_bg, xl-turbo pour chanson/musique_adn (qualité vocale, recettes validées) ; turbo = DiT 2B distillé, xl-turbo = DiT 4B distillé (~1,8x plus lent), xl-sft = DiT 4B avec CFG."),
+             help="ACE-Step variant: default = turbo for music_bg, xl-turbo for chanson/musique_adn (vocal quality, validated recipes); turbo = distilled DiT 2B, xl-turbo = distilled DiT 4B (~1.8x slower), xl-sft = DiT 4B with CFG."),
         dict(flags=("--force-bpm",), type=int, default=None,
-             help="Imposer le tempo (ACE-Step uniquement) — ex: 124."),
+             help="Force the tempo (ACE-Step only) — e.g.: 124."),
         dict(flags=("--tonalite",), default=None,
-             help="Imposer la tonalité (ACE-Step uniquement) — ex: A minor."),
+             help="Force the key (ACE-Step only) — e.g.: A minor."),
         dict(flags=("--mesure",), default=None,
-             help="Imposer la signature (ACE-Step uniquement) — ex: 4/4."),
+             help="Force the time signature (ACE-Step only) — e.g.: 4/4."),
         dict(flags=("--candidats",), type=int, default=3,
-             help="Nombre de candidats music_bg à générer puis départager (défaut: 3)."),
+             help="Number of music_bg candidates to generate then rank (default: 3)."),
         dict(flags=("--lyrics",), default="[Instrumental]",
-             help="Paroles/structure pour music_bg (défaut: [Instrumental])."),
+             help="Lyrics/structure for music_bg (default: [Instrumental])."),
         dict(flags=("--analyse",), action="store_true",
-             help="Active la QA Music Flamingo sur le bed sélectionné (music_bg)."),
+             help="Enables Music Flamingo QA on the selected bed (music_bg)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt") or PROMPT_TECH_DEFAUT
-        # Le flag CLI --duration a un défaut bas (2 s) : toute valeur < 4 s = non renseignée
+        # The --duration CLI flag has a low default (2 s): any value < 4 s = not provided
         duree = float(params.get("duration") or 12.0)
         if duree < 4.0:
             duree = 12.0
         etapes = int(params.get("steps") or 0)
-        # Défaut : ACE-Step 1.5 (validé plus qualitatif par l'utilisateur le
-        # 2026-09-05, ~36x plus rapide, MIT, 48 kHz natif). Music3 reste
-        # disponible via --moteur music3.
+        # Default: ACE-Step 1.5 (validated as better quality by the user on
+        # 2026-09-05, ~36x faster, MIT, native 48 kHz). Music3 remains
+        # available via --moteur music3.
         moteur = params.get("moteur") or "acestep"
         if moteur not in MOTEURS:
-            raise ValueError(f"Moteur inconnu : {moteur} (choix : {', '.join(MOTEURS)})")
+            raise ValueError(f"Unknown engine: {moteur} (choices: {', '.join(MOTEURS)})")
         variante = params.get("variante") or "turbo"
         if variante not in ACESTEP15_VARIANTES:
-            raise ValueError(f"Variante ACE-Step inconnue : {variante} (choix : {', '.join(ACESTEP15_VARIANTES)})")
+            raise ValueError(f"Unknown ACE-Step variant: {variante} (choices: {', '.join(ACESTEP15_VARIANTES)})")
         if etapes <= 0:
-            # Variantes distillées (turbo) : 8 pas ; xl-sft (CFG) en demande
-            # davantage ; Music3 : 30 pas
+            # Distilled variants (turbo): 8 steps; xl-sft (CFG) asks for
+            # more; Music3: 30 steps
             if moteur == "music3":
                 etapes = 30
             else:
                 etapes = 8 if variante != "xl-sft" else 25
-        # Contraintes musicales (ACE-Step uniquement : imposées au planner LM)
+        # Musical constraints (ACE-Step only: enforced on the LM planner)
         bpm_force = params.get("bpm_force")
         tonalite = params.get("tonalite") or None
         mesure = params.get("mesure") or None
@@ -138,12 +138,12 @@ class MusicBgWorkflow(BaseWorkflow):
         if not os.path.exists(exe):
             script = "download_acestep15_gguf.py" if moteur == "acestep" else "download_music3_gguf.py"
             raise FileNotFoundError(
-                f"audiocpp_cli.exe introuvable : {exe}\n"
-                f"→ Lancez : uv run python scripts/{script}"
+                f"audiocpp_cli.exe not found: {exe}\n"
+                f"→ Run: uv run python scripts/{script}"
             )
 
-        self.log(f"Moteur : {MOTEURS[moteur]}{f' • variante {variante}' if moteur == 'acestep' and variante != 'turbo' else ''} • backend={backend} • {nb_candidats} candidat(s)")
-        self.log(f"Prompt : « {prompt} »")
+        self.log(f"Engine: {MOTEURS[moteur]}{f' • variant {variante}' if moteur == 'acestep' and variante != 'turbo' else ''} • backend={backend} • {nb_candidats} candidate(s)")
+        self.log(f"Prompt: \"{prompt}\"")
         contraintes = []
         if bpm_force:
             contraintes.append(f"{int(bpm_force)} BPM")
@@ -153,26 +153,26 @@ class MusicBgWorkflow(BaseWorkflow):
             contraintes.append(mesure)
         if contraintes:
             if moteur != "acestep":
-                self.log("⚠️ bpm/tonalité/mesure imposés : ignorés par MiniMax-Music3 (ACE-Step uniquement).")
+                self.log("⚠️ enforced bpm/key/measure: ignored by MiniMax-Music3 (ACE-Step only).")
             else:
-                self.log(f"Contraintes imposées au planner : {' • '.join(contraintes)}")
-        self.log(f"Cible : boucle {duree:.0f} s • mode={loop_mode} • bed {lufs_cible:.0f} LUFS")
+                self.log(f"Constraints enforced on the planner: {' • '.join(contraintes)}")
+        self.log(f"Target: {duree:.0f} s loop • mode={loop_mode} • bed {lufs_cible:.0f} LUFS")
 
         # ------------------------------------------------------------------
-        # 1. Génération des candidats (marge +3 s pour l'alignement mesures)
+        # 1. Candidate generation (+3 s headroom for measure alignment)
         # ------------------------------------------------------------------
         dossier_bruts = os.path.join(output_dir, "candidats")
         os.makedirs(dossier_bruts, exist_ok=True)
-        # Marge pour l'alignement mesures : ACE-Step termine ses morceaux par un
-        # long fondu de sortie (~4-6 s) → marge large (le moteur est ~40x plus
-        # rapide que Music3, le coût est négligeable).
+        # Headroom for measure alignment: ACE-Step ends its pieces with a
+        # long fade-out (~4-6 s) → large headroom (the engine is ~40x faster
+        # than Music3, the cost is negligible).
         duree_generation = duree + (8.0 if moteur == "acestep" else 3.0)
         empreintes_vues = set()
         bruts: List[Dict[str, Any]] = []
 
         for i in range(1, nb_candidats + 1):
             chemin_brut = os.path.join(dossier_bruts, f"cand_{i}_brut.wav")
-            self.log(f"Génération candidat {i}/{nb_candidats} ({duree_generation:.0f} s)...", emoji="🎵")
+            self.log(f"Generating candidate {i}/{nb_candidats} ({duree_generation:.0f} s)...", emoji="🎵")
             graine_i = graine + i - 1 if graine >= 0 else -1
             if moteur == "acestep":
                 chemin, backend_utilise = generer_musique_acestep(
@@ -203,22 +203,22 @@ class MusicBgWorkflow(BaseWorkflow):
 
             empreinte = empreinte_fichier(chemin)
             if empreinte in empreintes_vues and graine_i < 0:
-                self.log("Candidat identique au précédent (graine non pilotée) — arrêt des générations.", emoji="♻️")
+                self.log("Candidate identical to the previous one (unseeded) — stopping the generations.", emoji="♻️")
                 os.remove(chemin)
                 break
             empreintes_vues.add(empreinte)
             bruts.append({"index": i, "chemin": chemin, "backend": backend_utilise})
 
         if not bruts:
-            raise RuntimeError("Aucun candidat généré.")
+            raise RuntimeError("No candidate generated.")
 
         # ------------------------------------------------------------------
-        # 2. Bouclage + post-traitement + validation de chaque candidat
+        # 2. Looping + post-processing + validation of each candidate
         # ------------------------------------------------------------------
         candidats: List[Dict[str, Any]] = []
         for brut in bruts:
             i = brut["index"]
-            self.log(f"Bouclage & post-traitement du candidat {i}...", emoji="🔊")
+            self.log(f"Looping & post-processing of candidate {i}...", emoji="🔊")
             audio, sr = charger_audio(brut["chemin"])
             boucle, infos_boucle = fabriquer_boucle(audio, sr, duree_cible=duree, mode=loop_mode)
             boucle = post_traiter_lit_voix(boucle, sr)
@@ -230,11 +230,11 @@ class MusicBgWorkflow(BaseWorkflow):
 
             verification = verifier_boucle(chemin_full)
             mesures = mesurer_lufs(chemin_full)
-            bpm_txt = f"{infos_boucle['bpm']:.0f} BPM" if infos_boucle.get("bpm") else "ambiante"
+            bpm_txt = f"{infos_boucle['bpm']:.0f} BPM" if infos_boucle.get("bpm") else "ambient"
             self.log(
-                f"Candidat {i} : {bpm_txt}, {infos_boucle['duree']:.1f} s, "
-                f"couture Δ{verification['ecart_couture_db']} dB, "
-                f"LUFS {mesures['I']:.1f}, pic {verification['pic_dbfs']} dBFS"
+                f"Candidate {i}: {bpm_txt}, {infos_boucle['duree']:.1f} s, "
+                f"seam Δ{verification['ecart_couture_db']} dB, "
+                f"LUFS {mesures['I']:.1f}, peak {verification['pic_dbfs']} dBFS"
                 f"{' ⚠️' if not verification['propre'] else ' ✅'}"
             )
             candidats.append({
@@ -248,20 +248,20 @@ class MusicBgWorkflow(BaseWorkflow):
             })
 
         # ------------------------------------------------------------------
-        # 3. Sélection du meilleur candidat (propreté puis couture minimale)
+        # 3. Best-candidate selection (cleanliness first, then minimal seam)
         # ------------------------------------------------------------------
         candidats_valides = [c for c in candidats if c["verification"]["propre"]]
         pool = candidats_valides or candidats
         meilleur = min(pool, key=lambda c: c["verification"]["ecart_couture_db"])
         self.log(
-            f"Meilleur candidat : #{meilleur['index']} "
-            f"(couture Δ{meilleur['verification']['ecart_couture_db']} dB)",
+            f"Best candidate: #{meilleur['index']} "
+            f"(seam Δ{meilleur['verification']['ecart_couture_db']} dB)",
             emoji="🏆",
         )
 
         # ------------------------------------------------------------------
-        # 4. Exports finaux : chaque candidat est finalisé (bed LUFS + MP3),
-        #    le meilleur est promu au niveau racine
+        # 4. Final exports: every candidate is finalized (LUFS bed + MP3),
+        #    the best one is promoted to the root level
         # ------------------------------------------------------------------
         wav_full = os.path.join(output_dir, f"{nom_base}_full.wav")
         shutil.copyfile(meilleur["chemin"], wav_full)
@@ -270,7 +270,7 @@ class MusicBgWorkflow(BaseWorkflow):
         ogg = convertir_ogg(bed, os.path.join(output_dir, f"{nom_base}.ogg"))
         mp3 = convertir_mp3(bed, os.path.join(output_dir, f"{nom_base}_preview.mp3"))
 
-        self.log(f"Bed normalisé : {mesures_bed['I']:.1f} LUFS (cible {lufs_cible:.0f}) • TP {mesures_bed['TP']:.1f} dBTP")
+        self.log(f"Normalized bed: {mesures_bed['I']:.1f} LUFS (target {lufs_cible:.0f}) • TP {mesures_bed['TP']:.1f} dBTP")
 
         fichiers_finale = [wav_full, bed, ogg, mp3]
         for cand in candidats:
@@ -285,47 +285,47 @@ class MusicBgWorkflow(BaseWorkflow):
             cand["mp3"] = mp3_c
             fichiers_finale += [bed_c, mp3_c]
             self.log(
-                f"Candidat {cand['index']} finalisé : {os.path.basename(bed_c)} "
+                f"Candidate {cand['index']} finalized: {os.path.basename(bed_c)} "
                 f"({mesures_c['I']:.1f} LUFS)"
             )
 
         # ------------------------------------------------------------------
-        # 5. QA optionnelle Music Flamingo
+        # 5. Optional Music Flamingo QA
         # ------------------------------------------------------------------
         resultat_analyse = None
         if analyse:
-            self.log("Analyse Music Flamingo (QA) du bed sélectionné...", emoji="🧠")
+            self.log("Music Flamingo (QA) analysis of the selected bed...", emoji="🧠")
             resultat_analyse = analyser_boucle_flamingo(bed, log=lambda m: self.log(m, emoji="   "))
             if resultat_analyse:
-                self.log(f"Verdict : {resultat_analyse}")
+                self.log(f"Verdict: {resultat_analyse}")
 
         # ------------------------------------------------------------------
-        # 6. Recette de mixage sous voix off (ducking automatique)
+        # 6. Mixing recipe under a voice-over (automatic ducking)
         # ------------------------------------------------------------------
         recette = construire_recette_ducking("voix_off.wav", os.path.basename(bed), "mix_final.wav")
         chemin_recette = os.path.join(output_dir, "recette_mixage_voix.txt")
         with open(chemin_recette, "w", encoding="utf-8") as f:
             f.write(
-                "RECETTE : mixage de la boucle sous une voix off (ducking automatique)\n"
-                "=====================================================================\n\n"
-                "1) Placez ce fichier à côté de votre voix off : voix_off.wav\n"
-                "2) Lancez la commande :\n\n"
+                "RECIPE: mixing the loop under a voice-over (automatic ducking)\n"
+                "==============================================================\n\n"
+                "1) Put this file next to your voice-over: voix_off.wav\n"
+                "2) Run the command:\n\n"
                 f"    {recette}\n\n"
-                "3) Résultat : mix_final.wav — la boucle est répétée à la durée de la\n"
-                "   voix et atténuée automatiquement dès que la voix parle.\n"
-                "   Ajustements :\n"
-                "   - musique trop présente → abaisser volume=1.0 (ex: 0.7)\n"
-                "   - ducking plus marqué → ratio=8 et/ou threshold=0.03\n"
-                "   - retour plus rapide après la voix → release=350\n"
+                "3) Result: mix_final.wav — the loop is repeated to the duration of the\n"
+                "   voice and attenuated automatically as soon as the voice speaks.\n"
+                "   Adjustments:\n"
+                "   - music too present → lower volume=1.0 (e.g.: 0.7)\n"
+                "   - stronger ducking → ratio=8 and/or threshold=0.03\n"
+                "   - faster recovery after the voice → release=350\n"
             )
 
-        self.log(f"Exports finaux dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Boucle complète : {wav_full}")
+        self.log(f"Final exports in '{output_dir}/':", emoji="🎉")
+        self.log(f"  • Full loop       : {wav_full}")
         self.log(f"  • Bed {mesures_bed['I']:.1f} LUFS   : {bed}")
-        self.log(f"  • OGG boucle       : {ogg}")
-        self.log(f"  • MP3 aperçu       : {mp3}")
-        self.log(f"  • {len(candidats)} boucles finalisées (bed + MP3) dans 'candidats/'", emoji="🎵")
-        self.log(f"  • Recette ducking  : {chemin_recette}", emoji="💎")
+        self.log(f"  • OGG loop        : {ogg}")
+        self.log(f"  • MP3 preview     : {mp3}")
+        self.log(f"  • {len(candidats)} finalized loops (bed + MP3) in 'candidats/'", emoji="🎵")
+        self.log(f"  • Ducking recipe  : {chemin_recette}", emoji="💎")
 
         return {
             "wav_full": wav_full,

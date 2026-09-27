@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Exécution des moteurs externes (sd-cli, Blender, ESRGAN…) via un helper unique.
+Execution of external engines (sd-cli, Blender, ESRGAN…) via a single helper.
 
-Centralise ce qui était dispersé dans des `subprocess.run` nus (audit §2.4) :
-journalisation de la commande, timeout systématique, erreur typée portant le
-code retour et la fin du stderr au lieu d'une `CalledProcessError` muette.
+Centralizes what used to be scattered across bare `subprocess.run` calls (audit §2.4):
+command logging, systematic timeout, typed error carrying the
+return code and the tail of stderr instead of a mute `CalledProcessError`.
 """
 
 import logging
@@ -15,11 +15,11 @@ from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
-_QUEUE_ERREUR = 800  # caractères de stderr inclus dans un EngineError
+_QUEUE_ERREUR = 800  # characters of stderr included in an EngineError
 
 
 class EngineError(RuntimeError):
-    """Échec d'un moteur externe (code retour ≠ 0 ou timeout)."""
+    """Failure of an external engine (return code ≠ 0 or timeout)."""
 
     def __init__(self, message: str, commande: List[str], code: int, stderr_fin: str = ""):
         super().__init__(message)
@@ -38,24 +38,23 @@ def run_engine(
     cwd: Optional[str] = None,
     etiquette: str = "moteur",
 ) -> subprocess.CompletedProcess:
-    """Exécute un moteur externe et centralise la gestion d'erreur.
+    """Runs an external engine and centralizes error handling.
 
-    - journalise la commande sur la console (traçabilité des appels moteurs) ;
-    - `timeout` : fait échouer l'appel au-delà du délai — un moteur qui pend ne
-      bloque plus le CLI à l'infini. À dimensionner par appel à partir des
-      repères de durées MEMORY_BANK (jamais « au plus juste » : les journées
-      lentes existent) ;
-    - `capture=True` (défaut) : stdout/stderr capturés, retournés dans le
-      CompletedProcess et ajoutés à `log_path` si fourni ; la fin du stderr
-      alimente `EngineError.stderr_fin` ;
-    - `capture=False` : sortie laissée en direct sur la console (jobs longs où
-      la progression compte) — EngineError portera alors seulement le code ;
-    - `check=True` (défaut) : lève EngineError si le code retour ≠ 0.
+    - logs the command to the console (traceability of engine calls);
+    - `timeout`: fails the call beyond the deadline — a hung engine no
+      longer blocks the CLI forever. Size per call from the MEMORY_BANK
+      duration landmarks (never "just tight enough": slow days exist);
+    - `capture=True` (default): stdout/stderr captured, returned in the
+      CompletedProcess and appended to `log_path` if provided; the tail of stderr
+      feeds `EngineError.stderr_fin`;
+    - `capture=False`: output left live on the console (long jobs where
+      progress matters) — EngineError will then carry only the code;
+    - `check=True` (default): raises EngineError if return code ≠ 0.
     """
     affichage = subprocess.list2cmdline(commande)
     logger.info("▶️ [%s] %s", etiquette, affichage)
     if timeout is None:
-        logger.warning("⚠️ [%s] exécution SANS timeout — à réserver aux cas maîtrisés", etiquette)
+        logger.warning("⚠️ [%s] execution WITHOUT timeout — reserve for mastered cases", etiquette)
 
     try:
         resultat = subprocess.run(
@@ -73,7 +72,7 @@ def run_engine(
         if isinstance(stderr_fin, bytes):
             stderr_fin = stderr_fin.decode("utf-8", errors="replace")
         raise EngineError(
-            f"[{etiquette}] timeout après {timeout:.0f} s : {affichage}",
+            f"[{etiquette}] timeout after {timeout:.0f} s: {affichage}",
             commande, -1, stderr_fin[-_QUEUE_ERREUR:],
         ) from e
 
@@ -89,8 +88,8 @@ def run_engine(
     if check and resultat.returncode != 0:
         stderr_fin = (resultat.stderr or "")[-_QUEUE_ERREUR:]
         raise EngineError(
-            f"[{etiquette}] code retour {resultat.returncode} : {affichage}"
-            + (f"\n--- fin de stderr ---\n{stderr_fin}" if stderr_fin else ""),
+            f"[{etiquette}] return code {resultat.returncode}: {affichage}"
+            + (f"\n--- stderr tail ---\n{stderr_fin}" if stderr_fin else ""),
             commande, resultat.returncode, stderr_fin,
         )
     return resultat

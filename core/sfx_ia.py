@@ -1,34 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Génération de bruitages (SFX) par IA : Stable Audio 3 Small SFX via audio.cpp.
+AI sound-effect (SFX) generation: Stable Audio 3 Small SFX via audio.cpp.
 
-Moteur validé par l'utilisateur le 2026-09-09 (4/5 échantillons « ok » : épée, pas
-gravier, porte, whoosh) sur les SFX du cas d'usage jeu Godot — RTF ~0,2 Vulkan,
-le plus rapide du poste.
+Engine validated by the user on 2026-09-09 (4/5 samples "ok": sword, gravel
+steps, door, whoosh) on the Godot game use-case SFX — RTF ~0.2 Vulkan,
+fastest on this machine.
 
-Traitements intégrés (issus des itérations d'écoute sur le sample pluie/orage) :
-- **Sélection du prompt = 1er levier de qualité.** Le modèle peut sortir des textures
-  déséquilibrées : « heavy rain on window glass, distant thunder rumble » produit un
-  grondement 50-250 Hz à +18 dB avec le crépitement HF à −17..−28 dB (« assourdie »,
-  verdict utilisateur) ; « heavy rain falling on glass, dense patter with natural
-  splashes » est spectralement équilibré (HF/LF ≈ −2 dB). Nommer LE CONTENU (patter,
-  splashes) plutôt que l'ambiance (thunder rumble) oriente le spectre.
-- **Rognage des silences d'entrée/sortie** : SA3 fondu la fin (jusqu'à plusieurs
-  secondes muettes) — rognage automatique des bords sous −45 dBFS (garde-fou :
-  jamais plus de 50 % du fichier).
-- **Deux traitements de niveau** (le volume ne suffit pas, verdict « son trop faible ») :
-  texture « nappe » (I < seuil) = gain vers la cible LUFS + limiteur de plafond
-  (alimiter — ne touche QUE les crêtes qui dépassent, préserve le crépitement ; la
-  1re version avec acompressor seuil −20 dB écrasait la modulation de la texture
-  et l'assourdissait davantage) ; SFX transitoire = simple normalisation de crête
-  (comportement historique, échantillons validés inchangés).
+Built-in processing (from the listening iterations on the rain/thunder sample):
+- **Prompt selection = first quality lever.** The model can output unbalanced
+  textures: "heavy rain on window glass, distant thunder rumble" produces a
+  50-250 Hz rumble at +18 dB with the HF crackle at −17..−28 dB ("muffled",
+  user verdict); "heavy rain falling on glass, dense patter with natural
+  splashes" is spectrally balanced (HF/LF ≈ −2 dB). Naming THE CONTENT (patter,
+  splashes) rather than the ambience (thunder rumble) steers the spectrum.
+- **Trimming of leading/trailing silences**: SA3 fades out the tail (up to several
+  silent seconds) — automatic edge trimming below −45 dBFS (safety guard:
+  never more than 50% of the file).
+- **Two level treatments** (volume alone is not enough, "sound too low" verdict):
+  "pad" texture (I < threshold) = gain toward the LUFS target + ceiling limiter
+  (alimiter — only touches the peaks that exceed it, preserves the crackle; the
+  1st version with acompressor threshold −20 dB crushed the texture modulation
+  and muffled it further); transient SFX = simple peak normalization
+  (historical behavior, validated samples unchanged).
 
-Écueils intégrés :
-- sortie SA3 = 44,1 kHz stéréo (le workflow sfx historique était mono procédural ;
-  l'export Godot WAV/OGG accepte les deux)
-- OGG interdit via soundfile (stack overflow libsndfile, règle §1.10) — l'export
-  final passe par exporter_sfx_godot (ffmpeg), ce module ne fait que le WAV intermédiaire
+Built-in pitfalls:
+- SA3 output = 44.1 kHz stereo (the historical sfx workflow was procedural mono;
+  the Godot WAV/OGG export accepts both)
+- OGG forbidden via soundfile (libsndfile stack overflow, rule §1.10) — the final
+  export goes through exporter_sfx_godot (ffmpeg); this module only produces the intermediate WAV
 """
 
 import os
@@ -51,25 +51,25 @@ MODELE_SA3_SFX = os.getenv(
     ),
 )
 
-# Normalisation de crête (~ -0,9 dBFS) : même convention que la synthèse procédurale (0,9).
+# Peak normalization (~ -0.9 dBFS): same convention as the procedural synthesis (0.9).
 PIC_CIBLE = 0.9
 
-# Texture « nappe » : seuil de détection, cible loudness du corps et plafond de crête.
+# "Pad" texture: detection threshold, body loudness target and peak ceiling.
 SEUIL_NAPPE_LUFS = -20.0
 LUFS_CIBLE_NAPPE = -16.0
 PLAFOND_DBFS = -1.5
 
-# Rognage des silences d'entrée/sortie (fondu structurel SA3).
+# Trimming of leading/trailing silences (structural SA3 fade).
 SEUIL_ROGNAGE_DB = -45.0
 MARGE_ROGNAGE_S = 0.05
 MAX_ROGNAGE_FRAC = 0.5
 
 
 def _rogner_silences(audio: np.ndarray, sr: int) -> np.ndarray:
-    """Coupe les bords silencieux (env. RMS 20 ms sous SEUIL_ROGNAGE_DB, marge conservée).
+    """Cuts the silent edges (approx. 20 ms RMS below SEUIL_ROGNAGE_DB, margin kept).
 
-    Garde-fou : aucun rognage si plus de MAX_ROGNAGE_FRAC du fichier disparaîtrait
-    (génération dégénérée — on la laisse telle quelle).
+    Safety guard: no trimming if more than MAX_ROGNAGE_FRAC of the file would
+    disappear (degenerate generation — left as is).
     """
     mono = audio.mean(axis=1) if audio.ndim > 1 else audio
     w = max(int(sr * 0.02), 1)
@@ -87,11 +87,11 @@ def _rogner_silences(audio: np.ndarray, sr: int) -> np.ndarray:
 
 
 def _traiter_loudness_nappe(chemin_wav: str, gain_db: float) -> None:
-    """Remonte le corps du signal vers LUFS_CIBLE_NAPPE et plafonne les crêtes (in place).
+    """Raises the signal body toward LUFS_CIBLE_NAPPE and caps the peaks (in place).
 
-    Gain linéaire puis alimiter : le limiteur ne touche que les crêtes qui dépassent
-    le plafond — la texture (modulation du crépitement) reste intacte. Une version
-    antérieure avec acompressor seuil fixe écrasait la texture elle-même (rendu sourd).
+    Linear gain then alimiter: the limiter only touches the peaks that exceed
+    the ceiling — the texture (crackle modulation) stays intact. An earlier
+    version with a fixed acompressor threshold crushed the texture itself (muffled rendering).
     """
     ffmpeg = resoudre_ffmpeg()
     chaine = (
@@ -103,7 +103,7 @@ def _traiter_loudness_nappe(chemin_wav: str, gain_db: float) -> None:
         run_engine(
             [ffmpeg, "-hide_banner", "-y", "-i", chemin_wav, "-af", chaine,
              "-ar", "44100", "-c:a", "pcm_s16le", tmp],
-            check=True, timeout=180, etiquette="ffmpeg normalisation sfx",
+            check=True, timeout=180, etiquette="ffmpeg sfx normalization",
         )
         os.replace(tmp, chemin_wav)
     finally:
@@ -118,17 +118,17 @@ def generer_sfx_ia(
     backend: str = "vulkan",
 ) -> Dict[str, Any]:
     """
-    Génère un effet sonore par IA (stable_audio, texte → audio).
-    Retourne {"audio": float32 (stéréo), "sr": 44100, "rtf": float|None,
+    Generates an AI sound effect (stable_audio, text → audio).
+    Returns {"audio": float32 (stereo), "sr": 44100, "rtf": float|None,
     "pic_source": float, "niveau_mode": "crete"|"nappe", "lufs_source": float|None,
     "rognage_pct": float}.
-    Graine < 0 = laisser le défaut du runtime (déterministe).
+    Seed < 0 = leave the runtime default (deterministic).
     """
     if not os.path.exists(MODELE_SA3_SFX):
         raise FileNotFoundError(
-            f"Paquet SA3 Small SFX introuvable : {MODELE_SA3_SFX} — le télécharger depuis "
+            f"SA3 Small SFX package not found: {MODELE_SA3_SFX} — download it from "
             f"audio-cpp/audio.cpp-gguf (Stable-Audio-3-Small-SFX-GGUF/stable-audio-3-small-sfx-f16.gguf, "
-            f"2,20 Gio ; téléchargeur parallèle recommandé)."
+            f"2.20 GiB; parallel downloader recommended)."
         )
 
     fd, wav_brut = tempfile.mkstemp(suffix=".wav")
@@ -149,7 +149,7 @@ def generer_sfx_ia(
         )
         if res.returncode != 0 or not os.path.exists(wav_brut):
             extrait = (res.stderr or res.stdout or "").strip()[-400:]
-            raise RuntimeError(f"Génération SFX IA échouée (exit {res.returncode}) : {extrait}")
+            raise RuntimeError(f"AI SFX generation failed (exit {res.returncode}): {extrait}")
 
         rtf = None
         m = re.search(r"metrics\.rtf=([\d.]+)", res.stdout)
@@ -158,14 +158,14 @@ def generer_sfx_ia(
 
         audio, sr = sf.read(wav_brut, always_2d=False, dtype="float32")
 
-        # Rognage des fondu/silences structurels d'entrée/sortie.
+        # Trimming of structural lead-in/out fades/silences.
         taille_avant = len(audio)
         audio = _rogner_silences(audio, sr)
         rognage_pct = 100.0 * (1.0 - len(audio) / max(taille_avant, 1))
         if rognage_pct > 0.01:
             sf.write(wav_brut, audio, sr, subtype="PCM_16", format="WAV")
 
-        # Traitement de niveau : nappe (gain + plafond) ou crête simple.
+        # Level treatment: pad (gain + ceiling) or simple peak.
         lufs_source = None
         niveau_mode = "crete"
         gain_db = 0.0

@@ -10,7 +10,7 @@ for o in list(bpy.data.objects):
     if o.type == 'MESH':
         bpy.data.objects.remove(o, do_unlink=True)
 
-print("Armature chargée :", arm.name)
+print("Armature loaded:", arm.name)
 
 # Clear pose transforms & apply rest pose
 bpy.context.view_layer.objects.active = arm
@@ -19,4 +19,4 @@ bpy.ops.pose.transforms_clear()
 bpy.ops.pose.armature_apply(selected=False)
 bpy.ops.object.mode_set(mode='OBJECT')
 
-print("✅ Rest pose de l'armature réinitialisée et appliquée parfaitement")
+print("✅ Armature rest pose reset and applied perfectly")

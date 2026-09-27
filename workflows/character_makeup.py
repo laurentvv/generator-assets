@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Character MakeUp : Pipeline d'extraction et d'application de caractéristiques
-faciales et de maquillage (cernes, fatigue, creux, lèvres, teint) depuis un portrait 2D
-vers les modèles 3D MakeHuman / MPFB2 (carte UV hm08 standard).
-Génère le calque d'encre officiel MPFB2 (.png + .json), personnalise les textures d'yeux,
-et produit les rendus de validation studio Cycles (tête et plein pied).
+Character MakeUp workflow: extraction and application pipeline for facial
+characteristics and make-up (eye bags, fatigue, hollows, lips, skin tone) from a 2D portrait
+to the MakeHuman / MPFB2 3D models (standard hm08 UV map).
+Generates the official MPFB2 ink layer (.png + .json), customizes the eye textures,
+and produces the Cycles studio validation renders (head and full body).
 """
 
 import json
@@ -35,40 +35,40 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class CharacterMakeupWorkflow(BaseWorkflow):
     name = "character_makeup"
-    description = "MakeUp & features MPFB2 depuis portrait IA (YuNet + calque d'encre UV hm08 + rendus Cycles)"
+    description = "MPFB2 MakeUp & features from AI portrait (YuNet + hm08 UV ink layer + Cycles renders)"
 
     emoji = "💄"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --character (partagé)
-    # vit dans outfit ; --samples reste en table plate (partagé avec
-    # asset_blendkit, famille 2D) ; --width/--height idem (partagés multi-familles).
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --character (shared)
+    # lives in outfit; --samples stays in the flat table (shared with
+    # asset_blendkit, 2D family); --width/--height same (shared multi-family).
     PARAMETRES = [
         dict(flags=("--portrait",),
-             help="Chemin vers le portrait 2D de référence pour character_makeup."),
+             help="Path to the reference 2D portrait for character_makeup."),
         dict(flags=("--skin",),
-             help="Chemin vers la texture de peau diffuse 3D pour le transfert de gamut (character_makeup)."),
+             help="Path to the 3D diffuse skin texture for the gamut transfer (character_makeup)."),
         dict(flags=("--eye-color",), default="cyan",
-             help="Teinte d'iris personnalisée pour les yeux MPFB (ex: 'cyan', 'amber', 'none')."),
+             help="Custom iris hue for the MPFB eyes (e.g.: 'cyan', 'amber', 'none')."),
         dict(flags=("--blend-file",),
-             help="Fichier Blender .blend pour rendus de contrôle studio Cycles (character_makeup)."),
+             help="Blender .blend file for Cycles studio control renders (character_makeup)."),
         dict(flags=("--render-modes",), default="head,body",
-             help="Modes de rendus studio à exécuter pour character_makeup ('head,body', 'head', 'body')."),
+             help="Studio render modes to run for character_makeup ('head,body', 'head', 'body')."),
         dict(flags=("--age",), type=float, default=0.12,
-             help="Âge normalisé MPFB (0.12 = enfant 4-5 ans, 0.18 = 8 ans, 0.5 = adulte)."),
+             help="MPFB normalized age (0.12 = 4-5 year old child, 0.18 = 8 years old, 0.5 = adult)."),
         dict(flags=("--gender",), type=float, default=0.0,
-             help="Genre morphologique MPFB (0.0 = enfant/féminin neutre, 1.0 = masculin)."),
+             help="MPFB morphological gender (0.0 = neutral child/feminine, 1.0 = masculine)."),
         dict(flags=("--makeup-only",), action="store_true",
-             help="Génère uniquement le calque d'encre MakeUp sans construire le corps 3D complet."),
+             help="Generates only the MakeUp ink layer without building the full 3D body."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         portrait_path = params.get("portrait") or params.get("input")
         if not portrait_path:
-            raise ValueError("Le paramètre 'portrait' (ou -i / --input) vers l'image de portrait de référence est requis.")
+            raise ValueError("The 'portrait' parameter (or -i / --input) pointing to the reference portrait image is required.")
 
         if not os.path.exists(portrait_path):
-            raise FileNotFoundError(f"Fichier portrait introuvable : {portrait_path}")
+            raise FileNotFoundError(f"Portrait file not found: {portrait_path}")
 
         char_name = params.get("character") or params.get("name") or slugifier_texte(Path(portrait_path).stem)
         layer_slug = params.get("output") or f"{char_name}_fatigue_ventgris"
@@ -88,26 +88,26 @@ class CharacterMakeupWorkflow(BaseWorkflow):
         mpfb_ink_dir = params.get("mpfb_ink_dir") or DEFAULT_MPFB_INK_DIR
         os.makedirs(mpfb_ink_dir, exist_ok=True)
 
-        self.log(f"Analyse du portrait : '{portrait_path}' pour le personnage '{char_name}'", "💄")
+        self.log(f"Portrait analysis: '{portrait_path}' for character '{char_name}'", "💄")
 
-        # 1. Analyse anatomique et colorimétrique du portrait via YuNet
+        # 1. Anatomical and colorimetric analysis of the portrait via YuNet
         yunet_model = params.get("yunet_model") or resoudre_yunet_model()
-        self.log(f"Détection des repères faciaux via YuNet ({yunet_model})...", "🔍")
+        self.log(f"Facial landmark detection via YuNet ({yunet_model})...", "🔍")
         metriques = analyser_metriques_portrait(portrait_path, yunet_path=yunet_model)
 
         score = metriques["yunet"]["score"]
         delta_l = metriques["delta_cerne_l"]
-        self.log(f"Repères détectés (score={score:.2f}) | ΔL cernes/fatigue = {delta_l:.1f}", "📊")
+        self.log(f"Detected landmarks (score={score:.2f}) | eye-bag/fatigue ΔL = {delta_l:.1f}", "📊")
 
-        # 2. Résolution de la texture de peau diffuse 3D
+        # 2. Resolution of the 3D diffuse skin texture
         skin_path = params.get("skin")
         if not skin_path:
             candidats_skin = [
                 os.path.join(DEFAULT_OUTPUT_DIR, "skins", char_name, f"{char_name}_diffuse.png"),
                 os.path.join(DEFAULT_OUTPUT_DIR, "skins", f"{char_name}_diffuse.png"),
             ]
-            # Repli projet spécifique (ancien chemin machine C:\test\... : surcharge possible
-            # sans code via MAKEUP_SKIN_FALLBACK_DIR, ex. <projet>/assets/textures).
+            # Project-specific fallback (old machine path C:\test\...: overridable
+            # without code via MAKEUP_SKIN_FALLBACK_DIR, e.g. <project>/assets/textures).
             repli_projet = os.getenv("MAKEUP_SKIN_FALLBACK_DIR")
             if repli_projet:
                 candidats_skin.append(os.path.join(repli_projet, f"{char_name}_diffuse.png"))
@@ -116,18 +116,18 @@ class CharacterMakeupWorkflow(BaseWorkflow):
                     skin_path = c
                     break
 
-        self.log(f"Texture de peau 3D de référence : {skin_path or '(teint Vent-Gris standard)'}", "🎨")
+        self.log(f"Reference 3D skin texture: {skin_path or '(standard Vent-Gris skin tone)'}", "🎨")
         couleurs_3d = calculer_gamut_peau_3d(skin_path, metriques)
 
         c_rgb = tuple(int(x) for x in couleurs_3d["cernes"][::-1])
         core_rgb = tuple(int(x) for x in couleurs_3d["cernes_core"][::-1])
-        self.log(f"Couleurs 3D avec compensation SSS : Cernes={c_rgb}, Cœur={core_rgb}", "🖌️")
+        self.log(f"3D colors with SSS compensation: eye bags={c_rgb}, core={core_rgb}", "🖌️")
 
-        # 3. Peinture anatomique des calques étagés sur la carte UV hm08
-        self.log("Génération du calque d'encre haute résolution (2048x2048 RGBA)...", "✨")
+        # 3. Anatomical painting of the layered ink layers on the hm08 UV map
+        self.log("Generating the high-resolution ink layer (2048x2048 RGBA)...", "✨")
         calque_ink = dessiner_calque_encre_hm08(couleurs_3d)
 
-        # 4. Génération du manifeste officiel MPFB2
+        # 4. Official MPFB2 manifest generation
         nom_png = f"{layer_slug}.png"
         nom_json = f"{layer_slug}.json"
         manifest = creer_manifest_ink(
@@ -153,8 +153,8 @@ class CharacterMakeupWorkflow(BaseWorkflow):
             }
         )
 
-        # Sauvegarde dans le dossier de sortie du projet ET dans le dossier actif MPFB
-        # Sauvegarde dans le dossier makeup du projet ET dans le dossier actif MPFB
+        # Save in the project output folder AND in the active MPFB folder
+        # Save in the project makeup folder AND in the active MPFB folder
         cibles_dossiers = [makeup_dir, mpfb_ink_dir]
         for d in cibles_dossiers:
             os.makedirs(d, exist_ok=True)
@@ -162,10 +162,10 @@ class CharacterMakeupWorkflow(BaseWorkflow):
             with open(os.path.join(d, nom_json), "w", encoding="utf-8") as f:
                 json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-        self.log(f"Calque d'encre MPFB enregistré dans : {os.path.join(makeup_dir, nom_png)}", "✅")
-        self.log(f"Manifeste MPFB enregistré dans    : {os.path.join(makeup_dir, nom_json)}", "✅")
+        self.log(f"MPFB ink layer saved to: {os.path.join(makeup_dir, nom_png)}", "✅")
+        self.log(f"MPFB manifest saved to    : {os.path.join(makeup_dir, nom_json)}", "✅")
 
-        # 5. Personnalisation optionnelle des yeux (ex: cyan / lueur intérieure)
+        # 5. Optional eye customization (e.g.: cyan / inner glow)
         eye_color = params.get("eye_color", "cyan")
         eye_out = None
         dst_eye_mpfb = None
@@ -177,9 +177,9 @@ class CharacterMakeupWorkflow(BaseWorkflow):
                 dst_paths=[dst_eye_depot, dst_eye_mpfb]
             )
             if eye_out:
-                self.log(f"Texture des yeux ({eye_color}) générée : {dst_eye_depot}", "👁️")
+                self.log(f"Eye texture ({eye_color}) generated: {dst_eye_depot}", "👁️")
 
-        # 6. Assemblage automatique du corps 3D MPFB2 dans Blender (.blend + .glb)
+        # 6. Automatic MPFB2 3D body assembly in Blender (.blend + .glb)
         build_body = params.get("build_body", True)
         makeup_only = params.get("makeup_only", False)
         blend_file = params.get("blend_file")
@@ -188,7 +188,7 @@ class CharacterMakeupWorkflow(BaseWorkflow):
         if build_body and not makeup_only and not blend_file:
             blend_file = os.path.join(char_dir, f"{char_name}_mpfb2.blend")
             glb_file = os.path.join(char_dir, f"{char_name}_mpfb2.glb")
-            self.log(f"Génération automatique du corps 3D MPFB2 ({blend_file})...", "🧍")
+            self.log(f"Automatic MPFB2 3D body generation ({blend_file})...", "🧍")
 
             gender_val = float(params.get("gender", 0.0))
             age_val = float(params.get("age", 0.12))
@@ -225,13 +225,13 @@ class CharacterMakeupWorkflow(BaseWorkflow):
                 rig=rig_val
             )
             if ok_body:
-                self.log(f"Scène .blend native générée : {blend_file}", "✅")
-                self.log(f"Modèle .glb optimisé généré : {glb_file}", "✅")
+                self.log(f"Native .blend scene generated: {blend_file}", "✅")
+                self.log(f"Optimized .glb model generated: {glb_file}", "✅")
 
-        # 7. Rendu de contrôle studio Blender Cycles (tête et plein pied)
+        # 7. Blender Cycles studio control render (head and full body)
         rendus = {}
         if blend_file and os.path.exists(blend_file):
-            self.log(f"Génération des rendus studio Cycles depuis : '{blend_file}'...", "🎬")
+            self.log(f"Generating the Cycles studio renders from: '{blend_file}'...", "🎬")
             render_prefix = os.path.join(renders_dir, f"{char_name}")
             samples = int(params.get("samples", 48))
             modes = params.get("render_modes", ["head", "body"])
@@ -245,7 +245,7 @@ class CharacterMakeupWorkflow(BaseWorkflow):
                 samples=samples
             )
             for k, chemin in rendus.items():
-                self.log(f"Rendu validé [{k}] : {chemin}", "📷")
+                self.log(f"Validated render [{k}]: {chemin}", "📷")
 
         resultat = {
             "status": "success",
@@ -258,12 +258,12 @@ class CharacterMakeupWorkflow(BaseWorkflow):
             "metriques": metriques,
             "rendus": rendus
         }
-        self.log(f"Workflow terminé avec succès pour '{char_name}'.", "🎉")
+        self.log(f"Workflow completed successfully for '{char_name}'.", "🎉")
         return resultat
 
 
 @WorkflowRegistry.register
 class Character3DWorkflow(CharacterMakeupWorkflow):
     name = "character3d"
-    description = "Pipeline universel Portrait IA -> Corps 3D MPFB2 (.blend, .glb, MakeUp, Yeux, Rendus Cycles)"
+    description = "Universal pipeline AI Portrait -> MPFB2 3D Body (.blend, .glb, MakeUp, Eyes, Cycles renders)"
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Système de Workflows Modulaires pour Generator-Assets.
-Inspiré par les architectures de graphes de traitement (ComfyUI) mais optimisé
-pour une exécution CLI ultra-légère, sans interface et avec gestion mémoire stricte.
+Modular Workflow System for Generator-Assets.
+Inspired by processing-graph architectures (ComfyUI) but optimized
+for ultra-lightweight CLI execution, with no UI and strict memory management.
 """
 
 from abc import ABC, abstractmethod
@@ -11,20 +11,20 @@ from typing import Any, Dict, List, Type
 
 
 class BaseWorkflow(ABC):
-    """Classe de base pour tous les workflows automatisés."""
+    """Base class for all automated workflows."""
 
     name: str = "base"
-    description: str = "Workflow de base"
+    description: str = "Base workflow"
 
-    # Déclaration des paramètres CLI spécifiques au workflow (audit §2.2 keystone).
-    # Chaque entrée = kwargs d'add_argument, avec la clé spéciale "flags" portant
-    # les options (ex. dict(flags=("--res",), type=int, default=512, help="…")).
-    # La surface CLI reste agrégée (tous les flags de tous les workflows toujours
-    # acceptés — contrat consommateurs préservé) : cli/parser.py agrège ces
-    # déclarations via WorkflowRegistry. Migration TERMINÉE : la table plate du
-    # parseur ne garde plus que les options cross-familles (--factor, --frames…).
-    # Un flag ne doit exister QUE dans une seule déclaration ou dans la table
-    # plate (test anti-doublon + gel de surface tests/surface_cli.json).
+    # Declaration of the workflow-specific CLI parameters (audit §2.2 keystone).
+    # Each entry = add_argument kwargs, with the special key "flags" carrying
+    # the options (e.g. dict(flags=("--res",), type=int, default=512, help="…")).
+    # The CLI surface stays aggregated (all flags of all workflows always
+    # accepted — consumer contract preserved): cli/parser.py aggregates these
+    # declarations via WorkflowRegistry. Migration DONE: the parser's flat
+    # table only keeps the cross-family options (--factor, --frames…).
+    # A flag must exist ONLY in a single declaration or in the flat
+    # table (anti-duplicate test + frozen surface tests/surface_cli.json).
     PARAMETRES: List[Dict[str, Any]] = []
 
     def __init__(self, config: Dict[str, Any] = None):
@@ -35,12 +35,12 @@ class BaseWorkflow(ABC):
 
     @abstractmethod
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Exécute les étapes du workflow."""
+        """Runs the workflow steps."""
         pass
 
 
 class WorkflowRegistry:
-    """Registre centralisé des workflows disponibles."""
+    """Centralized registry of the available workflows."""
 
     _workflows: Dict[str, Type[BaseWorkflow]] = {}
 
@@ -54,7 +54,7 @@ class WorkflowRegistry:
         nom = name.lower()
         if nom not in cls._workflows:
             dispos = ", ".join(cls._workflows.keys())
-            raise ValueError(f"Workflow '{name}' inconnu. Workflows disponibles : {dispos}")
+            raise ValueError(f"Unknown workflow '{name}'. Available workflows: {dispos}")
         return cls._workflows[nom]
 
     @classmethod
@@ -63,13 +63,13 @@ class WorkflowRegistry:
 
     @classmethod
     def parametres_declares(cls) -> List[Dict[str, Any]]:
-        """Agrège les PARAMETRES déclarés par tous les workflows enregistrés.
+        """Aggregates the PARAMETRES declared by all registered workflows.
 
-        Utilisé par cli/parser.py pour générer le groupe d'options « par
-        workflow » ; l'ordre suit celui du registre (menu interactif).
-        Une classe fille hérite de la liste PARAMETRES de sa mère (même objet) —
-        ex. character3d ⊂ character_makeup : la déclaration ne doit être émise
-        qu'une fois, sinon argparse refuse le flag en doublon.
+        Used by cli/parser.py to generate the "per workflow" option group;
+        the order follows that of the registry (interactive menu).
+        A child class inherits the PARAMETRES list of its parent (same object) —
+        e.g. character3d ⊂ character_makeup: the declaration must be emitted
+        only once, otherwise argparse rejects the duplicated flag.
         """
         declarations: List[Dict[str, Any]] = []
         vus: set = set()

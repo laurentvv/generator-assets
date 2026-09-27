@@ -21,11 +21,11 @@ URL = "https://huggingface.co/elix3r/gemma4-12b-with-proj-ltx-2.5-GGUF/resolve/m
 EXPECTED_SIZE = 9514920864
 
 if os.path.exists(dest) and os.path.getsize(dest) == EXPECTED_SIZE:
-    print(f"[OK] {DEST_NAME} est déjà téléchargé et complet ({EXPECTED_SIZE} octets) !")
+    print(f"[OK] {DEST_NAME} is already downloaded and complete ({EXPECTED_SIZE} bytes)!")
     sys.exit(0)
 
-print(f"[START] Téléchargement de {DEST_NAME} (8.86 Go)...")
-print(f"Destination : {dest}")
+print(f"[START] Downloading {DEST_NAME} (8.86 GB)...")
+print(f"Destination: {dest}")
 
 curl = shutil.which("curl.exe") or "curl"
 cmd = [
@@ -39,7 +39,7 @@ cmd = [
 res = subprocess.run(cmd)
 if res.returncode == 0:
     final_size = os.path.getsize(dest)
-    print(f"[OK] Téléchargement terminé avec succès ! Taille finale : {final_size / (1024**3):.2f} Go")
+    print(f"[OK] Download completed successfully! Final size: {final_size / (1024**3):.2f} GB")
 else:
-    print(f"[ERREUR] Échec du téléchargement (code {res.returncode})")
+    print(f"[ERROR] Download failed (code {res.returncode})")
     sys.exit(res.returncode)

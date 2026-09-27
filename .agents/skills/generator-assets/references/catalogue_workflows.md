@@ -1,124 +1,127 @@
-# Catalogue de référence des 40 workflows
+# Reference catalog of the 40 workflows
 
-Source de vérité : `README.md` § « 📦 Complete Workflow Catalog » (entrées/sorties/options exhaustives,
-showcases). Ce fichier est l'aide-mémoire condensé pour choisir et lancer — si une option manque ici,
-elle est dans le README.
+Source of truth: `README.md` § "📦 Complete Workflow Catalog" (exhaustive inputs/outputs/options,
+showcases). This file is the condensed cheat sheet for choosing and launching — if an option is
+missing here, it is in the README.
 
-Toutes les commandes : `uv run python main.py -w <workflow> …` depuis la racine du dépôt.
-Rappel garde-fous : `scripts/check_charge_systeme.py` avant toute génération lourde • prompt anglais •
-`--seed` fixée • une seule génération lourde à la fois.
+All commands: `uv run python main.py -w <workflow> …` from the repository root.
+Guardrail reminder: `scripts/check_charge_systeme.py` before any heavy generation • English
+prompt • fixed `--seed` • only one heavy generation at a time.
 
 ---
 
-## 1. 3D géométrie & textures PBR
+## 1. 3D geometry & PBR textures
 
-| Workflow | Usage | Entrées clés | Sorties |
+| Workflow | Use | Key inputs | Outputs |
 | :--- | :--- | :--- | :--- |
-| `material3d` | Pack PBR complet (albedo, normal DeepBump, roughness, height, AO, ORM) + `.tres` Godot | `prompt` ou `-i`, `-s` (512/1024/2048), `--pbr-engine` | `_albedo/_normal/_rough/_height/_ao/_orm.png`, `_material.tres`, `_preview3x3.png` |
-| `mesh3d` | Mesh 3D paramétrique Blender (texture PBR embarquée) | `prompt` ou `-i`, `--shape` (tile/cube/pillar/cylinder/sphere/card/cutout) | `_3d_<shape>.glb` + maps PBR |
-| `mesh_ia` | **Objet 3D IA volume réel** (TRELLIS.2-4B) depuis prompt (chaîne `generate`) ou image `-i` | `--res` (512 itération ~11 min / 1024 master ~55 min), `--faces-cible` (décimation Godot, ex. 30000), `--seed` | `<nom>_<res>.glb`, `_jeu.glb` (si décimation), planche de contrôle, `_infos.json` |
-| `voxel3d` | Modèle voxel (.glb, couleurs de sommets) pour GridMap | `-i` ou `prompt`, `--grid-size`, `--voxel-depth` | `_voxel.glb` |
-| `animal_godot` | **Animal packé riggé (.blend) → GLB Godot game-ready** (VALIDÉE 2026-09-18 : gallop natif « parfait ») | `-i` blend riggé, `--animal-prefixe` (AN_), `--animal-actions` (filtre) | `<blend>_godot.glb` (os + clips AN_* vérifiés) |
-| `skybox` | Panorama 360° équirectangulaire 2:1 + IBL | `prompt`, `-s`/`--width --height`, `-l 360RedmondResized:1.0` | `_sky.png`, `_sky_env.tres` |
-| `turnaround3d` | Fiche de modélisation orthogonale (face + profil, guides) | `prompt`, `-s`, `--seed` | `_front.png`, `_side.png`, `_model_sheet.png` |
-| `flowmap` | Carte de flux vectoriel + shader eau/lave Godot | `--angle`, `--flow-type` (river/vortex/radial/optical), `--turbulence`, `--mode-2d` | `_flowmap.png`, `_water.gdshader`, `_material.tres` |
-| `asset_blendkit` | Props CC0 Blendkit (.glb Godot) ou plaque décor rendue Cycles (compositing YouTube) | `--query`, `--list-assets`, `--index`, `--mode prop\|plate`, `--resolution` (2K défaut) | `<asset>.glb`+`apercu.png` ou `plaque.png` |
+| `material3d` | Complete PBR pack (albedo, DeepBump normal, roughness, height, AO, ORM) + Godot `.tres` | `prompt` or `-i`, `-s` (512/1024/2048), `--pbr-engine` | `_albedo/_normal/_rough/_height/_ao/_orm.png`, `_material.tres`, `_preview3x3.png` |
+| `mesh3d` | Parametric Blender 3D mesh (embedded PBR texture) | `prompt` or `-i`, `--shape` (tile/cube/pillar/cylinder/sphere/card/cutout) | `_3d_<shape>.glb` + PBR maps |
+| `mesh_ia` | **AI 3D object with real volume** (TRELLIS.2-4B) from prompt (chains `generate`) or image `-i` | `--res` (512 iteration ~11 min / 1024 master ~55 min), `--faces-cible` (Godot decimation, e.g. 30000), `--seed` | `<name>_<res>.glb`, `_jeu.glb` (if decimation), control contact sheet, `_infos.json` |
+| `voxel3d` | Voxel model (.glb, vertex colors) for GridMap | `-i` or `prompt`, `--grid-size`, `--voxel-depth` | `_voxel.glb` |
+| `animal_godot` | **Rigged packed animal (.blend) → Godot game-ready GLB** (VALIDATED 2026-09-18: native gallop "perfect") | `-i` rigged blend, `--animal-prefixe` (AN_), `--animal-actions` (filter) | `<blend>_godot.glb` (bones + AN_* clips checked) |
+| `skybox` | 2:1 equirectangular 360° panorama + IBL | `prompt`, `-s`/`--width --height`, `-l 360RedmondResized:1.0` | `_sky.png`, `_sky_env.tres` |
+| `turnaround3d` | Orthogonal modeling sheet (front + side, guides) | `prompt`, `-s`, `--seed` | `_front.png`, `_side.png`, `_model_sheet.png` |
+| `flowmap` | Vector flow map + Godot water/lava shader | `--angle`, `--flow-type` (river/vortex/radial/optical), `--turbulence`, `--mode-2d` | `_flowmap.png`, `_water.gdshader`, `_material.tres` |
+| `asset_blendkit` | CC0 BlendKit props (Godot .glb) or Cycles-rendered décor plate (YouTube compositing) | `--query`, `--list-assets`, `--index`, `--mode prop\|plate`, `--resolution` (2K default) | `<asset>.glb`+`apercu.png` or `plaque.png` |
 
-`mesh_ia` — choix de `--faces-cible` : 30000 = objet héros proche, 10000 = prop standard, 2000-3000 =
-clutter répété, ≥8000 si silhouette très courbée. Itérer à 512, master à 1024.
+`mesh_ia` — choosing `--faces-cible`: 30000 = close-up hero object, 10000 = standard prop,
+2000-3000 = repeated clutter, ≥8000 if the silhouette is highly curved. Iterate at 512, master
+at 1024.
 
-**Prérequis 3D** : §1 passe par Blender headless (bloquant pour `mesh3d`/`voxel3d`/`asset_blendkit`,
-optionnel pour `mesh_ia` — décimation + planche de contrôle) ; §2 exige Blender + addon MPFB2
-(data dir `%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data`, surcharge `MPFB_DATA_DIR`) ;
-`asset_blendkit` exige l'addon BlenderKit connecté une fois en GUI. Standards game-ready Godot,
-checklist de validation et écueils détaillés : [`pipeline_3d_blender.md`](pipeline_3d_blender.md).
+**3D prerequisites**: §1 goes through Blender headless (blocking for
+`mesh3d`/`voxel3d`/`asset_blendkit`, optional for `mesh_ia` — decimation + control contact
+sheet); §2 requires Blender + MPFB2 addon (data dir
+`%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data`, override `MPFB_DATA_DIR`);
+`asset_blendkit` requires the BlenderKit addon connected once in the GUI. Godot game-ready
+standards, validation checklist and detailed pitfalls: [`pipeline_3d_blender.md`](pipeline_3d_blender.md).
 
-## 2. Personnages humanoïdes (MakeHuman / MPFB2)
+## 2. Humanoid characters (MakeHuman / MPFB2)
 
-| Workflow | Usage | Entrées clés | Sorties |
+| Workflow | Use | Key inputs | Outputs |
 | :--- | :--- | :--- | :--- |
-| `character3d` | Portrait 2D → corps 3D complet (makeup hm08, rig Mixamo, habits, rendus Cycles) | `--portrait`, `--character`, `--age`, `--gender`, `--eye-color`, `--samples` | `.blend`, `.glb`, makeup ink, 4 rendus PNG |
-| `character_makeup` | Couche MakeUp uniquement (sans reconstruire le corps) | `--portrait`, `--character`, `--makeup-only` | ink layer `.png`+`.json` |
-| `makehuman_clothes` | Garde-robe modulaire depuis un thème (`.mhclo` barycentrique) | `prompt`, `--parts` (torso,pants,shoes) | `.mhclo/.obj/.mhmat/.thumb` + scène test |
-| `outfit` | Retexturation PBR de vêtements existants (patrons UV préservés) | `--character`, `--top`, `--shoes` | textures + `.blend`/`.glb` mis à jour + rendu |
-| `pose_control` | Sprite guidé par squelette OpenPose (conditionnement **ControlNet réel** depuis le 26/09 : xinsir SDXL, strength 0,9 ; repli prompt seul si le modèle manque) + scène Godot riggée | `prompt`, `--pose` (idle/slash_attack/cast_spell/shield_block/jump/walk) | `_openpose_skeleton.png`, sprite `.png`, `.tscn`, `_rig.json` |
-| `rpg_portrait` | Galerie de portraits multi-émotions + manifeste dialogues | `prompt` ou `-i`, `--emotions` | PNG par émotion, `_portrait_grid.png`, `_dialogue_manifest.json` |
+| `character3d` | 2D portrait → full 3D body (hm08 makeup, Mixamo rig, clothes, Cycles renders) | `--portrait`, `--character`, `--age`, `--gender`, `--eye-color`, `--samples` | `.blend`, `.glb`, makeup ink, 4 PNG renders |
+| `character_makeup` | MakeUp layer only (without rebuilding the body) | `--portrait`, `--character`, `--makeup-only` | ink layer `.png`+`.json` |
+| `makehuman_clothes` | Modular wardrobe from a theme (barycentric `.mhclo`) | `prompt`, `--parts` (torso,pants,shoes) | `.mhclo/.obj/.mhmat/.thumb` + test scene |
+| `outfit` | PBR retexturing of existing clothes (UV patterns preserved) | `--character`, `--top`, `--shoes` | textures + updated `.blend`/`.glb` + render |
+| `pose_control` | OpenPose skeleton-guided sprite (**real ControlNet** conditioning since 26/09: xinsir SDXL, strength 0.9; prompt-only fallback if the model is missing) + rigged Godot scene | `prompt`, `--pose` (idle/slash_attack/cast_spell/shield_block/jump/walk) | `_openpose_skeleton.png`, sprite `.png`, `.tscn`, `_rig.json` |
+| `rpg_portrait` | Multi-emotion portrait gallery + dialogue manifest | `prompt` or `-i`, `--emotions` | PNG per emotion, `_portrait_grid.png`, `_dialogue_manifest.json` |
 
-⚠️ Règles absolues MakeHuman : jamais d'illustration 2D plaquée, jamais écraser les originaux dans
-`%APPDATA%\...\mpfb\data` → lire `GUIDE_AGENT_IA_HABILLAGE.md`. Catalogue bilingue 177 modèles :
+⚠️ Absolute MakeHuman rules: never a plastered 2D illustration, never overwrite the originals in
+`%APPDATA%\...\mpfb\data` → read `GUIDE_AGENT_IA_HABILLAGE.md`. Bilingual 177-model catalog:
 `core/clothes_catalog.py` (`aiguiller_modele_vetement`).
 
-## 3. 2D sprites, tuiles & UI
+## 3. 2D sprites, tiles & UI
 
-| Workflow | Usage | Entrées clés | Sorties |
+| Workflow | Use | Key inputs | Outputs |
 | :--- | :--- | :--- | :--- |
-| `generate` | Asset 2D isolé détouré centré Godot | `prompt`, `-t` (item/character/prop/tile), `-i` (img2img), `--upscale`, `-l "lora:poids"` | `.png` transparent |
-| `spritesheet` | Planche multi-angles alignée + atlas JSON | `prompt`, `-s`, `--columns` | `_spritesheet.png`, `_atlas.json` |
-| `variations` | Variantes élémentaires (feu/glace/poison…) | `prompt` ou `-i`, `--themes` | `<base>_<theme>.png` |
-| `tileable` | Texture raccordable sans couture + vérif 3×3 | `prompt`, `-s` | `_tile.png`, `_preview3x3.png` |
-| `pixelart` | Quantization palette rétro | `-i` ou `prompt`, `--palette` (pico8/endesga32/gameboy), `--grid-size` | `_pixelart_<palette>.png` |
-| `ui_9slice` | Cadres/boutons 9-patch | `prompt` ou `-i`, `--margin`/`--auto-margin` | `.png`, `_stylebox.tres`, `_ninepatch.tscn` |
-| `autotile_pack` | Atlas autotile 47 tuiles Wang + TileSet | `--biome-a`, `--biome-b`, `-s` | `_atlas.png`, `_tileset.tres` |
-| `rembg` | Détourage neuronal (BiRefNet/RMBG-1.4) | `-i` (requis) | `_rembg.png` |
-| `batch` | Génération en série depuis un JSON | `--recipe <fichier.json>` (défaut : arrêt à la 1ʳᵉ erreur, exit ≠ 0 ; `--continue-on-error` = lot complet + échecs listés) | selon recette |
+| `generate` | Isolated 2D cutout asset, centered, Godot-ready | `prompt`, `-t` (item/character/prop/tile), `-i` (img2img), `--upscale`, `-l "lora:weight"` | transparent `.png` |
+| `spritesheet` | Aligned multi-angle sheet + JSON atlas | `prompt`, `-s`, `--columns` | `_spritesheet.png`, `_atlas.json` |
+| `variations` | Elemental variants (fire/ice/poison…) | `prompt` or `-i`, `--themes` | `<base>_<theme>.png` |
+| `tileable` | Seamless tileable texture + 3×3 check | `prompt`, `-s` | `_tile.png`, `_preview3x3.png` |
+| `pixelart` | Retro palette quantization | `-i` or `prompt`, `--palette` (pico8/endesga32/gameboy), `--grid-size` | `_pixelart_<palette>.png` |
+| `ui_9slice` | 9-patch frames/buttons | `prompt` or `-i`, `--margin`/`--auto-margin` | `.png`, `_stylebox.tres`, `_ninepatch.tscn` |
+| `autotile_pack` | 47-tile Wang autotile atlas + TileSet | `--biome-a`, `--biome-b`, `-s` | `_atlas.png`, `_tileset.tres` |
+| `rembg` | Neural cutout (BiRefNet/RMBG-1.4) | `-i` (required) | `_rembg.png` |
+| `batch` | Batch generation from a JSON | `--recipe <file.json>` (default: stop at the first error, exit ≠ 0; `--continue-on-error` = full batch + failures listed) | per recipe |
 
-LoRAs disponibles : `-l "game_icon_diablo_style:0.8"` (bascule auto SDXL Juggernaut) — liste complète
+Available LoRAs: `-l "game_icon_diablo_style:0.8"` (auto-switches to SDXL Juggernaut) — full list
 `python main.py --list-loras`.
 
-## 4. Audio, voix & musique (audio.cpp Vulkan)
+## 4. Audio, voice & music (audio.cpp Vulkan)
 
-| Workflow | Usage | Entrées clés | Sorties |
+| Workflow | Use | Key inputs | Outputs |
 | :--- | :--- | :--- | :--- |
-| `sfx` | Bruitages IA/procéduraux | `prompt` (EN), type d'effet | `_sfx.wav`, `_sfx.ogg` |
-| `audio_ambience` | Ambiances bouclables sans couture | `prompt` (EN) | `_ambience.wav` |
-| `music_bg` | **Boucles musicales beds** (ACE-Step 1.5 défaut, ou Music3) : boucle parfaite + bed −30 LUFS + recette ducking | `prompt` (EN), `--duration` (12 s), `--candidats` (3), `--force-bpm`/`--tonalite`, `--variante` (turbo/xl-turbo/xl-sft), `--moteur music3`, `--lufs` | `candidats/`, `<name>_bed.wav` (−30 LUFS), `.ogg`, `ECOUTE_cand<N>_boucle_x3.mp3`, `recette_mixage_voix.txt` |
-| `chanson` | Chanson complète AVEC paroles (ACE-Step xl-turbo) | paroles (texte ou `.txt`, balises `[Verse]`…), `--style-musique` (EN), `--duration`, `--langue` (fr) | `.wav` + `.mp3` |
-| `musique_adn` | Nouvelle musique avec BPM + tonalité de la référence, imposés au planificateur | `prompt` sobre (EN), `-i` référence, `--duration`, `--tonalite`, `--lyrics` | `.wav` + `.mp3` |
-| `musique_essence` | Musique à l'essence d'une référence (SA3 Medium `init_audio` + retrait voix) | `prompt` sobre (EN), `-i` référence, `--scale` (0.45 validé), `--seed` (42), `--keep-vocals` | `instrumental.wav/.mp3`, `brut.wav`, `stems/` |
-| `retrait_voix` | Retrait du chant / stems (HTDemucs) | `-i` morceau | `instrumental.wav/.mp3`, `stems/` |
-| `voix_off` | Voix off expressive FR, clonage depuis une référence | texte ou `.txt`, `--voix-ref`, `--moteur` (qwen3/voxcpm2/fish), `--instruct`, `--lufs-voix` (−16) | `voix_off_brut_final.wav` (−16 LUFS) + `.mp3` |
-| `voix_robot` | Voix robot EN — recette VALIDÉE figée (kokoro `af_heart`, pitch 1.30, ringmod 120 Hz, tempo 0.65, gain −4 dB) | texte EN ou `.txt`, `--robot-*` (défauts = recette validée) | `.wav`, `.mp3`, `_brut.wav` |
-| `audio_upscale` | Super-résolution audio → 48 kHz (UniverSR) — VALIDÉE voix 16k (« parfait même ») et musique 24k (« très bien ») | `-i` audio bande réduite, `--upsr-variante` (speech défaut / audio), `--upsr-rate` (0 = auto), `--seed` (42) | `<nom>_48k.wav` (mono) + `.mp3` |
-| `tts_dialogue` | Répliques émotionnelles + visèmes lip-sync Godot | `prompt` (perso), `--emotions`, `--pitch` | `.wav/.ogg` par émotion, `_dialogue_manifest.json` |
+| `sfx` | AI/procedural sound effects | `prompt` (EN), effect type | `_sfx.wav`, `_sfx.ogg` |
+| `audio_ambience` | Seamless loopable ambiances | `prompt` (EN) | `_ambience.wav` |
+| `music_bg` | **Music bed loops** (ACE-Step 1.5 default, or Music3): perfect loop + −30 LUFS bed + ducking recipe | `prompt` (EN), `--duration` (12 s), `--candidats` (3), `--force-bpm`/`--tonalite`, `--variante` (turbo/xl-turbo/xl-sft), `--moteur music3`, `--lufs` | `candidats/`, `<name>_bed.wav` (−30 LUFS), `.ogg`, `ECOUTE_cand<N>_boucle_x3.mp3`, `recette_mixage_voix.txt` |
+| `chanson` | Complete song WITH lyrics (ACE-Step xl-turbo) | lyrics (text or `.txt`, `[Verse]`… tags), `--style-musique` (EN), `--duration`, `--langue` (fr) | `.wav` + `.mp3` |
+| `musique_adn` | New music with the reference's BPM + key, imposed on the planner | minimal `prompt` (EN), `-i` reference, `--duration`, `--tonalite`, `--lyrics` | `.wav` + `.mp3` |
+| `musique_essence` | Music with the essence of a reference (SA3 Medium `init_audio` + vocal removal) | minimal `prompt` (EN), `-i` reference, `--scale` (0.45 validated), `--seed` (42), `--keep-vocals` | `instrumental.wav/.mp3`, `brut.wav`, `stems/` |
+| `retrait_voix` | Vocal removal / stems (HTDemucs) | `-i` track | `instrumental.wav/.mp3`, `stems/` |
+| `voix_off` | Expressive FR voice-over, cloned from a reference | text or `.txt`, `--voix-ref`, `--moteur` (qwen3/voxcpm2/fish), `--instruct`, `--lufs-voix` (−16) | `voix_off_brut_final.wav` (−16 LUFS) + `.mp3` |
+| `voix_robot` | EN robot voice — frozen VALIDATED recipe (kokoro `af_heart`, pitch 1.30, ringmod 120 Hz, tempo 0.65, gain −4 dB) | EN text or `.txt`, `--robot-*` (defaults = validated recipe) | `.wav`, `.mp3`, `_brut.wav` |
+| `audio_upscale` | Audio super-resolution → 48 kHz (UniverSR) — VALIDATED 16k voice ("perfect") and 24k music ("very good") | `-i` band-limited audio, `--upsr-variante` (speech default / audio), `--upsr-rate` (0 = auto), `--seed` (42) | `<name>_48k.wav` (mono) + `.mp3` |
+| `tts_dialogue` | Emotional lines + Godot lip-sync visemes | `prompt` (character), `--emotions`, `--pitch` | `.wav/.ogg` per emotion, `_dialogue_manifest.json` |
 
-Statuts clés : ACE-Step = moteur musical défaut validé (~42 s / 28 s) ; chanson validée (~15 min / 4 min) ;
-essence SA3 validée (scale 0.40-0.45, seed 42) ; voix_off validée sur 3 moteurs (production = Apache-2.0 :
-qwen3/voxcpm2) ; voix_robot validée (17 essais) ; audio_upscale validé mais **CPU seul RTF ~13 + sortie
-mono** (refuser > 24 kHz). **Ludique/subjectif → toujours faire écouter avant
-d'industrialiser.** Musique rock sombre : plafond réalisme instrumental connu (MEMORY_BANK §1.11/§1.22) —
-descriptions sobres, tonalité mineure imposée.
+Key statuses: ACE-Step = validated default music engine (~42 s / 28 s); song validated (~15 min /
+4 min); SA3 essence validated (scale 0.40-0.45, seed 42); voix_off validated on 3 engines
+(production = Apache-2.0: qwen3/voxcpm2); voix_robot validated (17 trials); audio_upscale
+validated but **CPU-only RTF ~13 + mono output** (refuse > 24 kHz). **Playful/subjective → always
+have it listened to before industrializing.** Dark rock music: known instrumental realism ceiling
+(MEMORY_BANK §1.11/§1.22) — minimal descriptions, imposed minor key.
 
-## 5. Vidéo IA (sd-cli Vulkan) & utilitaires
+## 5. AI video (sd-cli Vulkan) & utilities
 
-| Workflow | Usage | Entrées clés | Sorties |
+| Workflow | Use | Key inputs | Outputs |
 | :--- | :--- | :--- | :--- |
-| `video` | Vidéo T2V / I2V / FLF2V (`--end-img`) / V2V — Wan 2.1/2.2, LTX-2.5, .webm + scène Godot | `prompt`, `-i`, `--frames` (33), `--fps` (24) | `_vid.webm`, `_player.tscn` |
-| `monoplan_ia` | **Plan cinématique monopratique** depuis image (LTX-2.5 + ralenti mci + zoom pur) — validé, hooks YouTube | `prompt`, `-i` (ou `--monoplan-source`), `--monoplan-frames` (65, max ~81), `--monoplan-duration` (10 s), `--zoom-debut/--zoom-fin`, `--4k` (master 3840×2160 AMF), `--ambiance`, `--carton-titre "LIGNE1\|LIGNE2"` | `_1080p.mp4` ou `_4k.mp4`, `_avec_ambiance.mp4`, `_final_titre.mp4` |
-| `h3_ref2va` | **Continuation vidéo+audio** (MiniMax-H3 Ref2VA, webm avec son) — **toujours `--turbo`** | `-i` vidéo source (requise), `prompt` (mentionner `<Video 1>`/`<Audio 1>`), `--ref-frames` (12), `--frames` (22/39/56), `--turbo`, `--max-vram` (10) | `.webm` (VP8 + audio), `<name>_ref/` |
-| `rife_interp` | Interpolation de frames 2×/4× (60 fps) | `-i`, `--columns`, `--factor` | `_rife_<N>x.png` |
-| `vfx_flipbook` | Planche de particules 4×4 + scène GPUParticles | `prompt`, `--vfx-type`, `--mode-2d` | `_flipbook.png`, `_vfx.tscn` |
-| `anim_loop` | Boucle de texture/shader animée sans reset | `prompt`, `--frames`, `--fps` | `_spritesheet.png`, `_loop.gdshader`, `.tres` |
-| `ip_adapter` | Verrouillage de style entre assets | `-i` référence | assets cohérents |
-| `upscale` | Upscale ESRGAN 2×/4×/4K (alpha préservé) | `-i`, `--scale` | PNG agrandi |
+| `video` | T2V / I2V / FLF2V (`--end-img`) / V2V video — Wan 2.1/2.2, LTX-2.5, .webm + Godot scene | `prompt`, `-i`, `--frames` (33), `--fps` (24) | `_vid.webm`, `_player.tscn` |
+| `monoplan_ia` | **Single-shot cinematic plan** from image (LTX-2.5 + mci slow-mo + pure zoom) — validated, YouTube hooks | `prompt`, `-i` (or `--monoplan-source`), `--monoplan-frames` (65, max ~81), `--monoplan-duration` (10 s), `--zoom-debut/--zoom-fin`, `--4k` (3840×2160 AMF master), `--ambiance`, `--carton-titre "LINE1\|LINE2"` | `_1080p.mp4` or `_4k.mp4`, `_avec_ambiance.mp4`, `_final_titre.mp4` |
+| `h3_ref2va` | **Video+audio continuation** (MiniMax-H3 Ref2VA, webm with sound) — **always `--turbo`** | `-i` source video (required), `prompt` (mention `<Video 1>`/`<Audio 1>`), `--ref-frames` (12), `--frames` (22/39/56), `--turbo`, `--max-vram` (10) | `.webm` (VP8 + audio), `<name>_ref/` |
+| `rife_interp` | 2×/4× frame interpolation (60 fps) | `-i`, `--columns`, `--factor` | `_rife_<N>x.png` |
+| `vfx_flipbook` | 4×4 particle sheet + GPUParticles scene | `prompt`, `--vfx-type`, `--mode-2d` | `_flipbook.png`, `_vfx.tscn` |
+| `anim_loop` | Animated texture/shader loop without reset | `prompt`, `--frames`, `--fps` | `_spritesheet.png`, `_loop.gdshader`, `.tres` |
+| `ip_adapter` | Style locking across assets | `-i` reference | consistent assets |
+| `upscale` | ESRGAN 2×/4×/4K upscale (alpha preserved) | `-i`, `--scale` | upscaled PNG |
 
-Perfs vidéo (RX 6950 XT) : `monoplan_ia` ~15 min (65 f, 8 steps) + ~3 min post ; ~18 min en 4K natif.
-`h3_ref2va` 22 frames ~38 min turbo (~70 min sans). Plafond LTX ≈ 81 frames @ 832×480 (au-delà :
-device-lost → reboot avant d'incriminer la recette). Masters YouTube : 4K obligatoire (VP09/AV01),
-`scripts/conform_youtube_hd.py`, upscale vidéo `scripts/upscale_video_ai.py`.
+Video performance (RX 6950 XT): `monoplan_ia` ~15 min (65 f, 8 steps) + ~3 min post; ~18 min in
+native 4K. `h3_ref2va` 22 frames ~38 min turbo (~70 min without). LTX ceiling ≈ 81 frames @
+832×480 (beyond: device-lost → reboot before blaming the recipe). YouTube masters: 4K mandatory
+(VP09/AV01), `scripts/conform_youtube_hd.py`, video upscale `scripts/upscale_video_ai.py`.
 
-**⚠️ Écueil build sd-cli (état sept. 2026, MEMORY_BANK §1.16-1.19)** : MiniMax-H3 est cassé
-sur la sd-cli installée (`C:\SD\`, master-908 — 54 segments + OOM submit, inchangé de master-864 à 908
-malgré le fix amont #1900) ; LTX-2.5 n'y passe le benchmark T2V 33 trames qu'avec une VRAM bureau basse
-(machine rebootée, marge ~120 Mo fragile) et son I2V 65 trames n'y est pas retesté ;
-dernière build vidéo validée = **6b3edaa (master-841)**, installée en parallèle dans `C:\SD-6b3edaa\`.
-Pour `monoplan_ia` : préfixer `SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe"` (ou `--sd-cli`). Pour
-`h3_ref2va` : production via la build parallèle (commande brute en §1.16 si le workflow appelle le
-binaire en dur). Sur master-908, seule vidéo fiable : Wan T2V/I2V ≤ ~20 trames `--vae-on-cpu`.
-L'upscale ESRGAN vidéo (`scripts/upscale_video_ai.py`) reste validé. **Toujours
-revérifier cet état dans MEMORY_BANK avant un rendu vidéo.**
+**⚠️ sd-cli build pitfall (state Sept. 2026, MEMORY_BANK §1.16-1.19)**: MiniMax-H3 is broken on
+the installed sd-cli (`C:\SD\`, master-908 — 54 segments + OOM at submit, unchanged from
+master-864 to 908 despite upstream fix #1900); LTX-2.5 only passes the 33-frame T2V benchmark
+there with low desktop VRAM (rebooted machine, fragile ~120 MB margin) and its 65-frame I2V has
+not been retested there; last validated video build = **6b3edaa (master-841)**, installed in
+parallel in `C:\SD-6b3edaa\`. For `monoplan_ia`: prefix
+`SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe"` (or `--sd-cli`). For `h3_ref2va`: production through
+the parallel build (raw command in §1.16 if the workflow calls the binary hard-coded). On
+master-908, the only reliable video: Wan T2V/I2V ≤ ~20 frames with `--vae-on-cpu`. Video ESRGAN
+upscale (`scripts/upscale_video_ai.py`) remains validated. **Always re-check this state in
+MEMORY_BANK before a video render.**
 
-## Maintenance (menu interactif 33-35, hors génération)
+## Maintenance (interactive menu 33-35, outside generation)
 
-`update_sd` / `update_llama` / `update_vulkan` : gestionnaires de maj/compilation Vulkan — mais le process
-officiel passe par `scripts/veille_versions.py` + accord utilisateur (voir `AGENTS.md` § Process de mise
-à jour). Jamais de maj automatique.
+`update_sd` / `update_llama` / `update_vulkan`: update/Vulkan-compilation managers — but the
+official process goes through `scripts/veille_versions.py` + user agreement (see `AGENTS.md` §
+Watch & updates). Never automatic updates.

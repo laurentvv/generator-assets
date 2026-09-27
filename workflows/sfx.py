@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow SFX : Génération de Bruitages et Effets Sonores pour Assets de Jeu (Godot 4).
-Produit :
-- Fichier audio WAV (PCM 16-bit)
-- Fichier audio OGG Vorbis (Stream optimisé Godot)
+SFX Workflow: generation of sound effects and SFX for game assets (Godot 4).
+Produces:
+- WAV audio file (PCM 16-bit)
+- OGG Vorbis audio file (Godot-optimized Stream)
 
-Moteurs (param `sfx_engine`) :
-- `ia` (défaut) : Stable Audio 3 Small SFX via audio.cpp — validé utilisateur le
-  2026-09-09 (4/5 « ok », normalisation de crête intégrée suite au rejet « faible
-  volume » du sample pluie). N'importe quel prompt EN descriptif est possible.
-- `procedural` : synthèse numpy historique (types figés : sword, coin, explosion…).
+Engines (param `sfx_engine`):
+- `ia` (default): Stable Audio 3 Small SFX via audio.cpp — user-validated on
+  2026-09-09 (4/5 "ok", peak normalization integrated after the "low volume"
+  rejection of the rain sample). Any descriptive EN prompt is possible.
+- `procedural`: historical numpy synthesis (frozen types: sword, coin, explosion…).
 """
 
 import os
@@ -25,22 +25,22 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class SFXWorkflow(BaseWorkflow):
-    """Génération d'effets sonores et bruitages (SFX) pour Godot 4."""
+    """Generation of sound effects and SFX for Godot 4."""
 
     name = "sfx"
-    description = "Effets sonores & bruitages de jeux vidéo (.wav / .ogg) — moteur IA (SA3 small SFX) ou synthèse procédurale"
+    description = "Video game sound effects & SFX (.wav / .ogg) — AI engine (SA3 small SFX) or procedural synthesis"
 
     emoji = "🔊"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --duration sert toute la
-    # famille audio (sfx, audio_ambience, music_bg, chanson, musique_adn/essence) :
-    # il vit ici, premier workflow utilisateur de la famille dans le registre.
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). --duration serves the whole
+    # audio family (sfx, audio_ambience, music_bg, chanson, musique_adn/essence):
+    # it lives here, first user workflow of the family in the registry.
     PARAMETRES = [
         dict(flags=("--duration",), type=float, default=None,
-             help="Durée en secondes (sfx, audio_ambience, music_bg, chanson, musique_adn/essence ; défaut : propre au workflow — 1.5 sfx, 8.0 ambience, 12.0 music_bg, 180.0 chanson, 60.0 musique_adn, 30.0 musique_essence)."),
+             help="Duration in seconds (sfx, audio_ambience, music_bg, chanson, musique_adn/essence; default: workflow-specific — 1.5 sfx, 8.0 ambience, 12.0 music_bg, 180.0 chanson, 60.0 musique_adn, 30.0 musique_essence)."),
         dict(flags=("--sfx-engine",), dest="sfx_engine", choices=["ia", "procedural"], default="ia",
-             help="Moteur du workflow sfx : ia = Stable Audio 3 Small SFX via audio.cpp (validé 2026-09-09, normalisation de crête incluse, prompt EN libre) | procedural = synthèse numpy (types figés sword/coin/explosion…)."),
+             help="Engine of the sfx workflow: ia = Stable Audio 3 Small SFX via audio.cpp (validated 2026-09-09, peak normalization included, free EN prompt) | procedural = numpy synthesis (frozen types sword/coin/explosion…)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -54,25 +54,25 @@ class SFXWorkflow(BaseWorkflow):
         os.makedirs(output_dir, exist_ok=True)
 
         if moteur == "ia":
-            self.log(f"Synthèse IA (SA3 small SFX, graine {graine}) pour '{prompt}' (Durée: {duree:.1f}s, 44.1kHz stéréo)...")
+            self.log(f"AI synthesis (SA3 small SFX, seed {graine}) for '{prompt}' (Duration: {duree:.1f}s, 44.1kHz stereo)...")
             res = generer_sfx_ia(prompt, duree=duree, seed=graine)
             audio_data, sr = res["audio"], res["sr"]
             if res["niveau_mode"] == "nappe":
-                self.log(f"Nappe détectée ({res['lufs_source']:.1f} LUFS) : +{res['gain_db']} dB vers −16 LUFS (crêtes plafonnées), texture intacte.")
+                self.log(f"Pad detected ({res['lufs_source']:.1f} LUFS): +{res['gain_db']} dB toward −16 LUFS (peaks capped), texture intact.")
             else:
-                self.log(f"Génération OK (RTF {res['rtf']:.2f}, crête source {20 * np.log10(max(res['pic_source'], 1e-9)):.1f} dBFS → normalisée).")
+                self.log(f"Generation OK (RTF {res['rtf']:.2f}, source peak {20 * np.log10(max(res['pic_source'], 1e-9)):.1f} dBFS → normalized).")
             if res["rognage_pct"] > 0.01:
-                self.log(f"Silences d'entrée/sortie rognés : −{res['rognage_pct']} % de durée.")
+                self.log(f"Lead-in/lead-out silences trimmed: −{res['rognage_pct']} % of duration.")
         else:
-            self.log(f"Synthèse procédurale de l'effet sonore pour '{prompt}' (Durée: {duree:.1f}s, 44.1kHz)...")
+            self.log(f"Procedural synthesis of the sound effect for '{prompt}' (Duration: {duree:.1f}s, 44.1kHz)...")
             audio_data, sr = synthetiser_sfx(sfx_type=prompt, duree=duree, sr=44100), 44100
 
-        self.log("Export des formats audio Godot 4 (.wav, .ogg)...")
+        self.log("Exporting the Godot 4 audio formats (.wav, .ogg)...")
         chemin_wav, chemin_ogg = exporter_sfx_godot(nom_base, output_dir, audio_data, sr)
 
-        self.log(f"Effet sonore exporté avec succès dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Format WAV : {chemin_wav} (PCM 16-bit)")
-        self.log(f"  • Format OGG : {chemin_ogg} (AudioStreamPlayer Godot)", emoji="💎")
+        self.log(f"Sound effect exported successfully to '{output_dir}/':", emoji="🎉")
+        self.log(f"  • WAV format: {chemin_wav} (PCM 16-bit)")
+        self.log(f"  • OGG format: {chemin_ogg} (AudioStreamPlayer Godot)", emoji="💎")
 
         return {
             "wav": chemin_wav,

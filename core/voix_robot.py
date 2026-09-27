@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Voix de robot en anglais (recette VALIDÉE utilisateur le 2026-09-17, essai 17
-« petit robot tranquille ») : TTS Kokoro-82M via audio.cpp (Vulkan) puis effet
-« petit robot » FFmpeg.
+English robot voice (recipe VALIDATED by the user on 2026-09-17, trial 17
+"quiet little robot"): TTS Kokoro-82M via audio.cpp (Vulkan) then "little
+robot" FFmpeg effect.
 
-Recette validée (output/test_voix_robot/essai17_kokoro_ringmod120_tranquille.mp3) :
-1. TTS      : famille kokoro_tts, voix `af_heart`, en-us, 24 kHz mono, débit normal.
-2. Effet FF : pitch +30 % (asetrate 31200), atempo 0.65 (débit posé, pitch intact),
-              ring modulation 120 Hz (aeval — la voix multipliée par un sinus perd
-              son fondamental → timbre métallique), gain -4 dB.
+Validated recipe (output/test_voix_robot/essai17_kokoro_ringmod120_tranquille.mp3):
+1. TTS      : kokoro_tts family, `af_heart` voice, en-us, 24 kHz mono, normal rate.
+2. FF effect: pitch +30% (asetrate 31200), atempo 0.65 (settled rate, pitch intact),
+              120 Hz ring modulation (aeval — the voice multiplied by a sine loses
+              its fundamental → metallic timbre), gain -4 dB.
 
-⚠️ Moteur : le zip release audio.cpp (v0.7.4 et v0.8.0) ne peut pas lancer
-kokoro_tts (« Could not load eSpeak-ng » — ni DLL espeak partagée ni pack statique
-fournis, cf. MEMORY_BANK §1.21) → le binaire scratch `build-357` (espeak embarqué)
-est résolu automatiquement tant qu'il existe ; surchargeable par la variable
-d'environnement AUDIOCPP_KOKORO_CLI. À revoir si une release embarque espeak.
+⚠️ Engine: the audio.cpp release zip (v0.7.4 and v0.8.0) cannot launch
+kokoro_tts ("Could not load eSpeak-ng" — neither shared espeak DLL nor static
+pack provided, see MEMORY_BANK §1.21) → the scratch binary `build-357` (embedded espeak)
+is resolved automatically as long as it exists; overridable via the
+AUDIOCPP_KOKORO_CLI environment variable. To revisit if a release ships espeak.
 """
 
 import os
@@ -25,37 +25,37 @@ from core.config import DEFAULT_MODEL_DIR
 from core.music_ai import convertir_mp3, resoudre_ffmpeg
 from core.process import run_engine
 
-# Paquet GGUF Kokoro-82M (org audio-cpp, cf. MEMORY_BANK §1.21).
+# Kokoro-82M GGUF package (audio-cpp org, see MEMORY_BANK §1.21).
 MODELE_KOKORO = os.getenv(
     "KOKORO_TTS_MODEL",
     os.path.join(DEFAULT_MODEL_DIR, "Kokoro-82M-GGUF", "kokoro-82m-q8_0.gguf"),
 )
 
-# Binaire scratch avec espeak-ng embarqué (kokoro_tts inutilisable dans la release,
-# cf. docstring). Surcharge : AUDIOCPP_KOKORO_CLI.
+# Scratch binary with embedded espeak-ng (kokoro_tts unusable in the release,
+# see docstring). Override: AUDIOCPP_KOKORO_CLI.
 BINARIE_SCRATCH_KOKORO = (
     r"C:\IA\audio_cpp_master_test\build-357\bin\Release\audiocpp_cli.exe"
 )
 
-# Réglages validés par l'utilisateur (essai 17) — défauts du workflow.
+# Settings validated by the user (trial 17) — workflow defaults.
 RECIPE = {
     "voice_id": "af_heart",
-    "pitch": 1.30,        # asetrate = 24000 * pitch (1.30 = +30 %)
-    "ringmod_hz": 120.0,  # fréquence de la ring modulation
-    "tempo": 0.65,        # atempo post-pitch (0.65 = débit « tranquille » validé)
-    "gain_db": -4.0,      # volume final (voix « calme » validée)
+    "pitch": 1.30,        # asetrate = 24000 * pitch (1.30 = +30%)
+    "ringmod_hz": 120.0,  # ring modulation frequency
+    "tempo": 0.65,        # post-pitch atempo (0.65 = validated "quiet" rate)
+    "gain_db": -4.0,      # final volume (validated "calm" voice)
 }
 
 
 def resoudre_audiocpp_kokoro() -> str:
-    """Résout un binaire audiocpp capable de lancer kokoro_tts (espeak présent)."""
+    """Resolves an audiocpp binary able to run kokoro_tts (espeak present)."""
     surcharge = os.getenv("AUDIOCPP_KOKORO_CLI")
     if surcharge and os.path.exists(surcharge):
         return surcharge
     if os.path.exists(BINARIE_SCRATCH_KOKORO):
         return BINARIE_SCRATCH_KOKORO
-    # Repli : binaire release (échouera sur kokoro sans espeak-ng partagé —
-    # l'erreur « Could not load eSpeak-ng » reste explicite).
+    # Fallback: release binary (will fail on kokoro without shared espeak-ng —
+    # the "Could not load eSpeak-ng" error stays explicit).
     from core.music_ai import resoudre_audiocpp
     return resoudre_audiocpp()
 
@@ -67,10 +67,10 @@ def generer_base_kokoro(
     speaking_rate: float = 1.0,
     backend: str = "vulkan",
 ) -> Dict[str, Any]:
-    """Synthétise la parole anglaise (Kokoro-82M, 24 kHz mono) avant effet robot."""
+    """Synthesizes English speech (Kokoro-82M, 24 kHz mono) before the robot effect."""
     if not os.path.exists(MODELE_KOKORO):
         raise FileNotFoundError(
-            f"Kokoro-82M introuvable : {MODELE_KOKORO} — le télécharger depuis "
+            f"Kokoro-82M not found: {MODELE_KOKORO} — download it from "
             f"audio-cpp/Kokoro-82M-GGUF (scripts/telecharger_gros_fichier_parallele.py)."
         )
     audiocpp = resoudre_audiocpp_kokoro()
@@ -84,10 +84,10 @@ def generer_base_kokoro(
         cmd += ["--speaking-rate", str(speaking_rate)]
     cmd += ["--text", texte]
 
-    print(f"🤖 TTS Kokoro (voix {voice_id}, backend {backend}) — binaire : {audiocpp}")
+    print(f"🤖 TTS Kokoro (voice {voice_id}, backend {backend}) — binary: {audiocpp}")
     run_engine(cmd, capture=False, check=True, timeout=600, etiquette="audio.cpp kokoro")
     if not os.path.exists(sortie):
-        raise RuntimeError(f"La génération n'a pas produit {sortie}")
+        raise RuntimeError(f"The generation did not produce {sortie}")
     return {"sortie": sortie, "voice_id": voice_id}
 
 
@@ -100,8 +100,8 @@ def appliquer_effet_robot(
     gain_db: float = RECIPE["gain_db"],
 ) -> str:
     """
-    Effet « petit robot » validé : pitch up (asetrate), débit posé (atempo),
-    ring modulation (aeval, sinus mono), gain final. Chaîne identique à l'essai 17.
+    Validated "little robot" effect: pitch up (asetrate), settled rate (atempo),
+    ring modulation (aeval, mono sine), final gain. Chain identical to trial 17.
     """
     ffmpeg = resoudre_ffmpeg()
     asetrate = int(24000 * pitch)
@@ -112,7 +112,7 @@ def appliquer_effet_robot(
     run_engine(
         [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", source,
          "-af", filtre, "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", sortie],
-        capture=False, check=True, timeout=180, etiquette="ffmpeg effet robot",
+        capture=False, check=True, timeout=180, etiquette="ffmpeg robot effect",
     )
     return sortie
 
@@ -129,7 +129,7 @@ def generer_voix_robot(
     speaking_rate: float = 1.0,
     backend: str = "vulkan",
 ) -> Dict[str, Any]:
-    """Pipeline complet : base TTS → effet robot → WAV final + MP3 d'écoute."""
+    """Full pipeline: TTS base → robot effect → final WAV + listening MP3."""
     os.makedirs(dossier, exist_ok=True)
     wav_base = os.path.join(dossier, f"{nom}_brut.wav")
     wav_final = os.path.join(dossier, f"{nom}.wav")

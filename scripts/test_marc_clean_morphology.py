@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 test_marc_clean_morphology.py
-Reconstruit le visage de Marc avec la méthode professionnelle MakeHuman :
-1. Peau MakeHuman photoréaliste propre d'origine (sans découpe ni bricolage 2D).
-2. Morphologie 3D faciale ciblée (yeux perçants, sourcils déterminés, mâchoire fine).
-3. Matériaux et éclairage équilibrés.
+Rebuilds Marc's face with the professional MakeHuman method:
+1. Clean original photorealistic MakeHuman skin (no cutting or 2D tinkering).
+2. Targeted 3D facial morphology (piercing eyes, determined eyebrows, thin jaw).
+3. Balanced materials and lighting.
 """
 
 import bpy
@@ -19,7 +19,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {absolute_package_str} introuvable")
+    raise ValueError(f"Module {absolute_package_str} not found")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -31,7 +31,7 @@ HumanService = dynamic_import("mpfb.services.humanservice", "HumanService")
 AssetService = dynamic_import("mpfb.services.assetservice", "AssetService")
 TargetService = dynamic_import("mpfb.services.targetservice", "TargetService")
 
-# 1. Corps enfant 8 ans avec traits médiévaux fins
+# 1. 8-year-old child body with fine medieval features
 macros = {
     "gender": 1.0, "age": 0.18, "muscle": 0.28, "weight": 0.22,
     "proportions": 0.50, "height": 0.48,
@@ -41,12 +41,12 @@ basemesh = HumanService.create_human(macro_detail_dict=macros)
 TargetService.reapply_macro_details(basemesh)
 bpy.context.view_layer.update()
 
-# 2. Peau propre d'origine MakeHuman (GAMEENGINE)
+# 2. Clean original MakeHuman skin (GAMEENGINE)
 skin_mhmat = AssetService.find_asset_absolute_path("young_caucasian_male.mhmat", asset_subdir="skins")
 if skin_mhmat:
     HumanService.set_character_skin(skin_mhmat, basemesh, skin_type="GAMEENGINE")
 
-# 3. Assets natifs (yeux, dents, langue, cheveux courts, tenue)
+# 3. Native assets (eyes, teeth, tongue, short hair, outfit)
 assets = [
     ("eyes",      "low-poly.mhclo",        "Eyes"),
     ("eyebrows",  "eyebrow001.mhclo",      "Eyebrows"),
@@ -63,7 +63,7 @@ for subdir, fname, atype in assets:
 
 bpy.context.view_layer.update()
 
-# Matériau sourcils doux assorti aux cheveux
+# Soft eyebrow material matching the hair
 eyebrow_obj = next((o for o in bpy.data.objects if "eyebrow" in o.name.lower()), None)
 if eyebrow_obj and eyebrow_obj.data.materials:
     mat_eb = bpy.data.materials.new(name="Marc_Eyebrows_Natural")
@@ -84,7 +84,7 @@ if hair_obj:
     hair_obj.data.materials.clear()
     hair_obj.data.materials.append(mat_hair)
 
-# 4. Suppression des sommets d'aide MakeHuman
+# 4. Removal of the MakeHuman helper vertices
 helper_vg = basemesh.vertex_groups.get("HelperGeometry")
 if helper_vg:
     bm = bmesh.new()
@@ -108,7 +108,7 @@ for obj in list(bpy.data.objects):
         me.name = old.name
         bpy.data.meshes.remove(old)
 
-# 6. Retrait des masques
+# 6. Mask removal
 for obj in list(bpy.data.objects):
     if obj.type == 'MESH':
         for m in list(obj.modifiers):
@@ -118,7 +118,7 @@ for obj in list(bpy.data.objects):
             if vg.name.startswith("Delete."):
                 obj.vertex_groups.remove(vg)
 
-# 7. Alpha propre
+# 7. Clean alpha
 for obj in list(bpy.data.objects):
     if obj.type == 'MESH':
         for mat in obj.data.materials:
@@ -132,7 +132,7 @@ for obj in list(bpy.data.objects):
                 if an:
                     mat.node_tree.nodes.remove(an)
 
-# 8. Sauvegarde et export GLB
+# 8. Save and GLB export
 out_blend = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.blend"
 out_glb = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.glb"
 local_blend = r"C:\GIT\generator-assets\godot_assets\marc_novice.blend"
@@ -145,7 +145,7 @@ bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=out_glb, export_format='GLB', use_selection=True)
 bpy.ops.export_scene.gltf(filepath=local_glb, export_format='GLB', use_selection=True)
 
-# 9. Rendu de validation studio
+# 9. Studio validation render
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=out_glb)
 
@@ -194,4 +194,4 @@ bpy.context.scene.render.resolution_x = 1024
 bpy.context.scene.render.resolution_y = 1024
 bpy.context.scene.render.filepath = r"C:\GIT\generator-assets\godot_assets\marc_novice_beauty_render.png"
 bpy.ops.render.render(write_still=True)
-print("✅ Modèle propre et naturel généré avec succès !")
+print("✅ Clean and natural model generated successfully!")

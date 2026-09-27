@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
 # =============================================================================
-# install_unix.sh — Installateur generator-assets pour Linux x64 et macOS.
+# install_unix.sh — generator-assets installer for Linux x64 and macOS.
 #
-# Fait la même chose que scripts/install_windows.ps1 :
-#   1. Preflight : outils (curl/tar/unzip/python3), uv (auto-install), espace disque.
-#   2. uv sync (dépendances Python du dépôt).
-#   3. Moteurs C++ téléchargés depuis les RELEASES OFFICIELLES upstream
-#      (versions épinglées lues dans scripts/engines_manifest.json, clé de
-#      plateforme 'linux', 'macos-arm64' ou 'macos-x64') + FFmpeg standard
-#      (BtbN Linux / Homebrew macOS). Idempotent : un moteur déjà présent
-#      est ignoré sauf --force.
-#   4. Packs de modèles via scripts/download_models.py (défaut base,onnx,upscalers).
-#   5. Vérification finale : uv run python main.py --check.
+# Does the same thing as scripts/install_windows.ps1 :
+#   1. Preflight: tools (curl/tar/unzip/python3), uv (auto-install), disk space.
+#   2. uv sync (repo Python dependencies).
+#   3. C++ engines downloaded from upstream OFFICIAL RELEASES
+#      (pinned versions read from scripts/engines_manifest.json, platform key
+#      'linux', 'macos-arm64' or 'macos-x64') + standard FFmpeg
+#      (BtbN Linux / Homebrew macOS). Idempotent: an already-present engine
+#      is skipped unless --force.
+#   4. Model packs via scripts/download_models.py (default base,onnx,upscalers).
+#   5. Final check: uv run python main.py --check.
 #
-# Linux utilise le backend Vulkan (pilotes requis : Mesa/RADV pour AMD) ;
-# macOS utilise Metal natif (aucun Vulkan requis). trellis.cpp n'est pas
-# publié pour macOS : il est ignoré avec un message (build source possible).
+# Linux uses the Vulkan backend (required drivers: Mesa/RADV for AMD) ;
+# macOS uses native Metal (no Vulkan required). trellis.cpp is not
+# published for macOS: it is skipped with a message (source build possible).
 #
-# Les exécutables sont installés sous --prefix (défaut
-# $HOME/.local/share/generator-assets), liés symboliquement dans
-# $HOME/.local/bin, et les variables d'environnement attendues par
+# The executables are installed under --prefix (default
+# $HOME/.local/share/generator-assets), symbolically linked into
+# $HOME/.local/bin, and the environment variables expected by
 # core/config.py (SD_CLI_PATH, LLAMA_CLI_PATH, AUDIOCPP_PATH,
-# TRELLIS_CLI_PATH, FFMPEG_PATH, MODEL_DIR) sont écrites dans
-# <prefix>/env.sh (à sourcer dans ~/.bashrc ou ~/.zshrc).
+# TRELLIS_CLI_PATH, FFMPEG_PATH, MODEL_DIR) are written into
+# <prefix>/env.sh (to be sourced in ~/.bashrc or ~/.zshrc).
 #
-# Usage :
+# Usage:
 #   bash scripts/install_unix.sh [--prefix DIR] [--engines "a,b"] [--packs "p1,p2"]
 #        [--skip-models] [--skip-uv-sync] [--skip-check] [--force] [--dry-run]
 #
-# Variable de test : GENERATOR_ASSETS_FORCE_OS=linux|macos-arm64|macos-x64
-# force la plateforme cible (utile pour --dry-run depuis un autre OS).
+# Test variable: GENERATOR_ASSETS_FORCE_OS=linux|macos-arm64|macos-x64
+# forces the target platform (useful for --dry-run from another OS).
 # =============================================================================
 set -euo pipefail
 
@@ -51,14 +51,14 @@ while [ $# -gt 0 ] ; do
         --force)         FORCE=1 ; shift ;;
         --dry-run)       DRYRUN=1 ; shift ;;
         -h|--help)       usage ; exit 0 ;;
-        *) echo "Option inconnue : $1 (voir --help)" ; exit 1 ;;
+        *) echo "Unknown option: $1 (see --help)" ; exit 1 ;;
     esac
 done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="$REPO_ROOT/scripts/engines_manifest.json"
 
-# ---------------------------------------------------------------- affichage
+# ---------------------------------------------------------------- display
 
 if [ -t 1 ] ; then
     C_ETAPE=$'\033[35m' ; C_OK=$'\033[32m' ; C_INFO=$'\033[36m' ; C_ALERTE=$'\033[33m' ; C_FIN=$'\033[0m'
@@ -77,19 +77,19 @@ if [ -z "$PLATEFORME" ] ; then
     UNAME_S="$(uname -s)"
     case "$UNAME_S" in
         MINGW*|MSYS*|CYGWIN*)
-            echo "Windows detecte : utilisez scripts/install_windows.ps1 (PowerShell)." ; exit 1 ;;
+            echo "Windows detected: use scripts/install_windows.ps1 (PowerShell)." ; exit 1 ;;
         Linux*)  PLATEFORME="linux" ;;
         Darwin*)
             case "$(uname -m)" in
                 arm64)  PLATEFORME="macos-arm64" ;;
                 x86_64) PLATEFORME="macos-x64" ;;
-                *) echo "Architecture macOS inconnue : $(uname -m)" ; exit 1 ;;
+                *) echo "Unknown macOS architecture: $(uname -m)" ; exit 1 ;;
             esac ;;
-        *) echo "OS non supporte : $UNAME_S" ; exit 1 ;;
+        *) echo "Unsupported OS: $UNAME_S" ; exit 1 ;;
     esac
 fi
 
-# ---------------------------------------------------------------- prérequis outils
+# ---------------------------------------------------------------- tool prerequisites
 
 PY_CMD=""
 for c in python3 python ; do
@@ -99,7 +99,7 @@ for c in python3 python ; do
 done
 if [ -z "$PY_CMD" ] && command -v uv >/dev/null 2>&1 ; then PY_CMD="uv run python" ; fi
 if [ -z "$PY_CMD" ] ; then
-    echo "python3 introuvable : installez python3 (ou uv) puis relancez." ; exit 1
+    echo "python3 not found: install python3 (or uv) then run again." ; exit 1
 fi
 
 manque=""
@@ -107,21 +107,21 @@ for outil in curl tar unzip ; do
     command -v "$outil" >/dev/null 2>&1 || manque="$manque $outil"
 done
 if [ -n "$manque" ] ; then
-    echo "Outils manquants :$manque"
-    echo "  Linux (Debian/Ubuntu) : sudo apt install curl tar unzip"
-    echo "  macOS : fournis avec le systeme (xcode-select --install au besoin)"
+    echo "Missing tools:$manque"
+    echo "  Linux (Debian/Ubuntu): sudo apt install curl tar unzip"
+    echo "  macOS: shipped with the system (xcode-select --install if needed)"
     exit 1
 fi
 
 if ! command -v uv >/dev/null 2>&1 ; then
-    alerte "uv introuvable -> installation automatique..."
+    alerte "uv not found -> automatic install..."
     if [ "$DRYRUN" -eq 1 ] ; then
-        info "DRYRUN : curl -LsSf https://astral.sh/uv/install.sh | sh"
+        info "DRYRUN: curl -LsSf https://astral.sh/uv/install.sh | sh"
     else
         curl -LsSf https://astral.sh/uv/install.sh | sh
         export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
         command -v uv >/dev/null 2>&1 || {
-            echo "uv non disponible apres installation : ouvrez un nouveau terminal et relancez." ; exit 1 ;
+            echo "uv not available after install: open a new terminal and run again." ; exit 1 ;
         }
     fi
 fi
@@ -130,21 +130,21 @@ mkdir -p "$PREFIX"
 LIBRE_GO="$(df -PG "$PREFIX" 2>/dev/null | awk 'NR==2 {gsub(/G/,"",$4) ; print $4}' || true)"
 LIBRE_GO="${LIBRE_GO:-?}"
 if [ "$LIBRE_GO" != "?" ] && [ "$LIBRE_GO" -lt 20 ] 2>/dev/null ; then
-    alerte "Seulement ${LIBRE_GO} Go libres sur $PREFIX (~20 Go conseilles moteurs + pack base)."
+    alerte "Only ${LIBRE_GO} GB free on $PREFIX (~20 GB recommended for engines + base pack)."
 else
-    ok "Espace disque suffisant sur $PREFIX (${LIBRE_GO} Go libres)"
+    ok "Enough disk space on $PREFIX (${LIBRE_GO} GB free)"
 fi
 
 printf '\n========================================================\n'
 printf ' generator-assets - INSTALLATION UNIX (%s)\n' "$PLATEFORME"
 printf '========================================================\n'
-[ "$DRYRUN" -eq 1 ] && alerte "Mode DRYRUN : aucun telechargement ni installation reelle."
+[ "$DRYRUN" -eq 1 ] && alerte "DRYRUN mode: no real download or installation."
 
 # ---------------------------------------------------------------- lecture manifeste
 
-# fiche_moteur <moteur> : charge la fiche plateforme dans FICHE_MOTEUR (lignes CLE=VALEUR).
-# Code retour 3 = plateforme non publiee en amont ; affiche __INCONNU__ si moteur inconnu.
-fiche_moteur() { # $1 = moteur
+# fiche_moteur <engine>: loads the platform sheet into FICHE_MOTEUR (KEY=VALUE lines).
+# Return code 3 = platform not published upstream; prints __INCONNU__ if unknown engine.
+fiche_moteur() { # $1 = engine
     $PY_CMD - "$MANIFEST" "$1" "$PLATEFORME" <<'PYEOF'
 import json, sys
 m = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -162,32 +162,32 @@ for k, v in plat.items():
 PYEOF
 }
 
-# resoudre_url : renseigne ASSET_URL / ASSET_LABEL / ASSET_SHA256 depuis la fiche F_* courante.
-# ASSET_SHA256 : cle 'sha256' du manifeste (asset epingle) ou champ 'digest' de l'API GitHub
-# (release 'latest'/scan) ; vide sur URL directe mouvante (pas de verification possible).
+# resoudre_url: fills ASSET_URL / ASSET_LABEL / ASSET_SHA256 from the current F_* sheet.
+# ASSET_SHA256: 'sha256' key of the manifest (pinned asset) or 'digest' field of the GitHub API
+# ('latest'/scan release); empty on moving direct URL (no verification possible).
 resoudre_url() {
     if [ -n "${F_URL:-}" ] ; then
         ASSET_URL="$F_URL" ; ASSET_LABEL="$(basename "$F_URL")" ; ASSET_SHA256="" ; return 0
     fi
     if [ -n "${F_EPINGLE:-}" ] && [ -n "${F_ASSET:-}" ] ; then
         ASSET_URL="https://github.com/${F_REPO}/releases/download/${F_EPINGLE}/${F_ASSET}"
-        ASSET_LABEL="${F_ASSET} (epingle ${F_EPINGLE})" ; ASSET_SHA256="${F_SHA256:-}" ; return 0
+        ASSET_LABEL="${F_ASSET} (pinned ${F_EPINGLE})" ; ASSET_SHA256="${F_SHA256:-}" ; return 0
     fi
     local api_json
     if [ "${F_RELEASE:-}" = "latest" ] ; then
-        info "Recherche de la derniere release ${F_REPO}..."
+        info "Looking up the latest ${F_REPO} release..."
         api_json="https://api.github.com/repos/${F_REPO}/releases/latest"
     elif [ -n "${F_RELEASE:-}" ] ; then
-        info "Resolution de la release epinglee ${F_RELEASE} (${F_REPO})..."
+        info "Resolving the pinned release ${F_RELEASE} (${F_REPO})..."
         api_json="https://api.github.com/repos/${F_REPO}/releases/tags/${F_RELEASE}"
     elif [ -n "${F_SCAN_RELEASES:-}" ] ; then
-        info "Scan des ${F_SCAN_RELEASES} dernieres releases ${F_REPO}..."
+        info "Scanning the last ${F_SCAN_RELEASES} ${F_REPO} releases..."
         api_json="https://api.github.com/repos/${F_REPO}/releases?per_page=${F_SCAN_RELEASES}"
     else
-        echo "Fiche plateforme incomplete dans engines_manifest.json (ni url, ni epingle, ni release/scan_releases)" ; return 1
+        echo "Incomplete platform sheet in engines_manifest.json (no url, no pin, no release/scan_releases)" ; return 1
     fi
     local ligne
-    # Le script python passe par -c (et non stdin) pour laisser le pipe alimenter json.load.
+    # The python script goes through -c (not stdin) so the pipe feeds json.load.
     ligne="$(curl -sS -H "User-Agent: generator-assets-installer/1.0" "$api_json" | $PY_CMD -c '
 import fnmatch, json, sys
 pat = sys.argv[1]
@@ -199,34 +199,34 @@ for rel in (data if isinstance(data, list) else [data]):
                                        (a.get("digest") or "").replace("sha256:", "")))
             sys.exit(0)
 sys.exit(4)
-' "${F_ASSET_PATTERN:-}" 2>/dev/null)" || { echo "Aucun asset '${F_ASSET_PATTERN:-}' trouve pour ${F_REPO} (API GitHub injoignable ou rate-limit ?)" ; return 1 ; }
+' "${F_ASSET_PATTERN:-}" 2>/dev/null)" || { echo "No asset '${F_ASSET_PATTERN:-}' found for ${F_REPO} (GitHub API unreachable or rate-limited?)" ; return 1 ; }
     ASSET_URL="$(printf '%s' "$ligne" | cut -f1)"
     ASSET_LABEL="$(printf '%s' "$ligne" | cut -f2)"
     ASSET_SHA256="$(printf '%s' "$ligne" | cut -f3)"
-    # Le sha256 du manifeste (connu-bonne, maintenu par le process de maj) prime sur le digest API.
+    # The manifest sha256 (known-good, maintained by the update process) takes precedence over the API digest.
     ASSET_SHA256="${F_SHA256:-$ASSET_SHA256}"
 }
 
-# Verifie l'empreinte sha256 d'une archive telechargee (échec = installation refusee).
-verifier_sha256() { # $1 = archive, $2 = empreinte attendue (vide = verification sautee)
-    [ -n "$2" ] || { alerte "Pas de sha256 connu pour cet asset : integrite non verifiee." ; return 0 ; }
+# Checks the sha256 fingerprint of a downloaded archive (failure = installation refused).
+verifier_sha256() { # $1 = archive, $2 = expected fingerprint (empty = check skipped)
+    [ -n "$2" ] || { alerte "No known sha256 for this asset: integrity not verified." ; return 0 ; }
     local obtenu=""
     if command -v sha256sum >/dev/null 2>&1 ; then
         obtenu="$(sha256sum "$1" | awk '{print $1}')"
     elif command -v shasum >/dev/null 2>&1 ; then
         obtenu="$(shasum -a 256 "$1" | awk '{print $1}')"
     else
-        alerte "sha256sum/shasum introuvable : verification d'integrite sautee."
+        alerte "sha256sum/shasum not found: integrity check skipped."
         return 0
     fi
     if [ "$(printf '%s' "$obtenu" | tr '[:upper:]' '[:lower:]')" != "$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" ] ; then
-        echo "sha256 invalide pour $1 : attendu $2, obtenu $obtenu (asset corrompu ou modifie ?)"
+        echo "invalid sha256 for $1: expected $2, got $obtenu (corrupted or tampered asset?)"
         return 1
     fi
-    ok "sha256 verifie ($(printf '%s' "$2" | cut -c1-12)...)"
+    ok "sha256 verified ($(printf '%s' "$2" | cut -c1-12)...)"
 }
 
-# Variables d'environnement attendues par core/config.py, par moteur.
+# Environment variables expected by core/config.py, per engine.
 var_env_moteur() {
     case "$1" in
         sd-cli)     echo "SD_CLI_PATH" ;;
@@ -241,46 +241,46 @@ var_env_moteur() {
 ENV_SH="${PREFIX}/env.sh"
 : > "$ENV_SH"
 
-# ---------------------------------------------------------------- installation moteurs
+# ---------------------------------------------------------------- engine installation
 
 TMP_BASE="$(mktemp -d)"
 trap 'rm -rf "$TMP_BASE"' EXIT
 
-installer_moteur() { # $1 = moteur
+installer_moteur() { # $1 = engine
     local nom="$1"
-    etape "Moteur $nom"
+    etape "Engine $nom"
 
     local rc=0 FICHE
     FICHE="$(fiche_moteur "$nom")" || rc=$?
     if [ "$rc" -eq 3 ] ; then
-        alerte "Moteur $nom : pas de binaire publie en amont pour $PLATEFORME -> ignore"
-        [ "$nom" = "trellis.cpp" ] && info "Workflow mesh_ia sous macOS : compiler depuis https://github.com/pwilkin/trellis.cpp"
+        alerte "Engine $nom: no binary published upstream for $PLATEFORME -> skipped"
+        [ "$nom" = "trellis.cpp" ] && info "mesh_ia workflow on macOS: build from https://github.com/pwilkin/trellis.cpp"
         return 0
     fi
     if [ "$rc" -ne 0 ] || [ "$FICHE" = "__INCONNU__" ] ; then
-        echo "Moteur '$nom' inconnu dans engines_manifest.json" ; return 1
+        echo "Engine '$nom' unknown in engines_manifest.json" ; return 1
     fi
 
     unset F_REPO F_URL F_EPINGLE F_ASSET F_RELEASE F_SCAN_RELEASES F_ASSET_PATTERN F_SHA256 F_SOUS_DOSSIER F_EXE F_GESTIONNAIRE F_PAQUET 2>/dev/null || true
     local k v k_maj
     while IFS='=' read -r k v ; do
-        # tr : bash 3.2 de macOS n'a pas ${k^^} ; suppression du \r final
-        # (python de Windows traduit \n en \r\n sur stdout).
+        # tr: macOS bash 3.2 lacks ${k^^} ; stripping the trailing \r
+        # (Windows python translates \n to \r\n on stdout).
         k_maj="$(printf '%s' "$k" | tr '[:lower:]' '[:upper:]')"
         v="${v%$'\r'}"
         [ -n "$k_maj" ] && printf -v "F_$k_maj" '%s' "$v"
     done <<< "$FICHE"
 
-    # Cas particulier Homebrew (ffmpeg macOS) : rien a telecharger ni extraire.
+    # Homebrew special case (ffmpeg macOS): nothing to download or extract.
     if [ "${F_GESTIONNAIRE:-}" = "brew" ] ; then
         if ! command -v brew >/dev/null 2>&1 ; then
-            alerte "Homebrew requis pour $nom : https://brew.sh -> ignore" ; return 0
+            alerte "Homebrew required for $nom: https://brew.sh -> skipped" ; return 0
         fi
         if [ "$DRYRUN" -eq 1 ] ; then
             info "DRYRUN : brew install ${F_PAQUET}" ; return 0
         fi
         if brew list --formula "${F_PAQUET}" >/dev/null 2>&1 ; then
-            ok "brew : ${F_PAQUET} deja installe"
+            ok "brew: ${F_PAQUET} already installed"
         else
             info "brew install ${F_PAQUET}..." ; brew install "${F_PAQUET}"
         fi
@@ -294,24 +294,24 @@ installer_moteur() { # $1 = moteur
     local exe="${dir}/${F_EXE}"
 
     if [ -f "$exe" ] && [ "$FORCE" -eq 0 ] ; then
-        ok "$exe deja present -> ignore (--force pour reinstaller)"
+        ok "$exe already present -> skipped (--force to reinstall)"
         env_enregistrer "$nom" "$exe"
         return 0
     fi
 
     resoudre_url
-    info "Asset : $ASSET_LABEL"
+    info "Asset: $ASSET_LABEL"
     if [ "$DRYRUN" -eq 1 ] ; then
-        alerte "DRYRUN : telechargement/extraction simules vers $dir" ; return 0
+        alerte "DRYRUN: download/extraction simulated into $dir" ; return 0
     fi
 
     local tmp="$TMP_BASE/$nom" archive
-    # Nom reel de l'archive : le cas sur extension choisit le bon extracteur.
+    # Real archive name: the extension case picks the right extractor.
     mkdir -p "$TMP_BASE/archives" "$tmp"
     archive="$TMP_BASE/archives/$(basename "$ASSET_URL")"
-    info "Telechargement $ASSET_URL"
+    info "Downloading $ASSET_URL"
     curl -L --fail --retry 3 --progress-bar -o "$archive" "$ASSET_URL"
-    ok "Telecharge ($(( $(stat -c%s "$archive" 2>/dev/null || stat -f%z "$archive") / 1048576 )) Mo)"
+    ok "Downloaded ($(( $(stat -c%s "$archive" 2>/dev/null || stat -f%z "$archive") / 1048576 )) MB)"
     verifier_sha256 "$archive" "$ASSET_SHA256" || return 1
 
     info "Extraction..."
@@ -325,28 +325,28 @@ installer_moteur() { # $1 = moteur
     local exe_trouve
     exe_trouve="$(find "$tmp" -type f -name "${F_EXE}" | head -n1)"
     if [ -z "$exe_trouve" ] ; then
-        echo "${F_EXE} introuvable dans l'archive de $nom" ; return 1
+        echo "${F_EXE} not found in the $nom archive" ; return 1
     fi
 
     mkdir -p "$dir"
     find "$(dirname "$exe_trouve")" -maxdepth 1 -type f -exec cp -f {} "$dir/" \;
     chmod +x "$dir"/* 2>/dev/null || true
-    [ -f "$exe" ] || { echo "Echec de l'installation de $nom ($exe absent)" ; return 1 ; }
-    ok "Installe dans $dir"
+    [ -f "$exe" ] || { echo "$nom installation failed ($exe missing)" ; return 1 ; }
+    ok "Installed in $dir"
 
     if mkdir -p "$HOME/.local/bin" 2>/dev/null ; then
         ln -sf "$exe" "$HOME/.local/bin/$(basename "$F_EXE")" 2>/dev/null || true
         if [ "$nom" = "ffmpeg" ] && [ -f "$dir/ffprobe" ] ; then
             ln -sf "$dir/ffprobe" "$HOME/.local/bin/ffprobe" 2>/dev/null || true
         fi
-        info "Lien symbolique : $HOME/.local/bin/$(basename "$F_EXE")"
+        info "Symbolic link: $HOME/.local/bin/$(basename "$F_EXE")"
     fi
 
     env_enregistrer "$nom" "$exe"
 }
 
-# Record la variable d'env du moteur dans env.sh + le processus courant.
-env_enregistrer() { # $1 = moteur, $2 = chemin exe
+# Records the engine env variable into env.sh + the current process.
+env_enregistrer() { # $1 = engine, $2 = exe path
     local var chemin
     var="$(var_env_moteur "$1")"
     [ -z "$var" ] && return 0
@@ -358,16 +358,16 @@ env_enregistrer() { # $1 = moteur, $2 = chemin exe
 # ---------------------------------------------------------------- dependances python
 
 if [ "$SKIP_UV_SYNC" -eq 1 ] ; then
-    etape "uv sync : ignore (--skip-uv-sync)"
+    etape "uv sync: skipped (--skip-uv-sync)"
 elif [ "$DRYRUN" -eq 1 ] ; then
-    etape "uv sync : simule (DRYRUN)"
+    etape "uv sync: simulated (DRYRUN)"
 else
-    etape "Synchronisation des dependances Python (uv sync)"
+    etape "Syncing Python dependencies (uv sync)"
     (cd "$REPO_ROOT" && uv sync)
-    ok "Dependances synchronisees"
+    ok "Dependencies synced"
 fi
 
-# ---------------------------------------------------------------- moteurs
+# ---------------------------------------------------------------- engines
 
 export MODEL_DIR="${MODEL_DIR:-${PREFIX}/modeles}"
 printf 'export MODEL_DIR="%s"\n' "$MODEL_DIR" >> "$ENV_SH"
@@ -377,49 +377,49 @@ for nom in "${MOTEURS[@]}" ; do
     installer_moteur "$(printf '%s' "$nom" | tr -d '[:space:]')"
 done
 
-# ---------------------------------------------------------------- modeles
+# ---------------------------------------------------------------- models
 
 if [ "$SKIP_MODELS" -eq 1 ] ; then
-    etape "Modeles : ignore (--skip-models)"
+    etape "Models: skipped (--skip-models)"
 else
     IFS=',' read -ra PACKS_L <<< "$PACKS"
     for pack in "${PACKS_L[@]}" ; do
         pack="$(printf '%s' "$pack" | tr -d '[:space:]')"
-        etape "Pack de modeles '$pack' (download_models.py)"
+        etape "Model pack '$pack' (download_models.py)"
         if [ "$DRYRUN" -eq 1 ] ; then
-            alerte "DRYRUN : uv run python scripts/download_models.py --pack $pack" ; continue
+            alerte "DRYRUN: uv run python scripts/download_models.py --pack $pack" ; continue
         fi
         (cd "$REPO_ROOT" && uv run python scripts/download_models.py --pack "$pack")
     done
 fi
 
-# ---------------------------------------------------------------- verification
+# ---------------------------------------------------------------- check
 
 if [ "$SKIP_CHECK" -eq 1 ] ; then
-    etape "Verification finale : ignoree (--skip-check)"
+    etape "Final check: skipped (--skip-check)"
 elif [ "$DRYRUN" -eq 1 ] ; then
-    etape "Verification finale : simulee (DRYRUN) -> uv run python main.py --check"
+    etape "Final check: simulated (DRYRUN) -> uv run python main.py --check"
 else
-    etape "Verification finale (main.py --check)"
+    etape "Final check (main.py --check)"
     (cd "$REPO_ROOT" && uv run python main.py --check) || \
-        alerte "La verification signale des elements manquants (Blender, packs optionnels...) : cf. messages ci-dessus."
+        alerte "The check reports missing items (Blender, optional packs...): see messages above."
 fi
 
-# ---------------------------------------------------------------- récapitulatif
+# ---------------------------------------------------------------- summary
 
-etape "Environnement"
-ok "Variables d'environnement ecrites dans $ENV_SH"
-info "Pour les activer dans votre shell, ajoutez a ~/.bashrc (ou ~/.zshrc) :"
+etape "Environment"
+ok "Environment variables written to $ENV_SH"
+info "To activate them in your shell, add to ~/.bashrc (or ~/.zshrc):"
 info "    source $ENV_SH"
 if [ "$PLATEFORME" = "linux" ] ; then
-    info "GPU : pilotes Vulkan requis (AMD : Mesa/RADV ; test : vulkaninfo --summary)."
+    info "GPU: Vulkan drivers required (AMD: Mesa/RADV; test: vulkaninfo --summary)."
 else
-    info "GPU : les moteurs utilisent Metal nativement (aucun Vulkan requis)."
-    info "Workflow mesh_ia (trellis.cpp) indisponible sous macOS : build source requis."
+    info "GPU: the engines use Metal natively (no Vulkan required)."
+    info "mesh_ia workflow (trellis.cpp) unavailable on macOS: source build required."
 fi
 
 printf '\n========================================================\n'
-printf ' Installation terminee.\n'
-printf ' Demarrage :  uv run python main.py --interactive\n'
-printf ' Autres packs de modeles : video, video-14b, all (cf. README, section Modeles).\n'
+printf ' Installation complete.\n'
+printf ' Getting started:  uv run python main.py --interactive\n'
+printf ' Other model packs: video, video-14b, all (see README, Models section).\n'
 printf '========================================================\n\n'

@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 scripts/animate_ansible_nexus_wan22_i2v.py
-Animation cinématique Image-to-Video avec Wan 2.2 MoE Dual-DiT 28B :
-- Image de départ validée : output/ansible_nexus/ansible_nexus_wan22_raw.png (832x480)
-- Modèles MoE I2V : HighNoise + LowNoise Q4_K_M (8 étapes combinées 4+4)
-- Conditionnement : umt5-xxl + wan_2.1_vae + clip_vision_h
-- Séquence 81 trames natives -> Interpolation fluide 165 trames (5,5s @ 30 FPS)
-- Super-Résolution IA 4K Ultra HD (4x-UltraSharp Vulkan + AMD FidelityFX CAS 0.75 @ 50 Mbps)
+Cinematic Image-to-Video animation with Wan 2.2 MoE Dual-DiT 28B:
+- Validated starting image: output/ansible_nexus/ansible_nexus_wan22_raw.png (832x480)
+- I2V MoE models: HighNoise + LowNoise Q4_K_M (8 combined steps 4+4)
+- Conditioning: umt5-xxl + wan_2.1_vae + clip_vision_h
+- 81 native frames sequence -> smooth interpolation to 165 frames (5.5s @ 30 FPS)
+- 4K Ultra HD AI Super-Resolution (4x-UltraSharp Vulkan + AMD FidelityFX CAS 0.75 @ 50 Mbps)
 """
 
 import os
@@ -30,7 +30,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 DEFAULT_INPUT = r"C:\tmp\scene_01.png" if os.path.exists(r"C:\tmp\scene_01.png") else os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_raw.png")
 
-# Prompt de cinématique et de mouvement calibré sur la scène
+# Cinematics and movement prompt calibrated on the scene
 PROMPT = (
     "Cinematic slow forward camera push-in and subtle tilt over the futuristic hybrid IT control center. "
     "Luminous cyan and amber fiber-optic streams pulsating with flowing light packets toward the glowing circular Ansible nexus. "
@@ -50,15 +50,15 @@ INTERP_VIDEO = os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_scene01_5.5s_30fps.
 MASTER_4K_VIDEO = os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_scene01_5.5s_4k_master.mp4")
 
 def prepare_input_image(input_path: str) -> str:
-    """Redimensionne proprement l'image d'entrée en 832x480 avec recadrage 16:9 Lanczos."""
+    """Cleanly resizes the input image to 832x480 with a 16:9 Lanczos crop."""
     img = Image.open(input_path)
     w, h = img.size
-    print(f"🖼️ Image d'entrée source : {input_path} ({w}x{h}, {os.path.getsize(input_path)/(1024*1024):.1f} Mo)")
+    print(f"🖼️ Source input image: {input_path} ({w}x{h}, {os.path.getsize(input_path)/(1024*1024):.1f} MB)")
 
     if (w, h) == (832, 480):
         return input_path
 
-    # Conformation 16:9 sans déformation
+    # Distortion-free 16:9 conform
     target_aspect = 16.0 / 9.0
     aspect = w / h
     if abs(aspect - target_aspect) > 0.01:
@@ -66,12 +66,12 @@ def prepare_input_image(input_path: str) -> str:
         offset_x = max(0, (w - new_w) // 2)
         crop_box = (offset_x, 0, offset_x + new_w, h)
         img = img.crop(crop_box)
-        print(f"📐 Recadrage 16:9 propre : {img.size}")
+        print(f"📐 Clean 16:9 crop: {img.size}")
 
     resized_path = os.path.join(OUTPUT_DIR, "scene_01_832x480_lanczos.png")
     img_832 = img.resize((832, 480), Image.Resampling.LANCZOS)
     img_832.save(resized_path, quality=100)
-    print(f"✅ Image d'amorce Wan 2.2 préparée : {resized_path} (832x480)")
+    print(f"✅ Wan 2.2 lead-in image prepared: {resized_path} (832x480)")
     return resized_path
 
 def check_models(input_img: str):
@@ -85,29 +85,29 @@ def check_models(input_img: str):
     ]
     for r in required:
         if not os.path.exists(r):
-            raise FileNotFoundError(f"Fichier requis manquant : {r}")
+            raise FileNotFoundError(f"Missing required file: {r}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Animation I2V Wan 2.2 MoE 28B vers Master 4K")
-    parser.add_argument("-i", "--input", default=DEFAULT_INPUT, help="Image source (sera redimensionnée en 832x480)")
-    parser.add_argument("--frames", type=int, default=81, help="Nombre de trames natives Wan (ex: 33, 49, 81)")
-    parser.add_argument("--fps", type=int, default=16, help="FPS natif de diffusion")
-    parser.add_argument("--skip-upscale", action="store_true", help="Ne pas faire l'upscale 4K (pour test rapide)")
+    parser = argparse.ArgumentParser(description="Wan 2.2 MoE 28B I2V animation to 4K Master")
+    parser.add_argument("-i", "--input", default=DEFAULT_INPUT, help="Source image (will be resized to 832x480)")
+    parser.add_argument("--frames", type=int, default=81, help="Number of native Wan frames (e.g. 33, 49, 81)")
+    parser.add_argument("--fps", type=int, default=16, help="Native diffusion FPS")
+    parser.add_argument("--skip-upscale", action="store_true", help="Skip the 4K upscale (for a quick test)")
     args = parser.parse_args()
 
     print("=" * 85)
-    print("🎬 [ANIMATION CINÉMATIQUE WAN 2.2 I2V MoE 28B -> MASTER 4K 5.5s]")
-    print(f"   Image source fournie : {args.input}")
-    print(f"   Trames natives Wan    : {args.frames}")
-    print(f"   Dossier de sortie    : {OUTPUT_DIR}")
+    print("🎬 [WAN 2.2 I2V MoE 28B CINEMATIC ANIMATION -> 5.5s 4K MASTER]")
+    print(f"   Provided source image : {args.input}")
+    print(f"   Native Wan frames     : {args.frames}")
+    print(f"   Output folder         : {OUTPUT_DIR}")
     print("=" * 85)
 
-    # Préparation et redimensionnement propre de l'image (Lanczos 16:9 832x480)
+    # Clean preparation and resizing of the image (16:9 Lanczos 832x480)
     init_image_ready = prepare_input_image(args.input)
     check_models(init_image_ready)
 
-    # 1. Génération Image-to-Video avec Wan 2.2 MoE Dual-DiT (81 frames)
-    print(f"\n🎥 1. Génération vidéo native Wan 2.2 MoE ({args.frames} trames, 832x480)...")
+    # 1. Image-to-Video generation with Wan 2.2 MoE Dual-DiT (81 frames)
+    print(f"\n🎥 1. Native Wan 2.2 MoE video generation ({args.frames} frames, 832x480)...")
     cmd_wan = [
         SD_CLI, "-M", "vid_gen",
         "--diffusion-model", os.path.join(MODELS_DIR, "Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf"),
@@ -146,10 +146,10 @@ def main():
                 os.rename(candidate, RAW_VIDEO_WEBM)
                 break
 
-    print(f"✅ Vidéo brute Wan 2.2 générée en {t_gen:.1f}s : {RAW_VIDEO_WEBM}")
+    print(f"✅ Wan 2.2 raw video generated in {t_gen:.1f}s: {RAW_VIDEO_WEBM}")
 
-    # 2. Conformation temporelle exacte : 5,5 secondes (165 trames @ 30 FPS)
-    print("\n⏱️ 2. Conformation temporelle et interpolation de mouvement 30 FPS (165 trames)...")
+    # 2. Exact temporal conform: 5.5 seconds (165 frames @ 30 FPS)
+    print("\n⏱️ 2. Temporal conform and 30 FPS motion interpolation (165 frames)...")
     cmd_interp = [
         FFMPEG, "-y",
         "-i", RAW_VIDEO_WEBM,
@@ -158,14 +158,14 @@ def main():
         INTERP_VIDEO
     ]
     subprocess.run(cmd_interp, check=True)
-    print(f"✅ Vidéo 5.5s 30 FPS conforme : {INTERP_VIDEO}")
+    print(f"✅ Conforming 5.5s 30 FPS video: {INTERP_VIDEO}")
 
     if args.skip_upscale:
-        print("⏩ Upscale 4K ignoré comme demandé.")
+        print("⏩ 4K upscale skipped as requested.")
         return
 
-    # 3. Super-Résolution IA 4K Ultra HD (4x-UltraSharp Vulkan + AMD CAS 0.75)
-    print("\n🚀 3. Super-Résolution IA 4K Ultra HD (4x-UltraSharp + AMD FidelityFX CAS 0.75)...")
+    # 3. 4K Ultra HD AI Super-Resolution (4x-UltraSharp Vulkan + AMD CAS 0.75)
+    print("\n🚀 3. 4K Ultra HD AI Super-Resolution (4x-UltraSharp + AMD FidelityFX CAS 0.75)...")
     cmd_upscale = [
         sys.executable,
         r"C:\GIT\generator-assets\scripts\upscale_video_ai.py",
@@ -175,12 +175,12 @@ def main():
         "--bitrate", "50M"
     ]
     subprocess.run(cmd_upscale, check=True)
-    print(f"👑 Master 4K Ultra HD produit avec succès : {MASTER_4K_VIDEO}")
+    print(f"👑 4K Ultra HD Master produced successfully: {MASTER_4K_VIDEO}")
 
     total_time = time.time() - t0
     print("\n" + "=" * 85)
-    print(f"🏆 PIPELINE ACHEVÉ EN {total_time:.1f}s ({total_time/60:.2f} min) !")
-    print(f"   🎥 Master 4K UHD 5.5s : {MASTER_4K_VIDEO}")
+    print(f"🏆 PIPELINE FINISHED IN {total_time:.1f}s ({total_time/60:.2f} min)!")
+    print(f"   🎥 5.5s 4K UHD Master: {MASTER_4K_VIDEO}")
     print("=" * 85)
 
 if __name__ == "__main__":

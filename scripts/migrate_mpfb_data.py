@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 migrate_mpfb_data.py
-Migre et aplatit proprement le dossier imbriqué mpfb/data/data/ vers le dossier racine mpfb/data/.
-Supprime définitivement le sous-dossier data/data inutile.
+Migrates and cleanly flattens the nested mpfb/data/data/ folder into the root mpfb/data/ folder.
+Permanently removes the useless data/data subfolder.
 """
 
 import os
@@ -19,16 +19,16 @@ NESTED_DATA_DIR = os.path.join(MPFB_DATA_DIR, "data")
 
 def main():
     print("=" * 65)
-    print(" 🧹 MIGRATION ET APLATISSEMENT DE MPFB/DATA/DATA VERS MPFB/DATA")
-    print(f" 📂 Source (Imbriquée) : {NESTED_DATA_DIR}")
-    print(f" 📂 Cible (Racine)     : {MPFB_DATA_DIR}")
+    print(" 🧹 MIGRATION AND FLATTENING OF MPFB/DATA/DATA INTO MPFB/DATA")
+    print(f" 📂 Source (Nested) : {NESTED_DATA_DIR}")
+    print(f" 📂 Target (Root)   : {MPFB_DATA_DIR}")
     print("=" * 65)
 
     if not os.path.exists(NESTED_DATA_DIR):
-        print("✅ Le dossier imbriqué 'data' n'existe déjà plus. Rien à faire.")
+        print("✅ The nested 'data' folder no longer exists. Nothing to do.")
         return
 
-    # Parcourir chaque élément du dossier imbriqué
+    # Walk through each item of the nested folder
     for item_name in os.listdir(NESTED_DATA_DIR):
         src_item = os.path.join(NESTED_DATA_DIR, item_name)
         dst_item = os.path.join(MPFB_DATA_DIR, item_name)
@@ -45,27 +45,27 @@ def main():
                 else:
                     shutil.copy2(src_sub, dst_sub)
                     os.remove(src_sub)
-            print(f"✅ Dossier fusionné : {item_name}")
+            print(f"✅ Folder merged: {item_name}")
         else:
             shutil.copy2(src_item, dst_item)
             os.remove(src_item)
-            print(f"✅ Fichier déplacé : {item_name}")
+            print(f"✅ File moved: {item_name}")
 
-    # Suppression du dossier imbriqué désormais vide
+    # Deleting the now-empty nested folder
     shutil.rmtree(NESTED_DATA_DIR, ignore_errors=True)
-    print("\n🗑️ Dossier imbriqué 'mpfb/data/data/' supprimé avec succès !")
+    print("\n🗑️ Nested folder 'mpfb/data/data/' successfully removed!")
 
-    # Reconstruction du catalogue de vêtements
-    print("\n🔍 Reconstruction du catalogue de vêtements enrichi...")
+    # Rebuilding the clothing catalog
+    print("\n🔍 Rebuilding the enriched clothing catalog...")
     racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if racine not in sys.path:
         sys.path.insert(0, racine)
     from core.clothes_catalog import construire_catalogue_vetements
     cat = construire_catalogue_vetements()
-    print(f"🎉 Nouveau total d'assets indexés : {len(cat)} modèles !")
+    print(f"🎉 New total of indexed assets: {len(cat)} models!")
 
-    # Actualisation des listes dans Blender
-    print("\n🔄 Synchronisation du cache Blender MPFB...")
+    # Refreshing the lists in Blender
+    print("\n🔄 Syncing the Blender MPFB cache...")
     from core.blender_ops import trouver_blender
     bbin = trouver_blender()
     if bbin:
@@ -76,13 +76,13 @@ for m in sys.modules:
         svc = getattr(importlib.import_module(m), 'AssetService')
         svc.update_all_asset_lists()
         assets = svc.list_mhclo_assets()
-        print(f'✅ Blender MPFB synchronisé avec {len(assets)} assets .mhclo.')
+        print(f'✅ Blender MPFB synced with {len(assets)} .mhclo assets.')
 """
         res = subprocess.run([bbin, "--background", "--python-expr", script_mpfb], capture_output=True, text=True, encoding="utf-8", errors="replace")
         print(res.stdout)
 
     print("=" * 65)
-    print(" 🎉 MIGRATION TERMINÉE AVEC SUCCÈS : STRUCTURE PARFAITEMENT PROPRE !")
+    print(" 🎉 MIGRATION COMPLETED SUCCESSFULLY: PERFECTLY CLEAN STRUCTURE!")
     print("=" * 65)
 
 if __name__ == "__main__":

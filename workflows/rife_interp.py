@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow RIFE Interp : Augmentation de la fluidité des animations 2D (60 FPS) via RIFE v4 ONNX.
+RIFE Interp Workflow: increasing the smoothness of 2D animations (60 FPS) via RIFE v4 ONNX.
 """
 
 import os
@@ -15,7 +15,7 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
 def decouper_spritesheet_horizontal(image: Image.Image, nb_frames: int) -> List[Image.Image]:
-    """Découpe une planche de sprites linéaire horizontale en liste d'images."""
+    """Cuts a horizontal linear spritesheet into a list of images."""
     w, h = image.size
     frame_w = w // nb_frames
     frames = []
@@ -26,7 +26,7 @@ def decouper_spritesheet_horizontal(image: Image.Image, nb_frames: int) -> List[
 
 
 def assembler_spritesheet_horizontal(frames: List[Image.Image]) -> Image.Image:
-    """Réassemble une liste de trames en une seule planche de sprites linéaire."""
+    """Reassembles a list of frames into a single linear spritesheet."""
     if not frames:
         return Image.new("RGBA", (1, 1))
     fw, fh = frames[0].size
@@ -39,16 +39,16 @@ def assembler_spritesheet_horizontal(frames: List[Image.Image]) -> Image.Image:
 
 @WorkflowRegistry.register
 class RifeInterpWorkflow(BaseWorkflow):
-    """Workflow d'interpolation de trames IA pour fluidifier les spritesheets (60 FPS)."""
+    """AI frame interpolation workflow to smooth out spritesheets (60 FPS)."""
 
     name = "rife_interp"
-    description = "Super-fluidité d'animation IA (RIFE v4 ONNX) : multiplie le nombre de trames (2x, 4x, 60 FPS)"
+    description = "AI animation super-smoothness (RIFE v4 ONNX): multiplies the frame count (2x, 4x, 60 FPS)"
 
     emoji = "⚡"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_image = params.get("input")
         if not input_image or not os.path.exists(input_image):
-            raise ValueError("Le workflow rife_interp nécessite une spritesheet d'entrée valide (-i / --input).")
+            raise ValueError("The rife_interp workflow requires a valid input spritesheet (-i / --input).")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         facteur = int(params.get("factor", 2))
@@ -58,21 +58,21 @@ class RifeInterpWorkflow(BaseWorkflow):
         os.makedirs(output_dir, exist_ok=True)
         chemin_sortie = os.path.join(output_dir, f"{nom_base}.png")
 
-        self.log(f"Chargement de la spritesheet source : {input_image} ({nb_colonnes} trames)...")
+        self.log(f"Loading the source spritesheet: {input_image} ({nb_colonnes} frames)...")
         img_src = Image.open(input_image).convert("RGBA")
 
         trames_initiales = decouper_spritesheet_horizontal(img_src, nb_colonnes)
-        self.log(f"Découpage en {len(trames_initiales)} trames de {trames_initiales[0].size[0]}x{trames_initiales[0].size[1]}px.")
+        self.log(f"Cut into {len(trames_initiales)} frames of {trames_initiales[0].size[0]}x{trames_initiales[0].size[1]}px.")
 
-        self.log(f"Interpolation neuronale RIFE v4 (Facteur {facteur}x)...")
+        self.log(f"RIFE v4 neural interpolation (Factor {facteur}x)...")
         trames_fluides = interpoler_sequence(trames_initiales, facteur=facteur, boucler=False)
 
-        self.log(f"Nombre total de trames après interpolation : {len(trames_fluides)}")
+        self.log(f"Total number of frames after interpolation: {len(trames_fluides)}")
         sheet_finale = assembler_spritesheet_horizontal(trames_fluides)
         sheet_finale.save(chemin_sortie, "PNG")
 
-        self.log(f"Spritesheet ultra-fluide enregistrée dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Spritesheet {facteur}x : {chemin_sortie} ({len(trames_fluides)} trames)", emoji="💎")
+        self.log(f"Ultra-smooth spritesheet saved in '{output_dir}/':", emoji="🎉")
+        self.log(f"  • Spritesheet {facteur}x: {chemin_sortie} ({len(trames_fluides)} frames)", emoji="💎")
 
         return {
             "output_file": chemin_sortie,

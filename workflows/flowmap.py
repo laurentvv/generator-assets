@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Flowmap : Génération de Flowmaps vectorielles et Shaders animés (Eau, Lave, Tornade) pour Godot 4.
+Flowmap workflow: generating vector Flowmaps and animated Shaders (Water, Lava, Tornado) for Godot 4.
 """
 
 import os
@@ -14,24 +14,24 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class FlowmapWorkflow(BaseWorkflow):
-    """Génération de Flowmaps vectorielles et Shaders Godot 4."""
+    """Vector Flowmap and Godot 4 Shader generation."""
 
     name = "flowmap"
-    description = "Cartes de flux vectoriels (Flowmaps) et Shaders d'eau/lave animés pour Godot 4"
+    description = "Vector flow maps (Flowmaps) and animated water/lava Shaders for Godot 4"
 
     emoji = "🌊"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --flow-type est aussi lu
-    # en secours par anim_loop et audio_ambience ; --mode-2d (partagé) vit dans
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --flow-type is also read
+    # as a fallback by anim_loop and audio_ambience; --mode-2d (shared) lives in
     # anim_loop.
     PARAMETRES = [
         dict(flags=("--angle",), type=float, default=90.0,
-             help="Angle de direction en degrés pour le workflow flowmap (défaut: 90 = bas)."),
+             help="Direction angle in degrees for the flowmap workflow (default: 90 = down)."),
         dict(flags=("--flow-type",), default="river", choices=["river", "vortex", "radial", "optical"],
-             help="Type de flux pour le workflow flowmap."),
+             help="Flow type for the flowmap workflow."),
         dict(flags=("--turbulence",), type=float, default=0.35,
-             help="Intensité des tourbillons/méandres pour flowmap (défaut: 0.35)."),
+             help="Swirl/meander intensity for flowmap (default: 0.35)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -43,14 +43,14 @@ class FlowmapWorkflow(BaseWorkflow):
         nom_base = params.get("output") or f"{slugifier_texte(prompt)}_flow"
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         resolution = params.get("size", 1024) or 1024
-        angle = float(params.get("angle", 90.0))  # 90° = flux vers le bas par défaut
+        angle = float(params.get("angle", 90.0))  # 90° = flow toward the bottom by default
         turbulence = float(params.get("turbulence", 0.35))
         mode_2d = params.get("mode_2d", False)
 
         os.makedirs(output_dir, exist_ok=True)
         chemin_flowmap = os.path.join(output_dir, f"{nom_base}_flowmap.png")
 
-        self.log(f"Génération de la Flowmap '{type_flux}' ({resolution}x{resolution}, angle={angle}°, turb={turbulence})...")
+        self.log(f"Generating the '{type_flux}' Flowmap ({resolution}x{resolution}, angle={angle}°, turb={turbulence})...")
         img_flow = generer_flowmap(
             type_flux=type_flux,
             resolution=resolution,
@@ -59,14 +59,14 @@ class FlowmapWorkflow(BaseWorkflow):
         )
         img_flow.save(chemin_flowmap, "PNG")
 
-        # Génération du Shader Godot 4 associé (.gdshader + .tres)
-        self.log("Génération du script shader Godot 4 et de la ressource ShaderMaterial...")
+        # Generation of the associated Godot 4 Shader (.gdshader + .tres)
+        self.log("Generating the Godot 4 shader script and the ShaderMaterial resource...")
         chemin_shader, chemin_tres = exporter_shader_flow_godot(nom_base, output_dir, mode_2d=mode_2d)
 
-        self.log(f"Pack Flowmap prêt pour Godot 4 dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Texture Flowmap : {chemin_flowmap}")
-        self.log(f"  • Code Shader     : {chemin_shader} (.gdshader)")
-        self.log(f"  • Ressource       : {chemin_tres} (ShaderMaterial)", emoji="💎")
+        self.log(f"Flowmap pack ready for Godot 4 in '{output_dir}/':", emoji="🎉")
+        self.log(f"  • Flowmap texture: {chemin_flowmap}")
+        self.log(f"  • Shader code     : {chemin_shader} (.gdshader)")
+        self.log(f"  • Resource        : {chemin_tres} (ShaderMaterial)", emoji="💎")
 
         return {
             "flowmap": chemin_flowmap,

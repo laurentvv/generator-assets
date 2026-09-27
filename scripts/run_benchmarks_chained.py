@@ -20,24 +20,24 @@ PROMPT = (
 )
 
 def wait_for_file(filepath, min_size_gb=1.0, timeout_sec=1800):
-    print(f"⏳ Attente de finalisation du téléchargement : {os.path.basename(filepath)}...", flush=True)
+    print(f"⏳ Waiting for download completion: {os.path.basename(filepath)}...", flush=True)
     part_path = filepath + ".part"
     t0 = time.time()
     while time.time() - t0 < timeout_sec:
         if os.path.exists(filepath) and not os.path.exists(part_path):
             size_gb = os.path.getsize(filepath) / (1024**3)
             if size_gb >= min_size_gb:
-                print(f"✅ Fichier prêt : {os.path.basename(filepath)} ({size_gb:.2f} Go)", flush=True)
+                print(f"✅ File ready: {os.path.basename(filepath)} ({size_gb:.2f} GB)", flush=True)
                 return True
         time.sleep(5)
-    raise TimeoutError(f"Délai dépassé pour {filepath}")
+    raise TimeoutError(f"Timed out waiting for {filepath}")
 
 def extract_and_conform(video_path, name, has_audio=False):
     frames_dir = os.path.join(OUTPUT_DIR, f"frames_{name}")
     os.makedirs(frames_dir, exist_ok=True)
     out_mp4 = os.path.join(OUTPUT_DIR, f"{name}_1080p.mp4")
 
-    # Extraire trames clés
+    # Extract key frames
     cmd_frames = [
         FFMPEG, "-y", "-i", video_path,
         "-vf", "select=not(mod(n\\,8))",
@@ -45,9 +45,9 @@ def extract_and_conform(video_path, name, has_audio=False):
         os.path.join(frames_dir, "frame_%02d.png")
     ]
     subprocess.run(cmd_frames, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"   🖼️ Trames extraites dans : {frames_dir}", flush=True)
+    print(f"   🖼️ Frames extracted into: {frames_dir}", flush=True)
 
-    # Conformer MP4
+    # Conform MP4
     if has_audio:
         cmd_mp4 = [
             FFMPEG, "-y", "-i", video_path,
@@ -62,7 +62,7 @@ def extract_and_conform(video_path, name, has_audio=False):
             out_mp4
         ]
     subprocess.run(cmd_mp4, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"   🎬 MP4 1080p matériel généré : {out_mp4}", flush=True)
+    print(f"   🎬 Hardware 1080p MP4 generated: {out_mp4}", flush=True)
 
 def run_wan22():
     low_noise = os.path.join(MODELS_DIR, "Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf")
@@ -74,8 +74,8 @@ def run_wan22():
     wait_for_file(high_noise, min_size_gb=8.0)
 
     print("\n" + "=" * 80, flush=True)
-    print("🚀 [LANCEMENT DU BENCHMARK] WAN 2.2 MoE (A14B LowNoise + HighNoise)", flush=True)
-    print(f"   Sortie : {out_webm}", flush=True)
+    print("🚀 [BENCHMARK LAUNCH] WAN 2.2 MoE (A14B LowNoise + HighNoise)", flush=True)
+    print(f"   Output: {out_webm}", flush=True)
     print("=" * 80, flush=True)
 
     cmd = [
@@ -107,10 +107,10 @@ def run_wan22():
     res = subprocess.run(cmd)
     elapsed = time.time() - t0
     if res.returncode == 0:
-        print(f"\n✅ Wan 2.2 MoE terminé en {elapsed:.2f}s ({elapsed/60:.2f} min) !", flush=True)
+        print(f"\n✅ Wan 2.2 MoE done in {elapsed:.2f}s ({elapsed/60:.2f} min)!", flush=True)
         extract_and_conform(out_webm, "wan22_moe_dragon", has_audio=False)
     else:
-        print(f"\n❌ Erreur Wan 2.2 code {res.returncode}", flush=True)
+        print(f"\n❌ Wan 2.2 error code {res.returncode}", flush=True)
 
 def run_minimax():
     dit = os.path.join(MODELS_DIR, "minimax_h3_fl2va_pruned-Q4_K_M.gguf")
@@ -122,8 +122,8 @@ def run_minimax():
     wait_for_file(llm, min_size_gb=10.0)
 
     print("\n" + "=" * 80, flush=True)
-    print("🚀 [LANCEMENT DU BENCHMARK] MINIMAX-H3 (T2VA Vidéo + Audio)", flush=True)
-    print(f"   Sortie : {out_webm}", flush=True)
+    print("🚀 [BENCHMARK LAUNCH] MINIMAX-H3 (Video + Audio T2VA)", flush=True)
+    print(f"   Output: {out_webm}", flush=True)
     print("=" * 80, flush=True)
 
     cmd = [
@@ -150,24 +150,24 @@ def run_minimax():
     res = subprocess.run(cmd)
     elapsed = time.time() - t0
     if res.returncode == 0:
-        print(f"\n✅ MiniMax-H3 terminé en {elapsed:.2f}s ({elapsed/60:.2f} min) !", flush=True)
+        print(f"\n✅ MiniMax-H3 done in {elapsed:.2f}s ({elapsed/60:.2f} min)!", flush=True)
         extract_and_conform(out_webm, "minimax_h3_dragon", has_audio=True)
     else:
-        print(f"\n❌ Erreur MiniMax-H3 code {res.returncode}", flush=True)
+        print(f"\n❌ MiniMax-H3 error code {res.returncode}", flush=True)
 
 def main():
-    print("🚀 CHAÎNE D'EXÉCUTION AUTOMATIQUE : Wan 2.2 MoE -> MiniMax-H3", flush=True)
+    print("🚀 AUTOMATIC EXECUTION CHAIN: Wan 2.2 MoE -> MiniMax-H3", flush=True)
     try:
         run_wan22()
     except Exception as e:
-        print(f"⚠️ Exception lors de Wan 2.2 : {e}", flush=True)
+        print(f"⚠️ Exception during Wan 2.2: {e}", flush=True)
 
     try:
         run_minimax()
     except Exception as e:
-        print(f"⚠️ Exception lors de MiniMax-H3 : {e}", flush=True)
+        print(f"⚠️ Exception during MiniMax-H3: {e}", flush=True)
 
-    print("\n🏁 CHAÎNE COMPLÈTE TERMINÉE !", flush=True)
+    print("\n🏁 FULL CHAIN COMPLETE!", flush=True)
 
 if __name__ == "__main__":
     main()

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow MakeHuman Clothes : Génération automatisée de garde-robe complète
-compatible MakeHuman & MPFB2 (Torso/Haut, Pantalon/Bas, Chaussures/Bottes).
-Génère les textures PBR par IA, compile les fichiers .mhclo / .obj / .mhmat / .thumb
-dans la bibliothèque MPFB, et crée une scène 3D Blender (.blend) d'un New Human
-habillé avec rendu .png de prévisualisation.
+MakeHuman Clothes workflow: automated generation of a complete wardrobe
+compatible with MakeHuman & MPFB2 (Torso/Top, Pants/Bottom, Shoes/Boots).
+Generates the PBR textures by AI, compiles the .mhclo / .obj / .mhmat / .thumb files
+into the MPFB library, and creates a Blender 3D scene (.blend) of a dressed New Human
+with a .png preview render.
 """
 
 import os
@@ -28,23 +28,23 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class MakeHumanClothesWorkflow(BaseWorkflow):
     name = "makehuman_clothes"
-    description = "Garde-robe MakeHuman / MPFB (Torso, Pantalon, Chaussures) + Scène New Human .blend"
+    description = "MakeHuman / MPFB wardrobe (Torso, Pants, Shoes) + New Human .blend scene"
 
     emoji = "👗"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--parts",), default="torso,pants,shoes",
-             help="Pièces de garde-robe séparées par des virgules pour makehuman_clothes (défaut: 'torso,pants,shoes')."),
+             help="Comma-separated wardrobe pieces for makehuman_clothes (default: 'torso,pants,shoes')."),
         dict(flags=("--mpfb-dir",),
-             help="Répertoire personnalisé des assets MakeHuman / MPFB."),
+             help="Custom directory of the MakeHuman / MPFB assets."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         theme = params.get("prompt")
         if not theme:
-            raise ValueError("Le paramètre 'prompt' (thème de la tenue, ex: 'cuir médiéval aventurier') est requis.")
+            raise ValueError("The 'prompt' parameter (outfit theme, e.g.: 'medieval adventurer leather') is required.")
 
         output_dir = params.get("output_dir") or DEFAULT_OUTPUT_DIR
         mpfb_clothes_dir = params.get("mpfb_dir") or DEFAULT_MPFB_CLOTHES_DIR
@@ -59,13 +59,13 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
         os.makedirs(output_dir, exist_ok=True)
         os.makedirs(mpfb_clothes_dir, exist_ok=True)
 
-        self.log(f"Création de la garde-robe MakeHuman pour le thème : '{theme}'", "👗")
-        self.log(f"Pièces à générer : {', '.join(parts_list)}", "🧵")
+        self.log(f"Creating the MakeHuman wardrobe for theme: '{theme}'", "👗")
+        self.log(f"Pieces to generate: {', '.join(parts_list)}", "🧵")
 
         mhclo_generated_paths: List[str] = []
         resultats_pieces = {}
 
-        # Dictionnaires d'enrichissement par pièce (textures brutes de matière pure, sans motifs figuratifs pré-peints)
+        # Per-piece enrichment dictionaries (raw pure-material textures, no pre-painted figurative patterns)
         part_prompts = {
             "torso": f"top-down macro photograph of rustic weathered leather armor material, fine authentic leather grain texture, natural creases, {theme}, 8k scan, flat neutral studio lighting, full frame surface",
             "pants": f"top-down macro photograph of dark medieval wool weave and heavy fabric textile, fine cloth texture, {theme}, 8k scan, flat neutral studio lighting, full frame surface",
@@ -77,7 +77,7 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
 
         for part in parts_list:
             part_name = f"{nom_base}_{part}"
-            self.log(f"--- [1/2] Génération de la texture PBR IA pour '{part}' ({part_name}) ---", "🎨")
+            self.log(f"--- [1/2] AI PBR texture generation for '{part}' ({part_name}) ---", "🎨")
 
             prompt_part = part_prompts.get(part, f"top-down macro photograph of authentic {part} material, {theme}, 8k scan, flat neutral studio lighting")
             prompt_complet = construire_prompt_coherant(
@@ -90,7 +90,7 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
                 sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
-            # 1. Génération Albedo
+            # 1. Albedo generation
             img_brute = generer_image_vulkan(
                 prompt=prompt_complet,
                 sd_cli=self.config.get("sd_cli"),
@@ -108,10 +108,10 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
             )
             img_albedo = img_brute.convert("RGB")
 
-            # Upscaling de la texture brute si activé
+            # Upscaling of the raw texture if enabled
             if upscale_enabled and esrgan_model and os.path.exists(esrgan_model):
                 try:
-                    self.log(f"Upscaling IA (ESRGAN 4x) de la texture {part}...", "🔍")
+                    self.log(f"AI upscaling (ESRGAN 4x) of the {part} texture...", "🔍")
                     img_albedo = upscale_esrgan(
                         img_albedo,
                         esrgan_model_path=esrgan_model,
@@ -119,9 +119,9 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
                         backend=self.config.get("backend")
                     )
                 except Exception as e:
-                    self.log(f"Upscaling ignoré pour {part} : {e}", "⚠️")
+                    self.log(f"Upscaling skipped for {part}: {e}", "⚠️")
 
-            # Chemins temporaires / locaux des textures
+            # Temporary / local texture paths
             diffuse_file = os.path.join(output_dir, f"{part_name}_diffuse.png")
             normal_file = os.path.join(output_dir, f"{part_name}_normal.png")
             ao_file = os.path.join(output_dir, f"{part_name}_ao.png")
@@ -132,8 +132,8 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
             img_ao = generer_ao_map(img_albedo)
             img_ao.save(ao_file)
 
-            # 2. Compilation MakeClothes dans Blender
-            self.log(f"--- [2/2] Découpe Quad & Compilation MakeClothes pour '{part}' ---", "⚙️")
+            # 2. MakeClothes compilation in Blender
+            self.log(f"--- [2/2] Quad cutting & MakeClothes compilation for '{part}' ---", "⚙️")
             part_folder = os.path.join(mpfb_clothes_dir, part_name)
             os.makedirs(part_folder, exist_ok=True)
 
@@ -158,15 +158,15 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
                     "mhmat": os.path.join(part_folder, f"{part_name}.mhmat"),
                     "thumb": os.path.join(part_folder, f"{part_name}.thumb")
                 }
-                self.log(f"Asset MPFB compilé avec succès dans : {part_folder}", "✅")
+                self.log(f"MPFB asset compiled successfully into: {part_folder}", "✅")
             else:
-                self.log(f"Échec de compilation pour {part}", "❌")
+                self.log(f"Compilation failed for {part}", "❌")
 
-        # 3. Création de la scène New Human habillé sous Blender
+        # 3. Dressed New Human scene creation in Blender
         blend_file = os.path.join(output_dir, f"{nom_base}_personnage_habille.blend")
         render_file = os.path.join(output_dir, f"{nom_base}_personnage_habille.png")
 
-        self.log(f"Génération du 'New Human' habillé dans Blender : {blend_file}...", "🧍")
+        self.log(f"Generating the dressed 'New Human' in Blender: {blend_file}...", "🧍")
         scene_ok = creer_scene_personnage_habille(
             character_name=nom_base,
             mhclo_files=mhclo_generated_paths,
@@ -175,19 +175,19 @@ class MakeHumanClothesWorkflow(BaseWorkflow):
         )
 
         if scene_ok:
-            self.log(f"Scène Blender sauvegardée : {blend_file}", "💎")
+            self.log(f"Blender scene saved: {blend_file}", "💎")
             if os.path.exists(render_file):
-                self.log(f"Rendu d'image sauvegardé : {render_file}", "🖼️")
-                # Upscaling final du rendu preview si demandé
+                self.log(f"Image render saved: {render_file}", "🖼️")
+                # Final preview render upscaling if requested
                 if upscale_enabled and esrgan_model and os.path.exists(esrgan_model):
                     try:
                         img_prev = Image.open(render_file)
                         img_prev_up = upscale_esrgan(img_prev, esrgan_model_path=esrgan_model, sd_cli=self.config.get("sd_cli"))
                         upscaled_render_file = os.path.join(output_dir, f"{nom_base}_personnage_habille_upscaled.png")
                         img_prev_up.save(upscaled_render_file)
-                        self.log(f"Aperçu haute résolution 4x sauvegardé : {upscaled_render_file}", "✨")
+                        self.log(f"4x high-resolution preview saved: {upscaled_render_file}", "✨")
                     except Exception as e:
-                        self.log(f"Upscaling aperçu ignoré : {e}", "⚠️")
+                        self.log(f"Preview upscaling skipped: {e}", "⚠️")
 
         return {
             "theme": theme,

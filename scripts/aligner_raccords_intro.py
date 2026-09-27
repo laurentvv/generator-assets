@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scripts/aligner_raccords_intro.py — chirurgie des raccords du chaînage I2V (2026-09-10)
-Mesure par ECC (cv2) l'écart d'échelle/translation entre la dernière trame du plan N et
-la trame de coupe du plan N+1 (après retrait du tête-à-queue), puis :
-  • mode --mesurer : affiche les ratios par raccord ;
-  • mode --appliquer : re-conforme les plans intérieurs avec zoom de compensation
-    centré (l'échelle ramène la taille du château à l'identique à la coupe),
-    ré-assemble le master et re-mesure le profil de saccades.
-Le zoom compense uniquement ce que la coupe ne peut pas absorber ; il est borné (≤ 8 %).
+scripts/aligner_raccords_intro.py — surgery on the I2V chaining cuts (2026-09-10)
+Measures via ECC (cv2) the scale/translation gap between the last frame of shot N and
+the cut frame of shot N+1 (after removal of the head frames), then:
+  • --mesurer mode: prints the ratios per cut;
+  • --appliquer mode: re-conforms the inner shots with a centered compensation zoom
+    (the scale brings the castle size back to identical at the cut),
+    re-assembles the master and re-measures the jitter profile.
+The zoom only compensates what the cut cannot absorb; it is bounded (≤ 8 %).
 """
 import argparse
 import os
@@ -23,13 +23,13 @@ sys.path.insert(0, r"C:\GIT\generator-assets")
 from scripts.lancement_nuit_intro_vent_gris import OUTPUT_DIR, FFMPEG, log  # noqa: E402
 
 PLANS = ["plan1", "plan2", "plan3", "plan4"]
-TETE_COUPPEE = 12        # trames de tête retirées des plans intérieurs (cf. réparation)
-ZOOM_MAX = 1.08          # garde-fou : au-delà, on signale plutôt qu'on zoome
-SEUIL_SACCADE = 2.2      # pic de diff (× mouvement local) considéré comme saccade
+TETE_COUPPEE = 12        # head frames removed from the inner shots (see repair)
+ZOOM_MAX = 1.08          # guardrail: beyond that, report rather than zoom
+SEUIL_SACCADE = 2.2      # diff peak (× local motion) considered a jitter
 
 
 def extraire_trame(video: str, index: int) -> np.ndarray:
-    """Extrait une trame (0-based) en niveaux de gris, échelle de mesure 640 px."""
+    """Extracts a (0-based) frame in grayscale, measurement scale 640 px."""
     out = os.path.join(tempfile.gettempdir(), f"trame_{index}.png")
     subprocess.run(
         [FFMPEG, "-y", "-i", video, "-vf",
@@ -40,12 +40,12 @@ def extraire_trame(video: str, index: int) -> np.ndarray:
     img = cv2.imread(out, cv2.IMREAD_GRAYSCALE)
     os.remove(out)
     if img is None:
-        raise RuntimeError(f"trame {index} illisible dans {video}")
+        raise RuntimeError(f"frame {index} unreadable in {video}")
     return img
 
 
 def mesurer_raccord(fin_a: np.ndarray, debut_b: np.ndarray):
-    """ECC affine A→B : renvoie (échelle du contenu de B relative à A, dx, dy)."""
+    """ECC affine A→B: returns (scale of B's content relative to A, dx, dy)."""
     a = fin_a.astype(np.float32) / 255.0
     b = debut_b.astype(np.float32) / 255.0
     warp = np.eye(2, 3, dtype=np.float32)
@@ -60,13 +60,13 @@ def mesurer_raccord(fin_a: np.ndarray, debut_b: np.ndarray):
 
 
 def profil_saccades(video: str):
-    """Diff inter-trames du master ; renvoie la série et les pics aux raccords."""
+    """Inter-frame diff of the master; returns the series and the peaks at the cuts."""
     cmd = [FFMPEG, "-v", "error", "-i", video, "-vf", "scale=192:108",
            "-f", "rawvideo", "-pix_fmt", "gray", "-"]
     raw = subprocess.run(cmd, capture_output=True).stdout
     f = np.frombuffer(raw, dtype=np.uint8).reshape(-1, 108, 192).astype(np.float32)
     diffs = np.abs(np.diff(f, axis=0)).mean(axis=(1, 2))
-    # positions des coupes : 65, 65+69, 65+69+69 trames (recul de 1 pour la diff)
+    # cut positions: 65, 65+69, 65+69+69 frames (shifted by 1 for the diff)
     coupes = [65, 134, 203]
     pics = {t: float(diffs[t - 1]) for t in coupes if 0 < t - 1 < len(diffs)}
     return diffs, pics
@@ -74,9 +74,9 @@ def profil_saccades(video: str):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mesurer", action="store_true", help="affiche les écarts par raccord")
+    parser.add_argument("--mesurer", action="store_true", help="prints the gaps per cut")
     parser.add_argument("--appliquer", action="store_true",
-                        help="re-conforme avec zoom de compensation et ré-assemble")
+                        help="re-conforms with compensation zoom and re-assembles")
     parser.add_argument("--master", default=os.path.join(OUTPUT_DIR, "intro_vent_gris_10s_1080p_v3.mp4"))
     args = parser.parse_args()
 
@@ -85,7 +85,7 @@ def main() -> None:
     zooms = {p: 1.0 for p in PLANS[1:]}
 
     if args.mesurer or args.appliquer:
-        log("📏 Mesure ECC des raccords (fin plan N vs trame de coupe du plan N+1) :")
+        log("📏 ECC measurement of the cuts (end of shot N vs cut frame of shot N+1):")
         for i, p in enumerate(PLANS[1:], start=1):
             nb_b = int(subprocess.run(
                 ["C:/ffmpeg/dist/bin/ffprobe.exe", "-v", "error", "-select_streams", "v:0",
@@ -95,15 +95,15 @@ def main() -> None:
             res = mesurer_raccord(extraire_trame(bruts[PLANS[i - 1]], 64),
                                   extraire_trame(bruts[p], idx_b))
             if res is None:
-                log(f"  {p} : ECC non convergé — zoom 1,0 conservé")
+                log(f"  {p} : ECC not converged — zoom 1.0 kept")
                 continue
             echelle, dx, dy = res
-            # le contenu de B est 1/echelle fois celui de A (warp mappe A vers B) ;
-            # pour ré-aligner, on zoome B par 1/echelle (borné)
+            # B's content is 1/echelle times A's (warp maps A to B);
+            # to re-align, we zoom B by 1/echelle (bounded)
             z = min(ZOOM_MAX, max(1.0, 1.0 / echelle))
             zooms[p] = z
-            log(f"  {p} : échelle relative={echelle:.4f} → zoom compensation={z:.4f} "
-                f"(dx={dx:.1f}px, dy={dy:.1f}px à l'échelle de mesure)")
+            log(f"  {p} : relative scale={echelle:.4f} → compensation zoom={z:.4f} "
+                f"(dx={dx:.1f}px, dy={dy:.1f}px at measurement scale)")
 
     if args.appliquer:
         for p in PLANS[1:]:
@@ -132,13 +132,13 @@ def main() -> None:
              args.master],
             capture_output=True,
         ).returncode == 0
-        log("✅ Master ré-assemblé : " + args.master if ok else "❌ assemblage échoué")
+        log("✅ Master re-assembled: " + args.master if ok else "❌ assembly failed")
         if ok:
             diffs, pics = profil_saccades(args.master)
-            log(f"📊 Profil : diff moyenne={diffs.mean():.2f} max={diffs.max():.2f} "
-                f"seuil saccade≈{diffs.mean()*SEUIL_SACCADE:.2f}")
+            log(f"📊 Profile: mean diff={diffs.mean():.2f} max={diffs.max():.2f} "
+                f"jitter threshold≈{diffs.mean()*SEUIL_SACCADE:.2f}")
             for t, v in pics.items():
-                verdict = "OK" if v < diffs.mean() * SEUIL_SACCADE else "SACCADE RÉSIDUELLE"
+                verdict = "OK" if v < diffs.mean() * SEUIL_SACCADE else "RESIDUAL JITTER"
                 log(f"   coupe t={t/24:.2f}s : diff={v:.2f} → {verdict}")
 
 

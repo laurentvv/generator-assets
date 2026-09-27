@@ -1,5 +1,5 @@
 # benchmark_vram.ps1
-# Test de charge et profilage VRAM en conditions réelles sur AMD Radeon RX 6950 XT (16 Go)
+# Load test and VRAM profiling in real conditions on AMD Radeon RX 6950 XT (16 GB)
 
 $SD_CLI = "C:\SD\sd-cli.exe"
 $DIFF_MODEL = "C:\Modeles_LLM\wan2.1-t2v-14b-Q4_K_M.gguf"
@@ -8,7 +8,7 @@ $T5 = "C:\Modeles_LLM\umt5-xxl-encoder-Q4_K_M.gguf"
 $PROMPT = "A golden dragon soaring in clouds, cinematic lighting, 8k"
 $TEST_OUT = "C:\GIT\generator-assets\output\vram_test.webm"
 
-$TOTAL_VRAM_MO = 16384 # 16 Go
+$TOTAL_VRAM_MO = 16384 # 16 GB
 
 function Get-DedicatedVramMB {
     try {
@@ -30,16 +30,16 @@ function Profile-Config {
     )
 
     Write-Host "`n=======================================================" -ForegroundColor Cyan
-    Write-Host "🔍 TEST VRAM : $Label ($Width x $Height, $Frames trames)" -ForegroundColor Cyan
+    Write-Host "🔍 VRAM TEST: $Label ($Width x $Height, $Frames frames)" -ForegroundColor Cyan
     Write-Host "======================================================="
 
     $vram_repos = Get-DedicatedVramMB
-    Write-Host "   VRAM au repos avant lancement : $vram_repos Mo ($([math]::Round($vram_repos/1024, 2)) Go)"
+    Write-Host "   VRAM at rest before launch: $vram_repos MB ($([math]::Round($vram_repos/1024, 2)) GB)"
 
-    # Préparation de la commande
+    # Building the command
     $cmd = "$SD_CLI -M vid_gen --diffusion-model `"$DIFF_MODEL`" --vae `"$VAE`" --t5xxl `"$T5`" -p `"$PROMPT`" -W $Width -H $Height --video-frames $Frames --steps 1 --sampling-method euler --diffusion-fa --temporal-tiling --vae-tiling --backend `"diffusion=vulkan0,te=cpu`" -o `"$TEST_OUT`""
 
-    # Lancement du processus
+    # Launching the process
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $SD_CLI
     $psi.Arguments = "-M vid_gen --diffusion-model `"$DIFF_MODEL`" --vae `"$VAE`" --t5xxl `"$T5`" -p `"$PROMPT`" -W $Width -H $Height --video-frames $Frames --steps 1 --sampling-method euler --diffusion-fa --temporal-tiling --vae-tiling --backend `"diffusion=vulkan0,te=cpu`" -o `"$TEST_OUT`""
@@ -52,7 +52,7 @@ function Profile-Config {
 
     $peak_vram = $vram_repos
 
-    # Boucle de mesure active pendant l'exécution
+    # Active measurement loop while running
     while (-not $proc.HasExited) {
         $current = Get-DedicatedVramMB
         if ($current -gt $peak_vram) {
@@ -73,15 +73,15 @@ function Profile-Config {
     $marge_go = [math]::Round(($TOTAL_VRAM_MO - $peak_vram) / 1024, 2)
     $pct = [math]::Round(($peak_vram / $TOTAL_VRAM_MO) * 100, 1)
 
-    $statut = "🟢 SÛR"
+    $statut = "🟢 SAFE"
     if ($peak_go -gt 13.5) {
-        $statut = "🟡 ATTENTION (> 13.5 Go)"
+        $statut = "🟡 CAUTION (> 13.5 GB)"
     }
     if ($exitCode -ne 0 -or $peak_go -gt 15.0) {
-        $statut = "🔴 RISQUE DE SATURATION"
+        $statut = "🔴 SATURATION RISK"
     }
 
-    Write-Host "   📊 Résultat : Peak VRAM = $peak_go Go ($pct%) | Marge Libre = $marge_go Go | Statut: $statut" -ForegroundColor $(if ($exitCode -eq 0 -and $peak_go -lt 13.5) { "Green" } else { "Yellow" })
+    Write-Host "   📊 Result: Peak VRAM = $peak_go GB ($pct%) | Free Headroom = $marge_go GB | Status: $statut" -ForegroundColor $(if ($exitCode -eq 0 -and $peak_go -lt 13.5) { "Green" } else { "Yellow" })
 
     return [PSCustomObject]@{
         Configuration  = "$Width x $Height"
@@ -96,32 +96,32 @@ function Profile-Config {
 }
 
 Write-Host "=================================================================" -ForegroundColor Magenta
-Write-Host " 🚀 DÉMARRAGE DU BENCHMARK VRAM RÉEL (AMD Radeon RX 6950 XT 16 Go)" -ForegroundColor Magenta
+Write-Host " 🚀 STARTING THE REAL VRAM BENCHMARK (AMD Radeon RX 6950 XT 16 GB)" -ForegroundColor Magenta
 Write-Host "================================================================="
 
 $resultats = @()
 
-# 1. 832x480 natif - 5 trames (Référence déjà validée)
-$resultats += Profile-Config -Width 832 -Height 480 -Frames 5 -Label "832x480 Standard (5 trames)"
+# 1. 832x480 native - 5 frames (Already-validated reference)
+$resultats += Profile-Config -Width 832 -Height 480 -Frames 5 -Label "832x480 Standard (5 frames)"
 
-# 2. 832x480 natif - 9 trames
-$resultats += Profile-Config -Width 832 -Height 480 -Frames 9 -Label "832x480 Modéré (9 trames)"
+# 2. 832x480 native - 9 frames
+$resultats += Profile-Config -Width 832 -Height 480 -Frames 9 -Label "832x480 Moderate (9 frames)"
 
-# 3. 832x480 natif - 17 trames
-$resultats += Profile-Config -Width 832 -Height 480 -Frames 17 -Label "832x480 Étendu (17 trames)"
+# 3. 832x480 native - 17 frames
+$resultats += Profile-Config -Width 832 -Height 480 -Frames 17 -Label "832x480 Extended (17 frames)"
 
-# 4. 640x360 léger - 17 trames
-$resultats += Profile-Config -Width 640 -Height 360 -Frames 17 -Label "640x360 Éco (17 trames)"
+# 4. 640x360 light - 17 frames
+$resultats += Profile-Config -Width 640 -Height 360 -Frames 17 -Label "640x360 Eco (17 frames)"
 
-# 5. 640x360 léger - 25 trames
-$resultats += Profile-Config -Width 640 -Height 360 -Frames 25 -Label "640x360 Éco (25 trames)"
+# 5. 640x360 light - 25 frames
+$resultats += Profile-Config -Width 640 -Height 360 -Frames 25 -Label "640x360 Eco (25 frames)"
 
-# 6. 640x360 léger - 33 trames
-$resultats += Profile-Config -Width 640 -Height 360 -Frames 33 -Label "640x360 Éco (33 trames)"
+# 6. 640x360 light - 33 frames
+$resultats += Profile-Config -Width 640 -Height 360 -Frames 33 -Label "640x360 Eco (33 frames)"
 
 Write-Host "`n"
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host " 📋 TABLEAU RÉCAPITULATIF DE TÉLÉMÉTRIE VRAM" -ForegroundColor Cyan
+Write-Host " 📋 VRAM TELEMETRY SUMMARY TABLE" -ForegroundColor Cyan
 Write-Host "================================================================="
 
 $resultats | Format-Table -AutoSize

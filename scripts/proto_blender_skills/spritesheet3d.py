@@ -1,7 +1,7 @@
-# Spritesheet 3D → 2D : 8 directions orthographiques, fond transparent — pattern
-# blender-skills "isometric-style/hd-2d" adapté : transformer un asset 3D en sprites Godot.
-# Usage : blender --background --python spritesheet3d.py -- <glb_in> <out_dir> [res=512] [ndirs=8]
-# Sortie : sprite_00..NN.png (RGBA, caméra ortho, directions réparties sur 360°).
+# 3D → 2D spritesheet: 8 orthographic directions, transparent background — adapted
+# blender-skills pattern "isometric-style/hd-2d": turn a 3D asset into Godot sprites.
+# Usage: blender --background --python spritesheet3d.py -- <glb_in> <out_dir> [res=512] [ndirs=8]
+# Output: sprite_00..NN.png (RGBA, ortho camera, directions spread over 360°).
 
 import math
 import os
@@ -19,7 +19,7 @@ os.makedirs(out_dir, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
@@ -43,7 +43,7 @@ for o in meshes:
     o.location.z -= min(p.z for p in pts)
 bpy.context.view_layer.update()
 
-# Caméra ORTHO en orbite, fond transparent → sprites Godot prêts à l'emploi.
+# ORTHO camera in orbit, transparent background → ready-to-use Godot sprites.
 cam_data = bpy.data.cameras.new("Cam_Sprite")
 cam_data.type = "ORTHO"
 cam_data.ortho_scale = 1.25
@@ -70,7 +70,7 @@ for nom, energie, direction in (("Cle", 400, Vector((1.0, -1.0, 1.2))),
     bpy.context.scene.collection.objects.link(lo)
 monde = bpy.data.worlds.new("Monde")
 monde.use_nodes = True
-bpy.context.scene.world = monde  # fond noir masqué par film_transparent
+bpy.context.scene.world = monde  # black background hidden by film_transparent
 
 scn = bpy.context.scene
 for moteur in ("BLENDER_EEVEE_NEXT_RENDER", "BLENDER_EEVEE_RENDER", "BLENDER_EEVEE"):
@@ -99,6 +99,6 @@ for i in range(ndirs):
 with open(os.path.join(out_dir, "spritesheet_infos.json"), "w", encoding="utf-8") as f:
     import json
     json.dump({"directions_deg": angles, "res": res,
-               "note": "sprite_00 = face +X, sens anti-horaire vu de dessus"}, f, ensure_ascii=False, indent=2)
-print(f"SPRITESHEET_OK: {ndirs} directions de {res}px → {out_dir}")
+               "note": "sprite_00 = facing +X, counterclockwise seen from above"}, f, ensure_ascii=False, indent=2)
+print(f"SPRITESHEET_OK: {ndirs} directions of {res}px → {out_dir}")
 print("SUCCESS:")

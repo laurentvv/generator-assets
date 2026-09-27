@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scripts/lancement_nuit_intro_vent_gris.py  —  ÉDITION LTX-2.5 (nuit du 2026-09-10)
-Plan d'établissement cinématique du Château du Vent-Gris (« L'HÉRITIER DU VIDE »)
-— 10 s @ 24 fps 16:9, I2V depuis l'image de référence utilisateur.
+scripts/lancement_nuit_intro_vent_gris.py  —  LTX-2.5 EDITION (night of 2026-09-10)
+Cinematic establishing shot of the Château du Vent-Gris (« L'HÉRITIER DU VIDE »)
+— 10 s @ 24 fps 16:9, I2V from the user reference image.
 
-HISTORIQUE MOTEUR (constat 2026-09-10, 6 configurations détruites) :
-  Wan 2.2 I2V MoE / LowNoise est INUTILISABLE sur le build sd-cli 6b3edaa + RDNA2
-  cette nuit : staging wan_vae (4,2 Go) sur Vulkan0 malgré vae=cpu / --vae-on-cpu,
-  device lost « No fault detected » à des pressions mémoire très variables, MoE
-  mort au basculement HighNoise→LowNoise, graphe ~160 Go sans --diffusion-fa.
-  → Consigné dans C:\\SD\\README.md (ligne Wan) ; retester sur un build corrigé.
-  LTX-2.5 Distilled (recette §1.1) passe SANS PROBLÈME le même chemin vid_gen
-  (T2V 250 s, I2V 442 s, décodage VAE CPU 100 s, 65 trames saines au probe) →
-  le livrable de nuit bascule sur LTX-2.5 I2V, natif 24 fps avec audio généré.
+ENGINE HISTORY (finding 2026-09-10, 6 destroyed configurations):
+  Wan 2.2 I2V MoE / LowNoise is UNUSABLE on the sd-cli 6b3edaa + RDNA2 build
+  that night: wan_vae staging (4.2 GB) on Vulkan0 despite vae=cpu / --vae-on-cpu,
+  device lost "No fault detected" at highly variable memory pressures, MoE
+  dead at the HighNoise→LowNoise switch, ~160 GB graph without --diffusion-fa.
+  → Recorded in C:\\SD\\README.md (Wan line); retest on a fixed build.
+  LTX-2.5 Distilled (recipe §1.1) goes THROUGH WITHOUT A PROBLEM the same vid_gen
+  path (T2V 250 s, I2V 442 s, CPU VAE decoding 100 s, 65 healthy frames at probe) →
+  the night deliverable switches to LTX-2.5 I2V, native 24 fps with generated audio.
 
-RECETTE LIVRÉE :
-  1. Amorce 832×480 (recadrage 16:9 Lanczos de l'image de référence utilisateur).
-  2. 4 plans I2V de 65 trames @ 24 fps natif (2,708 s chacun = 10,83 s → 10,0 s),
-     sigmas distillés Lightricks 8 steps, euler_a, cfg 1.0, seed 42, audio généré
-     (conservé dans les plans bruts, NON mixé — raccords sonores trop bruités).
-  3. Chaînage §1.8 : l'ultime trame du plan N amorce le plan N+1.
-  4. Conformation Full HD 1080p @ 24 fps (lanczos + AMD FidelityFX CAS 0.75, AMF).
-  5. Master 4K UHD IA (4x-UltraSharp Vulkan + CAS 0.75, upscale_video_ai.py).
-  6. Ambiance tempête 10 s (workflow `sfx` SA3 Small validé) + MP4 d'écoute muxé.
+DELIVERED RECIPE:
+  1. 832×480 lead-in (16:9 Lanczos crop of the user reference image).
+  2. 4 I2V shots of 65 frames @ 24 fps native (2.708 s each = 10.83 s → 10.0 s),
+     Lightricks distilled 8-step sigmas, euler_a, cfg 1.0, seed 42, generated audio
+     (kept in the raw shots, NOT mixed — sound joints too noisy).
+  3. Chaining §1.8: the last frame of shot N leads in shot N+1.
+  4. Full HD 1080p @ 24 fps conform (lanczos + AMD FidelityFX CAS 0.75, AMF).
+  5. AI 4K UHD master (4x-UltraSharp Vulkan + CAS 0.75, upscale_video_ai.py).
+  6. 10 s storm ambience (validated `sfx` workflow SA3 Small) + muxed listening MP4.
 
-Résilience : reprise sur fichiers existants, 2 essais par phase GPU (écueil resets
-pilote AMD §1.10), contrôle de charge avant chaque phase GPU, rapport JSON final.
+Resilience: resumption on existing files, 2 attempts per GPU phase (AMD driver
+reset pitfall §1.10), load check before each GPU phase, final JSON report.
 """
 import json
 import os
@@ -45,7 +45,7 @@ REPO = r"C:\GIT\generator-assets"
 SD_CLI = r"C:\SD\sd-cli.exe"
 FFMPEG = r"C:\ffmpeg\dist\bin\ffmpeg.exe"
 if not os.path.exists(FFMPEG):
-    FFMPEG = r"C:\Program Files\Amuse\ffmpeg.exe"  # repli historique
+    FFMPEG = r"C:\Program Files\Amuse\ffmpeg.exe"  # historical fallback
 
 MODELS_DIR = r"C:\Modeles_LLM"
 IMAGE_SOURCE = r"C:\Users\laurent\Downloads\Gemini_Generated_Image_3kvg3q3kvg3q3kvg.jpg"
@@ -59,7 +59,7 @@ LTX_VAE = os.path.join(MODELS_DIR, "ltx-2.5-video-vae-conv-bf16.safetensors")
 LTX_AUDIO_VAE = os.path.join(MODELS_DIR, "ltx-2.5-audio-vae-bf16.safetensors")
 LTX_LLM = os.path.join(MODELS_DIR, "gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf")
 
-# Sigmas officiels distillés Lightricks (8 steps, cfg 1.0 = 1 passe/step)
+# Official Lightricks distilled sigmas (8 steps, cfg 1.0 = 1 pass/step)
 SIGMAS = "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0"
 
 PLANS = [
@@ -68,12 +68,12 @@ PLANS = [
     {"cle": "plan3", "frames": 65, "prompt": "PROMPT_PLAN3"},
     {"cle": "plan4", "frames": 65, "prompt": "PROMPT_PLAN4"},
 ]
-FPS = 24            # cadence NATIVE LTX-2.5 (aucune interpolation nécessaire)
-W, H = 832, 480     # ~394k px ≈ le canevas validé 768×512 ; aligné 32
+FPS = 24            # NATIVE LTX-2.5 cadence (no interpolation needed)
+W, H = 832, 480     # ~394k px ≈ the validated 768×512 canvas; 32-aligned
 STEPS = 8
 CFG = 1.0
 SEED = 42
-DUREE_TOTALE = 10.0  # s (4 × 2,708 s = 10,83 s → rogner à 10,0)
+DUREE_TOTALE = 10.0  # s (4 × 2.708 s = 10.83 s → trimmed to 10.0)
 
 NEGATIF = (
     "text, watermark, logo, subtitles, warm colors, autumn colors, sunny, cartoon, "
@@ -120,12 +120,12 @@ PROMPT_AMBIANCE = (
 )
 
 rapport = {
-    "projet": "Intro Château du Vent-Gris — L'HÉRITIER DU VIDE (plan d'établissement 10 s)",
+    "projet": "Intro Château du Vent-Gris — L'HÉRITIER DU VIDE (10 s establishing shot)",
     "date_debut": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     "image_source": IMAGE_SOURCE,
-    "moteur": "LTX-2.5 Distilled I2V (Wan 2.2 écarté cette nuit : bug vid_gen/RDNA2, cf. C:/SD/README.md)",
-    "recette": "4 plans × 65 trames @ 24 fps natif, sigmas Lightricks 8 steps, cfg 1.0, "
-               "chaînage §1.8 → conform 1080p CAS 0.75 → 4K IA",
+    "moteur": "LTX-2.5 Distilled I2V (Wan 2.2 ruled out that night: vid_gen/RDNA2 bug, see C:/SD/README.md)",
+    "recette": "4 shots × 65 frames @ 24 fps native, Lightricks 8-step sigmas, cfg 1.0, "
+               "chaining §1.8 → 1080p CAS 0.75 conform → AI 4K",
     "seed": SEED,
     "etapes": [],
 }
@@ -149,7 +149,7 @@ def etape(nom: str, duree: float, details: str = "") -> None:
 
 
 def verifier_charge() -> bool:
-    """Règle AGENTS.md : jamais de génération lourde sur machine chargée."""
+    """AGENTS.md rule: never a heavy generation on a loaded machine."""
     try:
         res = subprocess.run(
             [sys.executable, os.path.join(REPO, "scripts", "check_charge_systeme.py")],
@@ -157,32 +157,32 @@ def verifier_charge() -> bool:
         )
         return res.returncode == 0
     except Exception as exc:
-        log(f"⚠️ Contrôle de charge indécis ({exc}) — on poursuit.")
+        log(f"⚠️ Load check inconclusive ({exc}) — continuing.")
         return True
 
 
 def executer(commande: list, fichier_log: str, tentatives: int = 2, gpu: bool = False) -> bool:
-    """Exécute une commande avec log fichier et réessais (écueil resets pilote AMD)."""
+    """Runs a command with file log and retries (AMD driver reset pitfall)."""
     for essai in range(1, tentatives + 1):
         if gpu:
             if not verifier_charge():
-                log("⛔ Machine occupée — attente 10 min avant nouvel essai.")
+                log("⛔ Machine busy — waiting 10 min before a new attempt.")
                 time.sleep(600)
-            log(f"  ▶ essai {essai}/{tentatives} : {' '.join(os.path.basename(c) for c in commande[:3])}…")
+            log(f"  ▶ attempt {essai}/{tentatives}: {' '.join(os.path.basename(c) for c in commande[:3])}…")
         t0 = time.time()
         with open(fichier_log, "w", encoding="utf-8") as lf:
             code = subprocess.run(commande, stdout=lf, stderr=subprocess.STDOUT).returncode
         duree = time.time() - t0
         if code == 0:
-            log(f"  ✅ réussi en {duree/60:.2f} min")
+            log(f"  ✅ succeeded in {duree/60:.2f} min")
             return True
-        log(f"  ❌ échec code {code} après {duree/60:.2f} min — log : {fichier_log}")
+        log(f"  ❌ failed with code {code} after {duree/60:.2f} min — log: {fichier_log}")
         time.sleep(60)
     return False
 
 
 def conformer_amorce(source: str, destination: str) -> str:
-    """Recadrage 16:9 exact + redimensionnement 832×480 Lanczos."""
+    """Exact 16:9 crop + 832×480 Lanczos resize."""
     img = Image.open(source).convert("RGB")
     w, h = img.size
     cible = 16.0 / 9.0
@@ -190,15 +190,15 @@ def conformer_amorce(source: str, destination: str) -> str:
         nouvelle_l = int(h * cible)
         x0 = max(0, (w - nouvelle_l) // 2)
         img = img.crop((x0, 0, x0 + nouvelle_l, h))
-        log(f"  📐 recadrage 16:9 : {w}×{h} → {img.size[0]}×{img.size[1]}")
+        log(f"  📐 16:9 crop: {w}×{h} → {img.size[0]}×{img.size[1]}")
     img = img.resize((W, H), Image.Resampling.LANCZOS)
     img.save(destination, quality=100)
-    log(f"  ✅ amorce prête : {destination}")
+    log(f"  ✅ lead-in ready: {destination}")
     return destination
 
 
 def generer_ltx_i2v(amorce: str, prompt: str, sortie: str, fichier_log: str, frames: int) -> bool:
-    """Recette LTX-2.5 Distilled I2V validée (sigmas Lightricks, cfg 1.0, audio natif)."""
+    """Validated LTX-2.5 Distilled I2V recipe (Lightricks sigmas, cfg 1.0, native audio)."""
     commande = [
         SD_CLI, "-M", "vid_gen",
         "--diffusion-model", LTX,
@@ -232,18 +232,18 @@ def generer_ltx_i2v(amorce: str, prompt: str, sortie: str, fichier_log: str, fra
 
 
 def extraire_derniere_trame(video: str, destination: str) -> str:
-    """Chaînage §1.8 : l'ultime trame du plan N devient l'amorce du plan N+1."""
+    """Chaining §1.8: the last frame of shot N becomes the lead-in of shot N+1."""
     subprocess.run(
         [FFMPEG, "-y", "-sseof", "-0.15", "-i", video, "-update", "1", "-frames:v", "1", destination],
         capture_output=True,
     )
     if os.path.exists(destination):
-        conformer_amorce(destination, destination)  # recadre/redimensionne par sécurité
+        conformer_amorce(destination, destination)  # crops/resizes for safety
     return destination
 
 
 def conformer_1080p(source: str, destination: str) -> bool:
-    """Échelle Full HD + CAS 0.75, encodeur matériel AMF (repli libx264), sans audio."""
+    """Full HD scale + CAS 0.75, AMF hardware encoder (libx264 fallback), no audio."""
     base = [FFMPEG, "-y", "-i", source,
             "-vf", "scale=1920:1080:flags=lanczos,cas=0.75",
             "-an", "-pix_fmt", "yuv420p"]
@@ -253,7 +253,7 @@ def conformer_1080p(source: str, destination: str) -> bool:
         capture_output=True,
     ).returncode == 0
     if not ok:
-        log("  ⚠️ h264_amf refusé — repli libx264.")
+        log("  ⚠️ h264_amf refused — libx264 fallback.")
         ok = subprocess.run(
             base + ["-c:v", "libx264", "-crf", "14", "-preset", "slow", destination],
             capture_output=True,
@@ -279,74 +279,74 @@ def main() -> None:
             chemins["amorce_" + cle] = os.path.join(OUTPUT_DIR, f"amorce_{cle}.png")
 
     print("=" * 85)
-    log("🌙 LANCEMENT DE NUIT (ÉDITION LTX-2.5) — INTRO CHÂTEAU DU VENT-GRIS (10 s @ 24 fps)")
-    log(f"   Sorties : {OUTPUT_DIR}")
+    log("🌙 NIGHT RUN (LTX-2.5 EDITION) — INTRO CHÂTEAU DU VENT-GRIS (10 s @ 24 fps)")
+    log(f"   Outputs: {OUTPUT_DIR}")
     print("=" * 85)
 
     manquants = [p for p in (SD_CLI, FFMPEG, LTX, LTX_VAE, LTX_AUDIO_VAE, LTX_LLM,
                              IMAGE_SOURCE) if not os.path.exists(p)]
     if manquants:
-        log(f"⛔ Fichiers requis manquants : {manquants}")
+        log(f"⛔ Missing required files: {manquants}")
         sys.exit(2)
 
-    # ── Phase 1 : amorce 832×480 ─────────────────────────────────────────────
+    # ── Phase 1: 832×480 lead-in ─────────────────────────────────────────────
     t0 = time.time()
     if not os.path.exists(chemins["amorce"]):
         conformer_amorce(IMAGE_SOURCE, chemins["amorce"])
-    etape("Amorce 832×480 (Lanczos 16:9)", time.time() - t0)
+    etape("832×480 lead-in (Lanczos 16:9)", time.time() - t0)
 
-    # ── Phases 2-5 : génération I2V chaînée des 4 plans (65 trames natif 24fps) ─
+    # ── Phases 2-5: chained I2V generation of the 4 shots (65 frames native 24fps) ─
     for idx, plan in enumerate(PLANS):
         cle = plan["cle"]
         prompt_plan = globals()[plan["prompt"]]
         if idx == 0:
             amorce_plan = chemins["amorce"]
         elif not os.path.exists(chemins[PLANS[idx - 1]["cle"]]):
-            log(f"⏭️ {cle} sauté : {PLANS[idx - 1]['cle']} absent (chaînage impossible).")
+            log(f"⏭️ {cle} skipped: {PLANS[idx - 1]['cle']} absent (chaining impossible).")
             continue
         else:
             cle_amorce = "amorce_" + cle
             if not os.path.exists(chemins[cle_amorce]):
                 extraire_derniere_trame(chemins[PLANS[idx - 1]["cle"]], chemins[cle_amorce])
-                etape(f"Extraction dernière trame {PLANS[idx - 1]['cle']} (chaînage §1.8)", 0)
+                etape(f"Last frame extraction {PLANS[idx - 1]['cle']} (chaining §1.8)", 0)
             amorce_plan = chemins[cle_amorce]
 
         if os.path.exists(chemins[cle]):
-            log(f"⏭️ {cle} déjà présent.")
+            log(f"⏭️ {cle} already present.")
             continue
-        log(f"🎥 Plan {idx + 1}/{len(PLANS)} — LTX-2.5 I2V ({plan['frames']} trames @ {FPS} fps)…")
+        log(f"🎥 Shot {idx + 1}/{len(PLANS)} — LTX-2.5 I2V ({plan['frames']} frames @ {FPS} fps)…")
         t0 = time.time()
         ok = generer_ltx_i2v(amorce_plan, prompt_plan, chemins[cle],
                              os.path.join(OUTPUT_DIR, f"{cle}.log"), frames=plan["frames"])
         if ok:
-            etape(f"{cle} LTX-2.5 I2V ({plan['frames']} trames"
-                  + (", chaîné" if idx > 0 else "") + ")", time.time() - t0)
+            etape(f"{cle} LTX-2.5 I2V ({plan['frames']} frames"
+                  + (", chained" if idx > 0 else "") + ")", time.time() - t0)
         elif idx == 0:
-            log("⛔ Plan 1 impossible après 2 essais — arrêt de la chaîne.")
+            log("⛔ Shot 1 impossible after 2 attempts — stopping the chain.")
             sys.exit(3)
         else:
-            log(f"⚠️ {cle} impossible — l'assemblage utilisera les plans précédents.")
-            etape(f"{cle} LTX-2.5 I2V — ÉCHEC (assemblage sur plans précédents)", time.time() - t0)
+            log(f"⚠️ {cle} impossible — the assembly will use the previous shots.")
+            etape(f"{cle} LTX-2.5 I2V — FAILURE (assembly on previous shots)", time.time() - t0)
 
-    # ── Phase 6 : conform 1080p par plan (natif 24 fps, pas d'interpolation) ────
+    # ── Phase 6: per-shot 1080p conform (native 24 fps, no interpolation) ────
     for plan in PLANS:
         cle = plan["cle"]
         if os.path.exists(chemins[cle]) and not os.path.exists(chemins[cle + "_1080p"]):
-            log(f"🎬 Phase 6 : conform 1080p — {cle}…")
+            log(f"🎬 Phase 6: 1080p conform — {cle}…")
             t0 = time.time()
             ok = conformer_1080p(chemins[cle], chemins[cle + "_1080p"])
-            etape(f"Conform 1080p CAS ({cle})", time.time() - t0, "OK" if ok else "ÉCHEC")
+            etape(f"CAS 1080p conform ({cle})", time.time() - t0, "OK" if ok else "FAILED")
             if not ok:
                 chemins[cle + "_1080p"] = None
 
-    # ── Phase 7 : concat + master 1080p 10,0 s ────────────────────────────────
+    # ── Phase 7: concat + 1080p master 10.0 s ────────────────────────────────
     if not os.path.exists(chemins["master_1080p"]):
-        log("🎬 Phase 7 : assemblage master Full HD 1080p @ 24 fps…")
+        log("🎬 Phase 7: Full HD 1080p @ 24 fps master assembly…")
         t0 = time.time()
         segments = [chemins[p["cle"] + "_1080p"] for p in PLANS
                     if chemins.get(p["cle"] + "_1080p")]
         if not segments:
-            log("⛔ Aucun segment exploitable — arrêt.")
+            log("⛔ No usable segment — stopping.")
             sys.exit(4)
         if len(segments) > 1:
             liste = os.path.join(OUTPUT_DIR, "concat_list.txt")
@@ -370,17 +370,17 @@ def main() -> None:
                  chemins["master_1080p"]],
                 capture_output=True,
             ).returncode == 0
-        etape("Master 1080p @ 24 fps (concat 4 plans, 10,0 s)", time.time() - t0,
-              "OK" if ok else "ÉCHEC")
+        etape("1080p @ 24 fps master (concat 4 shots, 10.0 s)", time.time() - t0,
+              "OK" if ok else "FAILED")
         subprocess.run(
             [FFMPEG, "-y", "-ss", "5", "-i", chemins["master_1080p"], "-vframes", "1",
              chemins["apercu"]],
             capture_output=True,
         )
 
-    # ── Phase 8 : master 4K IA ────────────────────────────────────────────────
+    # ── Phase 8: AI 4K master ────────────────────────────────────────────────
     if os.path.exists(chemins["master_1080p"]) and not os.path.exists(chemins["master_4k"]):
-        log("🚀 Phase 8 : super-résolution IA 4K (4x-UltraSharp Vulkan + CAS 0.75)…")
+        log("🚀 Phase 8: AI 4K super-resolution (4x-UltraSharp Vulkan + CAS 0.75)…")
         t0 = time.time()
         ok = executer(
             [sys.executable, os.path.join(REPO, "scripts", "upscale_video_ai.py"),
@@ -388,12 +388,12 @@ def main() -> None:
              "-r", "3840:2160", "--cas", "0.75", "-b", "50M"],
             os.path.join(OUTPUT_DIR, "upscale_4k.log"), tentatives=2, gpu=True,
         ) and os.path.exists(chemins["master_4k"])
-        etape("Master 4K UHD IA (4x-UltraSharp + CAS)", time.time() - t0,
-              "OK" if ok else "ÉCHEC — master 1080p conservé")
+        etape("AI 4K UHD master (4x-UltraSharp + CAS)", time.time() - t0,
+              "OK" if ok else "FAILED — 1080p master kept")
 
-    # ── Phase 9 : ambiance tempête (bonus, workflow sfx validé) ───────────────
+    # ── Phase 9: storm ambience (bonus, validated sfx workflow) ──────────────
     if not os.path.exists(chemins["ambiance"]):
-        log("🔊 Phase 9 : ambiance tempête 10 s (workflow sfx, SA3 Small)…")
+        log("🔊 Phase 9: 10 s storm ambience (sfx workflow, SA3 Small)…")
         t0 = time.time()
         ok = executer(
             [sys.executable, os.path.join(REPO, "main.py"), "-w", "sfx", PROMPT_AMBIANCE,
@@ -404,8 +404,8 @@ def main() -> None:
         brut = os.path.join(OUTPUT_DIR, "ambiance_tempete_vent_gris.wav")
         if ok and os.path.exists(brut):
             os.replace(brut, chemins["ambiance"])
-        etape("Ambiance tempête 10 s (sfx IA)", time.time() - t0,
-              "OK" if os.path.exists(chemins["ambiance"]) else "ÉCHEC — master livré sans son")
+        etape("10 s storm ambience (AI sfx)", time.time() - t0,
+              "OK" if os.path.exists(chemins["ambiance"]) else "FAILED — master delivered without sound")
 
     if os.path.exists(chemins["ambiance"]) and not os.path.exists(chemins["master_1080p_son"]):
         subprocess.run(
@@ -415,7 +415,7 @@ def main() -> None:
             capture_output=True,
         )
 
-    # ── Bilan ────────────────────────────────────────────────────────────────
+    # ── Wrap-up ──────────────────────────────────────────────────────────────
     total = time.time() - t_global
     rapport["date_fin"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     rapport["duree_totale_min"] = round(total / 60, 2)
@@ -424,10 +424,10 @@ def main() -> None:
         json.dump(rapport, f, indent=2, ensure_ascii=False)
 
     print("=" * 85)
-    log(f"🌅 CHAÎNE DE NUIT TERMINÉE EN {total/60:.1f} min — livrables présents :")
+    log(f"🌅 NIGHT CHAIN FINISHED IN {total/60:.1f} min — deliverables present:")
     for cle, chemin in rapport["livrables"].items():
         log(f"   • {cle} : {chemin}")
-    log(f"   📊 rapport : {RAPPORT}")
+    log(f"   📊 report: {RAPPORT}")
     print("=" * 85)
 
 

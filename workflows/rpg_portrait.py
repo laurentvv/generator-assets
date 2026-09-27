@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow RPG Portrait : Galerie de Portraits de Personnages Multi-Émotions pour Dialogues RPG dans Godot 4.
-Produit :
-- Portraits individuels détourés (Neutre, Joie, Colère, Tristesse, Surprise, Blessé)
-- Planche récapitulative des expressions
-- Base de données JSON prête pour les systèmes de dialogues Godot (Dialogic / Custom)
+RPG Portrait workflow: multi-emotion character portrait gallery for RPG dialogues in Godot 4.
+Produces:
+- Individual cut-out portraits (Neutral, Happy, Angry, Sad, Surprised, Hurt)
+- Expression recap sheet
+- JSON database ready for Godot dialogue systems (Dialogic / Custom)
 """
 
 import json
@@ -20,7 +20,7 @@ from core.image_ops import post_process_asset
 from core.llm import construire_prompt_coherant
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
-# Descriptions des émotions pour le prompt
+# Emotion descriptions for the prompt
 EMOTION_PROMPTS = {
     "neutral": "neutral calm serious expression, closed mouth, direct eye contact",
     "happy": "warm gentle smile, happy bright eyes, pleased joyful expression",
@@ -32,7 +32,7 @@ EMOTION_PROMPTS = {
 
 
 def assembler_grille_portraits(portraits: List[Image.Image], colonnes: int = 3) -> Image.Image:
-    """Assemble une liste de portraits en une grille récapitulative."""
+    """Assembles a list of portraits into a recap grid."""
     if not portraits:
         return Image.new("RGBA", (1, 1))
     pw, ph = portraits[0].size
@@ -49,10 +49,10 @@ def assembler_grille_portraits(portraits: List[Image.Image], colonnes: int = 3) 
 
 @WorkflowRegistry.register
 class RPGPortraitWorkflow(BaseWorkflow):
-    """Génération de galeries de dialogues RPG multi-émotions pour Godot 4."""
+    """Multi-emotion RPG dialogue gallery generation for Godot 4."""
 
     name = "rpg_portrait"
-    description = "Galerie de portraits de dialogues RPG avec émotions cohérentes (Neutre, Joie, Colère, etc.) + JSON Godot"
+    description = "RPG dialogue portrait gallery with consistent emotions (Neutral, Happy, Angry, etc.) + Godot JSON"
 
     emoji = "🎭"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -60,7 +60,7 @@ class RPGPortraitWorkflow(BaseWorkflow):
         input_image = params.get("input")
 
         if not concept and not input_image:
-            raise ValueError("Le workflow rpg_portrait nécessite un 'prompt' ou une image de référence '-i / --input'.")
+            raise ValueError("The rpg_portrait workflow requires a 'prompt' or a reference image '-i / --input'.")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         taille = params.get("size", 512) or 512
@@ -77,7 +77,7 @@ class RPGPortraitWorkflow(BaseWorkflow):
         dossier_perso = os.path.join(output_dir, f"{nom_perso}_dialogues")
         os.makedirs(dossier_perso, exist_ok=True)
 
-        self.log(f"Génération des portraits RPG pour '{nom_perso}' ({len(emotions_list)} émotions)...")
+        self.log(f"Generating the RPG portraits for '{nom_perso}' ({len(emotions_list)} emotions)...")
 
         images_portraits = []
         dialogue_database = {
@@ -93,10 +93,10 @@ class RPGPortraitWorkflow(BaseWorkflow):
 
         for emo in emotions_list:
             desc_emo = EMOTION_PROMPTS.get(emo, f"{emo} facial expression")
-            self.log(f"  • Rendu de l'expression : [{emo}]...")
+            self.log(f"  • Rendering expression: [{emo}]...")
 
             if input_image and os.path.exists(input_image):
-                # Utiliser l'image fournie comme base (si une seule émotion)
+                # Use the provided image as base (if a single emotion)
                 img_brute = Image.open(input_image)
             else:
                 prompt_emo = f"{concept}, {desc_emo}"
@@ -121,11 +121,11 @@ class RPGPortraitWorkflow(BaseWorkflow):
                     threads=self.config.get("threads"),
                     steps=params.get("steps", 25),
                     guidance=params.get("guidance", 3.5),
-                    seed=seed_base,  # Même graine pour maximiser la cohérence
+                    seed=seed_base,  # Same seed to maximize consistency
                     loras=params.get("loras")
                 )
 
-            # Détourage et centrage
+            # Cutout and centering
             img_propre = post_process_asset(img_brute, redimensionner=taille)
             chemin_emo = os.path.join(dossier_perso, f"{nom_perso}_{emo}.png")
             img_propre.save(chemin_emo, "PNG")
@@ -133,19 +133,19 @@ class RPGPortraitWorkflow(BaseWorkflow):
             images_portraits.append(img_propre)
             dialogue_database["portraits"][emo] = f"res://{dossier_perso}/{nom_perso}_{emo}.png".replace("\\", "/")
 
-        # Planche récapitulative
+        # Recap sheet
         grid_img = assembler_grille_portraits(images_portraits, colonnes=3)
         chemin_grille = os.path.join(output_dir, f"{nom_perso}_expressions_grid.png")
         grid_img.save(chemin_grille, "PNG")
 
-        # Export JSON pour système de dialogue Godot
+        # JSON export for the Godot dialogue system
         chemin_json = os.path.join(dossier_perso, f"{nom_perso}_dialogue.json")
         with open(chemin_json, "w", encoding="utf-8") as f:
             json.dump(dialogue_database, f, indent=2, ensure_ascii=False)
 
-        self.log(f"Galerie de dialogues RPG prête dans '{dossier_perso}/' :", emoji="🎉")
-        self.log(f"  • Planche Globale  : {chemin_grille}")
-        self.log(f"  • Base de données  : {chemin_json} (JSON Godot)", emoji="💎")
+        self.log(f"RPG dialogue gallery ready in '{dossier_perso}/':", emoji="🎉")
+        self.log(f"  • Overall sheet    : {chemin_grille}")
+        self.log(f"  • Database         : {chemin_json} (Godot JSON)", emoji="💎")
 
         return {
             "dialogue_json": chemin_json,

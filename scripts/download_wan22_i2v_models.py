@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 scripts/download_wan22_i2v_models.py
-Téléchargement direct et résilient des modèles Wan 2.2 I2V MoE (Dual-DiT 28B Image-to-Video) :
-- HighNoise/Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf (~8.99 Go)
-- LowNoise/Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf (~8.99 Go)
-depuis le dépôt HuggingFace QuantStack/Wan2.2-I2V-A14B-GGUF vers C:\\Modeles_LLM.
+Direct, resilient download of the Wan 2.2 I2V MoE models (Dual-DiT 28B Image-to-Video):
+- HighNoise/Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf (~8.99 GB)
+- LowNoise/Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf (~8.99 GB)
+from the HuggingFace repo QuantStack/Wan2.2-I2V-A14B-GGUF into C:\\Modeles_LLM.
 """
 
 import os
@@ -29,9 +29,9 @@ FILES = [
 
 def main():
     print("=" * 80)
-    print("🚀 [TÉLÉCHARGEMENT OFFICIEL WAN 2.2 I2V MoE 28B]")
-    print(f"   Dépôt source : https://huggingface.co/{REPO_ID}")
-    print(f"   Destination  : {MODELS_DIR}")
+    print("🚀 [OFFICIAL WAN 2.2 I2V MoE 28B DOWNLOAD]")
+    print(f"   Source repo: https://huggingface.co/{REPO_ID}")
+    print(f"   Destination : {MODELS_DIR}")
     print("=" * 80)
 
     os.makedirs(MODELS_DIR, exist_ok=True)
@@ -40,10 +40,10 @@ def main():
         target_path = os.path.join(MODELS_DIR, local_filename)
         if os.path.exists(target_path) and os.path.getsize(target_path) > 8.5 * (1024**3):
             sz = os.path.getsize(target_path) / (1024**3)
-            print(f"\n✅ Déjà complet : {local_filename} ({sz:.2f} Go) - Ignoré.")
+            print(f"\n✅ Already complete: {local_filename} ({sz:.2f} GB) - Skipped.")
             continue
 
-        print(f"\n📥 Téléchargement en cours : {remote_path} -> {local_filename}...")
+        print(f"\n📥 Downloading: {remote_path} -> {local_filename}...")
         t0 = time.time()
 
         downloaded = hf_hub_download(
@@ -53,7 +53,7 @@ def main():
             local_dir_use_symlinks=False
         )
 
-        # Si hf_hub_download l'a placé dans un sous-dossier HighNoise/ ou LowNoise/, le déplacer à la racine de C:\Modeles_LLM
+        # If hf_hub_download placed it in a HighNoise/ or LowNoise/ subfolder, move it to the root of C:\Modeles_LLM
         if downloaded != target_path and os.path.exists(downloaded):
             if os.path.exists(target_path):
                 os.remove(target_path)
@@ -67,10 +67,10 @@ def main():
         elapsed = time.time() - t0
         sz_gb = os.path.getsize(target_path) / (1024**3)
         speed = (sz_gb * 1024) / max(elapsed, 1)
-        print(f"✅ Téléchargé en {elapsed:.1f}s ({sz_gb:.2f} Go, {speed:.1f} Mo/s) : {target_path}")
+        print(f"✅ Downloaded in {elapsed:.1f}s ({sz_gb:.2f} GB, {speed:.1f} MB/s): {target_path}")
 
     print("\n" + "=" * 80)
-    print("🎉 Tous les modèles Wan 2.2 I2V MoE 28B sont installés et prêts pour l'animation !")
+    print("🎉 All Wan 2.2 I2V MoE 28B models are installed and ready for animation!")
     print("=" * 80)
 
 if __name__ == "__main__":

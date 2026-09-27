@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow UI 9-Slice : Génération de Cadres d'Interface, Fenêtres et Boutons 9-Patch pour Godot 4.
-Produit :
-- Image PNG du cadre
-- Ressource Godot 4 StyleBoxTexture (.tres)
-- Scène Godot 4 NinePatchRect (.tscn)
-- Aperçu de test d'extensibilité
+UI 9-Slice workflow: generating Interface Frames, Windows and 9-Patch Buttons for Godot 4.
+Produces:
+- PNG image of the frame
+- Godot 4 StyleBoxTexture resource (.tres)
+- Godot 4 NinePatchRect scene (.tscn)
+- Stretch test preview
 """
 
 import os
@@ -23,18 +23,18 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 def detecter_marges_9slice(image: Image.Image) -> Tuple[int, int, int, int]:
     """
-    Analyse l'image pour déterminer les marges de découpe (left, top, right, bottom)
-    en repérant les zones de transition entre coins décorés et bordures répétables.
+    Analyzes the image to determine the slice margins (left, top, right, bottom)
+    by locating the transition zones between decorated corners and repeatable borders.
     """
     w, h = image.size
-    # Valeur par défaut : 1/6ème de la dimension
+    # Default value: 1/6th of the dimension
     def_x = max(16, w // 6)
     def_y = max(16, h // 6)
     return (def_x, def_y, def_x, def_y)
 
 
 def exporter_stylebox_godot(nom_base: str, output_dir: str, marges: Tuple[int, int, int, int]) -> str:
-    """Génère la ressource StyleBoxTexture (.tres) pour Godot 4."""
+    """Generates the StyleBoxTexture (.tres) resource for Godot 4."""
     ml, mt, mr, mb = marges
     chemin_tres = os.path.join(output_dir, f"{nom_base}_stylebox.tres")
     code_tres = f"""[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
@@ -56,7 +56,7 @@ axis_stretch_vertical = 1
 
 
 def exporter_scene_ninepatch_godot(nom_base: str, output_dir: str, marges: Tuple[int, int, int, int]) -> str:
-    """Génère une scène d'exemple Godot 4 avec un NinePatchRect (.tscn)."""
+    """Generates a sample Godot 4 scene with a NinePatchRect (.tscn)."""
     ml, mt, mr, mb = marges
     chemin_tscn = os.path.join(output_dir, f"{nom_base}_ninepatch.tscn")
     code_tscn = f"""[gd_scene load_steps=2 format=3]
@@ -98,11 +98,11 @@ axis_stretch_vertical = 1
 
 
 def creer_preview_extensibilite(image: Image.Image, marges: Tuple[int, int, int, int]) -> Image.Image:
-    """Génère un aperçu démontrant l'extensibilité 9-slice sans déformation des coins."""
+    """Generates a preview demonstrating 9-slice stretching without corner distortion."""
     ml, mt, mr, mb = marges
     w, h = image.size
 
-    # Extraire les 9 zones
+    # Extract the 9 regions
     c_tl = image.crop((0, 0, ml, mt))
     c_tr = image.crop((w - mr, 0, w, mt))
     c_bl = image.crop((0, h - mb, ml, h))
@@ -115,17 +115,17 @@ def creer_preview_extensibilite(image: Image.Image, marges: Tuple[int, int, int,
 
     center = image.crop((ml, mt, w - mr, h - mb))
 
-    # Construire un cadre étendu (Largeur 600, Hauteur 400)
+    # Build an expanded frame (Width 600, Height 400)
     target_w, target_h = 600, 350
     expanded = Image.new("RGBA", (target_w, target_h), (0, 0, 0, 0))
 
-    # Coins
+    # Corners
     expanded.paste(c_tl, (0, 0))
     expanded.paste(c_tr, (target_w - mr, 0))
     expanded.paste(c_bl, (0, target_h - mb))
     expanded.paste(c_br, (target_w - mr, target_h - mb))
 
-    # Bordures étirées
+    # Stretched borders
     if target_w - ml - mr > 0:
         expanded.paste(b_top.resize((target_w - ml - mr, mt), Image.BILINEAR), (ml, 0))
         expanded.paste(b_bot.resize((target_w - ml - mr, mb), Image.BILINEAR), (ml, target_h - mb))
@@ -133,7 +133,7 @@ def creer_preview_extensibilite(image: Image.Image, marges: Tuple[int, int, int,
         expanded.paste(b_left.resize((ml, target_h - mt - mb), Image.BILINEAR), (0, mt))
         expanded.paste(b_right.resize((mr, target_h - mt - mb), Image.BILINEAR), (target_w - mr, mt))
 
-    # Centre
+    # Center
     if target_w - ml - mr > 0 and target_h - mt - mb > 0:
         expanded.paste(center.resize((target_w - ml - mr, target_h - mt - mb), Image.BILINEAR), (ml, mt))
 
@@ -142,20 +142,20 @@ def creer_preview_extensibilite(image: Image.Image, marges: Tuple[int, int, int,
 
 @WorkflowRegistry.register
 class UI9SliceWorkflow(BaseWorkflow):
-    """Workflow de Cadres d'Interface 9-Patch pour Godot 4."""
+    """9-Patch Interface Frames workflow for Godot 4."""
 
     name = "ui_9slice"
-    description = "Génération de cadres d'UI, fenêtres d'inventaire et boutons 9-Patch extensibles pour Godot 4"
+    description = "UI frame, inventory window and stretchable 9-Patch button generation for Godot 4"
 
     emoji = "🖼️"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--margin",), type=int, default=32,
-             help="Taille de marge fixe en pixels pour le workflow ui_9slice."),
+             help="Fixed margin size in pixels for the ui_9slice workflow."),
         dict(flags=("--auto-margin",), action="store_true",
-             help="Détection automatique des marges de tranches pour ui_9slice."),
+             help="Automatic slice margin detection for ui_9slice."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -163,7 +163,7 @@ class UI9SliceWorkflow(BaseWorkflow):
         input_image = params.get("input")
 
         if not concept and not input_image:
-            raise ValueError("Le workflow ui_9slice nécessite un 'prompt' ou une image '-i / --input'.")
+            raise ValueError("The ui_9slice workflow requires a 'prompt' or an image '-i / --input'.")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         margin_val = int(params.get("margin", 32))
@@ -173,11 +173,11 @@ class UI9SliceWorkflow(BaseWorkflow):
         os.makedirs(output_dir, exist_ok=True)
 
         if input_image and os.path.exists(input_image):
-            self.log(f"Chargement du cadre source : {input_image}...")
+            self.log(f"Loading the source frame: {input_image}...")
             img_src = Image.open(input_image).convert("RGBA")
             nom_base = params.get("output") or f"{Path(input_image).stem}_9slice"
         else:
-            self.log(f"Génération d'un cadre d'interface pour '{concept}'...")
+            self.log(f"Generating an interface frame for '{concept}'...")
             nom_base = params.get("output") or slugifier_texte(concept)
 
             style_ui = (
@@ -209,40 +209,40 @@ class UI9SliceWorkflow(BaseWorkflow):
                 seed=params.get("seed", -1),
                 loras=params.get("loras")
             )
-            # Détourage
+            # Cutout
             img_src = post_process_asset(img_brute, redimensionner=taille)
 
         if taille and img_src.size != (taille, taille):
             img_src = img_src.resize((taille, taille), Image.Resampling.LANCZOS)
 
-        # Détermination des marges
+        # Margin determination
         if auto_margin:
             marges = detecter_marges_9slice(img_src)
         else:
             marges = (margin_val, margin_val, margin_val, margin_val)
 
-        self.log(f"Marges 9-Slice appliquées : Left={marges[0]}, Top={marges[1]}, Right={marges[2]}, Bottom={marges[3]}")
+        self.log(f"9-Slice margins applied: Left={marges[0]}, Top={marges[1]}, Right={marges[2]}, Bottom={marges[3]}")
 
-        # Sauvegarde image cadre
+        # Frame image save
         chemin_png = os.path.join(output_dir, f"{nom_base}.png")
         img_src.save(chemin_png, "PNG")
 
-        # Sauvegarde StyleBoxTexture
+        # StyleBoxTexture save
         chemin_stylebox = exporter_stylebox_godot(nom_base, output_dir, marges)
 
-        # Sauvegarde NinePatchRect Scène
+        # NinePatchRect scene save
         chemin_scene = exporter_scene_ninepatch_godot(nom_base, output_dir, marges)
 
-        # Génération de l'aperçu étendu
+        # Expanded preview generation
         img_preview = creer_preview_extensibilite(img_src, marges)
         chemin_preview = os.path.join(output_dir, f"{nom_base}_preview_stretched.png")
         img_preview.save(chemin_preview, "PNG")
 
-        self.log(f"Pack UI 9-Patch complet exporté dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Texture Cadre    : {chemin_png}")
+        self.log(f"Complete 9-Patch UI pack exported to '{output_dir}/':", emoji="🎉")
+        self.log(f"  • Frame texture    : {chemin_png}")
         self.log(f"  • StyleBox Godot 4 : {chemin_stylebox} (StyleBoxTexture)", emoji="💎")
-        self.log(f"  • Scène Godot 4    : {chemin_scene} (NinePatchRect)")
-        self.log(f"  • Aperçu Étendu    : {chemin_preview}")
+        self.log(f"  • Godot 4 scene    : {chemin_scene} (NinePatchRect)")
+        self.log(f"  • Expanded preview : {chemin_preview}")
 
         return {
             "texture": chemin_png,

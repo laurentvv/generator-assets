@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module de segmentation et détourage IA haute précision (RMBG / BiRefNet via ONNX Runtime).
+High-precision AI segmentation and cutout module (RMBG / BiRefNet via ONNX Runtime).
 """
 
 import os
@@ -15,11 +15,11 @@ _SESSION_CACHE = {}
 
 
 def _get_onnx_session(model_path: str):
-    """Récupère ou crée une session ONNX Runtime mise en cache."""
+    """Retrieves or creates a cached ONNX Runtime session."""
     global _SESSION_CACHE
     if model_path not in _SESSION_CACHE:
         import onnxruntime as ort
-        # Utiliser les providers disponibles (DirectML / CPU)
+        # Use the available providers (DirectML / CPU)
         available = ort.get_available_providers()
         preferred_providers = []
         if "DmlExecutionProvider" in available:
@@ -38,20 +38,20 @@ def detourer_ia(
     threshold: float = 0.5
 ) -> Image.Image:
     """
-    Détoure une image avec un réseau neuronal de segmentation (RMBG-1.4 / BiRefNet).
-    Garantit une découpe nette sans frange blanche, gérant les cheveux, armes et transparences.
+    Cuts out an image with a segmentation neural network (RMBG-1.4 / BiRefNet).
+    Guarantees a clean cut with no white fringe, handling hair, weapons and transparencies.
 
     Args:
-        image: Image PIL source (RGB ou RGBA)
-        model_path: Chemin vers le modèle ONNX (ou None pour le chemin par défaut)
-        threshold: Seuil de coupure du masque (si nécessaire)
+        image: Source PIL image (RGB or RGBA)
+        model_path: Path to the ONNX model (or None for the default path)
+        threshold: Mask cutoff threshold (if needed)
 
     Returns:
-        Image PIL en mode RGBA avec le canal alpha détouré
+        PIL image in RGBA mode with the alpha channel cut out
     """
     chemin = resoudre_modele_onnx(model_path, DEFAULT_RMBG_MODEL)
     if not chemin or not os.path.exists(chemin):
-        print(f"⚠️ [Segmentation] Modèle ONNX introuvable ({chemin}).")
+        print(f"⚠️ [Segmentation] ONNX model not found ({chemin}).")
         return image.convert("RGBA")
 
     try:
@@ -59,7 +59,7 @@ def detourer_ia(
         img_rgb = image.convert("RGB")
         w_orig, h_orig = img_rgb.size
 
-        # Prétraitement standard RMBG / BiRefNet : 1024x1024 normalisé
+        # Standard RMBG / BiRefNet preprocessing: normalized 1024x1024
         input_size = (1024, 1024)
         img_resized = img_rgb.resize(input_size, Image.BILINEAR)
 
@@ -68,12 +68,12 @@ def detourer_ia(
         arr = (arr - [0.5, 0.5, 0.5]) / [1.0, 1.0, 1.0]
         tensor = np.transpose(arr, (2, 0, 1))[np.newaxis, :].astype(np.float32)
 
-        # Inférence
+        # Inference
         input_name = session.get_inputs()[0].name
         outputs = session.run(None, {input_name: tensor})
         mask_raw = outputs[0][0, 0]
 
-        # Normalisation du masque 0.0 -> 1.0
+        # Mask normalization 0.0 -> 1.0
         min_v = mask_raw.min()
         max_v = mask_raw.max()
         if max_v > min_v:
@@ -81,15 +81,15 @@ def detourer_ia(
         else:
             mask_norm = mask_raw
 
-        # Redimensionnement du masque à la taille originale
+        # Resize the mask back to the original size
         mask_uint8 = (mask_norm * 255.0).clip(0, 255).astype(np.uint8)
         mask_img = Image.fromarray(mask_uint8, mode="L").resize((w_orig, h_orig), Image.BILINEAR)
 
-        # Application du canal alpha
+        # Apply the alpha channel
         result = img_rgb.convert("RGBA")
         result.putalpha(mask_img)
         return result
 
     except Exception as e:
-        print(f"❌ [Segmentation] Erreur pendant le détourage IA : {e}")
+        print(f"❌ [Segmentation] AI cutout error: {e}")
         return image.convert("RGBA")

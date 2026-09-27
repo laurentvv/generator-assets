@@ -11,7 +11,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {absolute_package_str} introuvable")
+    raise ValueError(f"Module {absolute_package_str} not found")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -37,44 +37,44 @@ if helper_vg:
 mesh = basemesh.data
 uv_layer = mesh.uv_layers[0]
 
-# Sommets faciaux sur le basemesh propre
-# On parcourt les faces de la tête
+# Facial vertices on the clean basemesh
+# We scan the head faces
 for poly in mesh.polygons:
     face_verts = [mesh.vertices[vi] for vi in poly.vertices]
     avg_co = sum((v.co for v in face_verts), mathutils.Vector()) / len(face_verts)
     if avg_co.z > 1.48 and abs(avg_co.x) < 0.01 and avg_co.y < -0.15:
-        # Nez
+        # Nose
         loop_idx = poly.loop_indices[0]
         uv = uv_layer.data[loop_idx].uv
-        print(f"Nez : 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
+        print(f"Nose: 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
         break
 
 for poly in mesh.polygons:
     face_verts = [mesh.vertices[vi] for vi in poly.vertices]
     avg_co = sum((v.co for v in face_verts), mathutils.Vector()) / len(face_verts)
     if 1.37 < avg_co.z < 1.40 and abs(avg_co.x) < 0.01 and avg_co.y < -0.10:
-        # Bouche
+        # Mouth
         loop_idx = poly.loop_indices[0]
         uv = uv_layer.data[loop_idx].uv
-        print(f"Bouche : 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
+        print(f"Mouth: 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
         break
 
 for poly in mesh.polygons:
     face_verts = [mesh.vertices[vi] for vi in poly.vertices]
     avg_co = sum((v.co for v in face_verts), mathutils.Vector()) / len(face_verts)
     if 1.51 < avg_co.z < 1.55 and 0.02 < avg_co.x < 0.05 and avg_co.y < -0.10:
-        # Oeil gauche
+        # Left eye
         loop_idx = poly.loop_indices[0]
         uv = uv_layer.data[loop_idx].uv
-        print(f"Oeil Gauche : 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
+        print(f"Left eye: 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
         break
 
 for poly in mesh.polygons:
     face_verts = [mesh.vertices[vi] for vi in poly.vertices]
     avg_co = sum((v.co for v in face_verts), mathutils.Vector()) / len(face_verts)
     if 1.51 < avg_co.z < 1.55 and -0.05 < avg_co.x < -0.02 and avg_co.y < -0.10:
-        # Oeil droit
+        # Right eye
         loop_idx = poly.loop_indices[0]
         uv = uv_layer.data[loop_idx].uv
-        print(f"Oeil Droit : 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
+        print(f"Right eye: 3D {avg_co} -> UV: ({uv.x:.4f}, {uv.y:.4f}) -> PIL px: ({uv.x*2048:.1f}, {(1-uv.y)*2048:.1f})")
         break

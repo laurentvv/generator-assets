@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Gestionnaires de maintenance des moteurs (--update-sd / --update-llama / --update-vulkan)."""
+"""Engine maintenance handlers (--update-sd / --update-llama / --update-vulkan)."""
 
 import os
 import sys
 
 
 def gerer_maintenance_sd(args) -> None:
-    """Traite --update-sd (check/download/build/rollback/list-backups)."""
+    """Handles --update-sd (check/download/build/rollback/list-backups)."""
     from pathlib import Path
     from scripts.update_sd_cpp import (
         action_compiler_vulkan,
@@ -29,15 +29,15 @@ def gerer_maintenance_sd(args) -> None:
         restaurer_sauvegarde(install_dir)
     elif args.update_sd == "list-backups":
         backups = lister_sauvegardes(install_dir)
-        print(f"\n📦 Sauvegardes trouvées dans {install_dir / 'backups'} :")
+        print(f"\n📦 Backups found in {install_dir / 'backups'}:")
         if not backups:
-            print("  (Aucune sauvegarde)")
+            print("  (No backup)")
         for b in backups:
             print(f"  • {b.name}")
     sys.exit(0)
 
 def gerer_maintenance_llama(args) -> None:
-    """Traite --update-llama (check/download/build/rollback/list-backups)."""
+    """Handles --update-llama (check/download/build/rollback/list-backups)."""
     from pathlib import Path
     from scripts.update_llama_cpp import (
         action_compiler_vulkan,
@@ -59,29 +59,29 @@ def gerer_maintenance_llama(args) -> None:
         restaurer_sauvegarde(install_dir)
     elif args.update_llama == "list-backups":
         backups = lister_sauvegardes(install_dir)
-        print(f"\n📦 Sauvegardes trouvées dans {install_dir / 'backups'} :")
+        print(f"\n📦 Backups found in {install_dir / 'backups'}:")
         if not backups:
-            print("  (Aucune sauvegarde)")
+            print("  (No backup)")
         for b in backups:
             print(f"  • {b.name}")
     sys.exit(0)
 
 def gerer_maintenance_vulkan(args) -> None:
-    """Traite --update-vulkan/--update-all (check/download/build/rollback)."""
+    """Handles --update-vulkan/--update-all (check/download/build/rollback)."""
     import scripts.update_vulkan_stack as v_stack
     v_stack.inspecter_gpu_vulkan()
     mode = args.update_vulkan
     if mode == "check":
-        print("▶️ [1/2] Inspection de stable-diffusion.cpp...")
+        print("▶️ [1/2] Inspecting stable-diffusion.cpp...")
         v_stack.check_sd(v_stack.DEFAULT_SD_DIR)
-        print("▶️ [2/2] Inspection de llama.cpp...")
+        print("▶️ [2/2] Inspecting llama.cpp...")
         v_stack.check_llama(v_stack.DEFAULT_LLAMA_DIR)
     elif mode == "download":
-        print("\n🚀 Téléchargement et mise à jour de la Suite Vulkan...")
+        print("\n🚀 Downloading and updating the Vulkan Suite...")
         v_stack.download_sd(v_stack.DEFAULT_SD_DIR)
         v_stack.download_llama(v_stack.DEFAULT_LLAMA_DIR)
     elif mode == "build":
-        print("\n⚙️ Compilation native complète de la Suite Vulkan...")
+        print("\n⚙️ Full native compilation of the Vulkan Suite...")
         v_stack.build_sd(v_stack.DEFAULT_SD_SRC, v_stack.DEFAULT_SD_DIR)
         v_stack.build_llama(v_stack.DEFAULT_LLAMA_SRC, v_stack.DEFAULT_LLAMA_DIR)
     elif mode == "rollback":

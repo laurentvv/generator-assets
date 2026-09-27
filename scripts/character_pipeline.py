@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Pipeline Générique Universel de Création de Personnage 3D (MakeHuman / MPFB2 / Godot 4).
+Universal Generic 3D Character Creation Pipeline (MakeHuman / MPFB2 / Godot 4).
 
-Entrées requises :
-  1. --portrait       : Chemin du portrait 2D canonique HD du personnage (référence visuelle & colorimétrie).
-  2. --recipe-script  : Chemin du script Blender de recette d'assemblage 3D (morphologie, macros, vêtements, animations).
-  3. --name           : Identifiant unique du personnage / skin (ex: marc_novice, elian_peasant).
+Required inputs:
+  1. --portrait       : Path of the canonical HD 2D portrait of the character (visual reference & colorimetry).
+  2. --recipe-script  : Path of the Blender 3D assembly recipe script (morphology, macros, clothes, animations).
+  3. --name           : Unique identifier of the character / skin (e.g. marc_novice, elian_peasant).
 
-Entrées optionnelles :
-  --base-skin         : Gabarit de peau MakeHuman d'origine (défaut : young_caucasian_male).
-  --blender-exe       : Chemin de l'exécutable Blender (défaut : Blender 5.2).
-  --output-dir        : Dossier de sortie pour les rendus de validation (défaut : godot_assets/).
+Optional inputs:
+  --base-skin         : Origin MakeHuman skin template (default: young_caucasian_male).
+  --blender-exe       : Path of the Blender executable (default: Blender 5.2).
+  --output-dir        : Output folder for the validation renders (default: godot_assets/).
 
-Exemple d'exécution :
+Run example:
   uv run python scripts/character_pipeline.py \
     --portrait "C:\\test\\L'HERITIER DU VIDE\\assets\\portraits\\marc_portrait.png" \
     --recipe-script "C:\\test\\L'HERITIER DU VIDE\\poc_3d\\create_marc_mpfb2.py" \
@@ -25,7 +25,7 @@ import os
 import subprocess
 import sys
 
-# Console Windows : force l'UTF-8
+# Windows console: force UTF-8
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
         stream.reconfigure(encoding="utf-8", errors="replace")
@@ -43,20 +43,20 @@ BASE_SKIN_DEFAULT = os.path.join(MPFB_SKINS_DIR, "young_caucasian_male", "young_
 
 
 def extraire_colorimetrie_portrait(chemin_portrait: str) -> dict:
-    """Analyse le portrait 2D pour en extraire la balance des couleurs et la luminosité de la peau."""
+    """Analyzes the 2D portrait to extract its color balance and skin brightness."""
     if not os.path.exists(chemin_portrait):
-        print(f"⚠️ Portrait '{chemin_portrait}' introuvable, utilisation de la colorimétrie par défaut.")
+        print(f"⚠️ Portrait '{chemin_portrait}' not found, using the default colorimetry.")
         return {"brightness": 1.03, "saturation": 0.92, "r_mult": 0.99, "b_mult": 1.02}
 
     img = Image.open(chemin_portrait).convert("RGB")
     arr = np.array(img, dtype=np.float32)
 
-    # Détection des pixels de peau (teinte chaude/claire)
+    # Skin pixel detection (warm/light hue)
     mask_skin = (arr[:, :, 0] > 70) & (arr[:, :, 0] > arr[:, :, 2]) & (arr[:, :, 1] > arr[:, :, 2])
     if np.sum(mask_skin) > 500:
         pixels_skin = arr[mask_skin]
         mean_rgb = np.mean(pixels_skin, axis=0)
-        # Calcul des ajustements par rapport à une peau standard
+        # Compute the adjustments against a standard skin
         lum = (mean_rgb[0] * 0.299 + mean_rgb[1] * 0.587 + mean_rgb[2] * 0.114) / 255.0
         brightness_factor = 1.0 + (lum - 0.55) * 0.2
         cold_tone = mean_rgb[2] / (mean_rgb[0] + 1e-5)
@@ -74,43 +74,43 @@ def extraire_colorimetrie_portrait(chemin_portrait: str) -> dict:
 
 
 def etape_1_generer_pack_skin(nom_personnage: str, chemin_base_skin: str, chemin_portrait: str, dossier_sortie_godot: str) -> dict:
-    """Étape 1 : Génère le pack complet MPFB (.mhmat, .thumb, diffuse, normal) sans altération destructrice."""
-    print(f"\n[1/3] 🎨 ÉTAPE 1 : Génération du pack de peau '{nom_personnage}'...")
+    """Step 1: Generates the full MPFB pack (.mhmat, .thumb, diffuse, normal) without destructive alteration."""
+    print(f"\n[1/3] 🎨 STEP 1: Generation of the '{nom_personnage}' skin pack...")
 
     if not os.path.exists(chemin_base_skin):
-        raise FileNotFoundError(f"Skin d'origine MakeHuman introuvable : {chemin_base_skin}")
+        raise FileNotFoundError(f"Origin MakeHuman skin not found: {chemin_base_skin}")
 
-    # 1. Charger la peau d'origine MakeHuman
+    # 1. Load the origin MakeHuman skin
     base_skin = Image.open(chemin_base_skin).convert("RGBA")
     w, h = base_skin.size
 
-    # 2. Calque des cernes de fatigue sous les yeux
+    # 2. Fatigue dark-circle layer under the eyes
     from PIL import ImageDraw, ImageFilter
     cerne_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw_cerne = ImageDraw.Draw(cerne_layer)
-    # Croissant sous l'oeil gauche (haut UV)
+    # Crescent under the left eye (top UV)
     draw_cerne.ellipse([1700, 935, 1750, 995], fill=(55, 32, 28, 120))
-    # Croissant sous l'oeil droit (bas UV)
+    # Crescent under the right eye (bottom UV)
     draw_cerne.ellipse([1700, 1120, 1750, 1180], fill=(55, 32, 28, 120))
     cerne_blurred = cerne_layer.filter(ImageFilter.GaussianBlur(radius=10))
 
-    # 3. Calque de la cicatrice du front et égratignure joue
+    # 3. Forehead scar layer and cheek scratch
     scar_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw_scar = ImageDraw.Draw(scar_layer)
-    # Cicatrice front (au-dessus sourcil droit)
+    # Forehead scar (above the right eyebrow)
     draw_scar.line([(1615, 1180), (1638, 1205)], fill=(185, 95, 80, 200), width=6)
     draw_scar.line([(1617, 1182), (1636, 1203)], fill=(90, 20, 18, 255), width=3)
     draw_scar.line([(1630, 1172), (1645, 1185)], fill=(110, 30, 25, 220), width=2)
-    # Égratignure joue gauche
+    # Left cheek scratch
     draw_scar.line([(1765, 905), (1785, 925)], fill=(160, 75, 65, 180), width=4)
     draw_scar.line([(1767, 907), (1783, 923)], fill=(85, 22, 18, 240), width=2)
     scar_blurred = scar_layer.filter(ImageFilter.GaussianBlur(radius=0.8))
 
-    # Fusion des calques
+    # Layer merging
     skin_finale = Image.alpha_composite(base_skin, cerne_blurred)
     skin_finale = Image.alpha_composite(skin_finale, scar_blurred)
 
-    # Dossiers cibles (MPFB + Godot)
+    # Target folders (MPFB + Godot)
     dossier_mpfb = os.path.join(MPFB_SKINS_DIR, nom_personnage)
     dossier_local = os.path.join(dossier_sortie_godot, "skins", nom_personnage)
     os.makedirs(dossier_mpfb, exist_ok=True)
@@ -122,7 +122,7 @@ def etape_1_generer_pack_skin(nom_personnage: str, chemin_base_skin: str, chemin
     skin_finale.convert("RGB").save(diff_mpfb, "PNG", optimize=True)
     skin_finale.convert("RGB").save(diff_local, "PNG", optimize=True)
 
-    # 2. Normal Map PBR
+    # 2. PBR Normal Map
     from core.image_ops import generer_normal_map
     norm_img = generer_normal_map(skin_finale, strength=2.0)
     norm_mpfb = os.path.join(dossier_mpfb, f"{nom_personnage}_normal.png")
@@ -130,7 +130,7 @@ def etape_1_generer_pack_skin(nom_personnage: str, chemin_base_skin: str, chemin
     norm_img.save(norm_mpfb, "PNG")
     norm_img.save(norm_local, "PNG")
 
-    # 3. Vignette .thumb pour l'interface Blender
+    # 3. .thumb vignette for the Blender interface
     w, h = skin_finale.size
     thumb_crop = skin_finale.crop((int(w * 0.35), int(h * 0.15), int(w * 0.65), int(h * 0.45)))
     thumb_img = thumb_crop.resize((256, 256), Image.Resampling.LANCZOS).convert("RGBA")
@@ -139,7 +139,7 @@ def etape_1_generer_pack_skin(nom_personnage: str, chemin_base_skin: str, chemin
     thumb_img.save(thumb_mpfb, "PNG")
     thumb_img.save(thumb_local, "PNG")
 
-    # 4. Matériau .mhmat
+    # 4. .mhmat material
     mhmat_code = f"""# Material file for MakeHuman / MPFB
 name {nom_personnage}
 tag MakeHuman™
@@ -187,7 +187,7 @@ shaderConfig diffuse True
     with open(mhmat_local, "w", encoding="utf-8") as f:
         f.write(mhmat_code)
 
-    print(f"  ✅ Pack skin déployé dans Blender MPFB : {dossier_mpfb}")
+    print(f"  ✅ Skin pack deployed into Blender MPFB: {dossier_mpfb}")
     return {
         "diffuse": diff_mpfb,
         "normal": norm_mpfb,
@@ -197,28 +197,28 @@ shaderConfig diffuse True
 
 
 def etape_2_executer_recette_blender(chemin_blender: str, chemin_recette: str):
-    """Étape 2 : Exécute le script Blender de recette pour construire le mesh 3D et exporter les GLB."""
-    print("\n[2/3] 🔨 ÉTAPE 2 : Exécution de la recette 3D dans Blender...")
+    """Step 2: Runs the Blender recipe script to build the 3D mesh and export the GLBs."""
+    print("\n[2/3] 🔨 STEP 2: Running the 3D recipe in Blender...")
     if not os.path.exists(chemin_recette):
-        raise FileNotFoundError(f"Script de recette Blender introuvable : {chemin_recette}")
+        raise FileNotFoundError(f"Blender recipe script not found: {chemin_recette}")
 
     cmd = [chemin_blender, "--background", "--python", chemin_recette]
     res = subprocess.run(cmd, capture_output=True, text=True)
 
     if res.returncode != 0:
-        print(f"❌ Erreur lors de l'exécution de la recette Blender : {res.stderr}")
+        print(f"❌ Error while running the Blender recipe: {res.stderr}")
         sys.exit(1)
 
     print(res.stdout)
-    print("  ✅ Modèle 3D construit et exporté avec succès.")
+    print("  ✅ 3D model built and exported successfully.")
 
 
 def etape_3_rendre_validation(chemin_blender: str, glb_path: str, sortie_render: str):
-    """Étape 3 : Rendu studio Cycles de validation du modèle GLB généré."""
-    print("\n[3/3] 📸 ÉTAPE 3 : Rendu studio de validation 3D...")
+    """Step 3: Cycles studio render validating the generated GLB model."""
+    print("\n[3/3] 📸 STEP 3: 3D validation studio render...")
 
     if not os.path.exists(glb_path):
-        print(f"⚠️ Fichier GLB '{glb_path}' introuvable pour le rendu de validation, étape ignorée.")
+        print(f"⚠️ GLB file '{glb_path}' not found for the validation render, step skipped.")
         return
 
     script_render = f"""# -*- coding: utf-8 -*-
@@ -234,7 +234,7 @@ y_min, y_max = min(p.y for p in all_verts), max(p.y for p in all_verts)
 y_center = (y_min + y_max) / 2.0
 head_z = z_max - 0.15
 
-# Éclairage Chiaroscuro dramatique (Vent-Gris)
+# Dramatic Chiaroscuro lighting (Vent-Gris)
 if bpy.context.scene.world is None:
     bpy.context.scene.world = bpy.data.worlds.new("World")
 bpy.context.scene.world.use_nodes = True
@@ -245,7 +245,7 @@ if bg:
 key_data = bpy.data.lights.new(name="KeyLight", type='AREA')
 key_data.energy = 45.0
 key_data.size = 0.5
-key_data.color = (0.98, 0.92, 0.85)  # Lumière chaude douce
+key_data.color = (0.98, 0.92, 0.85)  # Soft warm light
 key_obj = bpy.data.objects.new("KeyLight", key_data)
 bpy.context.collection.objects.link(key_obj)
 key_obj.location = mathutils.Vector((0.35, y_center - 0.90, head_z + 0.25))
@@ -253,7 +253,7 @@ key_obj.location = mathutils.Vector((0.35, y_center - 0.90, head_z + 0.25))
 fill_data = bpy.data.lights.new(name="FillLight", type='AREA')
 fill_data.energy = 15.0
 fill_data.size = 0.8
-fill_data.color = (0.75, 0.80, 0.88)  # Ambiance nordique froide
+fill_data.color = (0.75, 0.80, 0.88)  # Cold nordic ambience
 fill_obj = bpy.data.objects.new("FillLight", fill_data)
 bpy.context.collection.objects.link(fill_obj)
 fill_obj.location = mathutils.Vector((-0.45, y_center - 0.80, head_z - 0.05))
@@ -266,7 +266,7 @@ rim_obj = bpy.data.objects.new("RimLight", rim_data)
 bpy.context.collection.objects.link(rim_obj)
 rim_obj.location = mathutils.Vector((0.20, y_center + 0.55, head_z + 0.35))
 
-# Caméra Buste / Portrait
+# Bust / Portrait camera
 cam_data = bpy.data.cameras.new("BustCam")
 cam_data.lens = 55.0
 cam_obj = bpy.data.objects.new("BustCam", cam_data)
@@ -297,37 +297,37 @@ bpy.ops.render.render(write_still=True)
         os.remove(tmp_script)
 
     if os.path.exists(sortie_render):
-        print(f"  ✅ Rendu de validation enregistré : {sortie_render}")
+        print(f"  ✅ Validation render saved: {sortie_render}")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Pipeline générique de création de personnages 3D (MakeHuman + MPFB2 + Godot 4).",
+        description="Generic 3D character creation pipeline (MakeHuman + MPFB2 + Godot 4).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Exemple :
+Example:
   uv run python scripts/character_pipeline.py \\
     --portrait "C:\\test\\L'HERITIER DU VIDE\\assets\\portraits\\marc_portrait.png" \\
     --recipe-script "C:\\test\\L'HERITIER DU VIDE\\poc_3d\\create_marc_mpfb2.py" \\
     --name marc_novice
         """
     )
-    parser.add_argument("-p", "--portrait", required=True, help="Chemin absolu du portrait 2D canonique HD du personnage.")
-    parser.add_argument("-r", "--recipe-script", required=True, help="Chemin absolu du script Blender de recette d'assemblage 3D (.py).")
-    parser.add_argument("-n", "--name", required=True, help="Nom / Identifiant unique du personnage (ex: marc_novice, elian_peasant).")
-    parser.add_argument("-s", "--base-skin", default=BASE_SKIN_DEFAULT, help="Chemin du gabarit de peau MakeHuman d'origine.")
-    parser.add_argument("-o", "--output-dir", default="godot_assets", help="Dossier de sortie des assets et rendus (défaut: godot_assets/).")
-    parser.add_argument("--blender-exe", default=BLENDER_EXE_DEFAULT, help="Chemin de l'exécutable Blender.")
+    parser.add_argument("-p", "--portrait", required=True, help="Absolute path of the canonical HD 2D portrait of the character.")
+    parser.add_argument("-r", "--recipe-script", required=True, help="Absolute path of the Blender 3D assembly recipe script (.py).")
+    parser.add_argument("-n", "--name", required=True, help="Name / unique identifier of the character (e.g. marc_novice, elian_peasant).")
+    parser.add_argument("-s", "--base-skin", default=BASE_SKIN_DEFAULT, help="Path of the origin MakeHuman skin template.")
+    parser.add_argument("-o", "--output-dir", default="godot_assets", help="Output folder of the assets and renders (default: godot_assets/).")
+    parser.add_argument("--blender-exe", default=BLENDER_EXE_DEFAULT, help="Path of the Blender executable.")
 
     args = parser.parse_args()
 
     print("=" * 65)
-    print(f" 🚀 PIPELINE GÉNÉRIQUE PERSONNAGE 3D : '{args.name.upper()}'")
-    print(f" 👤 Portrait Source : {args.portrait}")
-    print(f" 📜 Recette 3D     : {args.recipe_script}")
+    print(f" 🚀 GENERIC 3D CHARACTER PIPELINE: '{args.name.upper()}'")
+    print(f" 👤 Source Portrait : {args.portrait}")
+    print(f" 📜 3D Recipe      : {args.recipe_script}")
     print("=" * 65)
 
-    # Étape 1 : Pack de Skin MPFB
+    # Step 1: MPFB Skin Pack
     etape_1_generer_pack_skin(
         nom_personnage=args.name,
         chemin_base_skin=args.base_skin,
@@ -335,16 +335,16 @@ Exemple :
         dossier_sortie_godot=args.output_dir
     )
 
-    # Étape 2 : Exécution de la Recette Blender
+    # Step 2: Running the Blender Recipe
     etape_2_executer_recette_blender(
         chemin_blender=args.blender_exe,
         chemin_recette=args.recipe_script
     )
 
-    # Étape 3 : Rendu Studio de Validation
+    # Step 3: Validation Studio Render
     glb_exporte = os.path.join(r"C:\test\L'HERITIER DU VIDE\poc_3d\exports", f"{args.name}.glb")
     if not os.path.exists(glb_exporte):
-        # Chercher variante _mpfb2
+        # Look for the _mpfb2 variant
         glb_exporte = os.path.join(r"C:\test\L'HERITIER DU VIDE\poc_3d\exports", f"{args.name.split('_')[0]}_mpfb2.glb")
 
     render_preview = os.path.abspath(os.path.join(args.output_dir, f"{args.name}_beauty_render.png"))
@@ -355,7 +355,7 @@ Exemple :
     )
 
     print("\n" + "=" * 65)
-    print(f" 🎉 PIPELINE TERMINÉ AVEC SUCCÈS POUR '{args.name.upper()}' !")
+    print(f" 🎉 PIPELINE COMPLETED SUCCESSFULLY FOR '{args.name.upper()}'!")
     print("=" * 65)
 
 

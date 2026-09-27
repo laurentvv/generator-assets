@@ -6,9 +6,9 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_p)
 
 print("=" * 60)
-print("=== INSPECTION DES MATÉRIAUX DU GLB ===")
+print("=== INSPECTING THE GLB MATERIALS ===")
 for mat in bpy.data.materials:
-    print(f"Matériau : {mat.name}")
+    print(f"Material: {mat.name}")
     if hasattr(mat, "blend_method"):
         print(f"  blend_method : {mat.blend_method}")
     if hasattr(mat, "surface_render_method"):

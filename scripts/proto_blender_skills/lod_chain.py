@@ -1,8 +1,8 @@
-# Chaîne LOD d'un GLB — pattern blender-skills "lod-pipeline" (ratios 100/50/25/10),
-# décimation identique à core/mesh_ia.py (COLLAPSE, delimit SHARP/UV, UV préservées).
-# Échelle et transforms du GLB source NON modifiés (les LOD doivent rester superposables).
-# Usage : blender --background --python lod_chain.py -- <glb_in> <out_dir> <base_name>
-# Sortie : <base>_LOD0..3.glb + une vue 3/4 PNG par LOD + LOD_JSON:{...}
+# LOD chain of a GLB — blender-skills pattern "lod-pipeline" (ratios 100/50/25/10),
+# decimation identical to core/mesh_ia.py (COLLAPSE, delimit SHARP/UV, UVs preserved).
+# Scale and transforms of the source GLB NOT modified (the LODs must stay superposable).
+# Usage: blender --background --python lod_chain.py -- <glb_in> <out_dir> <base_name>
+# Output: <base>_LOD0..3.glb + one 3/4 PNG view per LOD + LOD_JSON:{...}
 
 import json
 import math
@@ -15,7 +15,7 @@ from mathutils import Vector
 argv = sys.argv[sys.argv.index("--") + 1:]
 glb_in, out_dir, base = argv[0], argv[1], argv[2]
 os.makedirs(out_dir, exist_ok=True)
-RATIOS = [1.0, 0.5, 0.5, 0.5]  # LOD0 = original, puis -50 % relatif à chaque étage
+RATIOS = [1.0, 0.5, 0.5, 0.5]  # LOD0 = original, then -50% relative at each level
 
 
 def tris_meshes(meshes):
@@ -25,7 +25,7 @@ def tris_meshes(meshes):
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 
 
 def exporter(niveau):
@@ -38,8 +38,8 @@ def exporter(niveau):
 
 
 def vue_controle(niveau):
-    # Cadrage dynamique sur la bbox réelle (pas de normalisation : le GLB source
-    # garde son échelle d'origine dans les exports).
+    # Dynamic framing on the real bbox (no normalization: the source GLB
+    # keeps its original scale in the exports).
     pts = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
     max_dim = max(max(p.x for p in pts) - min(p.x for p in pts),
                   max(p.y for p in pts) - min(p.y for p in pts),
@@ -73,7 +73,7 @@ def vue_controle(niveau):
     bpy.data.cameras.remove(cam_data)
 
 
-# Éclairage + monde minimaux pour les vues (une seule fois) — proportionnels à la bbox.
+# Minimal lighting + world for the views (only once) — proportional to the bbox.
 pts0 = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
 max_dim0 = max(max(p.x for p in pts0) - min(p.x for p in pts0),
                max(p.y for p in pts0) - min(p.y for p in pts0),

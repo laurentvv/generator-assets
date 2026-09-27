@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Retrait de Voix : suppression du chant d'un morceau par séparation
-de sources HTDemucs (audio.cpp, Vulkan). Validé par l'utilisateur le
-2026-09-06 sur une piste complète de 4 min 07 s.
+Vocal Removal Workflow: removal of the vocals from a track by HTDemucs source
+separation (audio.cpp, Vulkan). User-validated on
+2026-09-06 on a full 4 min 07 s track.
 
-Produit l'instrumental sans chant (mixage drums+bass+other à niveaux
-préservés) + les 4 stems complets (drums, bass, other, vocals).
+Produces the vocal-free instrumental (drums+bass+other mix at preserved
+levels) + the 4 full stems (drums, bass, other, vocals).
 """
 
 import os
@@ -19,18 +19,18 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class RetraitVoixWorkflow(BaseWorkflow):
-    """Retrait du chant d'un morceau (HTDemucs GGUF, Vulkan) — instrumental + stems."""
+    """Vocal removal from a track (HTDemucs GGUF, Vulkan) — instrumental + stems."""
 
     name = "retrait_voix"
-    description = ("Supprime le chant d'un morceau via HTDemucs (audio.cpp Vulkan) : "
-                   "instrumental sans voix + 4 stems (drums/bass/other/vocals), "
-                   "rééchantillonnage 44,1 kHz automatique")
+    description = ("Removes the vocals from a track via HTDemucs (audio.cpp Vulkan): "
+                   "voice-free instrumental + 4 stems (drums/bass/other/vocals), "
+                   "automatic 44.1 kHz resampling")
 
     emoji = "🎧"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):
-            raise ValueError("Audio source introuvable : le passer via -i <MP3/WAV>.")
+            raise ValueError("Audio source not found: pass it via -i <MP3/WAV>.")
         backend = params.get("music_backend") or "vulkan"
         if backend == "auto":
             backend = "vulkan"
@@ -38,8 +38,8 @@ class RetraitVoixWorkflow(BaseWorkflow):
         nom = slugifier_texte(params.get("output") or os.path.splitext(os.path.basename(source))[0])[:60]
         dossier = os.path.join("output", "retrait_voix", nom)
 
-        self.log(f"Séparation HTDemucs de {source} (backend {backend})", "🎧")
+        self.log(f"HTDemucs separation of {source} (backend {backend})", "🎧")
         res = retirer_voix(source, dossier, backend=backend)
-        self.log(f"Instrumental prêt : {res['instrumental_mp3']} — écoute pour valider", "✅")
-        self.log(f"Stems conservés : {res['stems_dir']} (voix isolée : vocals.wav)", "📦")
+        self.log(f"Instrumental ready: {res['instrumental_mp3']} — listen to validate", "✅")
+        self.log(f"Stems kept: {res['stems_dir']} (isolated vocals: vocals.wav)", "📦")
         return res

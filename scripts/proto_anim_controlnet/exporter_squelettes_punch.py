@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Exporte la chorégraphie OpenPose COCO 18 d'une action GLB Quaternius (prototype anim ControlNet).
+"""Exports the OpenPose COCO 18 choreography of a Quaternius GLB action (anim ControlNet prototype).
 
-Lancé via Blender headless : dump les coordonnées MONDE brutes des keypoints pour N frames
-échantillonnées sur l'action (ici CharacterArmature|Punch du bunny). Le passage en coordonnées
-normalisées (transformation FIXE sur toute la séquence, pour éviter tout saut d'échelle entre
-frames) est fait côté Python par dessiner_squelettes_punch.py.
+Run via Blender headless: dumps the raw WORLD coordinates of the keypoints for N frames
+sampled across the action (here CharacterArmature|Punch of the bunny). The conversion to
+normalized coordinates (FIXED transformation over the whole sequence, to avoid any scale
+jump between frames) is done on the Python side by dessiner_squelettes_punch.py.
 """
 
 import bpy
@@ -16,8 +16,8 @@ ACTION = "CharacterArmature|Run"
 NB_FRAMES = 13
 SORTIE = r"C:\GIT\generator-assets\output\test_anim_controlnet\points_run13.json"
 
-# Mapping os Quaternius (.L/.R = côté SUJET) -> keypoints COCO 18 (l_*/r_* = côté sujet).
-# Pas d'os de main chez Quaternius : poignet = queue du LowerArm. Oreilles réelles via Ear1.
+# Mapping Quaternius bones (.L/.R = SUBJECT side) -> COCO 18 keypoints (l_*/r_* = subject side).
+# No hand bones in Quaternius: wrist = tail of the LowerArm. Real ears via Ear1.
 MAPPING_TETE = {"l_shoulder": "UpperArm.L", "r_shoulder": "UpperArm.R",
                 "l_elbow": "LowerArm.L", "r_elbow": "LowerArm.R",
                 "l_hip": "UpperLeg.L", "r_hip": "UpperLeg.R",
@@ -40,7 +40,7 @@ arm.animation_data_create()
 arm.animation_data.action = action
 f0, f1 = int(action.frame_range[0]), int(action.frame_range[1])
 frames = [round(i * (f1 - f0 - 1) / (NB_FRAMES - 1)) for i in range(NB_FRAMES)]
-print(f"ACTION {action.name} : frames {f0}-{f1} -> échantillons {frames}")
+print(f"ACTION {action.name}: frames {f0}-{f1} -> samples {frames}")
 
 poses = {}
 scene = bpy.context.scene
@@ -66,4 +66,4 @@ for idx, fr in enumerate(frames):
 
 with open(SORTIE, "w", encoding="utf-8") as f:
     json.dump({"frames": frames, "poses": poses}, f)
-print(f"OK : {len(poses)} frames -> {SORTIE}")
+print(f"OK: {len(poses)} frames -> {SORTIE}")

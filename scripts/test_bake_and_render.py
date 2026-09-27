@@ -12,7 +12,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {absolute_package_str} introuvable")
+    raise ValueError(f"Module {absolute_package_str} not found")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -24,7 +24,7 @@ HumanService = dynamic_import("mpfb.services.humanservice", "HumanService")
 AssetService = dynamic_import("mpfb.services.assetservice", "AssetService")
 TargetService = dynamic_import("mpfb.services.targetservice", "TargetService")
 
-# 1. Corps enfant natif MakeHuman
+# 1. Native MakeHuman child body
 macros = {
     "gender": 1.0, "age": 0.18, "muscle": 0.30, "weight": 0.25,
     "proportions": 0.50, "height": 0.50,
@@ -34,12 +34,12 @@ basemesh = HumanService.create_human(macro_detail_dict=macros)
 TargetService.reapply_macro_details(basemesh)
 bpy.context.view_layer.update()
 
-# 2. Skin Marc
+# 2. Marc skin
 skin_mhmat = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data\skins\marc_novice\marc_novice.mhmat"
 if os.path.exists(skin_mhmat):
     HumanService.set_character_skin(skin_mhmat, basemesh, skin_type="GAMEENGINE")
 
-# 3. Assets natifs ajustés
+# 3. Adjusted native assets
 assets = [
     ("eyes",      "low-poly.mhclo",        "Eyes"),
     ("eyebrows",  "eyebrow001.mhclo",      "Eyebrows"),
@@ -57,7 +57,7 @@ for subdir, fname, atype in assets:
 
 bpy.context.view_layer.update()
 
-# 4. Suppression des sommets d'aide MakeHuman (HelperGeometry)
+# 4. Removal of the MakeHuman helper vertices (HelperGeometry)
 helper_vg = basemesh.vertex_groups.get("HelperGeometry")
 if helper_vg:
     bm = bmesh.new()
@@ -70,7 +70,7 @@ if helper_vg:
     bm.free()
     basemesh.data.update()
 
-# 5. Bake propre des shape keys pour fixer la géométrie enfant définitive
+# 5. Clean bake of the shape keys to fix the definitive child geometry
 dg = bpy.context.evaluated_depsgraph_get()
 for obj in list(bpy.data.objects):
     if obj.type == 'MESH' and obj.data.shape_keys:
@@ -81,7 +81,7 @@ for obj in list(bpy.data.objects):
         me.name = old.name
         bpy.data.meshes.remove(old)
 
-# 6. Retrait des masques
+# 6. Mask removal
 for obj in list(bpy.data.objects):
     if obj.type == 'MESH':
         for m in list(obj.modifiers):
@@ -91,7 +91,7 @@ for obj in list(bpy.data.objects):
             if vg.name.startswith("Delete."):
                 obj.vertex_groups.remove(vg)
 
-# 7. Opacité 100%
+# 7. 100% opacity
 for obj in list(bpy.data.objects):
     if obj.type == 'MESH':
         for mat in obj.data.materials:
@@ -105,7 +105,7 @@ for obj in list(bpy.data.objects):
                 if an:
                     mat.node_tree.nodes.remove(an)
 
-# 8. Sauvegarde et export
+# 8. Save and export
 out_blend = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.blend"
 out_glb = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.glb"
 bpy.ops.wm.save_as_mainfile(filepath=out_blend)
@@ -113,7 +113,7 @@ bpy.ops.wm.save_as_mainfile(filepath=out_blend)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=out_glb, export_format='GLB', use_selection=True)
 
-# 9. Rendu de validation
+# 9. Validation render
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=out_glb)
 
@@ -124,9 +124,9 @@ y_min, y_max = min(p.y for p in all_verts), max(p.y for p in all_verts)
 y_center = (y_min + y_max) / 2.0
 head_z = z_max - 0.15
 
-print(f"Hauteur enfant réelle : {z_max - z_min:.3f} m, Sommet tête Z={z_max:.3f} m")
+print(f"Real child height: {z_max - z_min:.3f} m, Head top Z={z_max:.3f} m")
 
-# Studio 3 points
+# 3-point studio
 k_data = bpy.data.lights.new("Key", 'AREA')
 k_data.energy = 100.0
 k = bpy.data.objects.new("Key", k_data)
@@ -150,4 +150,4 @@ bpy.context.scene.camera = cam
 bpy.context.scene.render.engine = 'BLENDER_EEVEE_NEXT' if hasattr(bpy.types.RenderSettings, 'engine') else 'CYCLES'
 bpy.context.scene.render.filepath = r"C:\GIT\generator-assets\godot_assets\marc_3d_beauty_render.png"
 bpy.ops.render.render(write_still=True)
-print("✅ Rendu propre terminé !")
+print("✅ Clean render done!")
