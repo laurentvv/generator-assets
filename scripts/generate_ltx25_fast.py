@@ -1,7 +1,7 @@
 """
 generate_ltx25_fast.py
-Workflow ultra-rapide d'itération en journée avec LTX-2.5 Distilled.
-Permet de prototyper et valider des cinématiques en < 2 minutes sur AMD Radeon RX 6950 XT.
+Ultra-fast daytime iteration workflow with LTX-2.5 Distilled.
+Lets you prototype and validate cinematics in < 2 minutes on AMD Radeon RX 6950 XT.
 """
 import os
 import sys
@@ -34,16 +34,16 @@ def run_fast_generation(prompt=PROMPT_DEFAULT, frames=25, steps=10, fps=24, outp
     out_png = os.path.join(OUTPUT_DIR, f"{output_name}_preview.png")
 
     print("=" * 80)
-    print("⚡ [ITÉRATION RAPIDE EN JOURNÉE - LTX-2.5 DISTILLED]")
-    print(f"   Modèle : {os.path.basename(LTX_MODEL)}")
-    print(f"   Objectif : Rendu rapide < 2 min | Trames : {frames} ({frames/fps:.1f}s) @ {fps} fps")
-    print(f"   Steps : {steps} | Résolution : 768x512 (Native LTX)")
-    print(f"   Prompt : {prompt}")
+    print("⚡ [FAST DAYTIME ITERATION - LTX-2.5 DISTILLED]")
+    print(f"   Model: {os.path.basename(LTX_MODEL)}")
+    print(f"   Goal: Fast render < 2 min | Frames: {frames} ({frames/fps:.1f}s) @ {fps} fps")
+    print(f"   Steps: {steps} | Resolution: 768x512 (Native LTX)")
+    print(f"   Prompt: {prompt}")
     print("=" * 80)
 
     if not os.path.exists(LTX_MODEL):
-        print(f"\n⚠️ Le fichier {LTX_MODEL} est en cours de finalisation de téléchargement.")
-        print("   Veuillez patienter quelques instants que le téléchargement se termine.")
+        print(f"\n⚠️ The file {LTX_MODEL} is still finishing downloading.")
+        print("   Please wait a few moments for the download to complete.")
         return None, None, None
 
     cmd = [
@@ -67,22 +67,22 @@ def run_fast_generation(prompt=PROMPT_DEFAULT, frames=25, steps=10, fps=24, outp
     try:
         subprocess.run(cmd, check=True)
         duree = time.time() - t0
-        print(f"\n⚡ Rendu LTX-2.5 achevé en {duree:.1f}s ({duree/steps:.2f}s/step) !")
-        print(f"   Fichier brut : {out_webm}")
+        print(f"\n⚡ LTX-2.5 render completed in {duree:.1f}s ({duree/steps:.2f}s/step)!")
+        print(f"   Raw file: {out_webm}")
 
         # Extraction preview
         subprocess.run([FFMPEG, "-y", "-i", out_webm, "-vframes", "1", out_png], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"   📸 Trame d'aperçu : {out_png}")
+        print(f"   📸 Preview frame: {out_png}")
 
-        # Conformation YouTube HD 1080p
+        # YouTube HD 1080p conformance
         if os.path.exists(CONFORM_SCRIPT):
-            print("   🚀 Conformation matérielle YouTube Full HD 1080p...")
+            print("   🚀 YouTube Full HD 1080p hardware conformance...")
             subprocess.run([sys.executable, CONFORM_SCRIPT, out_webm, out_mp4], check=True)
-            print(f"   🎥 Vidéo Full HD 1080p prête : {out_mp4}")
+            print(f"   🎥 Full HD 1080p video ready: {out_mp4}")
 
         return out_webm, out_mp4, out_png
     except Exception as e:
-        print(f"❌ Erreur lors de l'exécution LTX-2.5 : {e}")
+        print(f"❌ Error while running LTX-2.5: {e}")
         return None, None, None
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 harmonize_face.py
-Harmonisation colorimétrique complète du visage de Marc sur la peau MakeHuman :
-1. Nettoyage de l'ombre sous le nez (qui faisait une tâche sombre sur le philtrum).
-2. Transfert de tonalité LAB (la couleur de peau de Marc s'harmonise 100% avec la peau MakeHuman).
-3. Injection des détails haute fréquence (cicatrices, micro-relief, regard) sans choc colorimétrique.
-4. Fondu périphérique naturel sur le front, les joues et le menton.
+Full color harmonization of Marc's face onto the MakeHuman skin:
+1. Cleaning of the shadow under the nose (which made a dark patch on the philtrum).
+2. LAB tone transfer (Marc's skin color harmonizes 100% with the MakeHuman skin).
+3. Injection of high-frequency details (scars, micro-relief, gaze) without any color clash.
+4. Natural peripheral fade on the forehead, cheeks and chin.
 """
 
 import os
@@ -24,15 +24,15 @@ OUT_MPFB_DIR = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2
 OUT_LOCAL_DIR = r"C:\GIT\generator-assets\godot_assets\skins\marc_novice"
 
 def rgb_to_lab(img_arr):
-    # Conversion simple RGB -> LAB via matrice standard
-    # Normalisation [0..1]
+    # Simple RGB -> LAB conversion via the standard matrix
+    # Normalization [0..1]
     rgb = img_arr.astype(np.float32) / 255.0
     # gamma correction
     mask = rgb > 0.04045
     rgb[mask] = np.power((rgb[mask] + 0.055) / 1.055, 2.4)
     rgb[~mask] = rgb[~mask] / 12.92
 
-    # Vers XYZ
+    # To XYZ
     m = np.array([
         [0.412453, 0.357580, 0.180423],
         [0.212671, 0.715160, 0.072169],
@@ -40,7 +40,7 @@ def rgb_to_lab(img_arr):
     ])
     xyz = np.dot(rgb, m.T)
 
-    # Vers LAB (D65 white point: 0.95047, 1.00000, 1.08883)
+    # To LAB (D65 white point: 0.95047, 1.00000, 1.08883)
     xyz[:, :, 0] /= 0.95047
     xyz[:, :, 1] /= 1.00000
     xyz[:, :, 2] /= 1.08883
@@ -78,7 +78,7 @@ def lab_to_rgb(lab_arr):
     rgb = np.dot(xyz, m_inv.T)
     rgb = np.clip(rgb, 0.0, 1.0)
 
-    # Dé-gamma
+    # De-gamma
     mask_rgb = rgb > 0.0031308
     rgb[mask_rgb] = 1.055 * np.power(rgb[mask_rgb], 1.0 / 2.4) - 0.055
     rgb[~mask_rgb] = 12.92 * rgb[~mask_rgb]
@@ -86,7 +86,7 @@ def lab_to_rgb(lab_arr):
 
 def main():
     print("=" * 65)
-    print(" 🎨 HARMONISATION COLORIMÉTRIQUE ET NETTOYAGE DES OMBRES DU VISAGE")
+    print(" 🎨 FACE COLOR HARMONIZATION AND SHADOW CLEANING")
     print("=" * 65)
 
     base_skin = Image.open(BASE_SKIN_PATH).convert("RGB")
@@ -94,18 +94,18 @@ def main():
 
     portrait = Image.open(PORTRAIT_PATH).convert("RGB")
 
-    # 1. Nettoyage de l'ombre peinte sous le nez sur le portrait source (X: 470..555, Y: 485..530)
-    # On adoucit la tâche sombre sous le nez pour ne pas créer d'effet moustache
+    # 1. Cleaning of the painted shadow under the nose on the source portrait (X: 470..555, Y: 485..530)
+    # We soften the dark patch under the nose to avoid a mustache effect
     arr_port = np.array(portrait, dtype=np.float32)
-    # Zone sous le nez : rehausser la luminosité
+    # Under-nose zone: brighten
     y0, y1 = 485, 535
     x0, x1 = 475, 550
     under_nose = arr_port[y0:y1, x0:x1]
-    # Augmenter la luminosité sous le nez de 40% pour atténuer l'ombre portée 2D
+    # Brighten under the nose by 40% to attenuate the 2D cast shadow
     arr_port[y0:y1, x0:x1] = np.clip(under_nose * 1.38, 0, 255)
     clean_portrait = Image.fromarray(arr_port.astype(np.uint8))
 
-    # 2. Alignement rigide
+    # 2. Rigid alignment
     scale = 171.0 / 187.0
     rot_portrait = clean_portrait.rotate(90, expand=True, resample=Image.Resampling.BICUBIC)
 
@@ -119,32 +119,32 @@ def main():
     paste_x = int(round(1710.1 - eye_in_scaled_x))
     paste_y = int(round(1058.5 - eye_in_scaled_y))
 
-    # 3. Échantillon de la peau MakeHuman sous le visage pour harmonisation LAB
-    # Zone MakeHuman sur la joue : X ~ 1700..1850, Y ~ 850..950
+    # 3. Sample of the MakeHuman skin under the face for LAB harmonization
+    # MakeHuman cheek zone: X ~ 1700..1850, Y ~ 850..950
     mh_cheek_crop = base_skin.crop((paste_x + 50, paste_y + 50, paste_x + scaled_w - 50, paste_y + scaled_h - 50))
 
     lab_mh = rgb_to_lab(np.array(mh_cheek_crop))
     lab_port = rgb_to_lab(np.array(scaled_portrait))
 
-    # Transfert Reinhard des statistiques de couleur (A et B) vers le portrait
-    # Cela aligne parfaitement la couleur de chair (peau pêche claire) tout en gardant les détails de contraste (L)
+    # Reinhard transfer of the color statistics (A and B) onto the portrait
+    # This perfectly aligns the flesh color (light peach skin) while keeping the contrast detail (L)
     mean_mh_a, std_mh_a = np.mean(lab_mh[:, :, 1]), np.std(lab_mh[:, :, 1])
     mean_mh_b, std_mh_b = np.mean(lab_mh[:, :, 2]), np.std(lab_mh[:, :, 2])
 
     mean_port_a, std_port_a = np.mean(lab_port[:, :, 1]), np.std(lab_port[:, :, 1])
     mean_port_b, std_port_b = np.mean(lab_port[:, :, 2]), np.std(lab_port[:, :, 2])
 
-    # Harmonisation douce (70% MakeHuman, 30% portrait)
+    # Soft harmonization (70% MakeHuman, 30% portrait)
     lab_port[:, :, 1] = ((lab_port[:, :, 1] - mean_port_a) * (std_mh_a / (std_port_a + 1e-5))) * 0.70 + mean_mh_a
     lab_port[:, :, 2] = ((lab_port[:, :, 2] - mean_port_b) * (std_mh_b / (std_port_b + 1e-5))) * 0.70 + mean_mh_b
 
-    # Rehaussement de la clarté (L) pour éliminer le masque sombre
+    # Brightness (L) boost to remove the dark mask
     lab_port[:, :, 0] = np.clip(lab_port[:, :, 0] * 1.12 + 5.0, 0, 100)
 
     harmonized_arr = lab_to_rgb(lab_port)
     harmonized_img = Image.fromarray(harmonized_arr)
 
-    # 4. Masque d'estompage progressif
+    # 4. Progressive feathered mask
     mask = Image.new("L", (scaled_w, scaled_h), 0)
     arr_mask = np.zeros((scaled_h, scaled_w), dtype=np.float32)
     cx = 420.6
@@ -165,11 +165,11 @@ def main():
 
     mask = Image.fromarray(arr_mask.astype(np.uint8)).filter(ImageFilter.GaussianBlur(radius=8))
 
-    # 5. Collage harmonisé
+    # 5. Harmonized paste
     final_diffuse = base_skin.copy()
     final_diffuse.paste(harmonized_img, (paste_x, paste_y), mask)
 
-    # 6. Sauvegarde
+    # 6. Save
     for d in [OUT_MPFB_DIR, OUT_LOCAL_DIR]:
         os.makedirs(d, exist_ok=True)
 
@@ -177,7 +177,7 @@ def main():
     diff_local = os.path.join(OUT_LOCAL_DIR, "marc_novice_diffuse.png")
     final_diffuse.save(diff_mpfb, "PNG", optimize=True)
     final_diffuse.save(diff_local, "PNG", optimize=True)
-    print(f"✅ Texture diffuse harmonisée enregistrée : {diff_mpfb}")
+    print(f"✅ Harmonized diffuse texture saved: {diff_mpfb}")
 
     # Normal Map
     racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -189,12 +189,12 @@ def main():
     norm_local = os.path.join(OUT_LOCAL_DIR, "marc_novice_normal.png")
     norm_img.save(norm_mpfb, "PNG")
     norm_img.save(norm_local, "PNG")
-    print(f"✅ Normal Map enregistrée : {norm_mpfb}")
+    print(f"✅ Normal Map saved: {norm_mpfb}")
 
     # .mhmat
     mhmat_path = os.path.join(OUT_MPFB_DIR, "marc_novice.mhmat")
     with open(mhmat_path, "w", encoding="utf-8") as f:
-        f.write("""# Material file for MakeHuman / MPFB - Marc Novice Harmonisé
+        f.write("""# Material file for MakeHuman / MPFB - Marc Novice Harmonized
 name marc_novice
 tag MPFB
 diffuseTexture marc_novice_diffuse.png

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Pilote de batch résilient pour la génération des boucles music_bg.
+Resilient batch driver for music_bg loop generation.
 
-Génère les candidats manquants un par un (chaque génération dans son propre
-processus audiocpp), reprend là où le batch s'est arrêté, survit aux resets
-du pilote GPU AMD (LiveKernelEvent 141) en réessayant, puis finalise toutes
-les boucles via l'algorithme corrigé (zone d'énergie stable).
+Generates the missing candidates one by one (each generation in its own
+audiocpp process), resumes where the batch stopped, survives AMD GPU driver
+resets (LiveKernelEvent 141) by retrying, then finalizes all the loops via
+the fixed algorithm (stable energy zone).
 
-Usage :
-  uv run python -u scripts/generer_boucles_music_bg_batch.py [nb_candidats] [moteur]
-  moteur : acestep (défaut, rapide) | music3 (lent, ~25 min/candidat)
+Usage:
+  uv run python -u scripts/generer_boucles_music_bg_batch.py [nb_candidats] [engine]
+  engine: acestep (default, fast) | music3 (slow, ~25 min/candidate)
 """
 
 import os
@@ -34,8 +34,8 @@ PROMPT = (
     "subtle minimal techno groove, soft pulsing analog synth bass, muffled kick, "
     "airy hi-hats, clean dark pads, instrumental only, steady understated momentum, no vocals"
 )
-# 20 s de boucle visée + marge : ACE-Step termine par un long fondu de sortie
-# (~4-6 s) → +8 s ; Music3 se contente de +3 s.
+# 20 s target loop + margin: ACE-Step ends with a long fade-out
+# (~4-6 s) → +8 s; Music3 only needs +3 s.
 if MOTEUR == "acestep":
     DUREE_GENERATION = 28.0
     ETAPES = 8
@@ -47,24 +47,24 @@ PAUSE_ENTRE_CANDIDATS_S = 8.0
 
 def main():
     os.makedirs(DOSSIER_BRUTS, exist_ok=True)
-    print(f"🎵 Batch résilient music_bg : {NB_CANDIDATS} candidats, moteur {MOTEUR}, "
-          f"génération {DUREE_GENERATION:.0f} s, prompt minimal techno instrumental")
-    print(f"   Dossier : {DOSSIER_BRUTS}")
+    print(f"🎵 Resilient music_bg batch: {NB_CANDIDATS} candidates, engine {MOTEUR}, "
+          f"generation {DUREE_GENERATION:.0f} s, instrumental minimal techno prompt")
+    print(f"   Folder: {DOSSIER_BRUTS}")
 
     reussis, echoues = [], []
     for i in range(1, NB_CANDIDATS + 1):
         chemin = os.path.join(DOSSIER_BRUTS, f"cand_{i}_brut.wav")
 
         if os.path.exists(chemin) and os.path.getsize(chemin) > 1024 * 1024:
-            print(f"✅ cand_{i} déjà présent ({os.path.getsize(chemin) / 1048576:.1f} Mo) — reprise")
+            print(f"✅ cand_{i} already present ({os.path.getsize(chemin) / 1048576:.1f} MB) — resuming")
             reussis.append(chemin)
             continue
 
         t0 = time.time()
-        print(f"\n▶️ Génération cand_{i}/{NB_CANDIDATS} (moteur {MOTEUR}, graine {1000 + i})...")
+        print(f"\n▶️ Generating cand_{i}/{NB_CANDIDATS} (engine {MOTEUR}, seed {1000 + i})...")
         try:
-            # Graine explicite par candidat : garantit des variations distinctes
-            # (le seed par défaut du runtime est déterministe).
+            # Explicit seed per candidate: guarantees distinct variations
+            # (the runtime default seed is deterministic).
             generateur = generer_musique_acestep if MOTEUR == "acestep" else generer_musique_music3
             chemin_ok, backend = generateur(
                 description=PROMPT,
@@ -76,22 +76,22 @@ def main():
                 graine=1000 + i,
                 log=print,
             )
-            print(f"✅ cand_{i} terminé en {(time.time() - t0) / 60:.1f} min (backend {backend}, "
-                  f"{os.path.getsize(chemin_ok) / 1048576:.1f} Mo, md5 {empreinte_fichier(chemin_ok)[:8]})")
+            print(f"✅ cand_{i} done in {(time.time() - t0) / 60:.1f} min (backend {backend}, "
+                  f"{os.path.getsize(chemin_ok) / 1048576:.1f} MB, md5 {empreinte_fichier(chemin_ok)[:8]})")
             reussis.append(chemin_ok)
         except Exception as e:
-            print(f"❌ cand_{i} ÉCHOUÉ après tous les essais : {e}")
+            print(f"❌ cand_{i} FAILED after all attempts: {e}")
             echoues.append(i)
 
         time.sleep(PAUSE_ENTRE_CANDIDATS_S)
 
     print(f"\n{'=' * 60}")
-    print(f"Générations : {len(reussis)} réussie(s), {len(echoues)} échouée(s) {echoues if echoues else ''}")
+    print(f"Generations: {len(reussis)} succeeded, {len(echoues)} failed {echoues if echoues else ''}")
     if not reussis:
-        print("❌ Aucun candidat — abandon.")
+        print("❌ No candidate — aborting.")
         sys.exit(1)
 
-    print("\n🎬 Finalisation (bouclage zone stable + bed LUFS + MP3)...")
+    print("\n🎬 Finalization (stable-zone looping + LUFS bed + MP3)...")
     os.execv(sys.executable, [sys.executable, "-u",
              os.path.join("scripts", "finaliser_boucles_music_bg.py"), DOSSIER])
 

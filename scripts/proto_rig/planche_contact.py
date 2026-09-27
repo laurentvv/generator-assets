@@ -1,6 +1,6 @@
-"""Planche de contact PIL : assemble des captures PNG en grille avec libellés.
+"""PIL contact sheet: assembles PNG captures into a grid with labels.
 
-Usage :
+Usage:
     uv run python scripts/proto_rig/planche_contact.py "output/test_rig/captures/*_phase1_*.png" output/test_rig/planche_phase1.png
 """
 
@@ -18,8 +18,8 @@ def construire(motifs: list[str], sortie: str, par_ligne: int = 4, largeur_cell:
     for motif in motifs:
         chemins.extend(sorted(globlib.glob(motif)))
     if not chemins:
-        raise SystemExit(f"aucune capture pour {motifs}")
-    # regroupe par sujet (prefixe commun avant la vue) -> lignes
+        raise SystemExit(f"no capture for {motifs}")
+    # groups by subject (common prefix before the view) -> rows
     def sujet(chemin: str) -> str:
         return os.path.basename(chemin).rsplit("_", 1)[0]
 
@@ -52,8 +52,8 @@ def construire(motifs: list[str], sortie: str, par_ligne: int = 4, largeur_cell:
 
 def main() -> int:
     parseur = argparse.ArgumentParser(description=__doc__)
-    parseur.add_argument("motifs", nargs="+", help="glob(s) des captures")
-    parseur.add_argument("sortie", help="fichier PNG de sortie")
+    parseur.add_argument("motifs", nargs="+", help="glob(s) of the captures")
+    parseur.add_argument("sortie", help="output PNG file")
     parseur.add_argument("--par-ligne", type=int, default=4)
     parseur.add_argument("--largeur", type=int, default=380)
     args = parseur.parse_args()

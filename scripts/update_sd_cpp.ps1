@@ -1,27 +1,27 @@
 <#
 .SYNOPSIS
-    Script PowerShell d'automatisation de la mise à jour et de compilation Vulkan pour stable-diffusion.cpp.
+    PowerShell script automating the Vulkan update and compilation of stable-diffusion.cpp.
 
 .DESCRIPTION
-    Ce script enveloppe et exécute scripts/update_sd_cpp.py avec détection de l'environnement Python
-    (uv run, virtualenv local ou python global).
-    Permet la vérification, le téléchargement rapide des binaires Vulkan GitHub ou la compilation native
-    avec CMake et Visual Studio / Vulkan SDK.
+    This script wraps and runs scripts/update_sd_cpp.py with Python environment detection
+    (uv run, local virtualenv or global python).
+    Allows checking, quickly downloading the GitHub Vulkan binaries or compiling natively
+    with CMake and Visual Studio / Vulkan SDK.
 
 .PARAMETER Check
-    Vérifie l'état actuel et indique si une mise à jour est disponible.
+    Checks the current state and reports whether an update is available.
 
 .PARAMETER Download
-    Télécharge et installe la dernière release officielle Vulkan pour Windows (x64).
+    Downloads and installs the latest official Vulkan release for Windows (x64).
 
 .PARAMETER Build
-    Clone/met à jour les sources et compile nativement avec Vulkan (CMake + MSVC).
+    Clones/updates the sources and compiles natively with Vulkan (CMake + MSVC).
 
 .PARAMETER Rollback
-    Restaure la sauvegarde précédente.
+    Restores the previous backup.
 
 .PARAMETER Clean
-    Nettoie le dossier build avant la compilation.
+    Cleans the build folder before compiling.
 
 .EXAMPLE
     .\scripts\update_sd_cpp.ps1 -Check
@@ -47,10 +47,10 @@ $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
-Write-Host " 🚀 STABLE-DIFFUSION.CPP - AUTOMATION DE MISE À JOUR & VULKAN" -ForegroundColor Cyan
+Write-Host " 🚀 STABLE-DIFFUSION.CPP - UPDATE & VULKAN AUTOMATION" -ForegroundColor Cyan
 Write-Host "========================================================`n" -ForegroundColor Cyan
 
-# Détection de Python / uv
+# Python / uv detection
 $PythonCmd = @()
 if (Get-Command uv -ErrorAction SilentlyContinue) {
     $PythonCmd = @("uv", "run", "python")
@@ -59,17 +59,17 @@ if (Get-Command uv -ErrorAction SilentlyContinue) {
 } elseif (Get-Command python -ErrorAction SilentlyContinue) {
     $PythonCmd = @("python")
 } else {
-    Write-Error "Python ou uv est introuvable. Veuillez installer Python ou uv."
+    Write-Error "Python or uv not found. Please install Python or uv."
     exit 1
 }
 
 $ScriptPath = Join-Path $PSScriptRoot "update_sd_cpp.py"
 if (-not (Test-Path $ScriptPath)) {
-    Write-Error "Le script Python $ScriptPath est introuvable."
+    Write-Error "The Python script $ScriptPath was not found."
     exit 1
 }
 
-# Construction des arguments
+# Building the arguments
 $ArgsList = @($ScriptPath)
 
 if ($Check) {
@@ -83,7 +83,7 @@ if ($Check) {
 } elseif ($ListBackups) {
     $ArgsList += "--list-backups"
 } else {
-    # Mode par défaut : vérification
+    # Default mode: check
     $ArgsList += "--check"
 }
 
@@ -103,7 +103,7 @@ if ($NoBackup) {
     $ArgsList += "--no-backup"
 }
 
-# Exécution
-Write-Host "Lancement de : $($PythonCmd -join ' ') $($ArgsList -join ' ')...`n" -ForegroundColor DarkGray
+# Execution
+Write-Host "Launching: $($PythonCmd -join ' ') $($ArgsList -join ' ')...`n" -ForegroundColor DarkGray
 & $PythonCmd[0] $PythonCmd[1..($PythonCmd.Length - 1)] $ArgsList
 exit $LASTEXITCODE

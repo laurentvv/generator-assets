@@ -18,7 +18,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 OUT_WEBM = os.path.join(OUTPUT_DIR, "ltx25_dragon_2steps.webm")
 
 if not os.path.exists(LLM):
-    print(f"❌ En attente du fichier : {LLM}")
+    print(f"❌ Waiting for file: {LLM}")
     sys.exit(1)
 
 prompt = "Cinematic wide tracking shot, a colossal golden dragon with shimmering scales soaring majestically through sunset clouds, volumetric rays, high quality, 8k"
@@ -45,14 +45,14 @@ cmd = [
 ]
 
 print("=" * 75)
-print("🚀 Lancement du test LTX-2.5 (2 steps, CFG 1.0, Audio+Vidéo synchro)")
-print(f"   Sortie : {OUT_WEBM}")
+print("🚀 Starting the LTX-2.5 test (2 steps, CFG 1.0, synchronized Audio+Video)")
+print(f"   Output: {OUT_WEBM}")
 print("=" * 75)
 
 t_start = time.time()
 res = subprocess.run(cmd)
 elapsed = time.time() - t_start
 if res.returncode == 0:
-    print(f"\n✅ LTX-2.5 généré en {elapsed:.2f}s ({elapsed/60:.2f} min) !")
+    print(f"\n✅ LTX-2.5 generated in {elapsed:.2f}s ({elapsed/60:.2f} min)!")
 else:
-    print(f"\n❌ Erreur code {res.returncode}")
+    print(f"\n❌ Error code {res.returncode}")

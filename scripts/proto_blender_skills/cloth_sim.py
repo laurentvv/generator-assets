@@ -1,6 +1,6 @@
-# Cloth sim headless — pattern blender-skills "cloth-sim" : un drap tombe sur une
-# sphère (collision), simulation calculée en frames puis rendu du résultat.
-# Usage : blender --background --python cloth_sim.py -- <out_png> [frames=40]
+# Cloth sim headless — blender-skills pattern "cloth-sim": a cloth falls onto a
+# sphere (collision), simulation computed frame by frame then the result rendered.
+# Usage: blender --background --python cloth_sim.py -- <out_png> [frames=40]
 
 import sys
 
@@ -13,7 +13,7 @@ frames = int(argv[1]) if len(argv) > 1 else 40
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
-# Sphère de collision (le « objet » sous le tissu).
+# Collision sphere (the "object" under the cloth).
 bpy.ops.mesh.primitive_uv_sphere_add(radius=0.8, location=(0, 0, 0.8), segments=32, ring_count=16)
 sphere = bpy.context.active_object
 sphere.name = "COL_Forme"
@@ -21,11 +21,11 @@ mat = bpy.data.materials.new("MAT_Forme")
 mat.use_nodes = True
 mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.25, 0.22, 0.3, 1.0)
 sphere.data.materials.append(mat)
-# Blender 5.x : object.collision est dérivé — le modificateur COLLISION suffit
-# (réglages par défaut ; thickness_* n'existe plus sur le modificateur 5.2).
+# Blender 5.x: object.collision is derived — the COLLISION modifier is enough
+# (default settings; thickness_* no longer exists on the 5.2 modifier).
 sphere.modifiers.new("Collision", "COLLISION")
 
-# Drap : plane subdivisé + modificateur Cloth (réglages « pin-and-collide » minimaux).
+# Cloth: subdivided plane + Cloth modifier (minimal "pin-and-collide" settings).
 bpy.ops.mesh.primitive_plane_add(size=3.2, location=(0, 0, 2.6))
 drap = bpy.context.active_object
 drap.name = "COL_Drap"
@@ -45,7 +45,7 @@ cloth.settings.mass = 0.3
 cloth.settings.tension_stiffness = 12
 cloth.collision_settings.distance_min = 0.005
 
-# Lumière + monde + caméra (3/4 plongeant).
+# Light + world + camera (high 3/4 angle).
 ld = bpy.data.lights.new("Soleil", type="SUN")
 ld.energy = 3.5
 lo = bpy.data.objects.new("Soleil", ld)
@@ -86,10 +86,10 @@ except AttributeError:
     pass
 scn.render.resolution_x = scn.render.resolution_y = 700
 
-# La simulation s'évalue frame par frame — avancer jusqu'à la dernière.
+# The simulation evaluates frame by frame — advance to the last one.
 for f in range(1, frames + 1):
     scn.frame_set(f)
 scn.render.filepath = out_png
 bpy.ops.render.render(write_still=True)
-print(f"CLOTH_OK: {frames} frames simulées → {out_png}")
+print(f"CLOTH_OK: {frames} frames simulated → {out_png}")
 print("SUCCESS:")

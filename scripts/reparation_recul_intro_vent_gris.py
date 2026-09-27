@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scripts/reparation_recul_intro_vent_gris.py — réparation du « recul » (2026-09-10 matin)
-Les plans chaînés 2-4 démarrent par un léger tête-à-queue (le modèle reprend depuis
-la trame gelée puis ré-enclenche le travelling) : saut de position à la coupe + glissement
-arrière lent perçu à l'œil. Correctif :
-  1. Régénération des plans 2-4 en 81 trames (au lieu de 65) avec prompt anti-recul
-     explicite (« constant slow forward speed, framing never widens, never backward »).
-  2. Assemblage avec SUPPRESSION des 12 premières trames (0,5 s) de chaque plan intérieur
-     — la trame 12 est déjà repartie en avant, et elle repart de la position de coupe.
-  3. 65 + 69×3 = 272 trames utiles = 11,33 s → master rogner à 10,000 s.
-Réutilise les fonctions du lanceur de nuit (moteur LTX-2.5 I2V validé la nuit même).
+scripts/reparation_recul_intro_vent_gris.py — repair of the "push-back" (2026-09-10 morning)
+Chained shots 2-4 start with a slight head-tail lag (the model resumes from the frozen
+frame then re-engages the dolly): position jump at the cut + slow backward drift
+perceived by the eye. Fix:
+  1. Regenerate shots 2-4 in 81 frames (instead of 65) with an explicit anti-push-back
+     prompt ("constant slow forward speed, framing never widens, never backward").
+  2. Assembly with REMOVAL of the first 12 frames (0.5 s) of each inner shot
+     — frame 12 is already moving forward again, and it restarts from the cut position.
+  3. 65 + 69×3 = 272 usable frames = 11.33 s → master trimmed to 10.000 s.
+Reuses the functions of the night launcher (LTX-2.5 I2V engine validated the same night).
 """
 import os
 import subprocess
@@ -53,12 +53,12 @@ PROMPTS = {
         "rest for a title card." + ANTI_RECUL
     ),
 }
-TETE_COUPPEE = 12  # trames retirées en tête des plans intérieurs (le tête-à-queue)
+TETE_COUPPEE = 12  # frames trimmed at the head of the inner shots (the head-tail lag)
 DUREE_TOTALE = 10.0
 
 
 def conformer_avec_coupe(source: str, destination: str, couper_tete: int) -> bool:
-    """Conform 1080p CAS avec retrait des trames de tête (tête-à-queue)."""
+    """1080p CAS conform with removal of the head frames (head-tail lag)."""
     vf = (f"trim=start_frame={couper_tete},setpts=PTS-STARTPTS,"
           "scale=1920:1080:flags=lanczos,cas=0.75") if couper_tete else \
          "scale=1920:1080:flags=lanczos,cas=0.75"
@@ -79,49 +79,49 @@ def main() -> None:
     master = os.path.join(OUTPUT_DIR, "intro_vent_gris_10s_1080p_v3.mp4")
 
     if not os.path.exists(chemins["plan1"]):
-        log("⛔ plan1 absent — lancez d'abord le lanceur de nuit.")
+        log("⛔ plan1 missing — run the night launcher first.")
         sys.exit(2)
 
-    # ── Régénération chaînée des plans 2-4 en 81 trames ──────────────────────
+    # ── Chained regeneration of shots 2-4 in 81 frames ───────────────────────
     precedent = "plan1"
     for cle in ("plan2", "plan3", "plan4"):
         if os.path.exists(chemins[cle]):
-            log(f"⏭️ {cle} déjà régénéré.")
+            log(f"⏭️ {cle} already regenerated.")
         else:
             if not os.path.exists(amorces[cle]):
                 extraire_derniere_trame(chemins[precedent], amorces[cle])
-            log(f"🎥 Régénération {cle} (81 trames, prompt anti-recul)…")
+            log(f"🎥 Regenerating {cle} (81 frames, anti-push-back prompt)…")
             t0 = time.time()
             ok = generer_ltx_i2v(amorces[cle], PROMPTS[cle], chemins[cle],
                                  os.path.join(OUTPUT_DIR, f"{cle}_v3.log"), frames=81)
             if not ok:
-                log(f"⛔ {cle} impossible après réessais — arrêt.")
+                log(f"⛔ {cle} failed after retries — stopping.")
                 sys.exit(3)
-            log(f"  ✅ {cle} régénéré en {(time.time()-t0)/60:.1f} min")
+            log(f"  ✅ {cle} regenerated in {(time.time()-t0)/60:.1f} min")
         precedent = cle
 
-    # ── Conform avec coupe de tête ───────────────────────────────────────────
+    # ── Conform with head trim ───────────────────────────────────────────────
     for cle in ("plan1", "plan2", "plan3", "plan4"):
         if not os.path.exists(conformes[cle]):
             coupe = 0 if cle == "plan1" else TETE_COUPPEE
-            log(f"🎬 Conform {cle} (coupe tête={coupe})…")
+            log(f"🎬 Conform {cle} (head trim={coupe})…")
             if not conformer_avec_coupe(chemins[cle], conformes[cle], coupe):
-                log(f"⛔ conform {cle} échoué.")
+                log(f"⛔ conform {cle} failed.")
                 sys.exit(4)
 
-    # ── Assemblage final 10,000 s ────────────────────────────────────────────
+    # ── Final assembly 10.000 s ──────────────────────────────────────────────
     liste = os.path.join(OUTPUT_DIR, "concat_v3.txt")
     with open(liste, "w", encoding="utf-8") as f:
         for cle in ("plan1", "plan2", "plan3", "plan4"):
             f.write(f"file '{conformes[cle].replace(os.sep, '/')}'\n")
-    log("🎬 Assemblage master v3 (10,000 s)…")
+    log("🎬 Assembling master v3 (10.000 s)…")
     ok = subprocess.run(
         [FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", liste,
          "-t", str(DUREE_TOTALE),
          "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", master],
         capture_output=True,
     ).returncode == 0
-    log("✅ Master v3 : " + master if ok else "❌ assemblage v3 échoué")
+    log("✅ Master v3: " + master if ok else "❌ v3 assembly failed")
     if ok:
         subprocess.run(
             [FFMPEG, "-y", "-i", master,

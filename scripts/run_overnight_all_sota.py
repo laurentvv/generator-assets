@@ -32,7 +32,7 @@ def conform_and_extract(raw_webm, base_name, has_audio=False):
     frames_dir = os.path.join(OVERNIGHT_DIR, f"frames_{base_name}")
     os.makedirs(frames_dir, exist_ok=True)
 
-    # 1. Extraire les trames d'inspection
+    # 1. Extract the inspection frames
     cmd_frames = [
         FFMPEG, "-y", "-i", raw_webm,
         "-vf", "select=not(mod(n\\,8))",
@@ -41,7 +41,7 @@ def conform_and_extract(raw_webm, base_name, has_audio=False):
     ]
     subprocess.run(cmd_frames, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # 2. Conformation matérielle Full HD 1080p Lanczos + AMD FidelityFX CAS
+    # 2. Hardware conform Full HD 1080p Lanczos + AMD FidelityFX CAS
     vf_conform = "scale=1920:1080:flags=lanczos,cas=0.75"
     if has_audio:
         cmd_mp4 = [
@@ -65,9 +65,9 @@ def conform_and_extract(raw_webm, base_name, has_audio=False):
 
 def run_job(job_id, total_jobs, title, cmd, out_raw, base_name, has_audio):
     print("\n" + "=" * 85)
-    print(f"[{job_id}/{total_jobs}] 🎬 DÉBUT DU RENDU : {title}")
-    print(f"   Heure de lancement : {datetime.now().strftime('%H:%M:%S')}")
-    print(f"   Fichier brut cible : {out_raw}")
+    print(f"[{job_id}/{total_jobs}] 🎬 RENDER START: {title}")
+    print(f"   Launch time: {datetime.now().strftime('%H:%M:%S')}")
+    print(f"   Target raw file: {out_raw}")
     print("=" * 85)
 
     t0 = time.time()
@@ -76,9 +76,9 @@ def run_job(job_id, total_jobs, title, cmd, out_raw, base_name, has_audio):
 
     if res.returncode == 0 and os.path.exists(out_raw) and os.path.getsize(out_raw) > 100000:
         mp4_path, frames_dir = conform_and_extract(out_raw, base_name, has_audio=has_audio)
-        print(f"✅ Succès en {elapsed:.1f}s ({elapsed/60:.2f} min) !")
-        print(f"   🎬 Vidéo 1080p : {mp4_path}")
-        print(f"   🖼️ Trames extraites : {frames_dir}")
+        print(f"✅ Success in {elapsed:.1f}s ({elapsed/60:.2f} min)!")
+        print(f"   🎬 1080p video: {mp4_path}")
+        print(f"   🖼️ Extracted frames: {frames_dir}")
         return {
             "title": title,
             "status": "OK",
@@ -87,10 +87,10 @@ def run_job(job_id, total_jobs, title, cmd, out_raw, base_name, has_audio):
             "frames": frames_dir
         }
     else:
-        print(f"❌ Échec du job {title} (code sortie {res.returncode})")
+        print(f"❌ Job {title} failed (exit code {res.returncode})")
         return {
             "title": title,
-            "status": f"ERREUR (code {res.returncode})",
+            "status": f"ERROR (code {res.returncode})",
             "duration": elapsed,
             "mp4": None,
             "frames": None
@@ -98,15 +98,15 @@ def run_job(job_id, total_jobs, title, cmd, out_raw, base_name, has_audio):
 
 def main():
     print("#" * 85)
-    print("🌙 SESSION DE RENDU NOCTURNE SOTA - GRAND BENCHMARK COMPARATIF")
-    print(f"   Démarrage : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-    print(f"   Dossier de sortie : {OVERNIGHT_DIR}")
+    print("🌙 SOTA OVERNIGHT RENDER SESSION - GRAND COMPARATIVE BENCHMARK")
+    print(f"   Start: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    print(f"   Output folder: {OVERNIGHT_DIR}")
     print("#" * 85)
 
     results = []
 
     # -------------------------------------------------------------
-    # 1. LTX-2.5 (15B Audio + Vidéo - 8 steps distillés officiels)
+    # 1. LTX-2.5 (15B Audio + Video - 8 official distilled steps)
     # -------------------------------------------------------------
     out_ltx = os.path.join(OVERNIGHT_DIR, "01_ltx25_8steps_dragon.webm")
     cmd_ltx = [
@@ -125,11 +125,11 @@ def main():
         "--backend", "diffusion=vulkan0,te=cpu,vae=cpu",
         "-o", out_ltx, "-v"
     ]
-    results.append(run_job(1, 4, "LTX-2.5 (15B Audio + Vidéo - 8 steps)", cmd_ltx, out_ltx, "01_ltx25_8steps_dragon", has_audio=True))
+    results.append(run_job(1, 4, "LTX-2.5 (15B Audio + Video - 8 steps)", cmd_ltx, out_ltx, "01_ltx25_8steps_dragon", has_audio=True))
     time.sleep(5)
 
     # -------------------------------------------------------------
-    # 2. Wan 2.1 (14B Flagship T2V - 8 steps cinématiques)
+    # 2. Wan 2.1 (14B Flagship T2V - 8 cinematic steps)
     # -------------------------------------------------------------
     out_wan21 = os.path.join(OVERNIGHT_DIR, "02_wan21_14steps_dragon.webm")
     cmd_wan21 = [
@@ -154,7 +154,7 @@ def main():
     time.sleep(5)
 
     # -------------------------------------------------------------
-    # 3. Wan 2.2 MoE (Dual-DiT A14B - 8 steps MoE)
+    # 3. Wan 2.2 MoE (Dual-DiT A14B - 8 MoE steps)
     # -------------------------------------------------------------
     out_wan22 = os.path.join(OVERNIGHT_DIR, "03_wan22_moe_18steps_dragon.webm")
     cmd_wan22 = [
@@ -184,7 +184,7 @@ def main():
     time.sleep(5)
 
     # -------------------------------------------------------------
-    # 4. MiniMax-H3 (Titan Hailuo AI 32B - Vidéo + Audio Stéréo - 12 steps)
+    # 4. MiniMax-H3 (Titan Hailuo AI 32B - Video + Stereo Audio - 12 steps)
     # -------------------------------------------------------------
     out_minimax = os.path.join(OVERNIGHT_DIR, "04_minimax_h3_20steps_dragon.webm")
     cmd_minimax = [
@@ -203,16 +203,16 @@ def main():
         "--backend", "diffusion=vulkan0,te=cpu,vae=cpu",
         "-o", out_minimax, "-v"
     ]
-    results.append(run_job(4, 4, "MiniMax-H3 (Titan 32B Vidéo + Audio - 12 steps)", cmd_minimax, out_minimax, "04_minimax_h3_20steps_dragon", has_audio=True))
+    results.append(run_job(4, 4, "MiniMax-H3 (Titan 32B Video + Audio - 12 steps)", cmd_minimax, out_minimax, "04_minimax_h3_20steps_dragon", has_audio=True))
 
     # -------------------------------------------------------------
-    # RAPPORT DE SYNTHÈSE
+    # SUMMARY REPORT
     # -------------------------------------------------------------
     report_md = os.path.join(OVERNIGHT_DIR, "overnight_summary.md")
     with open(report_md, "w", encoding="utf-8") as f:
-        f.write("# 🏆 Rapport de Synthèse du Grand Rendu Nocturne SOTA\n\n")
-        f.write(f"**Date de fin :** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n\n")
-        f.write("| Modèle | Statut | Durée | Vidéo HD 1080p | Trames Extraites |\n")
+        f.write("# 🏆 SOTA Overnight Grand Render Summary Report\n\n")
+        f.write(f"**End date:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n\n")
+        f.write("| Model | Status | Duration | HD 1080p Video | Extracted Frames |\n")
         f.write("| :--- | :--- | :--- | :--- | :--- |\n")
         for r in results:
             mp4_link = f"[{os.path.basename(r['mp4'])}](file:///{r['mp4'].replace(chr(92), '/')})" if r['mp4'] else "N/A"
@@ -220,8 +220,8 @@ def main():
             f.write(f"| **{r['title']}** | {r['status']} | {r['duration']/60:.2f} min | {mp4_link} | {frames_link} |\n")
 
     print("\n" + "#" * 85)
-    print("🎉 TOUS LES RENDUS NOCTURNES SONT TERMINÉS AVEC SUCCÈS !")
-    print(f"   Rapport de synthèse disponible : {report_md}")
+    print("🎉 ALL OVERNIGHT RENDERS COMPLETED SUCCESSFULLY!")
+    print(f"   Summary report available: {report_md}")
     print("#" * 85)
 
 if __name__ == "__main__":

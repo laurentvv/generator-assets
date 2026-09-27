@@ -23,7 +23,7 @@ prompt = (
     "massive wings spread wide, shimmering iridescent gold scales, dramatic clouds, sunset lighting, masterpiece, 8k"
 )
 
-# 3-step resample sigmas issus du workflow officiel two-stage HQ
+# 3-step resample sigmas from the official two-stage HQ workflow
 SIGMAS_3STEPS = "0.85, 0.725, 0.421875, 0.0"
 
 cmd = [
@@ -49,15 +49,15 @@ cmd = [
 ]
 
 print("=" * 75)
-print("🚀 [BENCHMARK 3 STEPS] LTX-2.5 (15B Audio + Vidéo)")
-print(f"   Sortie : {OUT_WEBM}")
+print("🚀 [BENCHMARK 3 STEPS] LTX-2.5 (15B Audio + Video)")
+print(f"   Output: {OUT_WEBM}")
 print("=" * 75)
 
 t_start = time.time()
 res = subprocess.run(cmd)
 elapsed = time.time() - t_start
 if res.returncode == 0:
-    print(f"\n✅ LTX-2.5 3-steps généré en {elapsed:.2f}s ({elapsed/60:.2f} min) !")
+    print(f"\n✅ LTX-2.5 3-steps generated in {elapsed:.2f}s ({elapsed/60:.2f} min)!")
 else:
-    print(f"\n❌ Erreur code {res.returncode}")
+    print(f"\n❌ Error code {res.returncode}")
     sys.exit(res.returncode)

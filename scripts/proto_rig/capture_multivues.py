@@ -1,13 +1,13 @@
-"""Protocole « capture multi-vues » — socle de vérification visuelle de la campagne RIG.
+""""Multi-view capture" protocol — foundation of the visual verification of the RIG campaign.
 
-Place la caméra viewport sur les vues standard (avant / 3-4 / profil / dos),
-cadre automatiquement les objets visibles, puis capture le viewport via
-l'addon BlenderMCP (rendu offscreen GPU, independant du focus fenetre).
+Points the viewport camera at the standard views (front / 3-4 / profile / back),
+automatically frames the visible objects, then captures the viewport via
+the BlenderMCP addon (offscreen GPU render, independent of window focus).
 
-Convention : le sujet regarde -Y (convention Blender/Mixamo). La camera se
-place du cote oppose a la direction de visee ; azimut en DEGRES autour de Z.
+Convention: the subject faces -Y (Blender/Mixamo convention). The camera is
+placed on the opposite side of the aiming direction; azimuth in DEGREES around Z.
 
-Usage (depuis la racine du depot, Blender lance avec demarrer_blender_mcp.py) :
+Usage (from the repo root, Blender launched via demarrer_blender_mcp.py):
     uv run python scripts/proto_rig/capture_multivues.py suzanne
     uv run python scripts/proto_rig/capture_multivues.py loup -d output/test_rig/captures
 """
@@ -22,8 +22,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from blender_client import envoyer  # noqa: E402
 
-# Vues : (azimut deg de la DIRECTION DE VISEE, elevation deg). Avant = camera
-# en -Y qui regarde +Y (le sujet fait face a -Y) -> on voit la face.
+# Views: (azimuth deg of the AIMING DIRECTION, elevation deg). Front = camera
+# at -Y looking at +Y (the subject faces -Y) -> we see the face.
 VUES = {
     "avant": (0.0, 6.0),
     "trois_quarts": (-45.0, 12.0),
@@ -31,7 +31,7 @@ VUES = {
     "dos": (180.0, 8.0),
 }
 
-# Gabarit execute dans Blender. Jetons @AZ@ @EL@ @FACTEUR@ remplaces cote client.
+# Template executed in Blender. Tokens @AZ@ @EL@ @FACTEUR@ replaced on the client side.
 CODE_ORIENTER = """
 import bpy, math
 from mathutils import Vector
@@ -54,7 +54,7 @@ centre /= len(points)
 rayon = max((p - centre).length for p in points) or 1.0
 distance = rayon * @FACTEUR@
 
-# Direction de visee : azimut autour de Z, elevation positive = camera haute
+# Aiming direction: azimuth around Z, positive elevation = high camera
 direction = Vector((math.sin(az) * math.cos(el), math.cos(az) * math.cos(el), -math.sin(el))).normalized()
 
 for aire in bpy.context.screen.areas:
@@ -71,7 +71,7 @@ for aire in bpy.context.screen.areas:
         r3d.view_rotation = direction.to_track_quat('-Z', 'Y')
         break
 else:
-    raise RuntimeError('aucune vue 3D trouvee')
+    raise RuntimeError('no 3D view found')
 view_layer.update()
 dir_lue = r3d.view_rotation @ Vector((0, 0, -1))
 print('CADRE_OK centre=(%.2f, %.2f, %.2f) rayon=%.2f dir=(%.2f, %.2f, %.2f)'
@@ -80,7 +80,7 @@ print('CADRE_OK centre=(%.2f, %.2f, %.2f) rayon=%.2f dir=(%.2f, %.2f, %.2f)'
 
 
 def capturer_multivues(nom: str, dossier: str, taille_max: int = 1400) -> list[str]:
-    """Capture les 4 vues standard ; renvoie les chemins des PNG ecrits."""
+    """Captures the 4 standard views; returns the paths of the written PNGs."""
     os.makedirs(dossier, exist_ok=True)
     chemins = []
     for vue, (azimut, elevation) in VUES.items():
@@ -92,7 +92,7 @@ def capturer_multivues(nom: str, dossier: str, taille_max: int = 1400) -> list[s
         reponse = envoyer("execute_code", {"code": code})
         resultat = str(reponse.get("result", ""))
         if "CADRE_OK" not in resultat:
-            raise RuntimeError(f"orientation {vue} echouee : {resultat!r}")
+            raise RuntimeError(f"orientation {vue} failed: {resultat!r}")
         chemin = os.path.abspath(os.path.join(dossier, f"{nom}_{vue}.png"))
         capture = envoyer(
             "get_viewport_screenshot",
@@ -100,7 +100,7 @@ def capturer_multivues(nom: str, dossier: str, taille_max: int = 1400) -> list[s
         )
         corps = capture.get("result", capture)
         if not corps.get("success"):
-            raise RuntimeError(f"capture {vue} echouee : {corps}")
+            raise RuntimeError(f"capture {vue} failed: {corps}")
         chemins.append(chemin)
         print(f"[OK] {vue}: {chemin}")
     return chemins
@@ -108,7 +108,7 @@ def capturer_multivues(nom: str, dossier: str, taille_max: int = 1400) -> list[s
 
 def main() -> int:
     parseur = argparse.ArgumentParser(description=__doc__)
-    parseur.add_argument("nom", help="prefixe des fichiers (ex. suzanne, loup_v1)")
+    parseur.add_argument("nom", help="file name prefix (e.g. suzanne, loup_v1)")
     parseur.add_argument("-d", "--dossier", default="output/test_rig/captures")
     parseur.add_argument("-t", "--taille-max", type=int, default=1400)
     args = parseur.parse_args()

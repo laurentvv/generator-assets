@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 retexture_uv_garment.py
-Transformation IA de patrons UV MakeHuman existants :
-1. Part du vrai patron UV MakeHuman (ex: male_worksuit01_diffuse.png ou shoes01_diffuse.png).
-2. Conserve 100% du placement des poches, boutons, coutures, bretelles et découpes UV.
-3. Transforme la matière (jean bleu -> toile de jute / lin médiéval / cuir vieilli).
-4. Génère la Normal Map PBR associée.
-5. Applique le nouveau patron directement dans Blender et exporte pour Godot 4.
+AI transformation of existing MakeHuman UV patterns:
+1. Starts from the real MakeHuman UV pattern (e.g. male_worksuit01_diffuse.png or shoes01_diffuse.png).
+2. Keeps 100% of the placement of pockets, buttons, seams, straps and UV cuts.
+3. Transforms the material (blue jeans -> burlap / medieval linen / aged leather).
+4. Generates the associated PBR Normal Map.
+5. Applies the new pattern directly in Blender and exports for Godot 4.
 """
 
 import os
@@ -28,39 +28,39 @@ RENDER_FILE = r"C:\GIT\generator-assets\godot_assets\marc_novice_beauty_render.p
 
 def main():
     print("=" * 65)
-    print(" 👗 TRANSFORMATION IA DES PATRONS UV MAKEHUMAN EXISTANTS")
+    print(" 👗 AI TRANSFORMATION OF THE EXISTING MAKEHUMAN UV PATTERNS")
     print("=" * 65)
     os.makedirs(OUT_DIR, exist_ok=True)
 
-    # 1. Transformation du patron UV de la Salopette / Tunique (male_worksuit01)
-    # Remplacement du denim bleu moderne par une toile de jute / chanvre médiévale rustique
+    # 1. Transformation of the Overall / Tunic UV pattern (male_worksuit01)
+    # Replacing the modern blue denim with a rustic medieval burlap / hemp cloth
     worksuit_img = Image.open(WORKSUIT_UV_ORIG).convert("RGBA")
     arr_ws = np.array(worksuit_img, dtype=np.float32)
 
-    # Isoler le fond noir (les pixels où R=G=B=0)
+    # Isolate the black background (the pixels where R=G=B=0)
     bg_mask = (arr_ws[:, :, 0] < 10) & (arr_ws[:, :, 1] < 10) & (arr_ws[:, :, 2] < 10)
 
-    # Isoler les boucles métalliques et boutons en haut à gauche / bas
-    # Zone boucles : Y: 0..400, X: 0..600
+    # Isolate the metal buckles and buttons at the top left / bottom
+    # Buckle zone: Y: 0..400, X: 0..600
     is_buckle = np.zeros(bg_mask.shape, dtype=bool)
     is_buckle[0:450, 0:600] = True
 
-    # Transformation de la couleur du tissu : Bleu denim -> Toile de jute beige/brun terreux
-    # Luminance de base
+    # Cloth color transformation: blue denim -> earthy beige/brown burlap
+    # Base luminance
     lum = (arr_ws[:, :, 0] * 0.299 + arr_ws[:, :, 1] * 0.587 + arr_ws[:, :, 2] * 0.114) / 255.0
 
-    # Teinte toile de jute rustique : RGB = (185, 155, 120) * lum
+    # Rustic burlap tint: RGB = (185, 155, 120) * lum
     burlap_r = np.clip(lum * 195.0 + 15.0, 0, 255)
     burlap_g = np.clip(lum * 165.0 + 10.0, 0, 255)
     burlap_b = np.clip(lum * 125.0 + 5.0, 0, 255)
 
-    # Appliquer sur le tissu (sauf le fond noir et les boucles métalliques)
+    # Apply on the cloth (except the black background and the metal buckles)
     cloth_mask = (~bg_mask) & (~is_buckle)
     arr_ws[cloth_mask, 0] = burlap_r[cloth_mask]
     arr_ws[cloth_mask, 1] = burlap_g[cloth_mask]
     arr_ws[cloth_mask, 2] = burlap_b[cloth_mask]
 
-    # Boucles métalliques : Fer forgé sombre / bronze médiéval au lieu de plastique bleu
+    # Metal buckles: dark wrought iron / medieval bronze instead of blue plastic
     buckle_mask = (~bg_mask) & is_buckle
     arr_ws[buckle_mask, 0] = np.clip(arr_ws[buckle_mask, 0] * 0.8 + 40.0, 0, 255)
     arr_ws[buckle_mask, 1] = np.clip(arr_ws[buckle_mask, 1] * 0.7 + 35.0, 0, 255)
@@ -69,7 +69,7 @@ def main():
     worksuit_peasant = Image.fromarray(arr_ws.astype(np.uint8))
     worksuit_out = os.path.join(OUT_DIR, "marc_peasant_worksuit_diffuse.png")
     worksuit_peasant.convert("RGB").save(worksuit_out, "PNG", optimize=True)
-    print(f"✅ Nouveau patron UV Tunique/Salopette généré : {worksuit_out}")
+    print(f"✅ New Tunic/Overall UV pattern generated: {worksuit_out}")
 
     # Normal map
     racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,12 +80,12 @@ def main():
     ws_norm_out = os.path.join(OUT_DIR, "marc_peasant_worksuit_normal.png")
     ws_norm.save(ws_norm_out, "PNG")
 
-    # 2. Transformation du patron UV des Chaussures (shoes01)
+    # 2. Transformation of the Shoes UV pattern (shoes01)
     shoes_img = Image.open(SHOES_UV_ORIG).convert("RGBA")
     arr_sh = np.array(shoes_img, dtype=np.float32)
     bg_sh = (arr_sh[:, :, 0] < 10) & (arr_sh[:, :, 1] < 10) & (arr_sh[:, :, 2] < 10)
 
-    # Cuir médiéval brun sombre usé
+    # Worn dark brown medieval leather
     lum_sh = (arr_sh[:, :, 0] * 0.299 + arr_sh[:, :, 1] * 0.587 + arr_sh[:, :, 2] * 0.114) / 255.0
     arr_sh[~bg_sh, 0] = np.clip(lum_sh[~bg_sh] * 120.0 + 20.0, 0, 255)
     arr_sh[~bg_sh, 1] = np.clip(lum_sh[~bg_sh] * 80.0 + 12.0, 0, 255)
@@ -94,13 +94,13 @@ def main():
     shoes_peasant = Image.fromarray(arr_sh.astype(np.uint8))
     shoes_out = os.path.join(OUT_DIR, "marc_peasant_shoes_diffuse.png")
     shoes_peasant.convert("RGB").save(shoes_out, "PNG", optimize=True)
-    print(f"✅ Nouveau patron UV Chaussures généré : {shoes_out}")
+    print(f"✅ New Shoes UV pattern generated: {shoes_out}")
 
     sh_norm = generer_normal_map(shoes_peasant.convert("RGB"), strength=2.5)
     sh_norm_out = os.path.join(OUT_DIR, "marc_peasant_shoes_normal.png")
     sh_norm.save(sh_norm_out, "PNG")
 
-    # 3. Application des textures UV dans Blender
+    # 3. Applying the UV textures in Blender
     from core.blender_ops import trouver_blender
     blender_bin = trouver_blender()
 
@@ -113,7 +113,7 @@ bpy.ops.wm.open_mainfile(filepath=blend_file)
 def assign_uv_material(obj_name, diffuse_path, normal_path, roughness_val=0.85):
     obj = next((o for o in bpy.data.objects if obj_name.lower() in o.name.lower()), None)
     if not obj:
-        print(f"⚠️ Objet {{obj_name}} introuvable")
+        print(f"⚠️ Object {{obj_name}} not found")
         return
 
     mat = bpy.data.materials.new(name=f"CustomUV_{{obj.name}}")
@@ -142,7 +142,7 @@ def assign_uv_material(obj_name, diffuse_path, normal_path, roughness_val=0.85):
 
     obj.data.materials.clear()
     obj.data.materials.append(mat)
-    print(f"✅ Nouveau patron UV assigné à {{obj.name}}")
+    print(f"✅ New UV pattern assigned to {{obj.name}}")
 
 assign_uv_material("worksuit", r"{worksuit_out}", r"{ws_norm_out}", roughness_val=0.90)
 assign_uv_material("shoes", r"{shoes_out}", r"{sh_norm_out}", roughness_val=0.75)
@@ -158,13 +158,13 @@ bpy.ops.export_scene.gltf(
     export_materials='EXPORT',
     export_yup=True
 )
-print("✅ GLB mis à jour avec les patrons UV modifiés.")
+print("✅ GLB updated with the modified UV patterns.")
 """
     import subprocess
     res = subprocess.run([blender_bin, "--background", "--python-expr", script_blender], capture_output=True, text=True, encoding="utf-8", errors="replace")
     print(res.stdout)
 
-    # 4. Rendu de validation Cycles
+    # 4. Cycles validation render
     from scripts.character_pipeline import etape_3_rendre_validation
     etape_3_rendre_validation(blender_bin, GLB_FILE, RENDER_FILE)
     print("=" * 65)

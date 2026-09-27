@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Téléchargement parallèle par segments HTTP Range pour gros fichiers (HF,
-ModelScope…). Contourne le bridage CDN mono-connexion observé sur Hugging
-Face (chute de 18 Mo/s à ~0,6 Mo/s après quelques Gio) : 10 connexions
-parallèles tiennent ~112 Mo/s.
+Parallel chunked download over HTTP Range for large files (HF,
+ModelScope…). Works around the single-connection CDN throttling observed on
+Hugging Face (drop from 18 MB/s to ~0.6 MB/s after a few GiB): 10 parallel
+connections hold ~112 MB/s.
 
-- Réutilise un éventuel préfixe .part laissé par curl/audiocpp (-C -)
-- Segments de 128 Mo écrits directement à leur offset dans le fichier final
-- Reprise : état JSON par segment (relançable tel quel)
-- Vérifie la taille finale avant de promouvoir le fichier
+- Reuses any .part prefix left by curl/audiocpp (-C -)
+- 128 MB segments written directly at their offset into the final file
+- Resumable: JSON state per segment (can be re-run as-is)
+- Checks the final size before promoting the file
 
-Usage :
+Usage:
   uv run python scripts/telecharger_gros_fichier_parallele.py <url> <destination> [nb_travailleurs]
-Exemple :
+Example:
   uv run python scripts/telecharger_gros_fichier_parallele.py \
     "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/master/ACE-Step1.5-GGUF/xl-turbo/ace-step-1.5-xl-turbo-bf16.gguf" \
     "C:\\Modeles_LLM\\ACE-Step1.5-GGUF\\xl-turbo\\ace-step-1.5-xl-turbo-bf16.gguf"
@@ -50,7 +50,7 @@ def taille_totale(url: str) -> int:
     taille = r.headers.get("Content-Length")
     if taille:
         return int(taille)
-    # Certains CDN ne donnent la taille que via Range
+    # Some CDNs only give the size via Range
     r = requests.get(url, headers={"Range": "bytes=0-0"}, allow_redirects=True, timeout=30)
     r.raise_for_status()
     plage = r.headers.get("Content-Range", "")
@@ -58,20 +58,20 @@ def taille_totale(url: str) -> int:
 
 
 def preparer_fichier(dest: str, total: int) -> int:
-    """Préalloue le fichier et y copie l'éventuel préfixe .part. Retourne sa taille."""
+    """Preallocates the file and copies any .part prefix into it. Returns its size."""
     prefix = 0
     part = dest + ".part"
     if os.path.exists(part):
         prefix = os.path.getsize(part)
     if os.path.exists(dest + ".download") and os.path.getsize(dest + ".download") == total:
-        return prefix  # déjà préalloué (reprise)
+        return prefix  # already preallocated (resume)
 
-    log(f"📂 Préallocation de {total / 2**30:.2f} Gio (préfixe .part : {prefix / 2**30:.2f} Gio)...")
+    log(f"📂 Preallocating {total / 2**30:.2f} GiB (.part prefix: {prefix / 2**30:.2f} GiB)...")
     with open(dest + ".download", "wb") as f:
         f.truncate(total)
     if prefix:
         if prefix > total:
-            raise RuntimeError("Préfixe .part plus grand que le fichier attendu ?!")
+            raise RuntimeError(".part prefix larger than the expected file?!")
         with open(part, "rb") as src, open(dest + ".download", "r+b") as dst:
             reste = prefix
             while reste > 0:
@@ -105,7 +105,7 @@ def travailleur(num: int, url: str, file_segments: "queue.Queue", total: int, et
                     for bloc in rep.iter_content(chunk_size=1024 * 1024):
                         handle.write(bloc)
                     if handle.tell() != fin + 1:
-                        raise RuntimeError(f"segment {i_seg} incomplet ({handle.tell()} != {fin + 1})")
+                        raise RuntimeError(f"segment {i_seg} incomplete ({handle.tell()} != {fin + 1})")
                     with verrou_etat:
                         etat["segments_finis"].append(i_seg)
                         tmp = dest + f".etat.{hashlib.md5(url.encode()).hexdigest()[:8]}.json.tmp"
@@ -115,12 +115,12 @@ def travailleur(num: int, url: str, file_segments: "queue.Queue", total: int, et
                         compteurs["octets"] += fin + 1 - debut
                         ecoule = max(1e-9, time.time() - compteurs["t0"])
                         fait = compteurs["octets"]
-                        log(f"✅ segment {i_seg} ({(fin + 1 - debut) / 2**20:.0f} Mo) — "
-                            f"{fait / 2**30:.2f} Gio, {fait / ecoule / 2**20:.1f} Mo/s moy.")
+                        log(f"✅ segment {i_seg} ({(fin + 1 - debut) / 2**20:.0f} MB) — "
+                            f"{fait / 2**30:.2f} GiB, {fait / ecoule / 2**20:.1f} MB/s avg.")
                     break
                 except Exception as e:
                     if essai == 5:
-                        log(f"❌ segment {i_seg} abandonné après 5 essais : {e}")
+                        log(f"❌ segment {i_seg} abandoned after 5 attempts: {e}")
                         with verrou_etat:
                             compteurs["echecs"] += 1
                     else:
@@ -135,7 +135,7 @@ def telecharger(url: str, dest: str, nb_travailleurs: int = NB_TRAVAILLEURS_DEFA
 
     total = taille_totale(url)
     log(f"🌐 {url}")
-    log(f"   Taille totale : {total} octets ({total / 2**30:.2f} Gio)")
+    log(f"   Total size: {total} bytes ({total / 2**30:.2f} GiB)")
     prefix = preparer_fichier(dest, total)
 
     etat = {"segments_finis": []}
@@ -143,10 +143,10 @@ def telecharger(url: str, dest: str, nb_travailleurs: int = NB_TRAVAILLEURS_DEFA
         with open(chemin_etat, encoding="utf-8") as f:
             etat = json.load(f)
     finis = set(etat["segments_finis"])
-    seg_depart = -(-prefix // TAILLE_SEG)  # ceil : segments chevauchant le préfixe refaits
+    seg_depart = -(-prefix // TAILLE_SEG)  # ceil: segments overlapping the prefix are redone
     segments = [i for i in range(seg_depart, -(-total // TAILLE_SEG)) if i not in finis]
-    log(f"🧩 {len(finis)} segment(s) déjà fini(s), {len(segments)} à télécharger "
-        f"({len(segments) * TAILLE_SEG / 2**30:.2f} Gio max)")
+    log(f"🧩 {len(finis)} segment(s) already done, {len(segments)} to download "
+        f"({len(segments) * TAILLE_SEG / 2**30:.2f} GiB max)")
 
     if segments:
         file_segments: "queue.Queue" = queue.Queue()
@@ -163,15 +163,15 @@ def telecharger(url: str, dest: str, nb_travailleurs: int = NB_TRAVAILLEURS_DEFA
         for fil in fils:
             fil.join()
         if compteurs["echecs"]:
-            raise RuntimeError(f"{compteurs['echecs']} segment(s) en échec — relancez pour reprendre.")
+            raise RuntimeError(f"{compteurs['echecs']} segment(s) failed — run again to resume.")
 
     if os.path.getsize(dest + ".download") != total:
-        raise RuntimeError(f"Taille finale inattendue : {os.path.getsize(dest + '.download')} != {total}")
+        raise RuntimeError(f"Unexpected final size: {os.path.getsize(dest + '.download')} != {total}")
     os.replace(dest + ".download", dest)
     for residu in (dest + ".part", chemin_etat):
         if os.path.exists(residu):
             os.remove(residu)
-    log(f"🎉 SUCCÈS : {dest} ({os.path.getsize(dest) / 2**30:.2f} Gio)")
+    log(f"🎉 SUCCESS: {dest} ({os.path.getsize(dest) / 2**30:.2f} GiB)")
 
 
 def main():

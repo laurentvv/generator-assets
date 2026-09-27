@@ -1,8 +1,8 @@
-# Bake AO headless — pattern blender-skills "texture-workflow/lookdev" : cuire une
-# carte d'occlusion ambiante (Cycles bake) sur les UV existantes du GLB, puis la
-# multiplier dans le shader et rendre l'après.
-# Usage : blender --background --python bake_ao.py -- <glb_in> <ao_png> <apercu_png>
-# Sortie : carte AO PNG + vue après mélange AO × albedo.
+# Bake AO headless — blender-skills pattern "texture-workflow/lookdev": bake an
+# ambient occlusion map (Cycles bake) onto the GLB's existing UVs, then multiply
+# it into the shader and render the result.
+# Usage: blender --background --python bake_ao.py -- <glb_in> <ao_png> <apercu_png>
+# Output: PNG AO map + view after AO × albedo blend.
 
 import sys
 
@@ -15,8 +15,8 @@ glb_in, ao_png, apercu_png = argv[0], argv[1], argv[2]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
-assert all(o.data.uv_layers for o in meshes), "UV manquantes — bake impossible"
+assert meshes, "no mesh in the GLB"
+assert all(o.data.uv_layers for o in meshes), "missing UVs — bake impossible"
 
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
@@ -32,13 +32,13 @@ centre = Vector((sum(p.x for p in pts) / len(pts),
                  sum(p.y for p in pts) / len(pts),
                  sum(p.z for p in pts) / len(pts)))
 
-# Bake AO (Cycles, sel→même objet).
+# Bake AO (Cycles, sel→same object).
 scn = bpy.context.scene
 scn.render.engine = "CYCLES"
 scn.cycles.samples = 32
 bake_img = bpy.data.images.new("T_Casque_AO", 1024, 1024)
 for o in meshes:
-    o.data.materials.clear()  # matériau simple dédié au bake (UV conservées)
+    o.data.materials.clear()  # simple material dedicated to the bake (UVs kept)
     mat = bpy.data.materials.new("MAT_Bake_Temp")
     mat.use_nodes = True
     nt = mat.node_tree
@@ -49,13 +49,13 @@ for o in meshes:
     o.data.materials.append(mat)
 
 bpy.ops.object.bake(type="AO", use_clear=True, margin=8,
-                    use_selected_to_active=False)  # pass_filter sans 'AO' en 5.2
+                    use_selected_to_active=False)  # pass_filter without 'AO' in 5.2
 bake_img.filepath_raw = ao_png
 bake_img.file_format = "PNG"
 bake_img.save()
 print(f"AO_BAKE_OK: {ao_png}")
 
-# Rendu après : AO multipliée dans le Base Color d'un Principled.
+# After render: AO multiplied into a Principled's Base Color.
 for m in [m for m in bpy.data.materials if m.name.startswith("MAT_Bake_Temp")]:
     bpy.data.materials.remove(m)
 mat = bpy.data.materials.new("MAT_Casque_AO")
@@ -69,7 +69,7 @@ mix.data_type = "RGBA"
 mix.blend_type = "MULTIPLY"
 mix.inputs["Factor"].default_value = 1.0
 alb = bpy.data.images.new("Albedo", 4, 4)
-alb.generated_color = (0.55, 0.35, 0.6, 1.0)  # teinte violette de référence
+alb.generated_color = (0.55, 0.35, 0.6, 1.0)  # reference purple tint
 tex_alb = nt.nodes.new("ShaderNodeTexImage")
 tex_alb.image = alb
 nt.links.new(tex_alb.outputs["Color"], mix.inputs["A"])

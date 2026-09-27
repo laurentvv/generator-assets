@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Programme d'automatisation de la mise à jour et de compilation Vulkan
-pour stable-diffusion.cpp (https://github.com/leejet/stable-diffusion.cpp).
+Automation tool for the update and Vulkan build
+of stable-diffusion.cpp (https://github.com/leejet/stable-diffusion.cpp).
 
-Modes supportés :
-  --check     : Vérifie les versions locale et distante (commits, releases, dates).
-  --download  : Téléchargement rapide de la dernière release Vulkan x64 officielle GitHub.
-  --build     : Compilation native complète avec accélération matérielle Vulkan (Git + CMake + MSVC + Vulkan SDK).
-  --rollback  : Restaure la sauvegarde précédente en cas de problème.
+Supported modes:
+  --check     : Checks the local and remote versions (commits, releases, dates).
+  --download  : Quick download of the latest official GitHub Vulkan x64 release.
+  --build     : Full native build with Vulkan hardware acceleration (Git + CMake + MSVC + Vulkan SDK).
+  --rollback  : Restores the previous backup in case of a problem.
 
-Fonctionnalités :
-  • Détection automatique du SDK Vulkan (C:\\VulkanSDK\\* ou $env:VULKAN_SDK).
-  • Détection automatique du compilateur MSVC / Visual Studio.
-  • Clônage ou mise à jour git avec submodules récursifs.
-  • Compilation CMake Release multi-threads optimisée avec support WebP & WebM (Vidéos).
-  • Sauvegarde horodatée avant mise à jour dans C:\\SD\\backups\\.
-  • Vérification post-installation (sd-cli.exe --version & --help).
+Features:
+  • Automatic detection of the Vulkan SDK (C:\\VulkanSDK\\* or $env:VULKAN_SDK).
+  • Automatic detection of the MSVC / Visual Studio compiler.
+  • Git clone or update with recursive submodules.
+  • Optimized multi-threaded CMake Release build with WebP & WebM (video) support.
+  • Timestamped backup before update into C:\\SD\\backups\\.
+  • Post-installation check (sd-cli.exe --version & --help).
 """
 
 import argparse
@@ -33,7 +33,7 @@ import urllib.request
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# Support UTF-8 sur consoles Windows (évite les erreurs UnicodeEncodeError cp1252)
+# UTF-8 support on Windows consoles (avoids cp1252 UnicodeEncodeError)
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -70,7 +70,7 @@ def log_info(message: str) -> None:
 
 
 def obtenir_version_locale(install_dir: Path) -> Dict[str, Optional[str]]:
-    """Inspecte l'exécutable sd-cli.exe installé et ses métadonnées."""
+    """Inspects the installed sd-cli.exe executable and its metadata."""
     sd_cli = install_dir / "sd-cli.exe"
     info = {
         "installed": False,
@@ -108,7 +108,7 @@ def obtenir_version_locale(install_dir: Path) -> Dict[str, Optional[str]]:
 
 
 def requete_github_api(url: str) -> Optional[Dict]:
-    """Exécute une requête GET vers l'API GitHub avec gestion d'erreurs."""
+    """Performs a GET request against the GitHub API with error handling."""
     req = urllib.request.Request(
         url,
         headers={
@@ -121,17 +121,17 @@ def requete_github_api(url: str) -> Optional[Dict]:
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         if e.code == 403:
-            log_warn("Limite de requêtes API GitHub atteinte (HTTP 403).")
+            log_warn("GitHub API rate limit reached (HTTP 403).")
         else:
-            log_warn(f"Erreur API GitHub ({e.code}) pour {url}")
+            log_warn(f"GitHub API error ({e.code}) for {url}")
         return None
     except Exception as e:
-        log_warn(f"Impossible de contacter l'API GitHub : {e}")
+        log_warn(f"Unable to reach the GitHub API: {e}")
         return None
 
 
 def obtenir_commit_distant_via_git() -> Optional[str]:
-    """Fallback : récupère le dernier commit master via git ls-remote sans utiliser l'API REST."""
+    """Fallback: fetches the latest master commit via git ls-remote without using the REST API."""
     try:
         res = subprocess.run(
             ["git", "ls-remote", REPO_URL, "refs/heads/master"],
@@ -149,7 +149,7 @@ def obtenir_commit_distant_via_git() -> Optional[str]:
 
 
 def obtenir_infos_distantes() -> Dict:
-    """Récupère les informations de la dernière release et du dernier commit master."""
+    """Fetches the latest release and latest master commit information."""
     result = {
         "release_tag": None,
         "release_commit": None,
@@ -189,7 +189,7 @@ def obtenir_infos_distantes() -> Dict:
         date = commit_details.get("committer", {}).get("date", "")
         result["master_commit_date"] = date[:10]
     else:
-        # Fallback git ls-remote
+        # git ls-remote fallback
         remote_sha = obtenir_commit_distant_via_git()
         if remote_sha:
             result["master_commit"] = remote_sha
@@ -198,7 +198,7 @@ def obtenir_infos_distantes() -> Dict:
 
 
 def detecter_vulkan_sdk() -> Optional[Path]:
-    """Détecte l'installation du SDK Vulkan (variable VULKAN_SDK ou scan de C:\\VulkanSDK)."""
+    """Detects the Vulkan SDK installation (VULKAN_SDK variable or scan of C:\\VulkanSDK)."""
     env_sdk = os.getenv("VULKAN_SDK")
     if env_sdk and Path(env_sdk).exists():
         return Path(env_sdk)
@@ -207,7 +207,7 @@ def detecter_vulkan_sdk() -> Optional[Path]:
     if base_sdk.exists():
         versions = [d for d in base_sdk.iterdir() if d.is_dir()]
         if versions:
-            # Trie par ordre alphabétique / version décroissante
+            # Sort in descending alphabetical / version order
             versions.sort(key=lambda p: [int(x) if x.isdigit() else 0 for x in p.name.split(".")], reverse=True)
             return versions[0]
 
@@ -215,19 +215,19 @@ def detecter_vulkan_sdk() -> Optional[Path]:
 
 
 def detecter_cmake() -> Optional[Path]:
-    """Vérifie la disponibilité de cmake dans le PATH."""
+    """Checks the availability of cmake in the PATH."""
     path = shutil.which("cmake")
     return Path(path) if path else None
 
 
 def detecter_git() -> Optional[Path]:
-    """Vérifie la disponibilité de git dans le PATH."""
+    """Checks the availability of git in the PATH."""
     path = shutil.which("git")
     return Path(path) if path else None
 
 
 def detecter_compilateur_msvc() -> Optional[str]:
-    """Recherche Visual Studio / MSVC via vswhere.exe."""
+    """Looks for Visual Studio / MSVC via vswhere.exe."""
     vswhere = Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
     if vswhere.exists():
         try:
@@ -245,7 +245,7 @@ def detecter_compilateur_msvc() -> Optional[str]:
 
 
 def creer_sauvegarde(install_dir: Path) -> Optional[Path]:
-    """Crée une sauvegarde horodatée du dossier C:\\SD."""
+    """Creates a timestamped backup of the C:\\SD folder."""
     if not install_dir.exists():
         return None
 
@@ -257,19 +257,19 @@ def creer_sauvegarde(install_dir: Path) -> Optional[Path]:
     backup_dir = install_dir / "backups" / f"backup_{timestamp}"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
-    log_info(f"Création de la sauvegarde dans : {backup_dir}")
+    log_info(f"Creating the backup in: {backup_dir}")
     for item in install_dir.iterdir():
         if item.name == "backups":
             continue
         if item.is_file():
             shutil.copy2(item, backup_dir / item.name)
 
-    log_success(f"Sauvegarde terminée ({len(fichiers_a_sauver)} exécutables/bibliothèques archivés).")
+    log_success(f"Backup done ({len(fichiers_a_sauver)} executables/libraries archived).")
     return backup_dir
 
 
 def lister_sauvegardes(install_dir: Path) -> List[Path]:
-    """Liste toutes les sauvegardes existantes."""
+    """Lists all the existing backups."""
     backup_root = install_dir / "backups"
     if not backup_root.exists():
         return []
@@ -279,26 +279,26 @@ def lister_sauvegardes(install_dir: Path) -> List[Path]:
 
 
 def restaurer_sauvegarde(install_dir: Path, target_backup: Optional[Path] = None) -> bool:
-    """Restaure une sauvegarde précédente."""
+    """Restores a previous backup."""
     backups = lister_sauvegardes(install_dir)
     if not backups:
-        log_error("Aucune sauvegarde trouvée dans C:\\SD\\backups\\")
+        log_error("No backup found in C:\\SD\\backups\\")
         return False
 
     choix = target_backup or backups[0]
-    log_step(f"Restauration de la sauvegarde : {choix.name}")
+    log_step(f"Restoring the backup: {choix.name}")
 
     fichiers = list(choix.glob("*.*"))
     for f in fichiers:
         if f.is_file():
             shutil.copy2(f, install_dir / f.name)
 
-    log_success(f"Restauration réussie ({len(fichiers)} fichiers restaurés).")
+    log_success(f"Restoration successful ({len(fichiers)} files restored).")
     return True
 
 
 def telecharger_fichier_avec_progression(url: str, destination: Path) -> None:
-    """Télécharge un fichier distant avec affichage de progression en console."""
+    """Downloads a remote file with a console progress display."""
     req = urllib.request.Request(url, headers={"User-Agent": "generator-assets-sd-updater/1.0"})
     with urllib.request.urlopen(req) as response:
         taille_totale = int(response.headers.get("content-length", 0))
@@ -317,48 +317,48 @@ def telecharger_fichier_avec_progression(url: str, destination: Path) -> None:
                     pct = (taille_telechargee / taille_totale) * 100
                     debit_mo = (taille_telechargee / (1024 * 1024)) / max(0.001, time.time() - start_time)
                     sys.stdout.write(
-                        f"\r⏳ Téléchargement : {taille_telechargee / (1024 * 1024):.1f} / {taille_totale / (1024 * 1024):.1f} Mo "
-                        f"({pct:.1f}%) à {debit_mo:.1f} Mo/s... "
+                        f"\r⏳ Download: {taille_telechargee / (1024 * 1024):.1f} / {taille_totale / (1024 * 1024):.1f} MB "
+                        f"({pct:.1f}%) at {debit_mo:.1f} MB/s... "
                     )
                     sys.stdout.flush()
     print()
 
 
 def action_verifier(install_dir: Path) -> None:
-    """Affiche un tableau complet de l'état local et des nouveautés disponibles."""
-    log_step("Inspection de l'état de stable-diffusion.cpp")
+    """Displays a complete table of the local state and the available updates."""
+    log_step("Inspecting the state of stable-diffusion.cpp")
 
     local_info = obtenir_version_locale(install_dir)
     distant_info = obtenir_infos_distantes()
 
     print("\n" + "=" * 70)
-    print(" 📊 RAPPORT DE VERSION STABLE-DIFFUSION.CPP (Vulkan)")
+    print(" 📊 STABLE-DIFFUSION.CPP VERSION REPORT (Vulkan)")
     print("=" * 70)
 
-    # 1. État local
+    # 1. Local state
     if local_info["installed"]:
-        print(f"  • Installation locale  : {local_info['path']}")
-        print(f"  • Commit local         : {local_info['commit'] or 'Inconnu'}")
-        print(f"  • Date des binaires    : {local_info['date']}")
-        print(f"  • Support Vulkan       : {'✅ Oui (ggml-vulkan.dll)' if local_info['has_vulkan'] else '❌ Non'}")
-        print(f"  • Support Vidéo WebM   : {'✅ Oui (webm.dll)' if local_info['has_webm'] else '❌ Non'}")
+        print(f"  • Local installation  : {local_info['path']}")
+        print(f"  • Local commit        : {local_info['commit'] or 'Unknown'}")
+        print(f"  • Binary date         : {local_info['date']}")
+        print(f"  • Vulkan support      : {'✅ Yes (ggml-vulkan.dll)' if local_info['has_vulkan'] else '❌ No'}")
+        print(f"  • WebM video support  : {'✅ Yes (webm.dll)' if local_info['has_webm'] else '❌ No'}")
     else:
-        print("  • Installation locale  : ❌ Aucun binaire détecté dans " + str(install_dir))
+        print("  • Local installation  : ❌ No binary detected in " + str(install_dir))
 
     print("-" * 70)
 
-    # 2. État distant
+    # 2. Remote state
     if distant_info["release_tag"]:
-        print(f"  • Dernière Release     : {distant_info['release_tag']} ({distant_info['release_date']})")
-        print(f"  • Asset Vulkan Win64   : {distant_info['vulkan_asset_name']} ({distant_info['vulkan_asset_size_mb']} Mo)")
+        print(f"  • Latest release      : {distant_info['release_tag']} ({distant_info['release_date']})")
+        print(f"  • Vulkan Win64 asset  : {distant_info['vulkan_asset_name']} ({distant_info['vulkan_asset_size_mb']} MB)")
     if distant_info["master_commit"]:
-        print(f"  • Dernier commit master: {distant_info['master_commit']} ({distant_info['master_commit_date']})")
+        print(f"  • Latest master commit: {distant_info['master_commit']} ({distant_info['master_commit_date']})")
         if distant_info["master_commit_msg"]:
-            print(f"  • Message commit       : \"{distant_info['master_commit_msg']}\"")
+            print(f"  • Commit message      : \"{distant_info['master_commit_msg']}\"")
 
     print("-" * 70)
 
-    # 3. Diagnostic de mise à jour
+    # 3. Update diagnostic
     est_a_jour = False
     if local_info["installed"] and local_info["commit"]:
         if distant_info["master_commit"] and local_info["commit"] == distant_info["master_commit"]:
@@ -367,50 +367,50 @@ def action_verifier(install_dir: Path) -> None:
             est_a_jour = True
 
     if est_a_jour:
-        log_success("Votre installation de stable-diffusion.cpp est parfaitement À JOUR !")
+        log_success("Your stable-diffusion.cpp installation is perfectly UP TO DATE!")
     else:
-        log_warn("Une NOUVELLE VERSION est disponible !")
-        print("\n💡 Pour mettre à jour rapidement via les binaires officiels GitHub :")
+        log_warn("A NEW VERSION is available!")
+        print("\n💡 To quickly update via the official GitHub binaries:")
         print("   python scripts/update_sd_cpp.py --download")
-        print("\n💡 Pour compiler les toutes dernières sources master avec Vulkan :")
+        print("\n💡 To build the very latest master sources with Vulkan:")
         print("   python scripts/update_sd_cpp.py --build")
 
     print("=" * 70 + "\n")
 
 
 def action_telecharger_release(install_dir: Path, backup: bool = True) -> bool:
-    """Télécharge et installe la dernière release officielle Vulkan pour Windows."""
-    log_step("Téléchargement de la dernière release Vulkan GitHub")
+    """Downloads and installs the latest official Vulkan release for Windows."""
+    log_step("Downloading the latest GitHub Vulkan release")
 
     distant = obtenir_infos_distantes()
     asset_url = distant.get("vulkan_asset_url")
     asset_name = distant.get("vulkan_asset_name")
 
     if not asset_url:
-        log_error("Impossible de localiser l'asset Vulkan pour Windows sur GitHub Releases.")
+        log_error("Unable to locate the Vulkan asset for Windows on GitHub Releases.")
         return False
 
-    log_info(f"Release cible : {distant.get('release_tag')} | Fichier : {asset_name} ({distant.get('vulkan_asset_size_mb')} Mo)")
+    log_info(f"Target release: {distant.get('release_tag')} | File: {asset_name} ({distant.get('vulkan_asset_size_mb')} MB)")
 
-    # 1. Sauvegarde
+    # 1. Backup
     if backup:
         creer_sauvegarde(install_dir)
 
-    # 2. Téléchargement dans un dossier temporaire
+    # 2. Download into a temporary folder
     temp_zip = install_dir / "temp_sd_vulkan.zip"
     try:
         install_dir.mkdir(parents=True, exist_ok=True)
         telecharger_fichier_avec_progression(asset_url, temp_zip)
 
         # 3. Extraction
-        log_step("Extraction des binaires dans " + str(install_dir))
+        log_step("Extracting the binaries into " + str(install_dir))
         import zipfile
         with zipfile.ZipFile(temp_zip, "r") as zip_ref:
             zip_ref.extractall(install_dir)
 
-        log_success("Extraction terminée avec succès.")
+        log_success("Extraction completed successfully.")
     except Exception as e:
-        log_error(f"Erreur lors du téléchargement ou de l'extraction : {e}")
+        log_error(f"Error during download or extraction: {e}")
         return False
     finally:
         if temp_zip.exists():
@@ -419,7 +419,7 @@ def action_telecharger_release(install_dir: Path, backup: bool = True) -> bool:
             except Exception:
                 pass
 
-    # 4. Vérification post-installation
+    # 4. Post-installation check
     return verifier_installation(install_dir)
 
 
@@ -431,71 +431,71 @@ def action_compiler_vulkan(
     clean: bool = False,
     parallel_jobs: Optional[int] = None
 ) -> bool:
-    """Clone/Met à jour le dépôt et compile nativement stable-diffusion.cpp avec Vulkan."""
-    log_step("Initialisation de la compilation Vulkan depuis les sources")
+    """Clones/Updates the repo and natively builds stable-diffusion.cpp with Vulkan."""
+    log_step("Starting the Vulkan build from sources")
 
-    # 1. Vérification des prérequis
+    # 1. Prerequisite check
     git_bin = detecter_git()
     if not git_bin:
-        log_error("Git n'est pas installé ou n'est pas présent dans le PATH.")
+        log_error("Git is not installed or not present in the PATH.")
         return False
 
     cmake_bin = detecter_cmake()
     if not cmake_bin:
-        log_error("CMake n'est pas installé ou n'est pas présent dans le PATH.")
+        log_error("CMake is not installed or not present in the PATH.")
         return False
 
     vulkan_sdk = detecter_vulkan_sdk()
     if not vulkan_sdk:
-        log_error("SDK Vulkan introuvable ! Téléchargez-le depuis https://vulkan.lunarg.com/")
+        log_error("Vulkan SDK not found! Download it from https://vulkan.lunarg.com/")
         return False
 
     msvc_path = detecter_compilateur_msvc()
     if not msvc_path:
-        log_warn("Visual Studio / MSVC non détecté via vswhere. CMake tentera la détection automatique.")
+        log_warn("Visual Studio / MSVC not detected via vswhere. CMake will attempt automatic detection.")
     else:
-        log_info(f"Visual Studio détecté : {msvc_path}")
+        log_info(f"Visual Studio detected: {msvc_path}")
 
-    log_info(f"SDK Vulkan sélectionné : {vulkan_sdk}")
-    log_info(f"Dossier source         : {source_dir}")
-    log_info(f"Dossier d'installation : {install_dir}")
+    log_info(f"Selected Vulkan SDK : {vulkan_sdk}")
+    log_info(f"Source folder       : {source_dir}")
+    log_info(f"Installation folder : {install_dir}")
 
-    # Injection du SDK Vulkan dans l'environnement
+    # Inject the Vulkan SDK into the environment
     build_env = os.environ.copy()
     build_env["VULKAN_SDK"] = str(vulkan_sdk)
     vulkan_bin_dir = str(vulkan_sdk / "Bin")
     if vulkan_bin_dir not in build_env.get("PATH", ""):
         build_env["PATH"] = f"{vulkan_bin_dir};{build_env.get('PATH', '')}"
 
-    # 2. Clônage ou mise à jour git
+    # 2. Git clone or update
     if not source_dir.exists():
-        log_step(f"Clônage du dépôt {REPO_URL} dans {source_dir}...")
+        log_step(f"Cloning the repo {REPO_URL} into {source_dir}...")
         source_dir.parent.mkdir(parents=True, exist_ok=True)
         res = subprocess.run(
             [str(git_bin), "clone", "--recursive", REPO_URL, str(source_dir)],
             check=False
         )
         if res.returncode != 0:
-            log_error("Échec du clônage git.")
+            log_error("Git clone failed.")
             return False
     else:
-        log_step(f"Mise à jour du dépôt git ({branch})...")
+        log_step(f"Updating the git repo ({branch})...")
         subprocess.run([str(git_bin), "-C", str(source_dir), "fetch", "origin", branch], check=False)
         subprocess.run([str(git_bin), "-C", str(source_dir), "checkout", branch], check=False)
         subprocess.run([str(git_bin), "-C", str(source_dir), "pull", "origin", branch], check=False)
-        log_info("Mise à jour des submodules récursifs...")
+        log_info("Updating the recursive submodules...")
         subprocess.run([str(git_bin), "-C", str(source_dir), "submodule", "sync", "--recursive"], check=False)
         subprocess.run([str(git_bin), "-C", str(source_dir), "submodule", "update", "--init", "--recursive"], check=False)
 
     build_dir = source_dir / "build"
     if clean and build_dir.exists():
-        log_step("Nettoyage de l'ancien dossier de compilation...")
+        log_step("Cleaning the old build folder...")
         shutil.rmtree(build_dir, ignore_errors=True)
 
     build_dir.mkdir(parents=True, exist_ok=True)
 
-    # 3. Configuration CMake
-    log_step("Configuration CMake avec support Vulkan & WebM (Vidéos)...")
+    # 3. CMake configuration
+    log_step("CMake configuration with Vulkan & WebM (video) support...")
     cmake_args = [
         str(cmake_bin),
         "-B", str(build_dir),
@@ -511,15 +511,15 @@ def action_compiler_vulkan(
         "-DSD_WEBM=ON"
     ]
 
-    log_info("Commande CMake : " + " ".join(cmake_args))
+    log_info("CMake command: " + " ".join(cmake_args))
     res = subprocess.run(cmake_args, env=build_env)
     if res.returncode != 0:
-        log_error("Échec de la configuration CMake.")
+        log_error("CMake configuration failed.")
         return False
 
-    # 4. Compilation CMake
+    # 4. CMake build
     jobs = parallel_jobs or os.cpu_count() or 8
-    log_step(f"Compilation en mode Release ({jobs} threads parallèles)...")
+    log_step(f"Building in Release mode ({jobs} parallel threads)...")
     build_args = [
         str(cmake_bin),
         "--build", str(build_dir),
@@ -528,25 +528,25 @@ def action_compiler_vulkan(
     ]
     res = subprocess.run(build_args, env=build_env)
     if res.returncode != 0:
-        log_error("Échec de la compilation C++.")
+        log_error("C++ build failed.")
         return False
 
-    log_success("Compilation terminée avec succès !")
+    log_success("Build completed successfully!")
 
-    # 5. Localisation des binaires produits
+    # 5. Locating the produced binaries
     dossier_bin = build_dir / "bin" / "Release"
     if not dossier_bin.exists() or not (dossier_bin / "sd-cli.exe").exists():
         dossier_bin = build_dir / "bin"
 
     if not (dossier_bin / "sd-cli.exe").exists():
-        log_error(f"sd-cli.exe introuvable dans {dossier_bin}")
+        log_error(f"sd-cli.exe not found in {dossier_bin}")
         return False
 
-    # 6. Sauvegarde et déploiement
+    # 6. Backup and deployment
     if backup:
         creer_sauvegarde(install_dir)
 
-    log_step(f"Déploiement des nouveaux binaires dans {install_dir}...")
+    log_step(f"Deploying the new binaries into {install_dir}...")
     install_dir.mkdir(parents=True, exist_ok=True)
 
     fichiers_copies = 0
@@ -555,7 +555,7 @@ def action_compiler_vulkan(
             shutil.copy2(f, install_dir / f.name)
             fichiers_copies += 1
 
-    # Copie également les licences si disponibles
+    # Also copy the licenses when available
     licence_sd = source_dir / "LICENSE"
     if licence_sd.exists():
         shutil.copy2(licence_sd, install_dir / "stable-diffusion.cpp.txt")
@@ -563,105 +563,105 @@ def action_compiler_vulkan(
     if licence_ggml.exists():
         shutil.copy2(licence_ggml, install_dir / "ggml.txt")
 
-    log_success(f"Déploiement réussi ({fichiers_copies} fichiers copiés dans {install_dir}).")
+    log_success(f"Deployment successful ({fichiers_copies} files copied into {install_dir}).")
 
-    # 7. Vérification finale
+    # 7. Final check
     return verifier_installation(install_dir)
 
 
 def verifier_installation(install_dir: Path) -> bool:
-    """Exécute sd-cli.exe --version et contrôle la présence des bibliothèques clés."""
-    log_step("Validation du bon fonctionnement des binaires installés...")
+    """Runs sd-cli.exe --version and checks the presence of the key libraries."""
+    log_step("Validating that the installed binaries work...")
     sd_cli = install_dir / "sd-cli.exe"
 
     if not sd_cli.exists():
-        log_error("sd-cli.exe est introuvable après l'opération.")
+        log_error("sd-cli.exe could not be found after the operation.")
         return False
 
     try:
         res = subprocess.run([str(sd_cli), "--version"], capture_output=True, text=True, timeout=10)
         output = (res.stdout or "") + (res.stderr or "")
-        print(f"\n[Sortie sd-cli --version] :\n{output.strip()}\n")
+        print(f"\n[sd-cli --version output]:\n{output.strip()}\n")
 
         vulkan_ok = (install_dir / "ggml-vulkan.dll").exists()
         webm_ok = (install_dir / "webm.dll").exists()
 
         if vulkan_ok:
-            log_success("Backend Vulkan opérationnel (ggml-vulkan.dll présent) !")
+            log_success("Vulkan backend operational (ggml-vulkan.dll present)!")
         else:
-            log_warn("ggml-vulkan.dll n'a pas été trouvé. Le backend GPU Vulkan pourrait être inactif.")
+            log_warn("ggml-vulkan.dll was not found. The Vulkan GPU backend may be inactive.")
 
         if webm_ok:
-            log_success("Support vidéo WebM opérationnel (webm.dll présent) !")
+            log_success("WebM video support operational (webm.dll present)!")
 
-        log_success("stable-diffusion.cpp est opérationnel et prêt pour generator-assets !\n")
+        log_success("stable-diffusion.cpp is operational and ready for generator-assets!\n")
         return True
     except Exception as e:
-        log_error(f"Erreur lors du test d'exécution de sd-cli.exe : {e}")
+        log_error(f"Error while running the sd-cli.exe test: {e}")
         return False
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Mise à jour et compilation Vulkan automatisée de stable-diffusion.cpp."
+        description="Automated update and Vulkan build of stable-diffusion.cpp."
     )
     parser.add_argument(
         "--check", action="store_true",
-        help="Vérifie les versions locale et distante sans modifier les fichiers."
+        help="Checks the local and remote versions without modifying files."
     )
     parser.add_argument(
         "--download", action="store_true",
-        help="Télécharge et installe la dernière release Vulkan x64 officielle GitHub."
+        help="Downloads and installs the latest official GitHub Vulkan x64 release."
     )
     parser.add_argument(
         "--build", action="store_true",
-        help="Compile nativement depuis les sources Git avec Vulkan (CMake + MSVC)."
+        help="Builds natively from the Git sources with Vulkan (CMake + MSVC)."
     )
     parser.add_argument(
         "--rollback", action="store_true",
-        help="Restaure la sauvegarde précédente depuis C:\\SD\\backups\\."
+        help="Restores the previous backup from C:\\SD\\backups\\."
     )
     parser.add_argument(
         "--list-backups", action="store_true",
-        help="Liste les sauvegardes existantes."
+        help="Lists the existing backups."
     )
     parser.add_argument(
         "--install-dir", type=Path, default=DEFAULT_INSTALL_DIR,
-        help=f"Dossier d'installation cible (défaut: {DEFAULT_INSTALL_DIR})."
+        help=f"Target installation folder (default: {DEFAULT_INSTALL_DIR})."
     )
     parser.add_argument(
         "--source-dir", type=Path, default=DEFAULT_SOURCE_DIR,
-        help=f"Dossier des sources Git pour la compilation (défaut: {DEFAULT_SOURCE_DIR})."
+        help=f"Git sources folder for the build (default: {DEFAULT_SOURCE_DIR})."
     )
     parser.add_argument(
         "--branch", type=str, default="master",
-        help="Branche Git à compiler (défaut: master)."
+        help="Git branch to build (default: master)."
     )
     parser.add_argument(
         "--no-backup", action="store_true",
-        help="Désactive la sauvegarde automatique préalable."
+        help="Disables the automatic prior backup."
     )
     parser.add_argument(
         "--clean", action="store_true",
-        help="Nettoie le dossier build avant de recompiler."
+        help="Cleans the build folder before rebuilding."
     )
     parser.add_argument(
         "--jobs", "-j", type=int, default=None,
-        help="Nombre de cœurs processeur pour la compilation."
+        help="Number of CPU cores for the build."
     )
 
     args = parser.parse_args()
 
-    # Si aucun argument spécifique n'est passé, on affiche l'état et on propose le choix
+    # If no specific argument is given, show the state and offer the choice
     if not (args.check or args.download or args.build or args.rollback or args.list_backups):
         action_verifier(args.install_dir)
         sys.exit(0)
 
     if args.list_backups:
         backups = lister_sauvegardes(args.install_dir)
-        print(f"\n📦 Sauvegardes trouvées dans {args.install_dir / 'backups'} :")
+        print(f"\n📦 Backups found in {args.install_dir / 'backups'}:")
         if not backups:
-            print("  (Aucune sauvegarde)")
+            print("  (No backup)")
         for b in backups:
             print(f"  • {b.name}")
         print()

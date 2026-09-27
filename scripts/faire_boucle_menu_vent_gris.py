@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scripts/faire_boucle_menu_vent_gris.py — fond de menu « L'HÉRITIER DU VIDE » :
-cinemagraph IA ultra-léger en boucle infinie parfaite, caméra fixe (2026-09-10).
+scripts/faire_boucle_menu_vent_gris.py — background of the « L'HÉRITIER DU VIDE » menu:
+ultra-light AI cinemagraph in a perfect infinite loop, locked camera (2026-09-10).
 
-Chaîne ACTIVE (recette validée en jeu) :
-  trame propre sans texte → LTX-2.5 I2V 65 trames caméra verrouillée → ralenti
-  motion-compensé ×3,75 vers ~9,8 s 1080p → xfade queue→tête (fondu 1,5 s,
-  fps=24 sur les DEUX branches, offset = durée_post − fondu, trim=end final)
-  → OGV Theora silencieux pour Godot. La boucle est construite DEPUIS LE
-  MASTER PROPRE (menu_vent_gris_10s_1080p.mp4), PAS depuis le stabilisé.
+ACTIVE chain (recipe validated in game):
+  clean text-free frame → LTX-2.5 I2V 65 frames locked camera → motion-compensated
+  slow motion ×3.75 to ~9.8 s 1080p → xfade queue→head (1.5 s crossfade,
+  fps=24 on BOTH branches, offset = post_duration − fade, trim=end final)
+  → silent OGV Theora for Godot. The loop is built FROM THE CLEAN
+  MASTER (menu_vent_gris_10s_1080p.mp4), NOT from the stabilized version.
 
-⚠️ Leçon incident 2026-09-10 (bande noire montante, mesurée en jeu) :
-l'ancienne chaîne passait par une étape de stabilisation (stabiliser_camera_fixe)
-dont le warp échantillonnait hors du cadre source en fin de dérive — remplissage
-NOIR constant (borderMode par défaut de cv2.warpAffine) — et le recadrage de
-sécurité était plafonné trop bas pour couvrir la dérive mesurée (236 px).
-La bande noire grandissait avec la dérive, puis le crossfade la figeait.
-Décisions : ① l'étape de stabilisation est RETIRÉE de la chaîne active (le
-contenu est une peinture quasi fixe : le fondu croisé suffit et a été validé
-en jeu) ; ② la fonction reste disponible, corrigée (BORDER_REPLICATE + recadrage
-couvrant borné avec avertissement) et son résultat est audité (stabilise_fix)
-comme preuve de correction — mais il n'entre pas dans la boucle.
+⚠️ Lesson from the 2026-09-10 incident (rising black band, measured in game):
+the old chain went through a stabilization step (stabiliser_camera_fixe)
+whose warp sampled outside the source frame at the end of the drift — constant
+BLACK fill (cv2.warpAffine default borderMode) — and the safety crop
+was capped too low to cover the measured drift (236 px).
+The black band grew with the drift, then the crossfade froze it.
+Decisions: ① the stabilization step is REMOVED from the active chain (the
+content is an almost static painting: the crossfade is enough and was validated
+in game); ② the function remains available, fixed (BORDER_REPLICATE + covering
+bounded crop with warning) and its result is audited (stabilise_fix)
+as proof of the fix — but it does not enter the loop.
 
-Reprenant : chaque étape saute si son livrable existe déjà. Sorties suffixées
-_fix : les fichiers contaminés d'origine sont conservés comme pièces à conviction.
-Pas de piste son : la musique du menu est posée dans le jeu (music_bg).
+Resumable: each step is skipped if its deliverable already exists. Outputs suffixed
+_fix: the originally contaminated files are kept as evidence.
+No audio track: the menu music is laid in game (music_bg).
 """
 
 import os
@@ -54,11 +54,11 @@ TRAME_PROPRE = os.path.join(ES_SOURCE, "intro_vent_gris_v6_derniere_trame.png")
 ES = os.path.join("output", "menu_vent_gris")
 AMORCE = os.path.join(ES, "menu_vent_gris_amorce_832x480.png")
 BRUT = os.path.join(ES, "menu_vent_gris_brut.webm")
-RALENTI = os.path.join(ES, "menu_vent_gris_10s_1080p.mp4")       # master propre, référence
-STABILISE = os.path.join(ES, "menu_vent_gris_stabilise.mp4")     # ⚠️ contaminé (pièce à conviction)
-STABILISE_FIX = os.path.join(ES, "menu_vent_gris_stabilise_fix.mp4")  # preuve de correction
-BOUCLE_MP4 = os.path.join(ES, "menu_vent_gris_boucle.mp4")       # ⚠️ contaminé (pièce à conviction)
-BOUCLE_OGV = os.path.join(ES, "menu_vent_gris_boucle.ogv")       # ⚠️ contaminé (pièce à conviction)
+RALENTI = os.path.join(ES, "menu_vent_gris_10s_1080p.mp4")       # clean master, reference
+STABILISE = os.path.join(ES, "menu_vent_gris_stabilise.mp4")     # ⚠️ contaminated (evidence)
+STABILISE_FIX = os.path.join(ES, "menu_vent_gris_stabilise_fix.mp4")  # proof of the fix
+BOUCLE_MP4 = os.path.join(ES, "menu_vent_gris_boucle.mp4")       # ⚠️ contaminated (evidence)
+BOUCLE_OGV = os.path.join(ES, "menu_vent_gris_boucle.ogv")       # ⚠️ contaminated (evidence)
 BOUCLE_FIX_MP4 = os.path.join(ES, "menu_vent_gris_boucle_fix.mp4")
 BOUCLE_FIX_OGV = os.path.join(ES, "menu_vent_gris_boucle_fix.ogv")
 
@@ -75,8 +75,8 @@ NEGATIF = NEGATIF_DEFAUT + (
 )
 SEED = 42
 DUREE_RALENTI = 10.0
-CROISE = 1.5           # fondu croisé queue→tête (recette validée en jeu)
-SEUIL_RACCORD = 6.0    # diff L moyenne trame 0 vs dernière trame (critère de sortie)
+CROISE = 1.5           # queue→head crossfade (recipe validated in game)
+SEUIL_RACCORD = 6.0    # mean L diff frame 0 vs last frame (exit criterion)
 
 
 def log(message):
@@ -84,18 +84,18 @@ def log(message):
 
 
 def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
-    """Gèle la caméra sur le cadrage de la première trame (HORS chaîne active).
+    """Freezes the camera on the framing of the first frame (OUTSIDE the active chain).
 
-    Leçon §1.17 appliquée : JAMAIS de mesure brute par trame dans le warp.
-    Dérive caméra mesurée sur 6 ancrages — ORB + RANSAC en similitude, chaque
-    ancre comparée directement à la trame 0 — puis interpolation douce.
-    Corrections incident 2026-09-10 :
-      • borderMode=BORDER_REPLICATE : plus JAMAIS de remplissage noir quand
-        l'échantillonnage sort du cadre (les bords répliquent le dernier pixel) ;
-      • recadrage ζ calculé pour COUVRIR la dérive mesurée (plus de garde-fou
-        qui masquait le problème) mais borné à 1,25 avec avertissement explicite
-        quand il ne suffit pas (les bords répliqués restent alors possibles —
-        à vérifier visuellement ; l'audit bande noire reste à 0 par construction).
+    Lesson §1.17 applied: NEVER per-frame raw measurement in the warp.
+    Camera drift measured over 6 anchors — ORB + RANSAC in similarity, each
+    anchor compared directly to frame 0 — then smooth interpolation.
+    Fixes from the 2026-09-10 incident:
+      • borderMode=BORDER_REPLICATE: NEVER again a black fill when
+        sampling leaves the frame (edges replicate the last pixel);
+      • crop ζ computed to COVER the measured drift (no more safety guard
+        that masked the problem) but bounded at 1.25 with an explicit warning
+        when it is not enough (replicated edges then remain possible —
+        to check visually; the black band audit stays at 0 by construction).
     """
     import cv2
     import numpy as np
@@ -110,7 +110,7 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
     cap.release()
     n = len(trames)
     if n < 10:
-        raise RuntimeError(f"Trop peu de trames : {n}")
+        raise RuntimeError(f"Too few frames: {n}")
 
     echelle_petite = 960.0 / trames[0].shape[1]
     petit = (960, int(trames[0].shape[0] * echelle_petite))
@@ -125,7 +125,7 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
     kp0, des0 = orb.detectAndCompute(g0, None)
 
     def similitude_vers_trame0(k):
-        """Similitude trame0→trame_k (où est parti le contenu de la trame 0)."""
+        """Similarity frame0→frame_k (where the frame 0 content went)."""
         gk = gris_de(idx[k])
         kpk, desk = orb.detectAndCompute(gk, None)
         if des0 is None or desk is None:
@@ -134,7 +134,7 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
         bons = [m for m, n in (p for p in paires if len(p) == 2)
                 if m.distance < 0.75 * n.distance]
         if len(bons) < 40:
-            log(f"   ⚠️ ancre {k} : {len(bons)} appariements — interpolée des voisines")
+            log(f"   ⚠️ anchor {k}: {len(bons)} matches — interpolated from neighbors")
             return None
         src = np.float32([kp0[m.queryIdx].pt for m in bons])
         dst = np.float32([kpk[m.trainIdx].pt for m in bons])
@@ -142,13 +142,13 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
             src, dst, method=cv2.RANSAC, ransacReprojThreshold=4.0, maxIters=5000)
         nb = 0 if inliers is None else int(inliers.sum())
         if M is None or nb < 30:
-            log(f"   ⚠️ ancre {k} : RANSAC insuffisant ({nb} inliers) — interpolée")
+            log(f"   ⚠️ anchor {k}: RANSAC insufficient ({nb} inliers) — interpolated")
             return None
         s = float(np.sqrt(np.linalg.det(M[:2, :2])))
         theta = float(np.degrees(np.arctan2(M[1, 0], M[0, 0])))
         if not (0.85 <= s <= 1.35) or abs(theta) > 5.0:
-            log(f"   ⚠️ ancre {k} hors plausibilité caméra (échelle {s:.3f}, "
-                f"rotation {theta:.1f}°) — interpolée")
+            log(f"   ⚠️ anchor {k} outside camera plausibility (scale {s:.3f}, "
+                f"rotation {theta:.1f}°) — interpolated")
             return None
         return M.astype(np.float64)
 
@@ -162,10 +162,10 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
             affines[k] = derniere_valide.copy()
         else:
             derniere_valide = affines[k]
-    log("   dérive (échelle) aux ancrages : " +
+    log("   drift (scale) at the anchors: " +
         ", ".join("{:.4f}".format(float(np.sqrt(np.linalg.det(a[:, :2])))) for a in affines))
 
-    # coords pleine résolution : similitude ⇒ seule la translation change d'échelle
+    # full-resolution coords: similarity ⇒ only the translation rescales
     facteur = 1.0 / echelle_petite
     affines_full = [(a[:, :2].copy(), a[:, 2] * facteur) for a in affines]
 
@@ -174,7 +174,7 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
     coins = np.array([[0, 0], [W - 1, 0], [0, H - 1], [W - 1, H - 1]], dtype=np.float64)
     hors = 0.0
     for (lin, vec) in affines_full:
-        coins_t = coins @ lin.T + vec  # où atterrissent les coins de la trame 0
+        coins_t = coins @ lin.T + vec  # where the frame 0 corners land
         hors = max(hors,
                    max(0.0, -(coins_t[:, 0].min())), max(0.0, coins_t[:, 0].max() - (W - 1)),
                    max(0.0, -(coins_t[:, 1].min())), max(0.0, coins_t[:, 1].max() - (H - 1)))
@@ -182,9 +182,9 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
     ZETA_MAX = 1.25
     zeta = min(zeta_souhaite, ZETA_MAX)
     if zeta < zeta_souhaite:
-        log(f"   ⚠️ recadrage souhaité ζ={zeta_souhaite:.2f} > plafond {ZETA_MAX} — "
-            "bords répliqués (REPLICATE) possibles en fin de dérive, vérifier visuellement")
-    log(f"   marge de dérive {hors:.1f} px → recadrage ζ={zeta:.4f}")
+        log(f"   ⚠️ desired crop ζ={zeta_souhaite:.2f} > cap {ZETA_MAX} — "
+            "replicated edges (REPLICATE) possible at the end of the drift, check visually")
+    log(f"   drift margin {hors:.1f} px → crop ζ={zeta:.4f}")
 
     def matrice(i):
         u = i / (n - 1)
@@ -218,13 +218,13 @@ def stabiliser_camera_fixe(source: str, sortie: str, nb_ancres: int = 6) -> str:
 
 
 def boucle_parfaite(source: str, sortie: str, croise: float = CROISE) -> str:
-    """Boucle infinie parfaite — recette xfade VALIDÉE EN JEU (incident 2026-09-10).
+    """Perfect infinite loop — xfade recipe VALIDATED IN GAME (2026-09-10 incident).
 
-    Pièges pris en compte :
-      • xfade EXIGE un fps constant → fps=24 sur les DEUX branches avant xfade ;
-      • trim=X fixe le DÉBUT, pas la fin → la longueur finale s'écrit trim=end=… ;
-      • offset = durée_post − fondu (durée_post = durée_source − fondu) ;
-      • le raccord result(0) ≈ result(fin) est vérifié par l'audit bande noire.
+    Pitfalls taken into account:
+      • xfade REQUIRES a constant fps → fps=24 on BOTH branches before xfade;
+      • trim=X sets the START, not the end → the final length is written trim=end=…;
+      • offset = post_duration − fade (post_duration = source_duration − fade);
+      • the joint result(0) ≈ result(end) is verified by the black band audit.
     """
     duree = _duree_media(source)
     duree_post = duree - croise
@@ -242,12 +242,12 @@ def boucle_parfaite(source: str, sortie: str, croise: float = CROISE) -> str:
          "-c:v", "libx264", "-crf", "16", "-preset", "slow", sortie],
         capture_output=True, check=True,
     )
-    log(f"   source {duree:.2f} s → boucle {duree_post:.2f} s (fondu {croise} s, offset {offset:.2f} s)")
+    log(f"   source {duree:.2f} s → loop {duree_post:.2f} s (fade {croise} s, offset {offset:.2f} s)")
     return sortie
 
 
 def encoder_ogv(source: str, sortie: str) -> str:
-    """OGV Theora silencieux (format vidéo natif Godot 4), qualité max (q 10)."""
+    """Silent OGV Theora (native Godot 4 video format), max quality (q 10)."""
     subprocess.run(
         [FFMPEG_PATH, "-y", "-v", "error", "-i", source, "-an",
          "-c:v", "libtheora", "-q:v", "10", "-pix_fmt", "yuv420p", sortie],
@@ -257,7 +257,7 @@ def encoder_ogv(source: str, sortie: str) -> str:
 
 
 def planche_qa(video: str, prefixe: str = "qa_boucle_fix"):
-    """Instantanés début/milieu/fin + planche avec raccord fin→début en case 4."""
+    """Start/middle/end snapshots + board with the end→start joint in cell 4."""
     from PIL import Image
     duree = _duree_media(video)
     instantanes = []
@@ -285,19 +285,19 @@ def planche_qa(video: str, prefixe: str = "qa_boucle_fix"):
     planche.paste(rac, (960, 540 + 135))
     sortie = os.path.join(ES, f"{prefixe}_planche.png")
     planche.save(sortie, quality=100)
-    log(f"   planche QA : {os.path.basename(sortie)} (début / milieu / fin / raccord)")
+    log(f"   QA board: {os.path.basename(sortie)} (start / middle / end / joint)")
 
 
 def auditer(sortie_attendue_zero, avec_raccord):
-    """Critère de sortie : audit bande noire (0 px) sur les vidéos listées,
-    raccord de boucle ≤ seuil sur celles marquées « boucle ». Exit 1 si échec."""
+    """Exit criterion: black band audit (0 px) on the listed videos,
+    loop joint ≤ threshold on those marked "loop". Exit 1 on failure."""
     commande = [sys.executable, AUDIT,
                 "--zero", *sortie_attendue_zero,
                 "--raccord", *avec_raccord]
     resultat = subprocess.run(commande)
     if resultat.returncode != 0:
-        raise SystemExit("⛔ AUDIT bande noire/raccord : CRITÈRE DE SORTIE NON ATTEINT")
-    log("✅ AUDIT : bande noire 0 px partout, raccords dans le seuil.")
+        raise SystemExit("⛔ AUDIT black band/joint: EXIT CRITERION NOT MET")
+    log("✅ AUDIT: black band 0 px everywhere, joints within threshold.")
 
 
 def main():
@@ -306,66 +306,66 @@ def main():
         raise FileNotFoundError(TRAME_PROPRE)
     os.makedirs(ES, exist_ok=True)
 
-    # 1. amorce 16:9 832×480 depuis la trame propre (sans texte)
+    # 1. 832×480 16:9 lead-in from the clean frame (text-free)
     if os.path.exists(AMORCE):
-        log(f"⏭️ 1. amorce déjà présente : {os.path.basename(AMORCE)}")
+        log(f"⏭️ 1. lead-in already present: {os.path.basename(AMORCE)}")
     else:
         conformer_amorce_16_9(TRAME_PROPRE, AMORCE)
-        log("✅ 1. amorce 832×480 prête (recadrage Lanczos).")
+        log("✅ 1. 832×480 lead-in ready (Lanczos crop).")
 
-    # 2. génération LTX I2V caméra verrouillée (65 trames = plafond GPU stable)
+    # 2. LTX I2V generation locked camera (65 frames = stable GPU ceiling)
     if os.path.exists(BRUT):
-        log(f"⏭️ 2. brut déjà présent : {os.path.basename(BRUT)}")
+        log(f"⏭️ 2. raw already present: {os.path.basename(BRUT)}")
     else:
-        log("🎬 2. génération LTX-2.5 I2V (caméra fixe, mouvement ultra-léger)…")
+        log("🎬 2. LTX-2.5 I2V generation (locked camera, ultra-light movement)…")
         generer_monoplan_ltx(
             AMORCE, PROMPT, BRUT, frames=65, fps=24, seed=SEED, negatif=NEGATIF,
             log_fn=lambda m: log(m.strip()))
-        log("✅ 2. brut généré (8 steps euler_a, cfg 1.0).")
+        log("✅ 2. raw generated (8 euler_a steps, cfg 1.0).")
 
-    # 3. ralenti motion-compensé ×3,75 → ~9,8 s 1080p (mouvement encore plus doux)
+    # 3. motion-compensated slow motion ×3.75 → ~9.8 s 1080p (even smoother movement)
     if os.path.exists(RALENTI):
-        log(f"⏭️ 3. ralenti déjà présent : {os.path.basename(RALENTI)} (master propre)")
+        log(f"⏭️ 3. slow motion already present: {os.path.basename(RALENTI)} (clean master)")
     else:
         _, facteur = ralentir_interp_1080p(BRUT, RALENTI, DUREE_RALENTI, fps=24)
-        log(f"✅ 3. ralenti ×{facteur:.2f} appliqué (mci/aobmc/vsbmc, 1080p).")
+        log(f"✅ 3. slow motion ×{facteur:.2f} applied (mci/aobmc/vsbmc, 1080p).")
 
-    # 3bis. stabilisation CORRIGÉE — preuve de correction UNIQUEMENT, la boucle
-    # est construite depuis le master propre (recette validée en jeu, voir docstring)
+    # 3bis. FIXED stabilization — proof of the fix ONLY, the loop
+    # is built from the clean master (recipe validated in game, see docstring)
     if os.path.exists(STABILISE_FIX):
-        log(f"⏭️ 3bis. stabilisée corrigée déjà présente : {os.path.basename(STABILISE_FIX)}")
+        log(f"⏭️ 3bis. fixed stabilized already present: {os.path.basename(STABILISE_FIX)}")
     else:
-        log("🔧 3bis. stabilisation corrigée (REPLICATE + ζ couvrant) — preuve d'audit, hors boucle…")
+        log("🔧 3bis. fixed stabilization (REPLICATE + covering ζ) — audit proof, outside the loop…")
         stabiliser_camera_fixe(RALENTI, STABILISE_FIX)
-        log(f"✅ 3bis. {os.path.basename(STABILISE_FIX)} (n'entre PAS dans la boucle).")
+        log(f"✅ 3bis. {os.path.basename(STABILISE_FIX)} (does NOT enter the loop).")
 
-    # 4. boucle parfaite depuis le MASTER PROPRE — recette xfade validée en jeu
+    # 4. perfect loop from the CLEAN MASTER — xfade recipe validated in game
     if os.path.exists(BOUCLE_FIX_MP4):
-        log(f"⏭️ 4. boucle déjà présente : {os.path.basename(BOUCLE_FIX_MP4)}")
+        log(f"⏭️ 4. loop already present: {os.path.basename(BOUCLE_FIX_MP4)}")
     else:
-        log("🎞️ 4. boucle xfade (fps=24 sur les 2 branches, trim=end, offset=durée_post−fondu)…")
+        log("🎞️ 4. xfade loop (fps=24 on both branches, trim=end, offset=post_duration−fade)…")
         boucle_parfaite(RALENTI, BOUCLE_FIX_MP4)
-        log(f"✅ 4. boucle : {os.path.basename(BOUCLE_FIX_MP4)}")
+        log(f"✅ 4. loop: {os.path.basename(BOUCLE_FIX_MP4)}")
 
-    # 5. OGV Theora silencieux pour Godot
+    # 5. silent OGV Theora for Godot
     if os.path.exists(BOUCLE_FIX_OGV):
-        log(f"⏭️ 5. OGV déjà présent : {os.path.basename(BOUCLE_FIX_OGV)}")
+        log(f"⏭️ 5. OGV already present: {os.path.basename(BOUCLE_FIX_OGV)}")
     else:
         encoder_ogv(BOUCLE_FIX_MP4, BOUCLE_FIX_OGV)
-        log(f"✅ 5. OGV Godot : {os.path.basename(BOUCLE_FIX_OGV)} (silencieux, boucle).")
+        log(f"✅ 5. Godot OGV: {os.path.basename(BOUCLE_FIX_OGV)} (silent, loop).")
 
     if not os.path.exists(os.path.join(ES, "qa_boucle_fix_planche.png")):
         planche_qa(BOUCLE_FIX_MP4)
 
-    # 6. AUDIT — critère de sortie : 0 px de bande noire à toutes les phases,
-    # raccord de boucle ≤ 6 (échelle L, 0-255). Échoue le script sinon.
-    log("🔍 6. audit bande noire + raccords…")
+    # 6. AUDIT — exit criterion: 0 px of black band at every phase,
+    # loop joint ≤ 6 (L scale, 0-255). The script fails otherwise.
+    log("🔍 6. black band + joints audit…")
     auditer(
         sortie_attendue_zero=[RALENTI, STABILISE_FIX, BOUCLE_FIX_MP4, BOUCLE_FIX_OGV],
         avec_raccord=[BOUCLE_FIX_MP4, BOUCLE_FIX_OGV],
     )
 
-    log(f"🎉 Terminé en {(time.time() - t0) / 60:.1f} min — livrables _fix dans {ES} :")
+    log(f"🎉 Done in {(time.time() - t0) / 60:.1f} min — _fix deliverables in {ES}:")
     for chemin in (BOUCLE_FIX_MP4, BOUCLE_FIX_OGV):
         log(f"   • {os.path.basename(chemin)}")
 

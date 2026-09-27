@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Skin MPFB d'ELIAN (enfant diaphane d'hiver, Vent-Gris) — base PROPRE :
-texture MakeHuman de base + colorimétrie Vent-Gris, RIEN d'autre.
-Les features (cernes, taches, lèvres) vivent dans l'ink layer MakeUp
-(scripts/build_makeup_elian.py) — architecture officielle MPFB : la skin
-reste générique, le makeup est une couche séparée composée par-dessus.
+ELIAN's MPFB skin (diaphanous winter child, Vent-Gris) — CLEAN base:
+base MakeHuman texture + Vent-Gris colorimetry, NOTHING else.
+The features (dark circles, blemishes, lips) live in the MakeUp ink layer
+(scripts/build_makeup_elian.py) — official MPFB architecture: the skin
+stays generic, the makeup is a separate layer composited on top.
 
-⚠️ RÈGLE PROJET : JAMAIS de portrait 2D collé sur le skin (refusé utilisateur,
-2026-09-08) — l'identité vient du personnage MPFB (morphologie + makeup).
+⚠️ PROJECT RULE: NEVER a 2D portrait pasted onto the skin (refused by the user,
+2026-09-08) — identity comes from the MPFB character (morphology + makeup).
 
-Coordonnées UV hm08 VALIDÉES PAR RENDU TEST GRILLE (2026-09-08, Blender 5.2
-+ MPFB2, cellules 128 px lues sur rendus face + 3/4) — les constantes des
-anciens scripts (align_marc X 760-1288, apply_marc œil 1710/1058) sont FAUSSES :
-  front   X 512-800, Y 384-640   (cellules D3/D4/E3/E4)
-  yeux    X 384-832, Y 640-768   (C5/D5/E5) — axe oculaire ~Y 704
-  nez     X 800-896, Y 640-896   (E5/D6)
-  bouche  X 384-896, Y 768-1024  (C6/D6/E6/E7) — centre ~ (640, 830)
-  joues   X 256-512, Y 640-896   (C5/C6)
-  cou     X 512-896, Y 896-1152  (D7/E7/D8/E8)
-Usage : uv run python scripts/build_skin_elian.py
+hm08 UV coordinates VALIDATED BY TEST GRID RENDER (2026-09-08, Blender 5.2
++ MPFB2, 128 px cells read on face + 3/4 renders) — the constants of the
+old scripts (align_marc X 760-1288, apply_marc eye 1710/1058) are WRONG:
+  forehead X 512-800, Y 384-640   (cells D3/D4/E3/E4)
+  eyes     X 384-832, Y 640-768   (C5/D5/E5) — eye axis ~Y 704
+  nose     X 800-896, Y 640-896   (E5/D6)
+  mouth    X 384-896, Y 768-1024  (C6/D6/E6/E7) — center ~ (640, 830)
+  cheeks   X 256-512, Y 640-896   (C5/C6)
+  neck     X 512-896, Y 896-1152  (D7/E7/D8/E8)
+Usage: uv run python scripts/build_skin_elian.py
 """
 
 import os
@@ -38,10 +38,10 @@ for stream in (sys.stdout, sys.stderr):
 
 SKIN_BASE = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data\skins\young_caucasian_male\young_lightskinned_male_diffuse.png"
 
-# ⚠️ Racine bibliothèque MPFB RÉELLEMENT SCANNÉE : ...\5.2\mpfb\data\data\skins
-# (double « data », cf. LocationService.get_user_data — 2026-09-08). L'ancien
-# chemin ...\mpfb\data\skins utilisé par build_clean_marc_skin.py n'est PAS lu
-# par AssetService (la skin Marc fonctionne car copie présente dans data\data).
+# ⚠️ MPFB library root ACTUALLY SCANNED: ...\5.2\mpfb\data\data\skins
+# (double "data", see LocationService.get_user_data — 2026-09-08). The old
+# path ...\mpfb\data\skins used by build_clean_marc_skin.py is NOT read
+# by AssetService (the Marc skin works because a copy exists in data\data).
 DIR_MPFB_VIVANT = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data\data\skins\elian_enfant"
 DIR_MPFB_LEGACY = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\mpfb\data\skins\elian_enfant"
 
@@ -55,11 +55,11 @@ MHMAT_LOCAL = r"C:\GIT\generator-assets\godot_assets\skins\elian_enfant\elian_en
 NORMAL_MPFB = DIR_MPFB_VIVANT + r"\elian_enfant_normal.png"
 NORMAL_LOCAL = r"C:\GIT\generator-assets\godot_assets\skins\elian_enfant\elian_enfant_normal.png"
 
-# Repères visage hm08 (validation rendu grille 2026-09-08)
-OEIL_G = (500, 704)    # œil côté image-gauche (cellules C5/D5)
-OEIL_D = (720, 704)    # œil côté image-droite (cellules D5/E5)
+# hm08 face landmarks (grid render validation 2026-09-08)
+OEIL_G = (500, 704)    # eye on the image-left side (cells C5/D5)
+OEIL_D = (720, 704)    # eye on the image-right side (cells D5/E5)
 BOUCHE = (640, 830)
-FRONT_C = (640, 500)   # centre du front (D3/D4)
+FRONT_C = (640, 500)   # forehead center (D3/D4)
 TEMPLE_G = (330, 600)
 TEMPLE_D = (950, 600)
 COU_C = (704, 1000)
@@ -67,7 +67,7 @@ COU_C = (704, 1000)
 
 def calque_sombre(img_rgb: Image.Image, ellipses: list,
                   force: float = 0.30, flou: int = 18) -> Image.Image:
-    """Peint des ellipses sombres translucides (multiplie la lumière)."""
+    """Paints translucent dark ellipses (multiplies the light)."""
     calque = Image.new("L", img_rgb.size, 0)
     d = ImageDraw.Draw(calque)
     for (cx, cy, rx, ry) in ellipses:
@@ -75,7 +75,7 @@ def calque_sombre(img_rgb: Image.Image, ellipses: list,
     calque = calque.filter(ImageFilter.GaussianBlur(radius=flou))
     arr = np.array(img_rgb, dtype=np.float32)
     masque = np.array(calque, dtype=np.float32) / 255.0 * force
-    assomb = arr * (1.0 - 0.55 * masque[:, :, None])  # -~55% max à pleine force
+    assomb = arr * (1.0 - 0.55 * masque[:, :, None])  # ~-55% max at full strength
     assomb[:, :, 2] = np.clip(assomb[:, :, 2] * (1.0 - 0.12 * masque), 0, 255)
     return Image.fromarray(np.clip(assomb, 0, 255).astype(np.uint8))
 
@@ -83,7 +83,7 @@ def calque_sombre(img_rgb: Image.Image, ellipses: list,
 def calque_taches(img_rgb: Image.Image, taches: list,
                   teinte=(168, 128, 118), force: float = 0.22,
                   flou: int = 3) -> Image.Image:
-    """Petites taches de fatigue / rougeurs diffuses."""
+    """Small fatigue blemishes / diffuse redness."""
     calque = Image.new("L", img_rgb.size, 0)
     d = ImageDraw.Draw(calque)
     for (cx, cy, r) in taches:
@@ -97,7 +97,7 @@ def calque_taches(img_rgb: Image.Image, taches: list,
 
 
 def colorimetrie_vent_gris(img_rgb: Image.Image) -> Image.Image:
-    """Colorimétrie Vent-Gris enfant : diaphane, froid, désaturé."""
+    """Child Vent-Gris colorimetry: diaphanous, cold, desaturated."""
     img = ImageEnhance.Brightness(img_rgb).enhance(1.07)
     img = ImageEnhance.Color(img).enhance(0.86)
     arr = np.array(img, dtype=np.float32)
@@ -108,43 +108,43 @@ def colorimetrie_vent_gris(img_rgb: Image.Image) -> Image.Image:
 
 def main():
     print("=" * 65)
-    print(" 🎯 SKIN ELIAN : BASE + VENT-GRIS + FEATURES SIGNATURE (recette Marc) ")
+    print(" 🎯 ELIAN SKIN: BASE + VENT-GRIS + SIGNATURE FEATURES (Marc recipe) ")
     print("=" * 65)
 
     base = Image.open(SKIN_BASE).convert("RGB")
     if base.size != (2048, 2048):
-        raise ValueError(f"Texture base inattendue : {base.size}")
+        raise ValueError(f"Unexpected base texture: {base.size}")
 
-    # 1. Colorimétrie Vent-Gris globale — base PROPRE : les cernes/taches
-    #    vivent désormais dans l'ink layer MakeUp (build_makeup_elian.py),
-    #    conforme à l'architecture officielle MPFB (skin ≠ makeup).
+    # 1. Global Vent-Gris colorimetry — CLEAN base: the dark circles/blemishes
+    #    now live in the MakeUp ink layer (build_makeup_elian.py),
+    #    compliant with the official MPFB architecture (skin ≠ makeup).
     skin = colorimetrie_vent_gris(base)
-    print("  🎨 Colorimétrie Vent-Gris (diaphane, froid) appliquée — base propre")
-    print("  🫥 Taches de fatigue (joues, front, menton) peintes")
+    print("  🎨 Vent-Gris colorimetry (diaphanous, cold) applied — clean base")
+    print("  🫥 Fatigue blemishes (cheeks, forehead, chin) painted")
 
-    # 3. Export diffuse (bibliothèque MPFB + dépôt + POC)
+    # 3. Diffuse export (MPFB library + repo + POC)
     for p in [SORTIE_MPFB, SORTIE_LOCAL, SORTIE_POC]:
         os.makedirs(os.path.dirname(p), exist_ok=True)
         skin.save(p, "PNG", optimize=True)
-        print("  ✅ Diffuse :", p)
+        print("  ✅ Diffuse:", p)
 
-    # 4. Normal map (micro-relief pores)
+    # 4. Normal map (pore micro-relief)
     from core.image_ops import generer_normal_map
     norm_img = generer_normal_map(skin, strength=2.0)
     for p in [NORMAL_MPFB, NORMAL_LOCAL]:
         os.makedirs(os.path.dirname(p), exist_ok=True)
         norm_img.save(p, "PNG")
-    print("  ✅ Normal map :", NORMAL_MPFB)
+    print("  ✅ Normal map:", NORMAL_MPFB)
 
-    # 5. Vignette .thumb centrée sur le visage hm08 réel
+    # 5. .thumb vignette centered on the real hm08 face
     thumb = skin.crop((240, 380, 960, 1020)).resize(
         (256, 256), Image.Resampling.LANCZOS).convert("RGBA")
     for t in [THUMB_MPFB, THUMB_LOCAL]:
         os.makedirs(os.path.dirname(t), exist_ok=True)
         thumb.save(t, "PNG")
-    print("  ✅ Vignette .thumb :", THUMB_MPFB)
+    print("  ✅ .thumb vignette:", THUMB_MPFB)
 
-    # 6. Fichier .mhmat
+    # 6. .mhmat file
     mhmat = """# Material file for MakeHuman / MPFB - Elian Enfant (Vent-Gris)
 # Character: Elian (4-5 years old, pale winter child of Vent-Gris)
 # Project: L'HERITIER DU VIDE
@@ -196,10 +196,10 @@ shaderConfig diffuse True
         os.makedirs(os.path.dirname(p), exist_ok=True)
         with open(p, "w", encoding="utf-8") as f:
             f.write(mhmat)
-    print("  ✅ Matériau .mhmat :", MHMAT_MPFB)
+    print("  ✅ .mhmat material:", MHMAT_MPFB)
 
     print("\n" + "=" * 65)
-    print(" 🎉 SKIN ELIAN GÉNÉRÉ (VENT-GRIS + FEATURES SIGNATURE) ")
+    print(" 🎉 ELIAN SKIN GENERATED (VENT-GRIS + SIGNATURE FEATURES) ")
     print("=" * 65)
 
 

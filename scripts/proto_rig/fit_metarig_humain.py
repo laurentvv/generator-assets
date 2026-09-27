@@ -1,12 +1,12 @@
-"""Vague 2A — Fit agentique du méta-rig Rigify sur le Body MPFB (T-pose).
+"""Wave 2A — Agentic fit of the Rigify metarig onto the MPFB Body (T-pose).
 
-Repositionne les articulations clés du méta-rig sur les repères mesurés du mesh
-(tranches Z), aligne les rolls (paumes vers le bas, rotules vers l'avant),
-translate paumes/doigts avec la main. Puis capture rayons X pour vérification.
+Repositions the key joints of the metarig onto the landmarks measured on the mesh
+(Z slices), aligns the rolls (palms down, kneecaps forward),
+translates palms/fingers along with the hand. Then an x-ray capture for verification.
 
-Repères mesurés le 2026-09-18 sur humain_a_mesh.blend (Body 14517 sommets) :
-pieds Z=0, chevilles 0.07, hanches (±0.09, 0.72), cou base 1.13, tete top 1.381,
-epaules (±0.185, 0.78), poignets ±0.365, bouts de mains ±0.4225, visage -Y.
+Landmarks measured on 2026-09-18 on humain_a_mesh.blend (Body 14517 vertices):
+feet Z=0, ankles 0.07, hips (±0.09, 0.72), neck base 1.13, head top 1.381,
+shoulders (±0.185, 0.78), wrists ±0.365, hand tips ±0.4225, face -Y.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ CODE_FIT = r"""
 import bpy
 from mathutils import Vector
 
-# ---- repères mesh (metres, monde) ----
+# ---- mesh landmarks (meters, world) ----
 CHEVILLE_Z = 0.07
 HANCHE = (0.09, 0.0, 0.72)
 GENOU_Z = 0.40
@@ -46,7 +46,7 @@ def os_(nom):
 def placer(nom, tete, queue):
     b = os_(nom)
     if b is None:
-        print('MANQUANT:', nom)
+        print('MISSING:', nom)
         return
     b.head = Vector(tete)
     b.tail = Vector(queue)
@@ -56,14 +56,14 @@ def rouler(nom, cible):
     if b is not None:
         b.align_roll(Vector(cible).normalized())
 
-# delta de la tete de hand.L pour translater paumes + doigts
-delta_x = EPAULE[0] * 1.0  # recalcule ci-dessous avec l'ancienne position
+# delta of the hand.L head to translate palms + fingers
+delta_x = EPAULE[0] * 1.0  # recomputed below from the old position
 old_hand = os_('hand.L')
 ancien_x = old_hand.head.x if old_hand else 0.66
 nouveau_x = POIGNET_X
 delta = nouveau_x - ancien_x
 
-# ---- colonne : 7 os repartis entre bassin et cou ----
+# ---- spine: 7 bones spread between pelvis and neck ----
 n_col = 7
 z0, z1 = BASSIN_Z, COU_Z
 pas = (z1 - z0) / n_col
@@ -72,14 +72,14 @@ for i in range(n_col):
     placer(nom, (0.0, 0.0, z0 + pas * i), (0.0, 0.0, z0 + pas * (i + 1)))
     rouler(nom, (0, -1, 0))
 
-# ---- tete (os 'face') ----
+# ---- head ('face' bone) ----
 placer('face', (0.0, 0.01, COU_Z + 0.02), (0.0, 0.0, 1.31))
 
 # ---- pelvis ----
 placer('pelvis.L', (0.0, 0.0, BASSIN_Z), (HANCHE[0], -0.04, BASSIN_Z + 0.14))
 placer('pelvis.R', (0.0, 0.0, BASSIN_Z), (-HANCHE[0], -0.04, BASSIN_Z + 0.14))
 
-# ---- jambes ----
+# ---- legs ----
 for c, s in (('L', 1), ('R', -1)):
     placer('thigh.%s' % c, (s * HANCHE[0], 0.0, HANCHE[2]), (s * HANCHE[0], 0.0, GENOU_Z))
     placer('shin.%s' % c, (s * HANCHE[0], 0.0, GENOU_Z), (s * HANCHE[0], 0.0, CHEVILLE_Z))
@@ -89,7 +89,7 @@ for c, s in (('L', 1), ('R', -1)):
     for nom in ('thigh.%s', 'shin.%s'):
         rouler(nom % c, (0, -1, 0))
 
-# ---- bras en T-pose stricte (paumes vers le bas) ----
+# ---- arms in strict T-pose (palms down) ----
 for c, s in (('L', 1), ('R', -1)):
     placer('shoulder.%s' % c, (s * 0.03, -0.01, EPAULE[2] + 0.01), (s * EPAULE[0], 0.0, EPAULE[2]))
     placer('upper_arm.%s' % c, (s * EPAULE[0], 0.0, EPAULE[2]), (s * COUDE_X, 0.0, EPAULE[2]))
@@ -97,12 +97,12 @@ for c, s in (('L', 1), ('R', -1)):
     placer('hand.%s' % c, (s * POIGNET_X, 0.0, EPAULE[2]), (s * BOUT_MAIN_X, 0.0, EPAULE[2]))
     for nom in ('upper_arm.%s', 'forearm.%s', 'hand.%s'):
         rouler(nom % c, (0, 0, -1))
-    # paumes + doigts + pouce : translation solidaire de la main
+    # palms + fingers + thumb: translation tied to the hand
     for b in eb:
         if c in b.name and any(b.name.startswith(p) for p in ('palm.', 'f_', 'thumb.')):
             b.head += Vector((s * delta, 0, 0))
             b.tail += Vector((s * delta, 0, 0))
-    # yeux et tempes approximatifs (tete centre Z~1.26, profondeur nez -Y)
+    # approximate eyes and temples (head center Z~1.26, nose depth -Y)
     placer('eye.%s' % c, (s * 0.032, -0.088, 1.255), (s * 0.032, -0.085, 1.265))
     placer('temple.%s' % c, (s * 0.072, 0.015, 1.27), (s * 0.074, 0.02, 1.29))
 
@@ -110,7 +110,7 @@ bpy.ops.object.mode_set(mode='OBJECT')
 meta.data.pose_position = 'REST'
 bpy.context.view_layer.update()
 
-# affichage rayons X pour la verification
+# x-ray display for verification
 meta.show_in_front = True
 meta.display_type = 'WIRE'
 print('FIT_OK')

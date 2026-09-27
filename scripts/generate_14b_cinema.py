@@ -28,12 +28,12 @@ def run_generation(prompt=PROMPT_DEFAULT, frames=9, steps=8, output_name="dragon
     out_png = os.path.join(OUTPUT_DIR, f"{output_name}_preview.png")
 
     print("=" * 80)
-    print("🎬 GÉNÉRATION WAN 2.1 14B (FLAGSHIP CINÉMA)")
-    print(f"   Modèle : {os.path.basename(DIFFUSION_14B)} (14 Milliards de paramètres)")
-    print("   VRAM allouée : ~9.65 Go sur AMD Radeon RX 6950 XT (16 Go)")
-    print("   Encodeur Texte : T5XXL CPU RAM (stabilité numérique FP32)")
-    print(f"   Trames : {frames} | Pas (steps) : {steps} | Résolution : 832x480")
-    print(f"   Prompt : {prompt}")
+    print("🎬 WAN 2.1 14B GENERATION (CINEMA FLAGSHIP)")
+    print(f"   Model: {os.path.basename(DIFFUSION_14B)} (14 Billion parameters)")
+    print("   Allocated VRAM: ~9.65 GB on AMD Radeon RX 6950 XT (16 GB)")
+    print("   Text Encoder: T5XXL CPU RAM (FP32 numerical stability)")
+    print(f"   Frames: {frames} | Steps: {steps} | Resolution: 832x480")
+    print(f"   Prompt: {prompt}")
     print("=" * 80)
 
     cmd = [
@@ -57,20 +57,20 @@ def run_generation(prompt=PROMPT_DEFAULT, frames=9, steps=8, output_name="dragon
     t0 = time.time()
     subprocess.run(cmd, check=True)
     duree = time.time() - t0
-    print(f"\n✅ Génération 14B terminée en {duree:.1f}s ({duree/steps:.2f}s/step)")
-    print(f"   Fichier brut généré : {out_webm}")
+    print(f"\n✅ 14B generation finished in {duree:.1f}s ({duree/steps:.2f}s/step)")
+    print(f"   Raw file generated: {out_webm}")
 
-    # Extraction aperçu
+    # Preview extraction
     ffmpeg = r"C:\Program Files\Amuse\ffmpeg.exe"
     subprocess.run([ffmpeg, "-y", "-i", out_webm, "-vframes", "1", out_png], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"   📸 Trame d'aperçu : {out_png}")
+    print(f"   📸 Preview frame: {out_png}")
 
-    # Conformation YouTube Full HD 1080p via AMD AMF
+    # YouTube Full HD 1080p conformance via AMD AMF
     conform_script = r"C:\GIT\generator-assets\scripts\conform_youtube_hd.py"
     if os.path.exists(conform_script):
-        print("\n🚀 Conformation YouTube Full HD 1080p (AMF Hardware)...")
+        print("\n🚀 YouTube Full HD 1080p conformance (AMF Hardware)...")
         subprocess.run([sys.executable, conform_script, out_webm, out_mp4], check=True)
-        print(f"   🎥 Vidéo finale YouTube HD : {out_mp4}")
+        print(f"   🎥 Final YouTube HD video: {out_mp4}")
 
     return out_webm, out_mp4, out_png
 

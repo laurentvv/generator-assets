@@ -1,43 +1,43 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🧪 PROTOTYPE EXPÉRIMENTAL — boucle multi-chunks H3 Ref2VA (« endless », façon
-ComfyUI-HR-Endless-Sampler, version CLI). NON VALIDÉ : les raccords chunk→chunk
-n'ont jamais été jugés à l'œil ; ce script n'est PAS un workflow (règle AGENTS.md :
-un workflow n'encapsule que du validé utilisateur — cf. docs/proto_endless_h3.md
-pour la procédure complète, les estimations et le critère go/no-go du 1er raccord).
+🧪 EXPERIMENTAL PROTOTYPE — H3 Ref2VA multi-chunk loop ("endless", in the vein of
+ComfyUI-HR-Endless-Sampler, CLI version). NOT VALIDATED: the chunk→chunk joints
+have never been judged by eye; this script is NOT a workflow (AGENTS.md rule:
+a workflow only encapsulates user-validated things — see docs/proto_endless_h3.md
+for the full procedure, the estimates and the go/no-go criterion of the 1st joint).
 
-Chaque chunk = un appel au workflow VALIDÉ `h3_ref2va` en mode `--turbo` (LoRA
-distillé 8 steps, validé utilisateur le 2026-09-09 — ~38 min/chunk au lieu de ~70,
-raccord référence ≥ baseline ; MEMORY_BANK §1.16). La référence de chaque chunk est
-pré-extraite ICI (le workflow reçoit un dossier de trames + `--ref-audio`) avec 3
-leviers du rapport de recherche ComfyUI (défauts = recette validée §1.16) :
-  • --ref-audio-sec : fenêtre audio qui SE TERMINe au raccord et « remonte » dans
-    le son déjà joué (leçon ComfyUI-H3-Motion-Context : le modèle continue la piste
-    au lieu d'écrire quelque chose qui ressemble). La fenêtre est découpée dans la
-    TIMELINE audio complète (source + chunks déjà générés), pas dans le seul chunk
-    précédent. Défaut 0,5 s = recette validée ; sonder 4-6 s pour l'A/B.
-  • --ref-frames : trames de queue extraites du chunk précédent. ⚠️ sd-cli tronque
-    le dossier à la grille 17k+5 et n'encode que les 5 PREMIÈRES trames (12 → 5,
-    = trames -12..-8, qui ne touchent pas le raccord). --ref-frames 5 met les 5
-    trames encodées EXACTEMENT sur le raccord et divise l'encodage VAE réf par ~2,4
-    (sonde de raccord maximal, non validé). Défaut 12 = recette validée.
-  • --ref-scale : downscale des trames réf (aligné 32 px, équivalent CLI de
-    `video_continuation_res`). N'a d'effet QUE si le résultat passe sous la taille
-    nominale interne de sd-cli (768×432 en 16:9 — ex. 3840×2160 × 0,15 → 576×320) ;
-    au-dessus, sd-cli re-agrandit vers la nominale. Défaut 1.0 = recette validée.
-Idempotent : reprend au premier chunk manquant. Fenêtre temps par défaut 23 h,
-marge 50 min/chunk, 3 tentatives par chunk espacées de 15 min (absorbe un
-check_charge refusant parce que la machine est momentanément occupée).
-Concatène tout à la fin (-c copy).
+Each chunk = one call to the VALIDATED `h3_ref2va` workflow in `--turbo` mode
+(distilled 8-step LoRA, user-validated on 2026-09-09 — ~38 min/chunk instead of ~70,
+reference joint ≥ baseline; MEMORY_BANK §1.16). The reference of each chunk is
+pre-extracted HERE (the workflow receives a frame folder + `--ref-audio`) with 3
+levers from the ComfyUI research report (defaults = validated recipe §1.16):
+  • --ref-audio-sec: audio window that ENDS at the joint and "reaches back" into
+    the already-played sound (ComfyUI-H3-Motion-Context lesson: the model continues
+    the track instead of writing something that sounds alike). The window is cut from
+    the complete audio TIMELINE (source + already generated chunks), not from the
+    previous chunk alone. Default 0.5 s = validated recipe; probe 4-6 s for the A/B.
+  • --ref-frames: tail frames extracted from the previous chunk. ⚠️ sd-cli truncates
+    the folder to the 17k+5 grid and only encodes the FIRST 5 frames (12 → 5,
+    = frames -12..-8, which do not touch the joint). --ref-frames 5 puts the 5
+    encoded frames EXACTLY on the joint and divides the ref VAE encoding by ~2.4
+    (maximal joint probe, not validated). Default 12 = validated recipe.
+  • --ref-scale: downscale of the ref frames (32 px aligned, CLI equivalent of
+    `video_continuation_res`). Only has an effect IF the result goes below sd-cli's
+    internal nominal size (768×432 in 16:9 — e.g. 3840×2160 × 0.15 → 576×320);
+    above, sd-cli upscales back to nominal. Default 1.0 = validated recipe.
+Idempotent: resumes at the first missing chunk. Default time window 23 h,
+50 min margin/chunk, 3 attempts per chunk 15 min apart (absorbs a
+check_charge refusal because the machine is momentarily busy).
+Concatenates everything at the end (-c copy).
 
-Usage (depuis la racine du dépôt, machine LIBRE — cf. check_charge_systeme) :
+Usage (from the repo root, FREE machine — see check_charge_systeme):
   uv run python scripts/proto_endless_h3.py --output-dir output/endless_dragon_24h
-Sonde raccord recommandée (~1 h 15, juger chunk_01→chunk_02 avant de tout lancer) :
+Recommended joint probe (~1 h 15, judge chunk_01→chunk_02 before launching everything):
   uv run python scripts/proto_endless_h3.py --output-dir output/endless_sonde \
       --deadline-min 100
-Options : --source <vidéo initiale> --deadline-min 1380 --chunk-min 50 --max-essais 3
-          --ref-frames 12 --ref-audio-sec 0.5 --ref-scale 1.0
+Options: --source <initial video> --deadline-min 1380 --chunk-min 50 --max-essais 3
+         --ref-frames 12 --ref-audio-sec 0.5 --ref-scale 1.0
 """
 
 import argparse
@@ -49,16 +49,16 @@ from datetime import datetime
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Ancre d'identité : chaque prompt part de la référence <Video 1> (+ <Audio 1>
-# seulement si un WAV de référence est disponible pour ce chunk).
+# Identity anchor: each prompt starts from the <Video 1> reference (+ <Audio 1>
+# only if a reference WAV is available for that chunk).
 PREFIX_VIDEO = "Use the dragon from <Video 1>"
 PREFIX_AUDIO = " and the roar from <Audio 1>"
 PREFIX_SUFFIX = " as the opening state. "
 
-# Storyboard par défaut : 18 chunks ≈ 16 s de vidéo (~11,5 h de rendu en turbo,
-# ~21 h en recette de base) — progression narrative continue du dragon
-# (marche → feu → envol → lac → falaises → grotte → trésor → sommeil).
-# Modifiable librement avant lancement (un prompt = un chunk ; garder le prefix).
+# Default storyboard: 18 chunks ≈ 16 s of video (~11.5 h of rendering in turbo,
+# ~21 h with the base recipe) — continuous narrative progression of the dragon
+# (walk → fire → takeoff → lake → cliffs → cave → treasure → sleep).
+# Freely editable before launch (one prompt = one chunk; keep the prefix).
 STORYBOARD = [
     "The same dragon walks forward on dark stone ground, head low, wings half folded, embers drifting in the air, cinematic lighting.",
     "The same dragon suddenly spreads its massive wings and roars loudly at the camera, dust rising from the ground, dramatic backlight.",
@@ -114,18 +114,18 @@ def a_audio(chemin: str) -> bool:
 
 
 def extraire_trames_ref(source: str, ref_dir: str, n_frames: int, echelle: float) -> bool:
-    """Extrait la queue de la source en trames PNG 24 fps (± downscale aligné 32).
+    """Extracts the tail of the source into 24 fps PNG frames (± 32-aligned downscale).
 
-    Ré-extrait à chaque appel (quelques secondes) : garantit que les trames
-    correspondent TOUJOURS aux --ref-frames/--ref-scale courants, même après un
-    changement de paramètres entre deux reprises de la boucle.
+    Re-extracts at every call (a few seconds): guarantees that the frames
+    ALWAYS match the current --ref-frames/--ref-scale, even after a
+    parameter change between two resumptions of the loop.
     """
     os.makedirs(ref_dir, exist_ok=True)
     for vieux in [f for f in os.listdir(ref_dir) if f.endswith(".png")]:
         os.remove(os.path.join(ref_dir, vieux))
     duree = duree_media(source)
     if duree <= 0:
-        log(f"⚠️ Durée illisible pour {source} — réf vidéo impossible")
+        log(f"⚠️ Unreadable duration for {source} — video ref impossible")
         return False
     fenetre = n_frames / 24.0
     start = max(0.0, duree - fenetre)
@@ -141,7 +141,7 @@ def extraire_trames_ref(source: str, ref_dir: str, n_frames: int, echelle: float
 
 
 def extraire_piece_audio(source: str, piece: str) -> bool:
-    """Normalise une piste audio en PCM 32 kHz stéréo (brique de la timeline)."""
+    """Normalizes an audio track into 32 kHz stereo PCM (building block of the timeline)."""
     if os.path.exists(piece) and os.path.getsize(piece) > 1000:
         return True
     if not a_audio(source):
@@ -154,7 +154,7 @@ def extraire_piece_audio(source: str, piece: str) -> bool:
 
 
 def couper_fenetre_audio(timeline: str, wav_ref: str, fenetre_s: float) -> bool:
-    """Découpe les DERNIÈRES `fenetre_s` secondes de la timeline (fin = raccord)."""
+    """Cuts the LAST `fenetre_s` seconds of the timeline (end = joint)."""
     duree = duree_media(timeline)
     if duree <= 0:
         return False
@@ -168,9 +168,9 @@ def couper_fenetre_audio(timeline: str, wav_ref: str, fenetre_s: float) -> bool:
 
 def preparer_reference(idx: int, source: str, pieces_audio: list, out: str,
                        args) -> tuple:
-    """Prépare (trames + WAV) la référence Ref2VA du chunk `idx`.
+    """Prepares (frames + WAV) the Ref2VA reference of chunk `idx`.
 
-    Retourne (ref_frames_dir, ref_wav ou None) — les deux en chemins absolus.
+    Returns (ref_frames_dir, ref_wav or None) — both as absolute paths.
     """
     ref_dir = os.path.join(out, "refs", f"ref_{idx:02d}")
     if not extraire_trames_ref(source, ref_dir, args.ref_frames, args.ref_scale):
@@ -179,12 +179,12 @@ def preparer_reference(idx: int, source: str, pieces_audio: list, out: str,
     ref_wav = None
     pieces_valides = [p for p in pieces_audio if os.path.exists(p)]
     if pieces_valides and args.ref_audio_sec > 0.01:
-        # Timeline = concat des pistes normalisées (source + chunks déjà générés)
+        # Timeline = concat of the normalized tracks (source + already generated chunks)
         timeline = os.path.join(out, "refs", "timeline_audio.wav")
         liste = os.path.join(out, "refs", "timeline_list.txt")
         with open(liste, "w", encoding="utf-8") as f:
             for p in pieces_valides:
-                # chemins ABSOLUS : ffmpeg résout la liste relativement à elle-même
+                # ABSOLUTE paths: ffmpeg resolves the list relative to itself
                 f.write(f"file '{os.path.abspath(p).replace(os.sep, '/')}'\n")
         if lancer([FFMPEG, "-y", "-v", "error", "-f", "concat", "-safe", "0",
                    "-i", liste, "-c", "copy", timeline]):
@@ -195,44 +195,44 @@ def preparer_reference(idx: int, source: str, pieces_audio: list, out: str,
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Prototype endless H3 Ref2VA (non validé)")
-    ap.add_argument("--output-dir", required=True, help="dossier des chunks (créé si besoin)")
+    ap = argparse.ArgumentParser(description="Endless H3 Ref2VA prototype (not validated)")
+    ap.add_argument("--output-dir", required=True, help="chunk folder (created if needed)")
     ap.add_argument("--source", default=os.path.join(
         "output", "overnight", "esrgan_4k", "01_ltx25_dragon_4k_ultrasharp.mp4"),
-        help="vidéo initiale (sa queue référence le chunk 1)")
-    ap.add_argument("--deadline-min", type=int, default=1380, help="fenêtre totale en min (défaut 1380 = 23 h)")
-    ap.add_argument("--chunk-min", type=int, default=50, help="marge de temps min pour entamer un chunk (défaut 50 = chunk turbo ~38 min + marge)")
-    ap.add_argument("--max-essais", type=int, default=3, help="tentatives par chunk (défaut 3, délai 15 min)")
+        help="initial video (its tail seeds chunk 1)")
+    ap.add_argument("--deadline-min", type=int, default=1380, help="total window in min (default 1380 = 23 h)")
+    ap.add_argument("--chunk-min", type=int, default=50, help="min time margin to start a chunk (default 50 = turbo chunk ~38 min + margin)")
+    ap.add_argument("--max-essais", type=int, default=3, help="attempts per chunk (default 3, 15 min delay)")
     ap.add_argument("--ref-frames", type=int, default=12,
-                    help="trames de queue extraites comme réf vidéo (défaut 12 = recette validée ; 5 = raccord maximal, non validé)")
+                    help="tail frames extracted as video ref (default 12 = validated recipe; 5 = maximal joint, not validated)")
     ap.add_argument("--ref-audio-sec", type=float, default=0.5,
-                    help="fenêtre audio de référence finissant au raccord, découpée dans la timeline (défaut 0.5 = recette validée ; 4-6 = leçon Motion-Context, non validé)")
+                    help="reference audio window ending at the joint, cut from the timeline (default 0.5 = validated recipe; 4-6 = Motion-Context lesson, not validated)")
     ap.add_argument("--ref-scale", type=float, default=1.0,
-                    help="downscale des trames réf, facteur sur la source aligné 32 px (défaut 1.0 ; actif seulement si le résultat passe sous la taille nominale sd-cli 768×432 — ex. 0.15 sur du 4K → 576×320, 0.85 sur du 864-wide → 736×416 ; non validé)")
+                    help="downscale of the ref frames, factor on the source aligned 32 px (default 1.0; active only if the result goes below the sd-cli nominal size 768×432 — e.g. 0.15 on 4K → 576×320, 0.85 on 864-wide → 736×416; not validated)")
     args = ap.parse_args()
 
     out = os.path.join(REPO, args.output_dir)
     os.makedirs(out, exist_ok=True)
     t0 = time.time()
-    log(f"Démarrage boucle endless — {len(STORYBOARD)} chunks prévus, fenêtre {args.deadline_min} min "
-        f"(réf : {args.ref_frames} trames, audio {args.ref_audio_sec}s, échelle {args.ref_scale})")
+    log(f"Starting the endless loop — {len(STORYBOARD)} chunks planned, window {args.deadline_min} min "
+        f"(ref: {args.ref_frames} frames, audio {args.ref_audio_sec}s, scale {args.ref_scale})")
 
     source_abs = os.path.join(REPO, args.source) if not os.path.isabs(args.source) else args.source
     if not os.path.exists(source_abs):
-        log(f"Source initiale manquante : {source_abs} — arrêt")
+        log(f"Missing initial source: {source_abs} — stopping")
         return
-    pieces_audio = []  # pistes normalisées (source puis chunks) de la timeline
+    pieces_audio = []  # normalized tracks (source then chunks) of the timeline
     piece_source = os.path.join(out, "refs", "audio_piece_00.wav")
     if extraire_piece_audio(source_abs, piece_source):
         pieces_audio.append(piece_source)
     else:
-        log("Source sans audio exploitable — chunks générés sans <Audio 1>.")
+        log("Source without usable audio — chunks generated without <Audio 1>.")
 
     for i, suite in enumerate(STORYBOARD, start=1):
         nom = f"chunk_{i:02d}"
         webm = os.path.join(out, f"{nom}.webm")
         if os.path.exists(webm) and os.path.getsize(webm) > 100_000:
-            log(f"{nom} déjà présent — skip")
+            log(f"{nom} already present — skip")
             piece = os.path.join(out, "refs", f"audio_piece_{i:02d}.wav")
             if extraire_piece_audio(webm, piece):
                 if len(pieces_audio) < i + 1:
@@ -241,27 +241,27 @@ def main() -> None:
 
         reste_min = args.deadline_min - (time.time() - t0) / 60.0
         if reste_min < args.chunk_min:
-            log(f"Fenêtre temps insuffisante ({reste_min:.0f} min restantes < {args.chunk_min}) — arrêt avant {nom}")
+            log(f"Insufficient time window ({reste_min:.0f} min left < {args.chunk_min}) — stopping before {nom}")
             break
 
         src = source_abs if i == 1 else os.path.join(out, f"chunk_{i-1:02d}.webm")
         if not os.path.exists(src):
-            log(f"Source manquante pour {nom} : {src} — arrêt de la boucle")
+            log(f"Missing source for {nom}: {src} — stopping the loop")
             break
 
         ref_dir, ref_wav = preparer_reference(i, src, pieces_audio, out, args)
         if not ref_dir:
-            log(f"⚠️ Impossible de préparer la référence vidéo de {nom} — arrêt de la boucle")
+            log(f"⚠️ Unable to prepare the video reference of {nom} — stopping the loop")
             break
         prefix = PREFIX_VIDEO + (PREFIX_AUDIO if ref_wav else "") + PREFIX_SUFFIX
         if ref_wav:
-            log(f"{nom} : réf {args.ref_frames} trames + audio {args.ref_audio_sec}s (fenêtre finissant au raccord)")
+            log(f"{nom}: ref {args.ref_frames} frames + audio {args.ref_audio_sec}s (window ending at the joint)")
         else:
-            log(f"{nom} : réf {args.ref_frames} trames (sans audio)")
+            log(f"{nom}: ref {args.ref_frames} frames (no audio)")
 
         succes = False
         for essai in range(1, args.max_essais + 1):
-            log(f"=== {nom} ({i}/{len(STORYBOARD)}), essai {essai}/{args.max_essais} — réf : {os.path.basename(src)}")
+            log(f"=== {nom} ({i}/{len(STORYBOARD)}), attempt {essai}/{args.max_essais} — ref: {os.path.basename(src)}")
             debut = time.time()
             cmd = [sys.executable, "main.py", "-w", "h3_ref2va",
                    "-i", ref_dir, "-p", prefix + suite,
@@ -271,26 +271,26 @@ def main() -> None:
             r = subprocess.run(cmd, cwd=REPO)
             dt = (time.time() - debut) / 60.0
             if r.returncode == 0 and os.path.exists(webm) and os.path.getsize(webm) > 100_000:
-                log(f"✅ {nom} terminé en {dt:.1f} min → {webm}")
+                log(f"✅ {nom} done in {dt:.1f} min → {webm}")
                 piece = os.path.join(out, "refs", f"audio_piece_{i:02d}.wav")
                 if extraire_piece_audio(webm, piece):
                     pieces_audio.append(piece)
                 succes = True
                 break
-            log(f"❌ {nom} échec après {dt:.1f} min (exit {r.returncode})")
+            log(f"❌ {nom} failed after {dt:.1f} min (exit {r.returncode})")
             if essai < args.max_essais:
-                log("Nouvelle tentative dans 15 min (machine possiblement occupée)...")
+                log("New attempt in 15 min (machine possibly busy)...")
                 time.sleep(900)
         if not succes:
-            log(f"{nom} en échec après {args.max_essais} essais — arrêt de la boucle")
+            log(f"{nom} failed after {args.max_essais} attempts — stopping the loop")
             break
 
-    # Concaténation finale des chunks présents (même encodeur sd-cli → -c copy)
+    # Final concatenation of the present chunks (same sd-cli encoder → -c copy)
     chunks = sorted(
         f for f in os.listdir(out)
         if f.startswith("chunk_") and f.endswith(".webm") and os.path.getsize(os.path.join(out, f)) > 100_000
     )
-    log(f"Boucle terminée : {len(chunks)} chunks valides")
+    log(f"Loop finished: {len(chunks)} valid chunks")
     if len(chunks) >= 2:
         liste = os.path.join(out, "concat_list.txt")
         with open(liste, "w", encoding="utf-8") as f:
@@ -309,13 +309,13 @@ def main() -> None:
                  "-of", "csv=p=0", final],
                 capture_output=True, text=True
             ).stdout.strip()
-            log(f"🎬 Vidéo finale : {final} ({len(chunks)} chunks, {duree} s)")
+            log(f"🎬 Final video: {final} ({len(chunks)} chunks, {duree} s)")
         else:
-            log("⚠️ Concat -c copy échouée — re-encoder manuellement : voir concat_list.txt")
+            log("⚠️ Concat -c copy failed — re-encode manually: see concat_list.txt")
     elif len(chunks) == 1:
-        log("Un seul chunk — pas de concat nécessaire.")
+        log("Only one chunk — no concat needed.")
     else:
-        log("Aucun chunk valide produit.")
+        log("No valid chunk produced.")
 
 
 if __name__ == "__main__":

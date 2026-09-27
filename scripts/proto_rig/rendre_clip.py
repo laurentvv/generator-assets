@@ -1,8 +1,8 @@
-# Clip animé d'un rig — rendu EEVEE headless + encodage MP4.
-# Pattern turntable.py (proto_blender_skills) : caméra orbitale + 3 points,
-# mais l'ANIMATION du sujet est le sujet du plan (trot loup / salut humain).
+# Animated clip of a rig — EEVEE headless render + MP4 encoding.
+# Pattern turntable.py (proto_blender_skills): orbital camera + 3 points,
+# but the subject's ANIMATION is the subject of the shot (wolf trot / human wave).
 #
-# Usage :
+# Usage:
 #   blender -b <blend> -P rendre_clip.py -- <mp4_out> <anim> [frames=72] [fps=24] [res=1280]
 #   anim ∈ {loup, humain, none}
 
@@ -21,33 +21,33 @@ anim = argv[1] if len(argv) > 1 else "none"
 nb_frames = int(argv[2]) if len(argv) > 2 else 72
 fps = int(argv[3]) if len(argv) > 3 else 24
 res = int(argv[4]) if len(argv) > 4 else 1280
-CAM_FIXE = "--fixe" in argv   # camera fixe (le mouvement du sujet est seul en scene)
-BOUCLE = "--boucle" in argv   # boucle l'action cuit du fichier (retarget)
+CAM_FIXE = "--fixe" in argv   # fixed camera (the subject's motion is alone in the scene)
+BOUCLE = "--boucle" in argv   # loops the baked action from the file (retarget)
 
 scene = bpy.context.scene
 rig = next((o for o in scene.objects if o.type == "ARMATURE" and "metarig" not in o.name.lower()), None)
-assert rig, "aucune armature dans le fichier"
+assert rig, "no armature in the file"
 
-# plage de l'action cuite (pour --boucle)
+# range of the baked action (for --boucle)
 action_debut, action_fin = 1, 1
 if BOUCLE and rig.animation_data and rig.animation_data.action:
     fr = rig.animation_data.action.frame_range
     action_debut, action_fin = int(fr[0]), int(fr[1])
-    print("BOUCLE action %s : frames %d..%d" % (rig.animation_data.action.name, action_debut, action_fin))
+    print("LOOP action %s: frames %d..%d" % (rig.animation_data.action.name, action_debut, action_fin))
 
 
 def trouver_ffmpeg():
     for c in (shutil.which("ffmpeg"), r"C:\ffmpeg\dist\ffmpeg.exe", r"C:\ffmpeg\bin\ffmpeg.exe"):
         if c:
             return c
-    raise RuntimeError("ffmpeg introuvable")
+    raise RuntimeError("ffmpeg not found")
 
 
 # ---------------------------------------------------------------- animations
 def poser(rig, nom, chemin, angles):
     pb = rig.pose.bones.get(nom)
     if pb is None:
-        print("ANIM: os absent", nom)
+        print("ANIM: missing bone", nom)
         return
     pb.rotation_mode = chemin or "XYZ"
     pb.rotation_euler = angles
@@ -55,10 +55,10 @@ def poser(rig, nom, chemin, angles):
 
 
 def basculer_fk(rig):
-    """Passe les MEMBRES de Rigify en mode FK (slider IK_FK=1).
+    """Switches the Rigify LIMBS to FK mode (IK_FK slider=1).
 
-    Filtre strict sur les os *_parent de membres : basculer aussi la colonne
-    (torso/neck) plie la chaine torse-tete (blob d'epaules constate).
+    Strict filter on the *_parent limb bones: also switching the spine
+    (torso/neck) bends the torso-head chain (shoulder blob observed).
     """
     for nom, pb in rig.pose.bones.items():
         if "IK_FK" in pb and ("arm_parent" in nom or "thigh_parent" in nom):
@@ -67,14 +67,14 @@ def basculer_fk(rig):
 
 
 def animer_loup(rig, n):
-    """Trot sur place AMPLIFIE : diagonales marquees, bob net, queue en vague."""
+    """AMPLIFIED trot in place: marked diagonals, clear bob, wavy tail."""
     scene.frame_set(1)
     basculer_fk(rig)
     per = 36.0  # frames par cycle
     for f in range(1, n + 1):
         scene.frame_set(f)
         t = 2 * math.pi * f / per
-        # pattes : swing X ample, diagonal front.L + rear.R
+        # legs: ample X swing, diagonal front.L + rear.R
         poser(rig, "front_thigh_fk.L", "XYZ", (-0.30 + 0.75 * math.sin(t), 0, 0))
         poser(rig, "front_shin_fk.L", "XYZ", (0.85 - 0.70 * math.cos(t), 0, 0))
         poser(rig, "front_thigh_fk.R", "XYZ", (-0.30 - 0.75 * math.sin(t), 0, 0))
@@ -83,25 +83,25 @@ def animer_loup(rig, n):
         poser(rig, "shin_fk.R", "XYZ", (-0.80 + 0.70 * math.cos(t), 0, 0))
         poser(rig, "thigh_fk.L", "XYZ", (0.50 + 0.75 * math.sin(t), 0, 0))
         poser(rig, "shin_fk.L", "XYZ", (-0.80 - 0.70 * math.cos(t), 0, 0))
-        # corps : bob vertical net + roulis
+        # body: clear vertical bob + roll
         torse = rig.pose.bones.get("spine.002")
         if torse:
             torse.location = (0, 0, 0.035 * math.sin(2 * t))
             torse.keyframe_insert(data_path="location", frame=f)
             torse.rotation_euler = (0, 0.09 * math.sin(t), 0)
             torse.keyframe_insert(data_path="rotation_euler", frame=f)
-        # tête : contre-balancement marqué
+        # head: marked counter-sway
         tete = rig.pose.bones.get("head")
         if tete:
             tete.rotation_euler = (0.10 * math.sin(2 * t + 1.0), 0, 0.10 * math.sin(t))
             tete.keyframe_insert(data_path="rotation_euler", frame=f)
-        # queue : vague ample le long de la chaine
+        # tail: ample wave along the chain
         for i, nom in enumerate(("spine_fk.004", "spine_fk.005", "spine_fk.006", "spine_fk.007", "spine_fk.008")):
             pb = rig.pose.bones.get(nom)
             if pb:
                 pb.rotation_euler = (0.18 * math.sin(2 * t - 0.6 * i), 0, 0.45 * math.sin(t - 0.6 * i))
                 pb.keyframe_insert(data_path="rotation_euler", frame=f)
-        # oreilles : twitch ponctuel
+        # ears: occasional twitch
         for cote in (".L", ".R"):
             pb = rig.pose.bones.get("ear" + cote)
             if pb:
@@ -111,35 +111,35 @@ def animer_loup(rig, n):
 
 
 def animer_humain(rig, n):
-    """Marche sur place : bascule FK des MEMBRES uniquement, cuisses en X,
-    genoux qui plient, bras qui balancent, torse en rotation (jamais location :
-    conflit avec les poids manuels head/shoulders de ce rig de test)."""
+    """Walk in place: FK switch of the LIMBS only, thighs in X,
+    knees bending, arms swinging, torso in rotation (never location:
+    conflict with the manual head/shoulders weights of this test rig)."""
     scene.frame_set(1)
     basculer_fk(rig)
     per = 36.0
     for f in range(1, n + 1):
         scene.frame_set(f)
         t = 2 * math.pi * f / per
-        # jambes : balancement X oppose, genou plie au retour
+        # legs: opposite X swing, knee bent on the return
         poser(rig, "thigh_fk.L", "XYZ", (0.70 * math.sin(t), 0, 0))
         poser(rig, "shin_fk.L", "XYZ", (-0.55 + 0.45 * math.cos(t), 0, 0))
         poser(rig, "foot_fk.L", "XYZ", (0.3 - 0.25 * math.sin(t), 0, 0))
         poser(rig, "thigh_fk.R", "XYZ", (-0.70 * math.sin(t), 0, 0))
         poser(rig, "shin_fk.R", "XYZ", (-0.55 - 0.45 * math.cos(t), 0, 0))
         poser(rig, "foot_fk.R", "XYZ", (0.3 + 0.25 * math.sin(t), 0, 0))
-        # bras : balancement oppose
+        # arms: opposite swing
         poser(rig, "upper_arm_fk.L", "XYZ", (0.35 * math.sin(t), 0, -1.30))
         poser(rig, "forearm_fk.L", "XYZ", (-0.25 - 0.15 * math.sin(t), 0, 0))
         poser(rig, "upper_arm_fk.R", "XYZ", (-0.35 * math.sin(t), 0, 1.30))
         poser(rig, "forearm_fk.R", "XYZ", (-0.25 + 0.15 * math.sin(t), 0, 0))
-        # torse : bob vertical (poids corriges en degrade doux) + roulis
+        # torso: vertical bob (weights corrected with a soft gradient) + roll
         torse = rig.pose.bones.get("torso")
         if torse:
             torse.location = (0, 0, 0.025 * abs(math.sin(t)))
             torse.keyframe_insert(data_path="location", frame=f)
             torse.rotation_euler = (0.04 * math.sin(t), 0, 0.06 * math.sin(t))
             torse.keyframe_insert(data_path="rotation_euler", frame=f)
-        # tete : compensée
+        # head: compensated
         tete = rig.pose.bones.get("head")
         if tete:
             tete.rotation_euler = (-0.04 * math.sin(t), 0, 0.08 * math.sin(t + 0.5))
@@ -151,7 +151,7 @@ if anim == "loup":
 elif anim == "humain":
     animer_humain(rig, nb_frames)
 
-# ---------------------------------------------------------------- caméra/lumière
+# ---------------------------------------------------------------- camera/lighting
 pts = []
 for o in scene.objects:
     if o.type in {"MESH", "ARMATURE"}:
@@ -182,11 +182,11 @@ contrainte.up_axis = "UP_Y"
 scene.camera = cam
 
 if CAM_FIXE:
-    # camera fixe : 3/4 avant pour un sujet face, PROFIL pour une locomotion
-    # (gallop/trot se lisent de cote, pas de face)
+    # fixed camera: front 3/4 for a facing subject, PROFILE for locomotion
+    # (gallop/trot read from the side, not from the front)
     pivot.rotation_euler.z = math.radians(-135 if "--profil" in argv else -38)
     if "--proche" in argv:
-        # cadrage manuel serre (sujet ~1.1 m a l'origine) : ignore la bbox
+        # tight manual framing (subject ~1.1 m at the origin): ignores the bbox
         cam.location = (0.9, -1.7, 1.05)
         pivot.rotation_euler.z = 0.0
 else:
@@ -218,7 +218,7 @@ monde.use_nodes = True
 monde.node_tree.nodes["Background"].inputs[0].default_value = (0.85, 0.87, 0.9, 1.0)
 monde.node_tree.nodes["Background"].inputs[1].default_value = 0.55
 
-# sol receveur d'ombre
+# shadow-catching ground
 bpy.ops.mesh.primitive_plane_add(size=rayon * 12, location=(centre.x, centre.y, 0))
 sol = bpy.context.active_object
 mat = bpy.data.materials.new("Sol")
@@ -229,7 +229,7 @@ bsdf.inputs["Roughness"].default_value = 0.9
 sol.data.materials.append(mat)
 
 # ---------------------------------------------------------------- rendu
-scene.render.engine = "BLENDER_EEVEE"  # 5.2 : EEVEE Next est le défaut, l'enum a perdu son suffixe
+scene.render.engine = "BLENDER_EEVEE"  # 5.2: EEVEE Next is the default, the enum lost its suffix
 scene.eevee.taa_render_samples = 32
 scene.render.resolution_x = res
 scene.render.resolution_y = int(res * 9 / 16)
@@ -248,7 +248,7 @@ for f in range(1, nb_frames + 1):
     scene.render.filepath = os.path.join(dossier_png, "frame_%04d.png" % f)
     bpy.ops.render.render(write_still=True)
     if f % 12 == 0 or f == nb_frames:
-        print("RENDU %d/%d" % (f, nb_frames))
+        print("RENDER %d/%d" % (f, nb_frames))
 
 ffmpeg = trouver_ffmpeg()
 cmd = [ffmpeg, "-y", "-framerate", str(fps), "-i", os.path.join(dossier_png, "frame_%04d.png"),

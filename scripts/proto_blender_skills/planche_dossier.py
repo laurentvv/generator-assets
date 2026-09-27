@@ -1,7 +1,7 @@
-"""Planche de contact générique : toutes les images d'un dossier en grille étiquetée.
+"""Generic contact sheet: every image of a folder in a labeled grid.
 
-Usage : uv run python scripts/proto_blender_skills/planche_dossier.py [dossier]
-Défaut : output/test_blender_skills/multi/ (campagne multi-assets 2026-09-17).
+Usage: uv run python scripts/proto_blender_skills/planche_dossier.py [folder]
+Default: output/test_blender_skills/multi/ (multi-asset campaign 2026-09-17).
 """
 
 import os
@@ -17,7 +17,7 @@ RES, MARGE, BANDEAU, COLS = 460, 10, 26, 4
 def main():
     pngs = sorted(f for f in os.listdir(DOSSIER) if f.endswith(".png") and not f.startswith("planche"))
     if not pngs:
-        print(f"aucun PNG dans {DOSSIER}")
+        print(f"no PNG in {DOSSIER}")
         sys.exit(1)
     lignes = (len(pngs) + COLS - 1) // COLS
     planche = Image.new("RGB", (COLS * (RES + MARGE) + MARGE,
@@ -33,7 +33,7 @@ def main():
         planche.paste(im, (x, y + BANDEAU))
     sortie = os.path.join(DOSSIER, "planche_multi.png")
     planche.save(sortie)
-    print(f"planche OK : {sortie} ({len(pngs)} tuiles)")
+    print(f"contact sheet OK: {sortie} ({len(pngs)} tiles)")
 
 
 if __name__ == "__main__":
