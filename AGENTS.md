@@ -1,7 +1,7 @@
-# AGENTS.md — generator-assets (fabrique média IA locale)
+# AGENTS.md — generator-assets (local AI media factory)
 
-> Instructions pour tout agent IA de codage travaillant dans ce dépôt.
-> Structure : **bloc commun** (délimité, resynchronisable) + **spécifique projet** (libre).
+> Instructions for any AI coding agent working in this repository.
+> Structure: **common block** (delimited, resyncable) + **project-specific section** (free).
 
 <!-- BEGIN:agents-common v2.1 — block shared across repositories (agents-kit). Do not edit by hand: resync with scripts/sync_agents.py -->
 <!-- The script only replaces what lies between the BEGIN/END markers; all repository-specific content is preserved -->
