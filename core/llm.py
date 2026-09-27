@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module d'inférence LLM séquentiel via llama.cpp.
-Assure l'exécution isolée et la libération totale de la VRAM après génération du prompt.
+Sequential LLM inference module via llama.cpp.
+Ensures isolated execution and full VRAM release after prompt generation.
 """
 
 from typing import Optional
@@ -26,13 +26,13 @@ def construire_prompt_coherant(
     sans_llm: bool = True
 ) -> str:
     """
-    Construit le prompt de diffusion final.
-    Par défaut (sans_llm=True), le concept est transmis directement avec son cadrage et style.
-    Si sans_llm=False, appelle llama.cpp en sous-processus pour enrichir le prompt.
+    Builds the final diffusion prompt.
+    By default (sans_llm=True), the concept is passed through directly with its framing and style.
+    If sans_llm=False, calls llama.cpp as a subprocess to enrich the prompt.
     """
     cadrage = custom_cadrage or CADRAGE_INSTRUCTIONS.get(type_asset, "centered 2D game asset")
 
-    # Mode direct sans LLM (comportement par défaut)
+    # Direct mode without LLM (default behavior)
     if sans_llm:
         parties = [concept]
         if cadrage:
@@ -53,20 +53,20 @@ def construire_prompt_coherant(
     )
 
     try:
-        print(f"🧠 [LLM] Direction artistique via llama.cpp pour '{concept}'...")
+        print(f"🧠 [LLM] Art direction via llama.cpp for '{concept}'...")
     except UnicodeEncodeError:
-        print(f"[LLM] Direction artistique via llama.cpp pour '{concept}'...")
+        print(f"[LLM] Art direction via llama.cpp for '{concept}'...")
 
     commande_llm = [
         llama_cli,
         "-m", llm_model,
         "-p", prompt_texte,
         "-st",                    # Single-turn
-        "--simple-io",            # Sortie sans fioritures
-        "-n", "500",              # Budget tokens
-        "--temp", "0.4",          # Faible température
-        "-ngl", "99",             # Décharge GPU
-        "--log-disable"           # Masque les logs internes
+        "--simple-io",            # Plain output
+        "-n", "500",              # Token budget
+        "--temp", "0.4",          # Low temperature
+        "-ngl", "99",             # GPU offload
+        "--log-disable"           # Hides internal logs
     ]
 
     try:
@@ -74,7 +74,7 @@ def construire_prompt_coherant(
             commande_llm,
             check=True,
             timeout=600,
-            etiquette="llama-cli enrichissement",
+            etiquette="llama-cli enrichment",
         )
 
         sortie_brute = resultat.stdout
@@ -95,19 +95,19 @@ def construire_prompt_coherant(
 
         prompt_final = f"{description_llm}, {cadrage}, {style_anchor}"
         try:
-            print(f"✨ [Prompt Final LLM] (VRAM libérée) :\n   {prompt_final}\n")
+            print(f"✨ [Final LLM Prompt] (VRAM released):\n   {prompt_final}\n")
         except UnicodeEncodeError:
-            print(f"[Prompt Final LLM] (VRAM libérée) :\n   {prompt_final}\n")
+            print(f"[Final LLM Prompt] (VRAM released):\n   {prompt_final}\n")
         return prompt_final
 
     except Exception as e:
         try:
-            print(f"❌ Erreur lors de l'exécution de llama.cpp : {e}")
+            print(f"❌ Error while running llama.cpp: {e}")
         except UnicodeEncodeError:
-            print(f"Erreur lors de l'exécution de llama.cpp : {e}")
+            print(f"Error while running llama.cpp: {e}")
         if hasattr(e, 'stderr') and e.stderr:
-            print(f"Détails : {e.stderr}")
-        print("⚠️  Repli sur le prompt conceptuel brut.")
+            print(f"Details: {e.stderr}")
+        print("⚠️  Falling back to the raw concept prompt.")
         parties = [concept]
         if cadrage:
             parties.append(cadrage)

@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Generator Assets - Pipeline & Workflows Modulaires d'Assets 2D & 3D pour Godot Engine.
-Combine Flux.1 Dev (Vulkan), LoRAs, Upscalers IA (ESRGAN), LLM local (llama.cpp),
-Matériaux PBR 3D, Skyboxes 360, Fiches de modélisation et Génération de Mesh .glb via Blender.
-100% Ligne de Commande Locale (CLI) • Zéro Gradio • Léger et Rapide.
+Generator Assets - Modular 2D & 3D Asset Pipeline & Workflows for the Godot Engine.
+Combines Flux.1 Dev (Vulkan), LoRAs, AI Upscalers (ESRGAN), local LLM (llama.cpp),
+3D PBR materials, 360 skyboxes, modeling sheets and .glb mesh generation via Blender.
+100% Local Command Line (CLI) • Zero Gradio • Light and Fast.
 """
 
 import logging
 import os
 import sys
 
-# Console Windows : force l'UTF-8 pour les emojis/accents
+# Windows console: force UTF-8 for emojis/accents
 for flux in (sys.stdout, sys.stderr):
     if hasattr(flux, "reconfigure"):
         flux.reconfigure(encoding="utf-8", errors="replace")
@@ -21,10 +21,10 @@ for flux in (sys.stdout, sys.stderr):
 
 
 # ==============================================================================
-# Mode Interactif
+# Interactive Mode
 
-# Imports différés vers les sous-modules CLI (ré-exportés pour compat :
-# tests/test_cli_contract.py et consommateurs utilisent main.construire_parseur).
+# Deferred imports to the CLI submodules (re-exported for compatibility:
+# tests/test_cli_contract.py and consumers use main.construire_parseur).
 from cli.interactive import lancer_mode_interactif
 from cli.maintenance import gerer_maintenance_llama, gerer_maintenance_sd, gerer_maintenance_vulkan
 from cli.parser import construire_parseur, construire_params
@@ -41,11 +41,11 @@ from workflows import WorkflowRegistry
 
 
 def main():
-    """Point d'entrée CLI."""
+    """CLI entry point."""
     parser = construire_parseur()
     args = parser.parse_args()
 
-    # Journalisation structurée (stderr) : INFO par défaut, DEBUG avec --verbose.
+    # Structured logging (stderr): INFO by default, DEBUG with --verbose.
     configurer_journal("DEBUG" if args.verbose else "INFO")
     logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def main():
     }
 
     if args.list_workflows:
-        print("\n📋 Workflows Disponibles (2D & 3D) dans Generator Assets :")
+        print("\n📋 Available Workflows (2D & 3D) in Generator Assets:")
         for nom, desc in WorkflowRegistry.list_all().items():
             print(f"  • {nom.ljust(16)} : {desc}")
         print()
@@ -74,25 +74,25 @@ def main():
 
     if args.list_loras:
         loras = lister_loras()
-        print("\n🧩 LoRAs Installés :")
+        print("\n🧩 Installed LoRAs:")
         if not loras:
-            print(f"  (Aucun LoRA détecté dans {[d for d in DEFAULT_LORA_DIRS if os.path.exists(d)]})")
-            print("  💡 Placez vos fichiers .safetensors dans 'C:\\Modeles_LLM\\loras' ou le dossier 'loras/'")
+            print(f"  (No LoRA detected in {[d for d in DEFAULT_LORA_DIRS if os.path.exists(d)]})")
+            print("  💡 Put your .safetensors files in 'C:\\Modeles_LLM\\loras' or the 'loras/' folder")
         else:
             for lora in loras:
-                print(f"  • {lora['name'].ljust(30)} ({lora['size_mb']} Mo) -> {lora['path']}")
+                print(f"  • {lora['name'].ljust(30)} ({lora['size_mb']} MB) -> {lora['path']}")
         print()
         sys.exit(0)
 
     if args.list_upscalers:
         upscalers = lister_upscalers()
-        print("\n🚀 Modèles d'Upscaling (ESRGAN / Super-Résolution) Installés :")
+        print("\n🚀 Installed Upscaling Models (ESRGAN / Super-Resolution):")
         if not upscalers:
-            print("  (Aucun modèle d'upscale détecté)")
-            print("  💡 Placez vos fichiers .pth dans 'C:\\Modeles_LLM\\upscalers' ou le dossier 'upscalers/'")
+            print("  (No upscale model detected)")
+            print("  💡 Put your .pth files in 'C:\\Modeles_LLM\\upscalers' or the 'upscalers/' folder")
         else:
             for u in upscalers:
-                print(f"  • {u['name'].ljust(35)} ({u['size_mb']} Mo) -> {u['path']}")
+                print(f"  • {u['name'].ljust(35)} ({u['size_mb']} MB) -> {u['path']}")
         print()
         sys.exit(0)
     if args.update_sd:
@@ -108,15 +108,15 @@ def main():
         sys.exit(0)
 
     if args.check:
-        print("🔍 Vérification des prérequis et des chemins...")
+        print("🔍 Checking prerequisites and paths...")
         valide = verifier_prerequis(config)
         if valide:
-            print("✅ Tous les exécutables et fichiers modèles sont prêts !")
+            print("✅ All executables and model files are ready!")
         sys.exit(0 if valide else 1)
 
     prompt_texte = args.prompt_flag or args.prompt
 
-    # Lancement du mode interactif si demandé explicitement ou si aucun paramètre fourni
+    # Launch interactive mode if explicitly requested or if no parameter was provided
     a_des_entrees = bool(prompt_texte or args.input or args.file or args.biome_a)
     if args.interactive or (not a_des_entrees and args.workflow == "generate"):
         lancer_mode_interactif(config)
@@ -124,7 +124,7 @@ def main():
 
     params = construire_params(args, prompt_texte)
 
-    # Détection automatique du workflow si l'argument -w n'est pas spécifié
+    # Automatic workflow detection if the -w argument is not specified
     wf_cible = args.workflow.lower()
     if wf_cible == "generate" and args.file:
         wf_cible = "batch"
@@ -134,14 +134,14 @@ def main():
         workflow_instance = workflow_cls(config)
         resultat = workflow_instance.run(params)
         if wf_cible == "batch" and isinstance(resultat, dict) and resultat.get("echecs"):
-            print(f"❌ Batch terminé avec {len(resultat['echecs'])} asset(s) en échec sur {resultat.get('total_tasks')} :")
+            print(f"❌ Batch finished with {len(resultat['echecs'])} failed asset(s) out of {resultat.get('total_tasks')}:")
             for echec in resultat["echecs"]:
-                print(f"   • '{echec['prompt']}' (workflow {echec['workflow']}) : {echec['erreur']}")
+                print(f"   • '{echec['prompt']}' (workflow {echec['workflow']}): {echec['erreur']}")
             sys.exit(1)
     except Exception as e:
-        # Traceback complet disponible en DEBUG (--verbose) ; message court à l'utilisateur.
-        logger.debug("Traceback complet de l'échec du workflow '%s' :", wf_cible, exc_info=True)
-        print(f"❌ Erreur lors de l'exécution du workflow '{wf_cible}' : {e}")
+        # Full traceback available in DEBUG (--verbose); short message to the user.
+        logger.debug("Full traceback of workflow '%s' failure:", wf_cible, exc_info=True)
+        print(f"❌ Error while running workflow '{wf_cible}': {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

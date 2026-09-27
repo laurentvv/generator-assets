@@ -1,7 +1,7 @@
 [project]
 name = "generator-assets"
 version = "0.2.0"
-description = "Pipeline IA d'Assets 2D & 3D pour Godot Engine (Flux.1 Vulkan, LoRAs, PBR Materials 3D, Skyboxes 360, Upscale ESRGAN, Blender Mesh GLB)"
+description = "AI pipeline of 2D & 3D assets for the Godot Engine (Flux.1 Vulkan, LoRAs, 3D PBR materials, 360 skyboxes, ESRGAN upscale, Blender GLB mesh)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -21,16 +21,16 @@ dev = [
 ]
 
 [tool.ruff]
-# Gate de style (audit §2.5 P2, élargie le 2026-09-25 après grand nettoyage) :
-# E4 = imports (E401/E402/E40x), E7 = comparaisons/ambiguïtés (E701/E741…),
-# E9 = erreurs de syntaxe, F = pyflakes (imports/variables mortes, noms indéfinis),
-# W = whitespace. E501 (longueur de ligne) volontairement exclue : les help
-# CLI et docstrings du dépôt sont volontiers longs.
+# Style gate (audit §2.5 P2, widened on 2026-09-25 after the big cleanup):
+# E4 = imports (E401/E402/E40x), E7 = comparisons/ambiguities (E701/E741…),
+# E9 = syntax errors, F = pyflakes (dead imports/variables, undefined names),
+# W = whitespace. E501 (line length) deliberately excluded: CLI help
+# texts and docstrings in this repo are willingly long.
 lint.select = ["E4", "E7", "E9", "F", "W"]
-# E402 toléré où le pattern bootstrap est délibéré : main.py reconfigure la
-# console UTF-8 avant ses imports, scripts/ sont des outils autonomes qui
-# installent sys.path avant d'importer le paquet, clothes_catalog doit rester
-# importable en direct depuis le disque.
+# E402 tolerated where the bootstrap pattern is deliberate: main.py reconfigures
+# the UTF-8 console before its imports, scripts/ are standalone tools that
+# install sys.path before importing the package, clothes_catalog must stay
+# importable directly from disk.
 exclude = [".agents"]
 
 [tool.ruff.lint.per-file-ignores]
