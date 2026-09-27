@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 clothes_catalog.py
-Indexateur & Moteur d'aiguillage IA bilingue (FR / EN) pour les vêtements MakeHuman / MPFB.
-1. Scanne et parse les répertoires de vêtements MakeHuman (.mhclo, .mhmat, .thumb, .obj).
-2. Construit une base de connaissances structurée (JSON) avec tags, catégories, genre et métadonnées en français et en anglais.
-3. Permet au LLM ou au moteur sémantique d'aiguiller automatiquement
-   n'importe quel prompt utilisateur (FR/EN) vers le meilleur modèle 3D existant.
+Bilingual (FR / EN) AI routing indexer & engine for MakeHuman / MPFB clothes.
+1. Scans and parses the MakeHuman clothes directories (.mhclo, .mhmat, .thumb, .obj).
+2. Builds a structured knowledge base (JSON) with tags, categories, gender and metadata in French and English.
+3. Lets the LLM or the semantic engine automatically route
+   any user prompt (FR/EN) to the best existing 3D model.
 """
 
 import json
@@ -30,7 +30,7 @@ STOP_WORDS = {
 }
 
 def parser_fichier_mhclo(mhclo_path: str) -> Dict[str, Any]:
-    """Extrait les métadonnées clés d'un fichier .mhclo."""
+    """Extracts the key metadata of a .mhclo file."""
     metadata = {
         "name": "",
         "tags": [],
@@ -77,7 +77,7 @@ def parser_fichier_mhclo(mhclo_path: str) -> Dict[str, Any]:
     return metadata
 
 def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, output_json: str = DEFAULT_CATALOG_PATH) -> Dict[str, Any]:
-    """Scanne tous les dossiers de vêtements et génère le catalogue JSON indexé bilingue (FR/EN)."""
+    """Scans all the clothes folders and generates the indexed bilingual (FR/EN) JSON catalog."""
     dossiers_a_scanner = [
         os.path.join(mpfb_data_dir, "data", "clothes"),
         os.path.join(mpfb_data_dir, "clothes")
@@ -92,7 +92,7 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
             if not os.path.isdir(item_path):
                 continue
 
-            # Recherche du .mhclo
+            # Look for the .mhclo
             mhclo_file = os.path.join(item_path, f"{item_name}.mhclo")
             if not os.path.exists(mhclo_file):
                 mhclos = list(Path(item_path).glob("*.mhclo"))
@@ -103,7 +103,7 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
 
             meta = parser_fichier_mhclo(mhclo_file)
 
-            # Détection de la catégorie par le nom si absent des tags
+            # Category detection from the name if absent from the tags
             nom_lower = item_name.lower()
             if "shoe" in nom_lower or "boot" in nom_lower:
                 meta["category"] = "shoes"
@@ -121,7 +121,7 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
             elif "female_" in nom_lower:
                 meta["gender"] = "female"
 
-            # Fichiers associés
+            # Associated files
             diffuse_files = list(Path(item_path).glob("*diffuse*.png")) + list(Path(item_path).glob("*_diffuse.png"))
             thumb_files = list(Path(item_path).glob("*.thumb")) + list(Path(item_path).glob("*.png"))
             obj_files = list(Path(item_path).glob("*.obj"))
@@ -130,16 +130,16 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
             thumb_path = str(thumb_files[0]) if thumb_files else ""
             obj_path = str(obj_files[0]) if obj_files else ""
 
-            # Enrichissement bilingue exhaustif des mots-clés (FR + EN)
+            # Exhaustive bilingual keyword enrichment (FR + EN)
             keywords = [item_name, meta["category"], meta["gender"]] + meta["tags"]
 
-            # Mots-clés de genre
+            # Gender keywords
             if meta["gender"] == "male":
                 keywords.extend(["male", "man", "men", "boy", "homme", "garcon", "masculin"])
             elif meta["gender"] == "female":
                 keywords.extend(["female", "woman", "women", "girl", "femme", "fille", "feminin"])
 
-            # Mots-clés par type de vêtement (Bilingue EN / FR)
+            # Keywords per clothing type (Bilingual EN / FR)
             if "worksuit" in nom_lower:
                 keywords.extend([
                     "worksuit", "overalls", "dungarees", "dungaree", "jumpsuit", "apron", "boiler suit",
@@ -191,11 +191,11 @@ def construire_catalogue_vetements(mpfb_data_dir: str = DEFAULT_MPFB_DATA_DIR, o
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(catalog, f, indent=4, ensure_ascii=False)
 
-    print(f"✅ Catalogue de {len(catalog)} vêtements MakeHuman indexé dans : {output_json}")
+    print(f"✅ Catalog of {len(catalog)} MakeHuman clothes indexed into: {output_json}")
     return catalog
 
 def charger_catalogue(catalog_path: str = DEFAULT_CATALOG_PATH) -> Dict[str, Any]:
-    """Charge le catalogue depuis le JSON, ou le reconstruit s'il n'existe pas."""
+    """Loads the catalog from the JSON, or rebuilds it if it does not exist."""
     if not os.path.exists(catalog_path):
         return construire_catalogue_vetements(output_json=catalog_path)
     try:
@@ -211,25 +211,25 @@ def aiguiller_modele_vetement(
     catalog_path: str = DEFAULT_CATALOG_PATH
 ) -> Optional[Dict[str, Any]]:
     """
-    Trouve le meilleur modèle 3D de vêtement correspondant au concept demandé (supporte les prompts en EN et en FR).
-    Effectue un scoring sémantique et pondéré sur les mots-clés bilingues.
+    Finds the best matching 3D clothes model for the requested concept (supports EN and FR prompts).
+    Performs a weighted semantic scoring over the bilingual keywords.
     """
     catalog = charger_catalogue(catalog_path)
     if not catalog:
         return None
 
-    # Extraction des tokens en ignorant la ponctuation et les mots vides
+    # Token extraction ignoring punctuation and stop words
     raw_tokens = re.findall(r"[a-zA-Z0-9_\-]+", concept.lower())
     concept_tokens = [t for t in raw_tokens if t not in STOP_WORDS and len(t) > 1]
 
-    # Détection automatique du genre depuis le prompt si non fourni explicitement
+    # Automatic gender detection from the prompt if not explicitly provided
     if not gender:
         if any(t in ["woman", "women", "female", "girl", "femme", "fille", "dame"] for t in concept_tokens):
             gender = "female"
         elif any(t in ["man", "men", "male", "boy", "homme", "garcon", "gars"] for t in concept_tokens):
             gender = "male"
 
-    # Détection automatique de la catégorie depuis le prompt si non fournie
+    # Automatic category detection from the prompt if not provided
     if not category:
         if any(t in ["shoe", "shoes", "boot", "boots", "footwear", "sneakers", "bottes", "chaussures", "souliers"] for t in concept_tokens):
             category = "shoes"
@@ -242,11 +242,11 @@ def aiguiller_modele_vetement(
     for item_id, item in catalog.items():
         score = 0
 
-        # Filtre de genre strict si déterminé
+        # Strict gender filter if determined
         if gender and item["gender"] != "unisex" and item["gender"] != gender.lower():
             continue
 
-        # Filtre de catégorie strict si déterminé
+        # Strict category filter if determined
         if category and item["category"] != category.lower():
             continue
 
@@ -262,7 +262,7 @@ def aiguiller_modele_vetement(
             meilleur_score = score
             meilleur_item = item
 
-    # Fallback si score nul
+    # Fallback on zero score
     if not meilleur_item or meilleur_score <= 0:
         if category == "shoes":
             return catalog.get("shoes01")

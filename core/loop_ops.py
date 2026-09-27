@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module de génération de boucles d'animation temporelles parfaites (Loop Engine) et Shaders Godot 4.
-Gère :
-- Le bouclage temporel cyclique (Cross-Dissolve sinusoïdal / Morphing de phase)
-- La génération d'effets visuels procéduraux en boucle fermée (Portail, Feu, Cascade, Nébuleuse)
-- L'assemblage d'atlas d'animation (Spritesheets)
-- L'exportation de Shaders Godot 4 (.gdshader) avec double échantillonnage déphasé et AnimatedTexture (.tres)
+Module for generating perfectly time-looping animations (Loop Engine) and Godot 4 Shaders.
+Handles:
+- Cyclic temporal looping (sinusoidal Cross-Dissolve / phase morphing)
+- Generation of closed-loop procedural visual effects (Portal, Fire, Waterfall, Nebula)
+- Animation atlas assembly (Spritesheets)
+- Godot 4 Shader export (.gdshader) with dual phase-shifted sampling and AnimatedTexture (.tres)
 """
 
 import math
@@ -18,8 +18,8 @@ from PIL import Image
 
 def creer_boucle_temporelle_circulaire(trames: List[Image.Image]) -> List[Image.Image]:
     """
-    Rend une séquence temporelle parfaitement bouclable à 360° sans à-coup entre la fin et le début
-    en appliquant un fondu croisé temporel harmonique (phase blending).
+    Makes a temporal sequence perfectly loopable at 360° with no jump between end and start
+    by applying a harmonic temporal cross-fade (phase blending).
     """
     n = len(trames)
     if n <= 1:
@@ -30,13 +30,13 @@ def creer_boucle_temporelle_circulaire(trames: List[Image.Image]) -> List[Image.
     trames_bouclees = []
 
     for i in range(n):
-        # Angle de phase [0, 2*pi]
+        # Phase angle [0, 2*pi]
         theta = (2.0 * math.pi * i) / n
-        # Poids harmonique de bouclage
+        # Harmonic looping weight
         w1 = (1.0 + math.cos(theta)) / 2.0
         w2 = 1.0 - w1
 
-        # Mélange entre la trame courante et la trame déphasée de n/2
+        # Blend between the current frame and the frame shifted by n/2
         idx_oppose = (i + n // 2) % n
         arr1 = np.array(trames_rgba[i]).astype(np.float32)
         arr2 = np.array(trames_rgba[idx_oppose]).astype(np.float32)
@@ -53,7 +53,7 @@ def generer_sequence_vfx_boucle(
     type_effet: str = "portal"
 ) -> List[Image.Image]:
     """
-    Génère une séquence procédurale d'effets visuels animés en boucle mathématique parfaite.
+    Generates a procedural animated visual-effects sequence with a mathematically perfect loop.
     """
     h, w = resolution, resolution
     y, x = np.mgrid[0:h, 0:w].astype(np.float32)
@@ -71,30 +71,30 @@ def generer_sequence_vfx_boucle(
         phase = 2.0 * np.pi * t_norm
 
         if any(e in type_effet for e in ["portal", "vortex", "swirl"]):
-            # Spirale rotative infinie
+            # Infinite rotating spiral
             spiral = np.sin(5.0 * angle - phase * 2.0 + 8.0 * np.log(dist + 0.1))
             ring = np.exp(-((dist - 0.6)**2) / 0.08)
             intensity = (0.5 + 0.5 * spiral) * ring
-            # Couleurs violet mystique / cyan
+            # Mystic purple / cyan colors
             r = (intensity * 180 + 30 * np.sin(phase)).clip(0, 255)
             g = (intensity * 80 + 20).clip(0, 255)
             b = (intensity * 255).clip(0, 255)
             alpha = (intensity * 255 * np.clip(1.2 - dist, 0, 1)).clip(0, 255)
 
         elif any(e in type_effet for e in ["fire", "flame", "torch"]):
-            # Ondulations ascendantes périodiques
+            # Periodic upward undulations
             wave1 = np.sin(4.0 * dx + phase) * 0.15
             wave2 = np.cos(6.0 * dy - phase * 2.0) * 0.1
             dist_flame = np.sqrt(dx**2 + (dy - 0.2 + wave1 + wave2)**2)
             intensity = np.exp(-(dist_flame**2) / 0.18) * np.clip(1.0 - (dy + 0.5), 0, 1)
-            # Couleurs feu (jaune -> orange -> rouge)
+            # Fire colors (yellow -> orange -> red)
             r = (intensity * 255).clip(0, 255)
             g = (intensity**1.8 * 200).clip(0, 255)
             b = (intensity**3.0 * 50).clip(0, 255)
             alpha = (intensity * 255).clip(0, 255)
 
         elif any(e in type_effet for e in ["waterfall", "water", "cascade"]):
-            # Flux descendant périodique
+            # Periodic downward flow
             wave_v = np.sin(8.0 * dy + phase * 2.0 + 4.0 * np.sin(3.0 * dx))
             foam = 0.5 + 0.5 * wave_v
             r = (foam * 70 + 40).clip(0, 255)
@@ -119,7 +119,7 @@ def generer_sequence_vfx_boucle(
 
 
 def assembler_spritesheet_loop(trames: List[Image.Image], colonnes: int = 4) -> Image.Image:
-    """Assemble une série de trames en une grille d'atlas (Spritesheet)."""
+    """Assembles a series of frames into an atlas grid (Spritesheet)."""
     if not trames:
         return Image.new("RGBA", (1, 1))
 
@@ -142,8 +142,8 @@ def exporter_shader_loop_godot(
     mode_2d: bool = False
 ) -> Tuple[str, str]:
     """
-    Génère un Shader Godot 4 (.gdshader) avec double-échantillonnage temporel déphasé
-    et son ShaderMaterial (.tres) pour des boucles de textures fluides infinies.
+    Generates a Godot 4 Shader (.gdshader) with dual phase-shifted temporal sampling
+    and its ShaderMaterial (.tres) for infinitely smooth texture loops.
     """
     os.makedirs(output_dir, exist_ok=True)
     chemin_shader = os.path.join(output_dir, f"{nom_base}_loop.gdshader")
@@ -170,7 +170,7 @@ void fragment() {{
 	vec4 tex1 = texture(albedo_texture, uv1);
 	vec4 tex2 = texture(albedo_texture, uv2);
 
-	// Fondu croisé triangulaire entre les 2 échantillons déphasés
+	// Triangular cross-fade between the 2 phase-shifted samples
 	float weight = abs((t1 - 0.5) * 2.0);
 	vec4 final_color = mix(tex2, tex1, weight) * tint_color;
 
@@ -203,7 +203,7 @@ def exporter_animated_texture_godot(
     nb_trames: int = 16,
     fps: float = 12.0
 ) -> str:
-    """Génère la ressource AnimatedTexture Godot 4 configurée."""
+    """Generates the configured Godot 4 AnimatedTexture resource."""
     os.makedirs(output_dir, exist_ok=True)
     chemin_anim = os.path.join(output_dir, f"{nom_base}_animated_tex.tres")
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module de synthèse audio procédurale, effets sonores (SFX), ambiances et voix émotionnelles pour Godot 4.
-Supporte :
-- Effets sonores procéduraux (SFX)
-- Synthèse vocale émotionnelle (TTS) avec modulation (Pitch, Formants, Tremolo, Saturation)
-- Extraction de visèmes pour Lip-Sync Godot
-- Ambiances procédurales multicouches (Donjon, Forêt, Orage, Espace, Feu de camp) en boucle sans couture
-- Export WAV (PCM 16-bit), OGG Vorbis et Bus Audio Godot (.tres)
+Procedural audio synthesis module, sound effects (SFX), ambiences and emotional voices for Godot 4.
+Supports:
+- Procedural sound effects (SFX)
+- Emotional voice synthesis (TTS) with modulation (Pitch, Formants, Tremolo, Saturation)
+- Viseme extraction for Godot Lip-Sync
+- Multilayer procedural ambiences (Dungeon, Forest, Storm, Space, Campfire) in seamless loop
+- WAV (PCM 16-bit), OGG Vorbis and Godot Audio Bus (.tres) export
 """
 
 import os
@@ -26,7 +26,7 @@ def _appliquer_enveloppe_adsr(
     sustain_time: float = 0.2,
     release: float = 0.2
 ) -> np.ndarray:
-    """Applique une enveloppe ADSR sur un signal numpy."""
+    """Applies an ADSR envelope to a numpy signal."""
     n_a = int(attack * sr)
     n_d = int(decay * sr)
     n_s = int(sustain_time * sr)
@@ -52,7 +52,7 @@ def _appliquer_enveloppe_adsr(
 
 
 # ==============================================================================
-# 1. Synthèse SFX Procédurale
+# 1. Procedural SFX Synthesis
 # ==============================================================================
 
 def synthetiser_sfx(
@@ -61,16 +61,16 @@ def synthetiser_sfx(
     sr: int = 44100
 ) -> np.ndarray:
     """
-    Synthétise un effet sonore procédural haute qualité.
+    Synthesizes a high-quality procedural sound effect.
 
-    Types disponibles :
-    - 'sword' / 'slash' / 'whoosh' : Tranchant d'épée avec bruit filtré balayé
-    - 'coin' / 'pickup' : Clochette magique ou pièce rétro (chime harmonique)
-    - 'explosion' / 'impact' : Onde de choc basse fréquence et saturation
-    - 'potion' / 'bubble' : Glouglou magique avec modulation de fréquence
-    - 'magic' / 'spell' : Shimmering magique et nappe d'énergie
-    - 'jump' / 'powerup' : Glissando ascendant
-    - 'chest' : Grincement de coffre et cliquetis
+    Available types:
+    - 'sword' / 'slash' / 'whoosh': sword slash with swept filtered noise
+    - 'coin' / 'pickup': magic chime or retro coin (harmonic chime)
+    - 'explosion' / 'impact': low-frequency shockwave and saturation
+    - 'potion' / 'bubble': magic gurgle with frequency modulation
+    - 'magic' / 'spell': magical shimmering and energy pad
+    - 'jump' / 'powerup': ascending glissando
+    - 'chest': chest creaking and rattling
     """
     t = np.linspace(0, duree, int(sr * duree), endpoint=False)
     sfx_type = sfx_type.lower()
@@ -140,10 +140,10 @@ def synthetiser_sfx(
 
 
 # ==============================================================================
-# 2. Synthèse Vocale Émotionnelle (TTS / Formants & Voice Modeling)
+# 2. Emotional Voice Synthesis (TTS / Formants & Voice Modeling)
 # ==============================================================================
 
-# Formants standards des voyelles (F1, F2, F3 en Hz)
+# Standard vowel formants (F1, F2, F3 in Hz)
 VOWEL_FORMANTS = {
     'a': (800, 1200, 2500),
     'e': (500, 1800, 2600),
@@ -156,7 +156,7 @@ VOWEL_FORMANTS = {
 
 
 def extraire_visemes_phonetiques(texte: str, duree: float) -> List[Dict[str, Any]]:
-    """Génère la timeline de visèmes phonétiques pour le lip-sync dans Godot."""
+    """Generates the phonetic viseme timeline for lip-sync in Godot."""
     mots = texte.lower().split()
     if not mots:
         return [{"time_start": 0.0, "time_end": round(duree, 2), "word": "", "viseme": "neutral"}]
@@ -200,8 +200,8 @@ def synthetiser_voix_emotionnelle(
     sr: int = 44100
 ) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
     """
-    Synthétise une réplique vocale avec modulation formantique et intonation émotionnelle.
-    Retourne le signal audio normalisé et la liste des visèmes pour le lip-sync Godot.
+    Synthesizes a voice line with formant modulation and emotional intonation.
+    Returns the normalized audio signal and the viseme list for Godot lip-sync.
     """
     emotion = emotion.lower()
     nb_mots = max(len(texte.split()), 1)
@@ -216,7 +216,7 @@ def synthetiser_voix_emotionnelle(
     t = np.linspace(0, duree, int(sr * duree), endpoint=False)
     n_samples = len(t)
 
-    # Profil d'intonation de pitch selon l'émotion
+    # Pitch intonation profile per emotion
     if emotion == "happy":
         pitch_curve = pitch_base * 1.25 + np.sin(2 * np.pi * 3.0 * t) * 20.0 + (t / duree) * 15.0
     elif emotion == "angry":
@@ -275,7 +275,7 @@ def synthetiser_voix_emotionnelle(
 
 
 # ==============================================================================
-# 3. Synthèse d'Ambiances Procédurales Multicouches (Seamless Loop)
+# 3. Multilayer Procedural Ambience Synthesis (Seamless Loop)
 # ==============================================================================
 
 def synthetiser_ambiance(
@@ -284,14 +284,14 @@ def synthetiser_ambiance(
     sr: int = 44100
 ) -> np.ndarray:
     """
-    Génère une nappe d'ambiance sonore stéréo 2 canaux en boucle seamless parfaite.
+    Generates a 2-channel stereo ambient soundscape with a perfectly seamless loop.
 
-    Types d'ambiances :
-    - 'dungeon' : Sub-bass drone sombre, résonance de caverne et échos de gouttes d'eau.
-    - 'forest' / 'enchanted' : Vent feutré, gazouillis magiques, scintillements de fées.
-    - 'storm' / 'volcano' : Grondement de basse fréquence, vent orageux et sifflements.
-    - 'space' / 'void' : Drones binauaux cosmiques, textures stellaires étirées.
-    - 'campfire' / 'tavern' : Crépitement de feu de bois chaud et ronronnement de braises.
+    Ambience types:
+    - 'dungeon': dark sub-bass drone, cave resonance and water-drop echoes.
+    - 'forest' / 'enchanted': muffled wind, magical chirps, fairy sparkles.
+    - 'storm' / 'volcano': low-frequency rumble, stormy wind and hisses.
+    - 'space' / 'void': cosmic binaural drones, stretched stellar textures.
+    - 'campfire' / 'tavern': warm wood-fire crackle and ember purring.
     """
     n_samples = int(sr * duree)
     t = np.linspace(0, duree, n_samples, endpoint=False)
@@ -395,7 +395,7 @@ def exporter_ambiance_godot(
     audio_data: np.ndarray,
     sr: int = 44100
 ) -> Tuple[str, str, str]:
-    """Exporte l'ambiance stéréo en .wav, .ogg et produit la ressource AudioBusLayout Godot 4."""
+    """Exports the stereo ambience to .wav, .ogg and produces the Godot 4 AudioBusLayout resource."""
     os.makedirs(output_dir, exist_ok=True)
     chemin_wav = os.path.join(output_dir, f"{nom_base}.wav")
     chemin_ogg = os.path.join(output_dir, f"{nom_base}.ogg")
@@ -444,7 +444,7 @@ def exporter_sfx_godot(
     audio_data: np.ndarray,
     sr: int = 44100
 ) -> Tuple[str, str]:
-    """Exporte les fichiers audio .wav et .ogg prêts pour Godot 4 AudioStreamPlayer."""
+    """Exports .wav and .ogg audio files ready for Godot 4 AudioStreamPlayer."""
     from core.music_ai import convertir_ogg
 
     os.makedirs(output_dir, exist_ok=True)
@@ -453,8 +453,8 @@ def exporter_sfx_godot(
 
     sf.write(chemin_wav, audio_data, sr, subtype='PCM_16', format='WAV')
     try:
-        # OGG toujours via ffmpeg : le libsndfile fait un stack overflow C (exit 127
-        # silencieux) au-delà de quelques secondes — règle §1.10 MEMORY_BANK.
+        # OGG always via ffmpeg: libsndfile does a C stack overflow (silent
+        # exit 127) beyond a few seconds — rule §1.10 MEMORY_BANK.
         convertir_ogg(chemin_wav, chemin_ogg)
     except Exception:
         chemin_ogg = chemin_wav

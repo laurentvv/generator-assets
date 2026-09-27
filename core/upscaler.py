@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module d'Upscaling et Super-Résolution pour Assets 2D.
-Supporte :
-1. ESRGAN / Real-ESRGAN sous GPU Vulkan (sd-cli -M upscale) avec préservation parfaite du canal Alpha RGBA
-2. Super-résolution logicielle Smart Lanczos avec Unsharp Mask et préservation des contours
+Upscaling and Super-Resolution module for 2D Assets.
+Supports:
+1. ESRGAN / Real-ESRGAN on Vulkan GPU (sd-cli -M upscale) with perfect RGBA Alpha channel preservation
+2. Smart Lanczos software super-resolution with Unsharp Mask and edge preservation
 """
 
 import os
@@ -29,15 +29,15 @@ def upscale_esrgan(
     backend: str = DEFAULT_BACKEND
 ) -> Image.Image:
     """
-    Exécute le modèle ESRGAN via sd-cli sous Vulkan en préservant la transparence RGBA.
+    Runs the ESRGAN model via sd-cli on Vulkan while preserving RGBA transparency.
     """
     if not os.path.exists(esrgan_model_path):
-        raise FileNotFoundError(f"Modèle ESRGAN introuvable : {esrgan_model_path}")
+        raise FileNotFoundError(f"ESRGAN model not found: {esrgan_model_path}")
 
     a_alpha = image_entree.mode == "RGBA"
 
-    # Fichiers temporaires uniques (tempfile) : compatible exécutions parallèles,
-    # et aucun reste d'un appel précédent ne peut être relu.
+    # Unique temp files (tempfile): compatible with parallel runs,
+    # and no leftover from a previous call can be read back.
     with tempfile.TemporaryDirectory(prefix="ga_esrgan_") as dossier_temp:
         temp_in = os.path.join(dossier_temp, "entree.png")
         temp_out = os.path.join(dossier_temp, "sortie.png")
@@ -46,7 +46,7 @@ def upscale_esrgan(
         rgb_in.save(temp_in, "PNG")
 
         nom_modele = Path(esrgan_model_path).name
-        print(f"[ESRGAN Vulkan] Upscaling IA avec '{nom_modele}'...")
+        print(f"[ESRGAN Vulkan] AI upscaling with '{nom_modele}'...")
 
         commande = [
             sd_cli,
@@ -62,7 +62,7 @@ def upscale_esrgan(
         run_engine(commande, timeout=600, capture=False, check=True, etiquette="sd-cli ESRGAN")
         img_upscaled_rgb = Image.open(temp_out).convert("RGB")
 
-    # Si l'image source possédait de la transparence, ré-injecter l'Alpha agrandi
+    # If the source image had transparency, re-inject the upscaled Alpha
     if a_alpha:
         alpha_orig = image_entree.split()[-1]
         alpha_upscaled = alpha_orig.resize(img_upscaled_rgb.size, Image.Resampling.LANCZOS)
@@ -81,8 +81,8 @@ def upscale_smart_lanczos(
     unsharp_threshold: int = 3
 ) -> Image.Image:
     """
-    Super-résolution logicielle multi-passes avec filtre Lanczos,
-    masque de netteté (Unsharp Mask) et gestion propre du canal Alpha.
+    Multi-pass software super-resolution with the Lanczos filter,
+    Unsharp Mask sharpening and clean Alpha channel handling.
     """
     has_alpha = image.mode == "RGBA"
 
@@ -116,9 +116,9 @@ def upscaler_asset(
     backend: str = DEFAULT_BACKEND
 ) -> Image.Image:
     """
-    Point d'entrée unifié pour l'upscaling d'assets 2D.
-    Tente d'abord le modèle de super-résolution IA (ESRGAN) sur GPU Vulkan,
-    avec repli automatique sur Smart Lanczos si aucun modèle n'est fourni.
+    Unified entry point for 2D asset upscaling.
+    First tries the AI super-resolution model (ESRGAN) on Vulkan GPU,
+    with automatic fallback to Smart Lanczos if no model is provided.
     """
     largeur_init, hauteur_init = image_entree.size
 
@@ -131,7 +131,7 @@ def upscaler_asset(
 
     modele_resolu = resoudre_upscaler(upscale_model)
 
-    # 1. Utilisation du modèle IA ESRGAN si disponible
+    # 1. Use the ESRGAN AI model if available
     if mode in ["esrgan", "auto"] and modele_resolu and os.path.exists(modele_resolu) and os.path.exists(sd_cli):
         try:
             img_ia = upscale_esrgan(
@@ -140,15 +140,15 @@ def upscaler_asset(
                 sd_cli=sd_cli,
                 backend=backend
             )
-            # Ajuster à la dimension exacte demandée si besoin
+            # Adjust to the exact requested dimension if needed
             if img_ia.size != (largeur_cible, hauteur_cible):
                 img_ia = img_ia.resize((largeur_cible, hauteur_cible), Image.Resampling.LANCZOS)
             return img_ia
         except Exception as e:
-            print(f"⚠️  Échec ESRGAN ({e}), basculement vers Smart Lanczos...")
+            print(f"⚠️  ESRGAN failure ({e}), switching to Smart Lanczos...")
 
-    # 2. Repli vers Smart Lanczos
-    print(f"🔍 [Smart Lanczos] Upscaling logiciel vers {largeur_cible}x{hauteur_cible}...")
+    # 2. Fallback to Smart Lanczos
+    print(f"🔍 [Smart Lanczos] Software upscaling to {largeur_cible}x{hauteur_cible}...")
     return upscale_smart_lanczos(image_entree, largeur_cible, hauteur_cible)
 
 
@@ -164,18 +164,18 @@ def upscale_video(
     log_fn=print
 ) -> str:
     """
-    Upscale une vidéo (.webm, .mp4, .avi) trame par trame avec super-résolution IA (ESRGAN Vulkan ou Smart Lanczos).
-    Permet la validation rapide en basse résolution (preview 480p) puis l'agrandissement en HD / 4K.
+    Upscales a video (.webm, .mp4, .avi) frame by frame with AI super-resolution (ESRGAN Vulkan or Smart Lanczos).
+    Allows quick low-resolution validation (480p preview) then upscaling to HD / 4K.
     """
     import cv2
     import numpy as np
 
     if not os.path.exists(video_input_path):
-        raise FileNotFoundError(f"Vidéo source introuvable : {video_input_path}")
+        raise FileNotFoundError(f"Source video not found: {video_input_path}")
 
     cap = cv2.VideoCapture(video_input_path)
     if not cap.isOpened():
-        raise RuntimeError(f"Impossible d'ouvrir la vidéo source : {video_input_path}")
+        raise RuntimeError(f"Cannot open the source video: {video_input_path}")
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -189,7 +189,7 @@ def upscale_video(
         largeur_cible = int(largeur_init * facteur)
         hauteur_cible = int(hauteur_init * facteur)
 
-    # Dimensions paires requises par les codecs
+    # Even dimensions required by the codecs
     largeur_cible = (largeur_cible // 2) * 2
     hauteur_cible = (hauteur_cible // 2) * 2
 
@@ -199,7 +199,7 @@ def upscale_video(
         output_path = os.path.splitext(output_path)[0] + ".mp4"
         ext = ".mp4"
 
-    log_fn(f"[Upscale Vidéo] {largeur_init}x{hauteur_init} ➔ {largeur_cible}x{hauteur_cible} ({total_frames} trames @ {fps:.1f} fps)...")
+    log_fn(f"[Video Upscale] {largeur_init}x{hauteur_init} ➔ {largeur_cible}x{hauteur_cible} ({total_frames} frames @ {fps:.1f} fps)...")
 
     writer = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (largeur_cible, hauteur_cible))
     if not writer.isOpened():
@@ -214,7 +214,7 @@ def upscale_video(
                 break
             frame_idx += 1
             if frame_idx % 5 == 0 or frame_idx == 1 or frame_idx == total_frames:
-                log_fn(f"  Trame {frame_idx}/{total_frames} en cours...")
+                log_fn(f"  Frame {frame_idx}/{total_frames} in progress...")
 
             frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
             img_pil = Image.fromarray(frame_rgb)
@@ -238,6 +238,6 @@ def upscale_video(
         cap.release()
         writer.release()
 
-    log_fn(f"✅ Vidéo upscalée avec succès : {output_path} ({largeur_cible}x{hauteur_cible})")
+    log_fn(f"✅ Video upscaled successfully: {output_path} ({largeur_cible}x{hauteur_cible})")
     return output_path
 

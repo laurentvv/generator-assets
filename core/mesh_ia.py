@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Objets 3D IA depuis une image : TRELLIS.2-4B GGUF via trellis.cpp (backend Vulkan).
+AI 3D objects from an image: TRELLIS.2-4B GGUF via trellis.cpp (Vulkan backend).
 
-Validé par l'utilisateur le 2026-09-06 sur le casque du dépôt :
-res 512 = 10 min 44 s (GLB 144 k faces, atlas 1024), res 1024 = 55 min 10 s
-(GLB 293 k faces, atlas 2048). Outil installé dans C:\\trellis (README dédié),
-GGUF f16 dans C:\\Modeles_LLM\\trellis2-gguf (voir MEMORY_BANK §1.14).
+Validated by the user on 2026-09-06 on the repo helmet:
+res 512 = 10 min 44 s (144 k faces GLB, 1024 atlas), res 1024 = 55 min 10 s
+(293 k faces GLB, 2048 atlas). Tool installed in C:\\trellis (dedicated README),
+f16 GGUF in C:\\Modeles_LLM\\trellis2-gguf (see MEMORY_BANK §1.14).
 
-Pipeline : image PNG (détourée idéalement — l'alpha est conservé par trellis)
-→ trellis-cli → GLB PBR (+ .ply + atlas _base.png) → rendus de contrôle Blender
-(4 vues orbitales studio) → planche 2×3 récapitulative.
+Pipeline: PNG image (background-removed ideally — alpha is kept by trellis)
+→ trellis-cli → PBR GLB (+ .ply + _base.png atlas) → Blender control renders
+(4 studio orbital views) → 2×3 recap board.
 """
 
 import os
@@ -31,15 +31,15 @@ TRELLIS_GGUF_REQUIS = [
     "dinov3.gguf", "birefnet.gguf",
 ]
 
-# Budget réaliste RX 6950 XT (RDNA2, pas de matrix cores Vulkan) pour l'aide utilisateur.
-DUREES_ESTIMEES = {512: "~11 min", 1024: "~55 min", 1536: "~2 h (non mesuré)"}
+# Realistic RX 6950 XT budget (RDNA2, no Vulkan matrix cores) for user help.
+DUREES_ESTIMEES = {512: "~11 min", 1024: "~55 min", 1536: "~2 h (not measured)"}
 
 
 def verifier_trellis() -> Tuple[bool, List[str]]:
-    """Vérifie trellis-cli.exe et les 10 GGUF requis. Retourne (ok, manquants)."""
+    """Checks trellis-cli.exe and the 10 required GGUFs. Returns (ok, missing)."""
     manquants: List[str] = []
     if not os.path.exists(TRELLIS_CLI):
-        manquants.append(f"trellis-cli introuvable : {TRELLIS_CLI}")
+        manquants.append(f"trellis-cli not found: {TRELLIS_CLI}")
     for f in TRELLIS_GGUF_REQUIS:
         if not os.path.exists(os.path.join(TRELLIS_MODELES_DIR, f)):
             manquants.append(os.path.join(TRELLIS_MODELES_DIR, f))
@@ -56,17 +56,17 @@ def generer_mesh_trellis(
     gpu: int = 0,
 ) -> Dict[str, Any]:
     """
-    Exécute trellis-cli (Vulkan) : image → GLB PBR + .ply + aperçu d'atlas _base.png.
+    Runs trellis-cli (Vulkan): image → PBR GLB + .ply + _base.png atlas preview.
 
-    `res` : 512 (itération, ~11 min) ou 1024 (master, ~55 min) ou 1536 (non mesuré).
-    `seed` : None/-
-    → graine auto de trellis. La progression est affichée en direct (étapes 1/6 → 6/7).
+    `res`: 512 (iteration, ~11 min) or 1024 (master, ~55 min) or 1536 (not measured).
+    `seed`: None/-
+    → automatic trellis seed. Progress is displayed live (steps 1/6 → 6/7).
     """
     ok, manquants = verifier_trellis()
     if not ok:
         raise EnvironmentError(
-            "Composants TRELLIS.2 manquants : " + " ; ".join(manquants)
-            + " — voir C:\\trellis\\README.md (install) et MEMORY_BANK §1.14."
+            "Missing TRELLIS.2 components: " + " ; ".join(manquants)
+            + " — see C:\\trellis\\README.md (install) and MEMORY_BANK §1.14."
         )
 
     glb_path = os.path.join(output_dir, f"{nom_base}_{res}.glb")
@@ -84,13 +84,13 @@ def generer_mesh_trellis(
     commande += ["--gpu", str(gpu)]
 
     t0 = time.time()
-    # Sortie non capturée : trellis affiche sa barre de progression en direct.
-    # 7200 s : repères mesurés 512 = ~11 min, 1024 = ~55 min (MEMORY_BANK), marge ×2
+    # Uncaptured output: trellis displays its progress bar live.
+    # 7200 s: measured marks 512 = ~11 min, 1024 = ~55 min (MEMORY_BANK), ×2 margin
     run_engine(commande, capture=False, check=True, timeout=7200, etiquette="trellis-cli")
     duree = time.time() - t0
 
     if not os.path.exists(glb_path):
-        raise RuntimeError(f"trellis-cli n'a pas produit {glb_path}")
+        raise RuntimeError(f"trellis-cli did not produce {glb_path}")
 
     retour: Dict[str, Any] = {"glb": glb_path, "res": res, "duree_s": duree, "seed": seed}
     ply = os.path.splitext(glb_path)[0] + ".ply"
@@ -102,8 +102,8 @@ def generer_mesh_trellis(
     return retour
 
 
-# Script Blender de rendu de contrôle (4 vues orbitales + éclairage studio, EEVEE).
-# Substitution $entree / $prefixe via string.Template (le script contient des f-strings).
+# Blender control-render script (4 orbital views + studio lighting, EEVEE).
+# $entree / $prefixe substitution via string.Template (the script contains f-strings).
 _SCRIPT_RENDU = Template(r'''import math
 import sys
 
@@ -116,7 +116,7 @@ glb_in, out_prefix = argv[0], argv[1]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
@@ -133,7 +133,7 @@ def bbox_monde():
     return pts
 
 
-# Normalisation : dimension max ramenée à 2.0, base posée sur z=0.
+# Normalization: max dimension brought to 2.0, base set at z=0.
 pts = bbox_monde()
 max_dim = max(max(p.x for p in pts) - min(p.x for p in pts),
               max(p.y for p in pts) - min(p.y for p in pts),
@@ -208,8 +208,8 @@ print("[rendu] TERMINE")
 ''')
 
 
-# Script Blender de réduction de maillage (Decimate collapse délimité UV/SHARP,
-# matériaux PBR conservés) puis ré-export GLB.
+# Blender mesh reduction script (UV/SHARP delimited Decimate collapse,
+# PBR materials kept) then GLB re-export.
 _SCRIPT_REDUCTION = Template(r'''import sys
 
 import bpy
@@ -220,9 +220,9 @@ glb_in, glb_out, faces_cible = argv[0], argv[1], int(argv[2])
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 total_avant = sum(len(m.data.polygons) for m in meshes)
-print(f"[reduction] faces avant : {total_avant}")
+print(f"[reduction] faces before: {total_avant}")
 
 if faces_cible > 0 and total_avant > faces_cible:
     ratio = max(faces_cible / total_avant, 0.01)
@@ -235,9 +235,9 @@ if faces_cible > 0 and total_avant > faces_cible:
         bpy.context.view_layer.objects.active = o
         bpy.ops.object.modifier_apply(modifier="Decimate")
     total_apres = sum(len(m.data.polygons) for m in meshes)
-    print(f"[reduction] faces apres : {total_apres} (cible {faces_cible}, ratio {ratio:.4f})")
+    print(f"[reduction] faces after: {total_apres} (target {faces_cible}, ratio {ratio:.4f})")
 else:
-    print("[reduction] deja sous la cible, aucune decimation")
+    print("[reduction] already below target, no decimation")
 
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
@@ -249,21 +249,21 @@ print("[reduction] export OK -> " + glb_out)
 
 def reduire_mesh_blender(glb_path: str, glb_sortie: str, faces_cible: int) -> Optional[Dict[str, Any]]:
     """
-    Décime un GLB vers ~faces_cible faces (Blender headless, Decimate collapse
-    délimité UV/SHARP, textures PBR conservées) et ré-exporte en GLB distinct.
+    Decimates a GLB toward ~faces_cible faces (Blender headless, UV/SHARP delimited
+    Decimate collapse, PBR textures kept) and re-exports as a separate GLB.
 
-    Retourne {"glb": ..., "faces_avant": N, "faces_apres": N} ou None si échec
-    (non bloquant : le GLB master reste utilisable).
+    Returns {"glb": ..., "faces_avant": N, "faces_apres": N} or None on failure
+    (non-blocking: the master GLB remains usable).
     """
     from core.blender_ops import trouver_blender
 
     blender = trouver_blender()
     if not blender:
-        print("⚠️ Blender introuvable : réduction de maillage sautée.")
+        print("⚠️ Blender not found: mesh reduction skipped.")
         return None
 
-    # Script temporaire unique (tempfile) : plus de _reduction.py écrit dans le
-    # dossier de sortie (collision entre exécutions parallèles + pollution).
+    # Unique temp script (tempfile): no more _reduction.py written into the
+    # output folder (collision between parallel runs + pollution).
     descripteur, script = tempfile.mkstemp(suffix=".py", prefix="ga_reduction_")
     os.close(descripteur)
     with open(script, "w", encoding="utf-8") as f:
@@ -272,10 +272,10 @@ def reduire_mesh_blender(glb_path: str, glb_sortie: str, faces_cible: int) -> Op
     try:
         proc = run_engine(
             [blender, "--background", "--python", script, "--", glb_path, glb_sortie, str(int(faces_cible))],
-            check=False, timeout=600, etiquette="blender réduction",
+            check=False, timeout=600, etiquette="blender reduction",
         )
     except EngineError:
-        print("⚠️ Réduction Blender expirée (10 min) : sautée.")
+        print("⚠️ Blender reduction timed out (10 min): skipped.")
         return None
     finally:
         if os.path.exists(script):
@@ -285,12 +285,12 @@ def reduire_mesh_blender(glb_path: str, glb_sortie: str, faces_cible: int) -> Op
                 pass
 
     if not os.path.exists(glb_sortie):
-        print(f"⚠️ Réduction Blender a échoué : {(proc.stderr or '')[-500:]}")
+        print(f"⚠️ Blender reduction failed: {(proc.stderr or '')[-500:]}")
         return None
 
     import re as _re
-    m_avant = _re.search(r"faces avant : (\d+)", proc.stdout or "")
-    m_apres = _re.search(r"faces apres : (\d+)", proc.stdout or "")
+    m_avant = _re.search(r"faces before: (\d+)", proc.stdout or "")
+    m_apres = _re.search(r"faces after: (\d+)", proc.stdout or "")
     return {
         "glb": glb_sortie,
         "faces_avant": int(m_avant.group(1)) if m_avant else None,
@@ -300,14 +300,14 @@ def reduire_mesh_blender(glb_path: str, glb_sortie: str, faces_cible: int) -> Op
 
 def rendre_controle_blender(glb_path: str, output_dir: str, nom_base: str) -> List[str]:
     """
-    Rend 4 vues orbitales du GLB (Blender headless EEVEE). Retourne les PNG
-    produits (liste vide si Blender indisponible ou rendu échoué — non bloquant).
+    Renders 4 orbital views of the GLB (Blender headless EEVEE). Returns the PNGs
+    produced (empty list if Blender is unavailable or the render failed — non-blocking).
     """
     from core.blender_ops import trouver_blender
 
     blender = trouver_blender()
     if not blender:
-        print("⚠️ Blender introuvable : rendus de contrôle sautés.")
+        print("⚠️ Blender not found: control renders skipped.")
         return []
 
     script = os.path.join(output_dir, "_rendu_controle.py")
@@ -318,10 +318,10 @@ def rendre_controle_blender(glb_path: str, output_dir: str, nom_base: str) -> Li
     try:
         proc = run_engine(
             [blender, "--background", "--python", script, "--", glb_path, prefixe],
-            check=False, timeout=600, etiquette="blender rendus contrôle",
+            check=False, timeout=600, etiquette="blender control renders",
         )
     except EngineError:
-        print("⚠️ Rendu de contrôle Blender expiré (10 min) : sauté.")
+        print("⚠️ Blender control render timed out (10 min): skipped.")
         return []
 
     vues: List[str] = []
@@ -330,7 +330,7 @@ def rendre_controle_blender(glb_path: str, output_dir: str, nom_base: str) -> Li
         if os.path.exists(p):
             vues.append(p)
     if len(vues) < 4:
-        print(f"⚠️ Rendus Blender incomplets ({len(vues)}/4) : {proc.stderr[-500:] if proc.stderr else ''}")
+        print(f"⚠️ Incomplete Blender renders ({len(vues)}/4): {proc.stderr[-500:] if proc.stderr else ''}")
     return vues
 
 
@@ -341,7 +341,7 @@ def assembler_planche(
     sortie: str,
     taille: int = 900,
 ) -> str:
-    """Planche récapitulative 2×3 : source, 4 vues, texture d'atlas."""
+    """2×3 recap board: source, 4 views, atlas texture."""
     from PIL import Image, ImageDraw, ImageFont
 
     def charge(p: str) -> "Image.Image":
@@ -356,9 +356,9 @@ def assembler_planche(
     panneaux_bas.append(charge(base_png) if base_png and os.path.exists(base_png)
                         else Image.new("RGB", (taille, taille), (24, 24, 28)))
 
-    titres_haut = ["Source (entree 2D)", "Vue azimut 25 deg", "Vue azimut 115 deg"]
-    titres_bas = ["Vue azimut 205 deg", "Vue azimut 295 deg",
-                  "Texture PBR base" if base_png and os.path.exists(base_png) else "(sans texture)"]
+    titres_haut = ["Source (2D input)", "Azimuth view 25 deg", "Azimuth view 115 deg"]
+    titres_bas = ["Azimuth view 205 deg", "Azimuth view 295 deg",
+                  "PBR base texture" if base_png and os.path.exists(base_png) else "(no texture)"]
 
     marge, barre = 12, 56
     planche = Image.new("RGB", (3 * taille + 4 * marge, 2 * (taille + barre) + 3 * marge), (16, 16, 20))

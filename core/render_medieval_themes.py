@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script d'habillage et de rendu multi-angles des thèmes médiévaux (Option B) sous Blender.
-Gère les 3 objets de vêtements 100% indépendants :
- - medieval_<theme>_torso (Tunique / Plastron / Veste)
- - medieval_<theme>_pants (Braies / Chausses / Grèves)
- - medieval_<theme>_shoes (Sabots / Bottes / Solerets)
-Et affiche parfaitement les mains, poignets, cou et tête du modèle Human.
+Dressing and multi-angle rendering script for the medieval themes (Option B) under Blender.
+Handles the 3 fully independent clothing objects:
+ - medieval_<theme>_torso (Tunic / Breastplate / Jacket)
+ - medieval_<theme>_pants (Braies / Chausses / Greaves)
+ - medieval_<theme>_shoes (Clogs / Boots / Sabatons)
+And perfectly shows the hands, wrists, neck and head of the Human model.
 """
 
 import bpy
@@ -14,8 +14,8 @@ import bmesh
 import os
 import math
 
-# Script exécuté dans Blender (pas d'import core.config garanti) : chemins dérivés
-# de %APPDATA% (MPFB utilisateur) et de la position du fichier (racine du dépôt).
+# Script executed inside Blender (core.config import not guaranteed): paths derived
+# from %APPDATA% (user MPFB) and from the file location (repository root).
 MPFB_ROOT = os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data")
 MPFB_OBJSDIR = os.path.expandvars(
     r"%APPDATA%\Blender Foundation\Blender\5.2\extensions\user_default\mpfb\data\3dobjs"
@@ -34,17 +34,17 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
     suit_obj_path = os.path.join(mpfb_root, "clothes", "male_casualsuit01", "male_casualsuit01.obj")
     shoes_obj_path = os.path.join(mpfb_root, "clothes", "shoes01", "shoes01.obj")
 
-    # Nettoyage de la scène
+    # Scene cleanup
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
 
-    # 1. Caméra et éclairage studio 3 points
+    # 1. Camera and 3-point studio lighting
     cam_data = bpy.data.cameras.new("Camera")
     cam = bpy.data.objects.new("Camera", cam_data)
     bpy.context.collection.objects.link(cam)
     bpy.context.scene.camera = cam
 
-    # Fond de scène studio neutre
+    # Neutral studio scene background
     world = bpy.context.scene.world or bpy.data.worlds.new("Studio_World")
     bpy.context.scene.world = world
     world.use_nodes = True
@@ -66,12 +66,12 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
     add_studio_light("Fill_Light", 400.0, (-2.5, -2.5, 2.0), size=2.5)
     add_studio_light("Rim_Light", 600.0, (0.0, 3.2, 2.5), size=2.0)
 
-    # 2. Import Base Human MakeHuman
+    # 2. MakeHuman Base Human import
     bpy.ops.wm.obj_import(filepath=base_obj_path)
     human = bpy.context.selected_objects[0]
     human.name = "Human"
 
-    # Import Vêtements Option B
+    # Option B clothing import
     bpy.ops.wm.obj_import(filepath=suit_obj_path)
     suit = bpy.context.selected_objects[0]
     suit.name = f"{theme_slug}_torso"
@@ -80,22 +80,22 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
     shoes = bpy.context.selected_objects[0]
     shoes.name = f"{theme_slug}_shoes"
 
-    # Mise à l'échelle métrique (0.1)
+    # Metric scaling (0.1)
     for o in [human, suit, shoes]:
         o.scale = (0.1, 0.1, 0.1)
         bpy.context.view_layer.objects.active = o
         o.select_set(True)
     bpy.ops.object.transform_apply(scale=True)
 
-    # 3. Masquage propre du corps sous les vêtements :
-    # AFFICHE CLAIREMENT :
-    #  - La tête et le cou (z >= 0.44 et |x| <= 0.16)
-    #  - Les mains, paumes, doigts et poignets complets (|x| >= 0.39 et z <= 0.35)
+    # 3. Clean masking of the body under the clothes:
+    # CLEARLY SHOWS:
+    #  - The head and neck (z >= 0.44 and |x| <= 0.16)
+    #  - The complete hands, palms, fingers and wrists (|x| >= 0.39 and z <= 0.35)
     vg_keep = human.vertex_groups.new(name="Visible_Skin")
     skin_verts = [v.index for v in human.data.vertices if (
         v.index < 13380 and (
-            (v.co.z >= 0.44 and abs(v.co.x) <= 0.16) or # Tête et cou complets
-            (abs(v.co.x) >= 0.39 and v.co.z <= 0.35)     # Mains, doigts et poignets complets
+            (v.co.z >= 0.44 and abs(v.co.x) <= 0.16) or # Full head and neck
+            (abs(v.co.x) >= 0.39 and v.co.z <= 0.35)     # Full hands, fingers and wrists
         )
     )]
     vg_keep.add(skin_verts, 1.0, 'REPLACE')
@@ -111,7 +111,7 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
     human.data.materials.clear()
     human.data.materials.append(skin_mat)
 
-    # 4. Séparation du pantalon en OBJET INDÉPENDANT
+    # 4. Separating the pants into an INDEPENDENT OBJECT
     bm_s = bmesh.new()
     bm_s.from_mesh(suit.data)
     bm_s.faces.ensure_lookup_table()
@@ -142,13 +142,13 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
     pants_obj = bpy.data.objects.new(f"{theme_slug}_pants", pants_mesh)
     bpy.context.collection.objects.link(pants_obj)
 
-    # Supprimer les faces du pantalon du Torso
+    # Delete the pants faces from the Torso
     bmesh.ops.delete(bm_s, geom=pants_faces, context='FACES')
     bm_s.to_mesh(suit.data)
     bm_s.free()
     suit.name = f"{theme_slug}_torso"
 
-    # 5. Création des Matériaux PBR Thématiques pour chaque pièce indépendante
+    # 5. Creating the thematic PBR materials for each independent piece
     parts_meta = [
         ("torso", suit, config.get("torso_scale", 3.0), config.get("torso_roughness", 0.5), config.get("torso_metallic", 0.0), config.get("torso_normal_str", 1.5)),
         ("pants", pants_obj, config.get("pants_scale", 4.0), config.get("pants_roughness", 0.6), config.get("pants_metallic", 0.0), config.get("pants_normal_str", 1.5)),
@@ -199,7 +199,7 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
         obj.data.materials.clear()
         obj.data.materials.append(mat)
 
-    # 6. Modificateurs Solidify & Subsurf sur chaque vêtement indépendant
+    # 6. Solidify & Subsurf modifiers on each independent garment
     for o in [suit, pants_obj, shoes]:
         sol = o.modifiers.new("Solidify", 'SOLIDIFY')
         sol.thickness = 0.005
@@ -207,7 +207,7 @@ def render_outfit_theme(theme_name: str, config: dict, output_base_dir: str = os
         sub = o.modifiers.new("Subsurf", 'SUBSURF')
         sub.levels = 1
 
-    # 7. Cadrage Studio 4 Vues (plein pied complet avec marge)
+    # 7. 4-View studio framing (full standing body with margin)
     views = [
         (f"{theme_slug}_front", (0.0, -4.0, 0.0), (math.radians(90), 0, 0), 45),
         (f"{theme_slug}_three_quarter", (2.8, -3.0, 0.0), (math.radians(90), 0, math.radians(43)), 45),

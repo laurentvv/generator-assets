@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Retrait de voix par séparation de sources HTDemucs (audio.cpp, Vulkan).
+Vocal removal via HTDemucs source separation (audio.cpp, Vulkan).
 
-Capacité validée par l'utilisateur le 2026-09-06 (« retrait de la voix : OK »)
-sur la piste complète Love Like Blood. Produit :
-- l'instrumental sans chant (mixage drums+bass+other, niveaux préservés)
-- les 4 stems complets (drums, bass, other, vocals) pour usage ultérieur
+Capability validated by the user on 2026-09-06 ("vocal removal: OK")
+on the full Love Like Blood track. Produces:
+- the instrumental without vocals (drums+bass+other mix, levels preserved)
+- the 4 full stems (drums, bass, other, vocals) for later use
 
-Écueils intégrés :
-- HTDemucs exige du 44,1 kHz (« sample rate mismatch » sinon) → rééchantillonnage
-  automatique de toute source
-- l'écriture des stems exige --out-dir (multi-sorties nommées) ; --out est refusé
+Integrated pitfalls:
+- HTDemucs requires 44.1 kHz ("sample rate mismatch" otherwise) → automatic
+  resampling of any source
+- writing stems requires --out-dir (named multi-output); --out is rejected
 """
 
 import os
@@ -30,29 +30,29 @@ STEMS_INSTRUMENTAL = ("drums", "bass", "other")
 
 def retirer_voix(chemin_audio: str, dossier_travail: str, backend: str = "vulkan") -> Dict[str, Any]:
     """
-    Sépare l'audio en stems HTDemucs et construit l'instrumental sans chant.
-    Retourne les chemins {instrumental_wav, instrumental_mp3, stems_dir, voix_wav}.
+    Separates audio into HTDemucs stems and builds the instrumental without vocals.
+    Returns the paths {instrumental_wav, instrumental_mp3, stems_dir, voix_wav}.
     """
     if not os.path.exists(MODELE_HTDEMUCS):
         raise FileNotFoundError(
-            f"Paquet HTDemucs introuvable : {MODELE_HTDEMUCS} — le télécharger depuis "
-            f"audio-cpp/audio.cpp-gguf (HTDemucs-GGUF/htdemucs-f16.gguf, 84 Mo)."
+            f"HTDemucs package not found: {MODELE_HTDEMUCS} — download it from "
+            f"audio-cpp/audio.cpp-gguf (HTDemucs-GGUF/htdemucs-f16.gguf, 84 MB)."
         )
     ffmpeg = resoudre_ffmpeg()
     os.makedirs(dossier_travail, exist_ok=True)
 
-    # 1) Rééchantillonnage 44,1 kHz stéréo (exigé par HTDemucs)
+    # 1) 44.1 kHz stereo resampling (required by HTDemucs)
     wav44 = os.path.join(dossier_travail, "source_44k.wav")
     run_engine(
         [ffmpeg, "-hide_banner", "-y", "-i", chemin_audio,
          "-ar", str(SR_HDEMUCS), "-ac", "2", "-c:a", "pcm_s16le", wav44],
-        check=True, timeout=600, etiquette="ffmpeg rééchantillonnage 44k",
+        check=True, timeout=600, etiquette="ffmpeg 44k resampling",
     )
 
-    # 2) Séparation en stems (multi-sorties => --out-dir obligatoire)
+    # 2) Stem separation (multi-output => --out-dir mandatory)
     stems_dir = os.path.join(dossier_travail, "stems")
     os.makedirs(stems_dir, exist_ok=True)
-    # Progression HTDemucs en direct (séparation = minutes)
+    # Live HTDemucs progress (separation = minutes)
     run_engine(
         [resoudre_audiocpp(), "--task", "sep", "--family", "htdemucs",
          "--model", MODELE_HTDEMUCS, "--backend", backend, "--threads", "16",
@@ -62,9 +62,9 @@ def retirer_voix(chemin_audio: str, dossier_travail: str, backend: str = "vulkan
     manquants = [s for s in STEMS_INSTRUMENTAL + ("vocals",)
                  if not os.path.exists(os.path.join(stems_dir, f"{s}.wav"))]
     if manquants:
-        raise RuntimeError(f"Stems HTDemucs manquants : {', '.join(manquants)}")
+        raise RuntimeError(f"Missing HTDemucs stems: {', '.join(manquants)}")
 
-    # 3) Instrumental = drums + bass + other (somme sans le chant, niveaux préservés)
+    # 3) Instrumental = drums + bass + other (sum without vocals, levels preserved)
     instrumental = os.path.join(dossier_travail, "instrumental.wav")
     entrees: list = []
     for s in STEMS_INSTRUMENTAL:
@@ -77,7 +77,7 @@ def retirer_voix(chemin_audio: str, dossier_travail: str, backend: str = "vulkan
         check=True, timeout=600, etiquette="ffmpeg amix instrumental",
     )
 
-    # 4) MP3 d'écoute
+    # 4) Listening MP3
     mp3 = convertir_mp3(instrumental, instrumental.replace(".wav", ".mp3"), 192)
     return {
         "instrumental_wav": instrumental,

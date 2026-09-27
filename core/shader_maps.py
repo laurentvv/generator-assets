@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Module de génération de cartes de shaders techniques pour Godot 4 (Flow Maps, Dissolve Noise, Shaders GLSL).
+Technical shader map generation module for Godot 4 (Flow Maps, Dissolve Noise, GLSL Shaders).
 """
 
 import math
@@ -12,18 +12,18 @@ from PIL import Image
 
 
 def _generer_perlin_noise_2d(shape: Tuple[int, int], res: Tuple[int, int] = (8, 8)) -> np.ndarray:
-    """Génère un bruit pseudo-Perlin 2D fluide avec interpolation cosinus."""
+    """Generates smooth pseudo-Perlin 2D noise with cosine interpolation."""
     ny, nx = shape
     ry, rx = res
     grid_y = np.linspace(0, ry, ny, endpoint=False)
     grid_x = np.linspace(0, rx, nx, endpoint=False)
 
     np.random.seed(42)
-    # Gradients aléatoires
+    # Random gradients
     angles = 2 * np.pi * np.random.rand(ry + 1, rx + 1)
     gradients = np.stack((np.cos(angles), np.sin(angles)), axis=-1)
 
-    # Coordonnées de cellule
+    # Cell coordinates
     x0 = grid_x.astype(int)
     x1 = x0 + 1
     y0 = grid_y.astype(int)
@@ -32,11 +32,11 @@ def _generer_perlin_noise_2d(shape: Tuple[int, int], res: Tuple[int, int] = (8, 
     fx = grid_x - x0
     fy = grid_y - y0
 
-    # Fonction de lissage (smoothstep)
+    # Smoothing function (smoothstep)
     sx = fx * fx * (3 - 2 * fx)
     sy = fy * fy * (3 - 2 * fy)
 
-    # Produits scalaires aux 4 coins
+    # Dot products at the 4 corners
     g00 = gradients[y0[:, None], x0[None, :]]
     g10 = gradients[y0[:, None], x1[None, :]]
     g01 = gradients[y1[:, None], x0[None, :]]
@@ -52,7 +52,7 @@ def _generer_perlin_noise_2d(shape: Tuple[int, int], res: Tuple[int, int] = (8, 
     bottom = v01 * (1 - sx[None, :]) + v11 * sx[None, :]
     noise = top * (1 - sy[:, None]) + bottom * sy[:, None]
 
-    # Normalisation [0, 1]
+    # Normalization [0, 1]
     noise = (noise - noise.min()) / (noise.max() - noise.min() + 1e-6)
     return noise.astype(np.float32)
 
@@ -66,14 +66,14 @@ def generer_flowmap(
     image_b: Optional[Image.Image] = None
 ) -> Image.Image:
     """
-    Génère une Flow Map (R=Vecteur X, G=Vecteur Y, B=Magnitude, A=255).
-    128 = Vecteur 0, 0 = -1.0, 255 = +1.0.
+    Generates a Flow Map (R=X Vector, G=Y Vector, B=Magnitude, A=255).
+    128 = Zero vector, 0 = -1.0, 255 = +1.0.
 
-    Types disponibles :
-    - 'river' : Flux directionnel continu (avec méandres et bruit de turbulence)
-    - 'vortex' : Tourbillon / spirale avec aspiration vers le centre
-    - 'radial' : Expansion radiale vers l'extérieur (onde de choc / explosion)
-    - 'optical' : Calcul du flux optique entre image_a et image_b via OpenCV
+    Available types:
+    - 'river': Continuous directional flow (with meanders and turbulence noise)
+    - 'vortex': Whirlpool / spiral with suction toward the center
+    - 'radial': Radial expansion outward (shockwave / explosion)
+    - 'optical': Optical flow computed between image_a and image_b via OpenCV
     """
     h, w = resolution, resolution
 
@@ -84,7 +84,7 @@ def generer_flowmap(
         flow = cv2.calcOpticalFlowFarneback(img1, img2, None, 0.5, 3, 15, 3, 5, 1.2, 0)
         vx = flow[..., 0]
         vy = flow[..., 1]
-        # Normalisation
+        # Normalization
         max_mag = np.max(np.sqrt(vx**2 + vy**2)) + 1e-6
         vx /= max_mag
         vy /= max_mag
@@ -96,37 +96,37 @@ def generer_flowmap(
         dist = np.sqrt(dx**2 + dy**2) + 1e-5
 
         if type_flux in ("vortex", "whirlpool", "swirl"):
-            # Vitesse tangentielle (tourbillon) + légère attraction vers le centre
+            # Tangential velocity (whirlpool) + slight attraction toward the center
             tangent_x = -dy / dist
             tangent_y = dx / dist
             inward_x = -dx
             inward_y = -dy
             vx = tangent_x * 0.85 + inward_x * 0.15
             vy = tangent_y * 0.85 + inward_y * 0.15
-            # Atténuation vers les bords
+            # Attenuation toward the edges
             vx *= np.clip(1.2 - dist, 0.0, 1.0)
             vy *= np.clip(1.2 - dist, 0.0, 1.0)
 
         elif type_flux in ("radial", "explosion", "shockwave"):
-            # Expansion du centre vers l'extérieur
+            # Expansion from the center outward
             vx = dx / dist
             vy = dy / dist
 
         else:  # "river", "linear", default
-            # Direction linéaire selon l'angle spécifié
+            # Linear direction along the specified angle
             rad = math.radians(angle_deg)
             base_vx = math.cos(rad)
             base_vy = math.sin(rad)
             vx = np.full((h, w), base_vx, dtype=np.float32)
             vy = np.full((h, w), base_vy, dtype=np.float32)
 
-            # Ajout de turbulences / méandres par Curl Noise
+            # Adding turbulence / meanders via Curl Noise
             if turbulence > 0:
                 noise_a = _generer_perlin_noise_2d((h, w), (6, 6))
                 noise_b = _generer_perlin_noise_2d((h, w), (12, 12))
                 combined_noise = noise_a * 0.7 + noise_b * 0.3
 
-                # Gradient orthogonal pour conserver l'incompressibilité
+                # Orthogonal gradient to preserve incompressibility
                 grad_y, grad_x = np.gradient(combined_noise)
                 curl_x = -grad_y * 10.0 * turbulence
                 curl_y = grad_x * 10.0 * turbulence
@@ -134,14 +134,14 @@ def generer_flowmap(
                 vx += curl_x
                 vy += curl_y
 
-    # Calcul de la magnitude
+    # Magnitude computation
     magnitude = np.sqrt(vx**2 + vy**2)
     max_m = np.maximum(magnitude.max(), 1.0)
     vx_norm = vx / max_m
     vy_norm = vy / max_m
     mag_norm = (magnitude / max_m).clip(0.0, 1.0)
 
-    # Conversion en RGBA 8-bit standard Flowmap (128 = 0)
+    # Conversion to standard 8-bit RGBA flowmap (128 = 0)
     r = ((vx_norm * 0.5 + 0.5) * 255.0).clip(0, 255).astype(np.uint8)
     g = ((vy_norm * 0.5 + 0.5) * 255.0).clip(0, 255).astype(np.uint8)
     b = (mag_norm * 255.0).clip(0, 255).astype(np.uint8)
@@ -153,8 +153,8 @@ def generer_flowmap(
 
 def exporter_shader_flow_godot(nom_base: str, output_dir: str, mode_2d: bool = False) -> Tuple[str, str]:
     """
-    Génère un fichier shader Godot 4 (.gdshader) avec double-sampling et déphasage fluide
-    ainsi que sa ressource ShaderMaterial (.tres).
+    Generates a Godot 4 shader file (.gdshader) with double sampling and smooth phase shift
+    along with its ShaderMaterial resource (.tres).
     """
     os.makedirs(output_dir, exist_ok=True)
     chemin_shader = os.path.join(output_dir, f"{nom_base}_water.gdshader")
@@ -163,8 +163,8 @@ def exporter_shader_flow_godot(nom_base: str, output_dir: str, mode_2d: bool = F
     shader_type = "canvas_item" if mode_2d else "spatial"
 
     code_shader = f"""shader_type {shader_type};
-// Shader de flux d'eau / lave animé avec Flowmap (Double sampling déphasé)
-// Généré automatiquement par Generator Assets pour Godot 4
+// Animated water / lava flow shader with Flowmap (phase-shifted double sampling)
+// Generated automatically by Generator Assets for Godot 4
 
 uniform sampler2D albedo_texture : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D flowmap_texture : hint_default_black, filter_linear_mipmap, repeat_enable;
@@ -176,7 +176,7 @@ void fragment() {{
     vec2 flow = texture(flowmap_texture, UV).rg * 2.0 - vec2(1.0);
     float time = TIME * flow_speed;
 
-    // Deux échantillons déphasés de 0.5 cycle pour une boucle continue sans raccord visible
+    // Two samples phase-shifted by 0.5 cycle for a continuous loop with no visible seam
     float phase0 = fract(time);
     float phase1 = fract(time + 0.5);
 
