@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Autotile Pack : Génération de planches d'Autotile 47 tuiles (Terrain Minimal 3x3) et TileSet.tres pour Godot 4.
+Autotile Pack workflow: generating 47-tile Autotile sheets (Minimal 3x3 Terrain) and TileSet.tres for Godot 4.
 """
 
 import os
@@ -17,20 +17,20 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class AutotilePackWorkflow(BaseWorkflow):
-    """Génération complète d'Autotile 47 tuiles et ressource TileSet.tres Godot 4."""
+    """Complete 47-tile Autotile generation and Godot 4 TileSet.tres resource."""
 
     name = "autotile_pack"
-    description = "Planches d'Autotiles 47 tuiles (Wang / Minimal 3x3) + Ressource TileSet.tres pour Godot 4"
+    description = "47-tile Autotile sheets (Wang / Minimal 3x3) + Godot 4 TileSet.tres resource"
 
     emoji = "🗺️"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--biome-a",),
-             help="Description ou image du premier biome pour autotile_pack."),
+             help="Description or image of the first biome for autotile_pack."),
         dict(flags=("--biome-b",),
-             help="Description ou image du second biome pour autotile_pack."),
+             help="Description or image of the second biome for autotile_pack."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -44,12 +44,12 @@ class AutotilePackWorkflow(BaseWorkflow):
 
         os.makedirs(output_dir, exist_ok=True)
 
-        # 1. Chargement ou génération du Biome A
+        # 1. Biome A load or generation
         if os.path.exists(biome_a_param):
-            self.log(f"Chargement du Biome A (Premier plan) : {biome_a_param}...")
+            self.log(f"Loading Biome A (Foreground): {biome_a_param}...")
             img_a = Image.open(biome_a_param).convert("RGB")
         else:
-            self.log(f"Génération de la texture pour Biome A : '{biome_a_param}'...")
+            self.log(f"Generating the texture for Biome A: '{biome_a_param}'...")
             prompt_a = construire_prompt_coherant(
                 concept=biome_a_param,
                 type_asset="tile",
@@ -72,12 +72,12 @@ class AutotilePackWorkflow(BaseWorkflow):
                 steps=params.get("steps", 25)
             )
 
-        # 2. Chargement ou génération du Biome B
+        # 2. Biome B load or generation
         if os.path.exists(biome_b_param):
-            self.log(f"Chargement du Biome B (Arrière-plan) : {biome_b_param}...")
+            self.log(f"Loading Biome B (Background): {biome_b_param}...")
             img_b = Image.open(biome_b_param).convert("RGB")
         else:
-            self.log(f"Génération de la texture pour Biome B : '{biome_b_param}'...")
+            self.log(f"Generating the texture for Biome B: '{biome_b_param}'...")
             prompt_b = construire_prompt_coherant(
                 concept=biome_b_param,
                 type_asset="tile",
@@ -100,19 +100,19 @@ class AutotilePackWorkflow(BaseWorkflow):
                 steps=params.get("steps", 25)
             )
 
-        # 3. Composition de l'Atlas 47 tuiles
-        self.log(f"Composition de l'atlas 47 tuiles ({colonnes} colonnes, tuiles {tile_size}x{tile_size})...")
+        # 3. 47-tile Atlas composition
+        self.log(f"Composing the 47-tile atlas ({colonnes} columns, {tile_size}x{tile_size} tiles)...")
         atlas = generer_atlas_47_tuiles(img_a, img_b, tile_size=tile_size, colonnes=colonnes)
         chemin_atlas = os.path.join(output_dir, f"{nom_base}_atlas.png")
         atlas.save(chemin_atlas, "PNG")
 
-        # 4. Export du TileSet Godot 4
-        self.log("Génération de la ressource TileSet (.tres) Godot 4 avec peering bits...")
+        # 4. Godot 4 TileSet export
+        self.log("Generating the Godot 4 TileSet (.tres) resource with peering bits...")
         chemin_tres = exporter_tileset_godot(nom_base, output_dir, tile_size=tile_size, colonnes=colonnes)
 
-        self.log(f"Pack Autotile complet exporté dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Atlas 47 Tuiles  : {chemin_atlas}")
-        self.log(f"  • Ressource Godot  : {chemin_tres} (TileSet avec Terrains)", emoji="💎")
+        self.log(f"Complete Autotile pack exported to '{output_dir}/':", emoji="🎉")
+        self.log(f"  • 47-Tile Atlas    : {chemin_atlas}")
+        self.log(f"  • Godot resource   : {chemin_tres} (TileSet with Terrains)", emoji="💎")
 
         return {
             "atlas": chemin_atlas,

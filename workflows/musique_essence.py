@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Musique Essence : nouvelle musique à l'essence d'une référence audio
-(Stable Audio 3 Medium, mode init_audio) puis retrait du chant (HTDemucs).
+Musique Essence Workflow: new music with the essence of an audio reference
+(Stable Audio 3 Medium, init_audio mode) then vocal removal (HTDemucs).
 
-Validé par l'utilisateur le 2026-09-09 (« c bien ») sur la référence Love Like
-Blood : échelle 0,40-0,45, graine fixe 42 → batterie/guitare de la référence
-restituées, sans le biais pop du prompt texte seul. Le chant de la référence
-« bave » dans la génération → HTDemucs le retire et livre un instrumental
-exploitable (pas de clonage vocal = pas de risque contenu dérivatif).
+User-validated on 2026-09-09 ("c bien") on the Love Like
+Blood reference: scale 0.40-0.45, fixed seed 42 → the drums/guitar of the
+reference restored, without the pop bias of the text prompt alone. The vocals of the
+reference "smear" into the generation → HTDemucs removes them and delivers a usable
+instrumental (no voice cloning = no derivative-content risk).
 
-Étapes :
-1. Génération SA3 Medium init_audio (RTF ~0,8 sur RX 6950 XT)
-2. (défaut) Retrait de voix HTDemucs → instrumental + stems
-   (--keep-vocals pour conserver la version brute avec la bave de chant)
+Steps:
+1. SA3 Medium init_audio generation (RTF ~0.8 on RX 6950 XT)
+2. (default) HTDemucs vocal removal → instrumental + stems
+   (--keep-vocals to keep the raw version with the vocal smear)
 """
 
 import os
@@ -24,37 +24,37 @@ from core.music_essence import DEFAULT_SCALE, generer_essence_sa3
 from core.separation import retirer_voix
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
-VALIDATED_SEED = 42  # loterie de graine démontrée à 0,5 — la recette validée fixe la graine
+VALIDATED_SEED = 42  # seed lottery demonstrated at 0.5 — the validated recipe fixes the seed
 
 
 @WorkflowRegistry.register
 class MusiqueEssenceWorkflow(BaseWorkflow):
-    """Musique à l'essence d'une référence (SA3 Medium init_audio + retrait voix HTDemucs)."""
+    """Music with the essence of a reference (SA3 Medium init_audio + HTDemucs vocal removal)."""
 
     name = "musique_essence"
-    description = ("Nouvelle musique gardant l'essence (groove/timbre) d'une référence : "
-                   "SA3 Medium init_audio (Vulkan) puis retrait du chant HTDemucs — "
-                   "échelle 0,40-0,45 et graine fixe validées ; --keep-vocals pour la version brute")
+    description = ("New music keeping the essence (groove/timbre) of a reference: "
+                   "SA3 Medium init_audio (Vulkan) then HTDemucs vocal removal — "
+                   "validated scale 0.40-0.45 and fixed seed; --keep-vocals for the raw version")
 
     emoji = "🧬"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --duration vit dans sfx,
-    # --music-backend (partagé) dans music_bg.
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). --duration lives in sfx,
+    # --music-backend (shared) in music_bg.
     PARAMETRES = [
         dict(flags=("--scale",), type=float, default=0.45,
-             help="Échelle d'essence init_audio pour musique_essence (défaut: 0.45 ; plateau validé 0.40-0.45, >=0.5 = loterie de graine, <=0.35 = quasi-copie avec bave de chant)."),
+             help="init_audio essence scale for musique_essence (default: 0.45; validated plateau 0.40-0.45, >=0.5 = seed lottery, <=0.35 = near-copy with vocal smear)."),
         dict(flags=("--keep-vocals",), action="store_true",
-             help="musique_essence : saute le retrait de voix HTDemucs (conserve la version brute avec la bave du chant de référence)."),
+             help="musique_essence: skips the HTDemucs vocal removal (keeps the raw version with the smear of the reference vocals)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         style = params.get("prompt")
         if not style:
-            raise ValueError("Style attendu en argument : main.py -w musique_essence \"<style EN>\" -i <référence>")
+            raise ValueError("Style expected as argument: main.py -w musique_essence \"<style EN>\" -i <reference>")
         reference = params.get("input")
         if not reference or not os.path.exists(reference):
-            raise ValueError("Référence audio introuvable : le passer via -i <MP3/WAV>.")
+            raise ValueError("Audio reference not found: pass it via -i <MP3/WAV>.")
 
         scale = float(params.get("scale") or DEFAULT_SCALE)
         seed = params.get("seed")
@@ -67,24 +67,24 @@ class MusiqueEssenceWorkflow(BaseWorkflow):
         dossier = os.path.join("output", "musique_essence", nom)
         os.makedirs(dossier, exist_ok=True)
 
-        self.log(f"Génération SA3 Medium (essence {scale}, graine {seed}, {duree:.0f} s) "
-                 f"depuis {reference} — backend {backend}", "🧬")
+        self.log(f"SA3 Medium generation (essence {scale}, seed {seed}, {duree:.0f} s) "
+                 f"from {reference} — backend {backend}", "🧬")
         gen = generer_essence_sa3(
             style=style, reference=reference, duree=duree, scale=scale,
             seed=seed, sortie_wav=os.path.join(dossier, "brut.wav"), backend=backend,
         )
         rtf_txt = f", RTF {gen['rtf']:.2f}" if gen["rtf"] else ""
-        self.log(f"Version brute (avec bave de chant possible) : {gen['mp3']}{rtf_txt}", "✅")
+        self.log(f"Raw version (possible vocal smear): {gen['mp3']}{rtf_txt}", "✅")
         resultat: Dict[str, Any] = {"brut_wav": gen["wav"], "brut_mp3": gen["mp3"], "rtf": gen["rtf"]}
 
         if keep_vocals:
-            self.log("--keep-vocals actif : retrait de voix sauté", "⏭️")
+            self.log("--keep-vocals active: vocal removal skipped", "⏭️")
             return resultat
 
-        self.log("Retrait du chant (HTDemucs) → instrumental", "🎧")
+        self.log("Vocal removal (HTDemucs) → instrumental", "🎧")
         sep = retirer_voix(gen["wav"], dossier, backend=backend)
-        self.log(f"Instrumental prêt : {sep['instrumental_mp3']} — écoute pour valider", "✅")
-        self.log(f"Stems conservés : {sep['stems_dir']} (chant isolé : vocals.wav)", "📦")
+        self.log(f"Instrumental ready: {sep['instrumental_mp3']} — listen to validate", "✅")
+        self.log(f"Stems kept: {sep['stems_dir']} (isolated vocals: vocals.wav)", "📦")
         resultat.update({
             "instrumental_wav": sep["instrumental_wav"],
             "instrumental_mp3": sep["instrumental_mp3"],

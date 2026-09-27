@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow TTS Dialogue : Synthèse Vocale Émotionnelle & Lip-Sync pour Dialogues RPG dans Godot 4.
-Produit :
-- Fichiers audio .wav et .ogg par réplique et émotion (Neutre, Joie, Colère, Tristesse, Blessé)
-- Piste de visèmes phonétiques pour Lip-Sync en temps réel
-- Manifeste JSON complet prêt pour Dialogic ou le DialogueManager de Godot 4
+TTS Dialogue Workflow: Emotional Voice Synthesis & Lip-Sync for RPG Dialogues in Godot 4.
+Produces:
+- .wav and .ogg audio files per line and emotion (Neutral, Joy, Anger, Sadness, Hurt)
+- Phonetic viseme track for real-time Lip-Sync
+- Complete JSON manifest ready for Dialogic or the Godot 4 DialogueManager
 """
 
 import json
@@ -16,7 +16,7 @@ from core.audio_ops import exporter_sfx_godot, synthetiser_voix_emotionnelle
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
-# Exemples de répliques par émotion si non fournies
+# Sample lines per emotion when not provided (French TTS content on purpose)
 DEFAULT_LINES = {
     "neutral": "Je veille sur ce sanctuaire depuis des siècles. Que cherchez-vous ?",
     "happy": "C'est un véritable honneur de voyager à vos côtés, noble allié !",
@@ -29,19 +29,19 @@ DEFAULT_LINES = {
 
 @WorkflowRegistry.register
 class TTSDialogueWorkflow(BaseWorkflow):
-    """Génération de voix de PNJ émotionnelles et synchronisation Lip-Sync pour Godot 4."""
+    """Generation of emotional NPC voices and Lip-Sync for Godot 4."""
 
     name = "tts_dialogue"
-    description = "Synthèse vocale émotionnelle (TTS / Kokoro) synchronisée avec les portraits RPG et lip-sync Godot"
+    description = "Emotional voice synthesis (TTS / Kokoro) synchronized with the RPG portraits and Godot lip-sync"
 
     emoji = "🎙️"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --emotions (partagé avec
-    # rpg_portrait, famille 2D) reste dans la table plate de cli/parser.py.
+    # CLI declaration (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). --emotions (shared with
+    # rpg_portrait, 2D family) stays in cli/parser.py's flat table.
     PARAMETRES = [
         dict(flags=("--pitch",), type=float, default=None,
-             help="Pitch vocal fondamental pour tts_dialogue (défaut workflow : 160 Hz)."),
+             help="Fundamental voice pitch for tts_dialogue (workflow default: 160 Hz)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -55,7 +55,7 @@ class TTSDialogueWorkflow(BaseWorkflow):
         dossier_voix = os.path.join(output_dir, f"{nom_base}_voice")
         os.makedirs(dossier_voix, exist_ok=True)
 
-        self.log(f"Synthèse vocale émotionnelle pour '{nom_base}' ({len(emotions_list)} répliques)...")
+        self.log(f"Emotional voice synthesis for '{nom_base}' ({len(emotions_list)} lines)...")
 
         manifeste_dialogues = {
             "character_id": nom_base,
@@ -67,7 +67,7 @@ class TTSDialogueWorkflow(BaseWorkflow):
 
         for emo in emotions_list:
             texte_replique = DEFAULT_LINES.get(emo, f"Parole de {personnage} en état {emo}.")
-            self.log(f"  • Synthèse de la voix [{emo}] : \"{texte_replique[:40]}...\"")
+            self.log(f"  • Voice synthesis [{emo}]: \"{texte_replique[:40]}...\"")
 
             audio_data, visemes = synthetiser_voix_emotionnelle(
                 texte=texte_replique,
@@ -92,16 +92,16 @@ class TTSDialogueWorkflow(BaseWorkflow):
 
             fichiers_produits.extend([chemin_wav, chemin_ogg])
 
-        # Exportation du manifeste complet JSON
+        # Export of the complete JSON manifest
         chemin_json = os.path.join(dossier_voix, f"{nom_base}_dialogue_manifest.json")
         with open(chemin_json, "w", encoding="utf-8") as f:
             json.dump(manifeste_dialogues, f, indent=2, ensure_ascii=False)
 
         fichiers_produits.append(chemin_json)
 
-        self.log(f"Packs de dialogues & voix prêts dans '{dossier_voix}/' :", emoji="🎉")
-        self.log(f"  • Manifeste Lip-Sync : {chemin_json}")
-        self.log(f"  • Répliques audio   : {len(emotions_list)} fichiers .wav / .ogg", emoji="💎")
+        self.log(f"Dialogue & voice packs ready in '{dossier_voix}/':", emoji="🎉")
+        self.log(f"  • Lip-Sync manifest : {chemin_json}")
+        self.log(f"  • Audio lines       : {len(emotions_list)} .wav / .ogg files", emoji="💎")
 
         return {
             "manifest_json": chemin_json,

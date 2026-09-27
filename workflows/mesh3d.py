@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Mesh 3D : Génération de modèles 3D (.glb) complets pour Godot Engine via Blender headless.
-Prend un prompt ou une image, génère le pack de textures PBR, et exporte le modèle 3D .glb prêt à l'emploi.
+Mesh 3D Workflow: generation of complete 3D models (.glb) for Godot Engine via Blender headless.
+Takes a prompt or an image, generates the PBR texture pack, and exports the ready-to-use .glb 3D model.
 """
 
 import os
@@ -17,7 +17,7 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class Mesh3DWorkflow(BaseWorkflow):
     name = "mesh3d"
-    description = "Génération de modèle 3D maillé (.glb) complet avec textures PBR pour Godot (Blender Headless)"
+    description = "Complete meshed 3D model (.glb) generation with PBR textures for Godot (Blender Headless)"
 
     emoji = "🎲"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -27,16 +27,16 @@ class Mesh3DWorkflow(BaseWorkflow):
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
 
         if not concept and not input_image:
-            raise ValueError("Le paramètre 'prompt' ou 'input' est requis pour le workflow mesh3d.")
+            raise ValueError("The 'prompt' or 'input' parameter is required for the mesh3d workflow.")
 
         if not verifier_blender():
-            raise EnvironmentError("Blender n'est pas détecté dans le PATH système. Veuillez installer Blender ou l'ajouter au PATH.")
+            raise EnvironmentError("Blender is not detected in the system PATH. Please install Blender or add it to the PATH.")
 
         os.makedirs(output_dir, exist_ok=True)
         nom_base = params.get("output") or (slugifier_texte(concept) if concept else Path(input_image).stem)
 
-        # 1. Génération ou récupération des textures PBR
-        self.log(f"Préparation des textures PBR pour le modèle 3D ({shape.upper()})...")
+        # 1. Generation or retrieval of the PBR textures
+        self.log(f"Preparing the PBR textures for the 3D model ({shape.upper()})...")
         wf_pbr = WorkflowRegistry.get("material3d")(self.config)
         pbr_res = wf_pbr.run(params)
 
@@ -45,8 +45,8 @@ class Mesh3DWorkflow(BaseWorkflow):
         orm_path = pbr_res.get("orm")
         height_path = pbr_res.get("height")
 
-        # 2. Construction et Export GLB via Blender headless
-        self.log(f"Construction du maillage 3D ({shape}) et export .glb via Blender...", emoji="🔨")
+        # 2. Build and GLB export via Blender headless
+        self.log(f"Building the 3D mesh ({shape}) and exporting the .glb via Blender...", emoji="🔨")
         fichier_glb = exporter_mesh_pbr_glb(
             nom_base=nom_base,
             output_dir=output_dir,
@@ -57,7 +57,7 @@ class Mesh3DWorkflow(BaseWorkflow):
             height_path=height_path
         )
 
-        self.log(f"Modèle 3D Godot prêt : {fichier_glb}", emoji="🎮")
+        self.log(f"Godot 3D model ready: {fichier_glb}", emoji="🎮")
 
         return {
             "glb_path": fichier_glb,

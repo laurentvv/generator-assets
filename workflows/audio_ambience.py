@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Audio Ambience : Ambiances Sonores Immersives & Paysages Sonores Procéduraux pour Godot 4.
-Produit :
-- Fichier audio stéréo WAV (PCM 16-bit)
-- Fichier audio OGG Vorbis en boucle continue sans couture (Seamless Loop)
-- Ressource Godot 4 AudioBusLayout (.tres) avec Reverb et Filtres atmosphériques
-- Scène Godot 4 AudioStreamPlayer (.tscn)
+Audio Ambience Workflow: immersive sound ambiences & procedural soundscapes for Godot 4.
+Produces:
+- Stereo WAV audio file (PCM 16-bit)
+- Seamless continuous loop OGG Vorbis audio file (Seamless Loop)
+- Godot 4 AudioBusLayout resource (.tres) with atmospheric Reverb and Filters
+- Godot 4 AudioStreamPlayer scene (.tscn)
 """
 
 import os
@@ -22,7 +22,7 @@ def exporter_scene_ambiance_godot(
     output_dir: str,
     chemin_rel_ogg: str
 ) -> str:
-    """Génère une scène Godot 4 avec un AudioStreamPlayer configuré en boucle sur le bus Ambience."""
+    """Generates a Godot 4 scene with an AudioStreamPlayer set to loop on the Ambience bus."""
     chemin_tscn = os.path.join(output_dir, f"{nom_base}_player.tscn")
     code_tscn = f"""[gd_scene load_steps=2 format=3]
 
@@ -41,20 +41,20 @@ bus = &"Ambience"
 
 @WorkflowRegistry.register
 class AudioAmbienceWorkflow(BaseWorkflow):
-    """Génération de paysages sonores et ambiances immersives bouclables pour Godot 4."""
+    """Generation of loopable soundscapes and immersive ambiences for Godot 4."""
 
     name = "audio_ambience"
-    description = "Ambiances sonores immersives & paysages sonores procéduraux en boucle continue pour Godot 4 (.wav / .ogg / .tres)"
+    description = "Immersive sound ambiences & procedural soundscapes in seamless loops for Godot 4 (.wav / .ogg / .tres)"
 
     emoji = "🌌"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). Flag conservé pour la
-    # surface : le run lit flow_type puis vfx_type en priorité (ambience_type
-    # n'est actuellement lu nulle part — ne pas câbler sans validation).
+    # CLI declaration (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). Flag kept for the
+    # surface: the run reads flow_type then vfx_type first (ambience_type
+    # is currently read nowhere — do not wire it without validation).
     PARAMETRES = [
         dict(flags=("--ambience-type",), choices=["dungeon", "forest", "storm", "space", "campfire", "tavern"],
-             help="Type d'ambiance pour audio_ambience."),
+             help="Ambience type for audio_ambience."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -66,23 +66,23 @@ class AudioAmbienceWorkflow(BaseWorkflow):
 
         os.makedirs(output_dir, exist_ok=True)
 
-        self.log(f"Synthèse de l'ambiance sonore stéréo pour '{prompt}' (Durée: {duree:.1f}s, boucle sans couture)...")
+        self.log(f"Stereo sound ambience synthesis for '{prompt}' (Duration: {duree:.1f}s, seamless loop)...")
 
-        # Synthèse stéréo multicouche en boucle
+        # Multilayer stereo looped synthesis
         audio_stereo = synthetiser_ambiance(ambience_type=ambience_type, duree=duree, sr=44100)
 
-        # Export audio et bus Godot 4
-        self.log("Exportation des formats audio et configuration du bus Godot 4...")
+        # Audio export and Godot 4 bus
+        self.log("Exporting the audio formats and configuring the Godot 4 bus...")
         chemin_wav, chemin_ogg, chemin_bus = exporter_ambiance_godot(nom_base, output_dir, audio_stereo, sr=44100)
 
-        # Scène Godot 4
+        # Godot 4 scene
         chemin_tscn = exporter_scene_ambiance_godot(nom_base, output_dir, f"res://{nom_base}.ogg")
 
-        self.log(f"Ambiance sonore exportée avec succès dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Piste WAV 16-bit : {chemin_wav}")
-        self.log(f"  • Piste OGG Loop   : {chemin_ogg}")
+        self.log(f"Sound ambience exported successfully to '{output_dir}/':", emoji="🎉")
+        self.log(f"  • 16-bit WAV track : {chemin_wav}")
+        self.log(f"  • OGG Loop track   : {chemin_ogg}")
         self.log(f"  • AudioBusLayout   : {chemin_bus}")
-        self.log(f"  • Scène Godot 4    : {chemin_tscn}", emoji="💎")
+        self.log(f"  • Godot 4 scene    : {chemin_tscn}", emoji="💎")
 
         return {
             "wav": chemin_wav,

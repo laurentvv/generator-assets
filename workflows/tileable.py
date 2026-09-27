@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Tileable : Génération de textures raccordables (Seamless / Tileable) pour TileMaps Godot.
-Utilise le mode circular padding de sd-cli et produit la tuile ainsi qu'un aperçu de raccordement 3x3.
+Tileable workflow: generating seamless textures (Seamless / Tileable) for Godot TileMaps.
+Uses the sd-cli circular padding mode and produces the tile plus a 3x3 seam-check preview.
 """
 
 import os
@@ -19,22 +19,22 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class TileableWorkflow(BaseWorkflow):
     name = "tileable"
-    description = "Génération de textures seamless / tuiles de terrain infinies pour TileMaps Godot"
+    description = "Seamless texture generation / infinite terrain tiles for Godot TileMaps"
 
     emoji = "🔲"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). Le dest no_preview est
-    # transformé en clé preview par cli/parser.construire_params.
+    # CLI declaration (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). The no_preview dest is
+    # turned into the preview key by cli/parser.construire_params.
     PARAMETRES = [
         dict(flags=("--no-preview",), action="store_true",
-             help="Désactive l'aperçu 3x3 pour le workflow tileable."),
+             help="Disables the 3x3 preview for the tileable workflow."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:
-            raise ValueError("Le paramètre 'prompt' est requis pour le workflow tileable.")
+            raise ValueError("The 'prompt' parameter is required for the tileable workflow.")
 
         nom_base = params.get("output") or slugifier_texte(concept)
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
@@ -42,7 +42,7 @@ class TileableWorkflow(BaseWorkflow):
         creer_preview = params.get("preview", True)
 
         os.makedirs(output_dir, exist_ok=True)
-        self.log(f"Génération d'une texture seamless pour '{concept}'...")
+        self.log(f"Generating a seamless texture for '{concept}'...")
 
         style_tuile = (
             "seamless texture, continuous repeating pattern, top-down view, "
@@ -59,7 +59,7 @@ class TileableWorkflow(BaseWorkflow):
             sans_llm=params.get("sans_llm", params.get("no_llm", True))
         )
 
-        # Rendu avec le flag circular pour forcer le bouclage des bords
+        # Render with the circular flag to force edge looping
         img_tuile = generer_image_vulkan(
             prompt=prompt_complet,
             sd_cli=self.config.get("sd_cli"),
@@ -80,15 +80,15 @@ class TileableWorkflow(BaseWorkflow):
 
         chemin_tuile = os.path.join(output_dir, f"{nom_base}_tile.png")
         img_tuile.save(chemin_tuile, "PNG")
-        self.log(f"Tuile seamless sauvegardée : {chemin_tuile}", emoji="✅")
+        self.log(f"Seamless tile saved: {chemin_tuile}", emoji="✅")
 
-        # Générer un aperçu de répétition 3x3 pour valider visuellement le raccord
+        # Generate a 3x3 repeat preview to visually validate the seam
         chemin_preview = None
         if creer_preview:
             img_preview = creer_apercu_tuilage(img_tuile, rep_x=3, rep_y=3)
             chemin_preview = os.path.join(output_dir, f"{nom_base}_tile_preview3x3.png")
             img_preview.save(chemin_preview, "PNG")
-            self.log(f"Aperçu de tuilage 3x3 généré : {chemin_preview}", emoji="🖼️")
+            self.log(f"3x3 tiling preview generated: {chemin_preview}", emoji="🖼️")
 
         return {
             "tile_path": chemin_tuile,

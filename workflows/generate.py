@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Standard : Génération d'asset 2D unitaire pour Godot.
-LLM (enrichissement) -> Flux.1 (Vulkan + LoRAs) -> Détourage Floodfill -> Centrage -> Export PNG.
+Standard Workflow: single 2D asset generation for Godot.
+LLM (enrichment) -> Flux.1 (Vulkan + LoRAs) -> Floodfill cutout -> Centering -> PNG export.
 """
 
 import os
@@ -20,21 +20,21 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class GenerateWorkflow(BaseWorkflow):
     name = "generate"
-    description = "Génération d'un asset 2D isolé (LLM -> Diffusion -> Détourage -> Centrage Godot -> Upscale IA optionnel)"
+    description = "Generation of a single 2D asset (LLM -> Diffusion -> Cutout -> Godot centering -> optional AI upscale)"
 
     emoji = "🎨"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declaration (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--segmenter",), default="auto", choices=["auto", "birefnet", "rmbg", "floodfill", "none"],
-             help="Moteur de détourage 2D."),
+             help="2D cutout engine."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         concept = params.get("prompt")
         if not concept:
-            raise ValueError("Le paramètre 'prompt' est requis pour le workflow generate.")
+            raise ValueError("The 'prompt' parameter is required for the generate workflow.")
 
         type_asset = params.get("type", "item")
         nom_sortie = params.get("output") or slugifier_texte(concept)
@@ -54,12 +54,12 @@ class GenerateWorkflow(BaseWorkflow):
 
         os.makedirs(output_dir, exist_ok=True)
 
-        # 1. Étape LLM
+        # 1. LLM step
         if sans_llm:
-            self.log("Mode direct : prompt brut sans LLM.")
+            self.log("Direct mode: raw prompt without LLM.")
             prompt_complet = f"{concept}, {self.config.get('style_anchor')}"
         else:
-            self.log(f"Direction artistique pour '{concept}'...")
+            self.log(f"Art direction for '{concept}'...")
             prompt_complet = construire_prompt_coherant(
                 concept=concept,
                 type_asset=type_asset,
@@ -68,12 +68,12 @@ class GenerateWorkflow(BaseWorkflow):
                 style_anchor=self.config.get("style_anchor")
             )
 
-        # 2. Étape Diffusion (Flux.1 ou SDXL + LoRAs + Init Img)
+        # 2. Diffusion step (Flux.1 or SDXL + LoRAs + Init Img)
         init_image = params.get("input")
         force_denoise = float(params.get("strength", 0.55)) if init_image else 0.75
         if init_image:
-            self.log(f"Guidage par image source ({init_image}, strength={force_denoise})...")
-        self.log(f"Rendu de diffusion Vulkan ({steps} étapes, guidance={guidance})...")
+            self.log(f"Guidance from source image ({init_image}, strength={force_denoise})...")
+        self.log(f"Vulkan diffusion rendering ({steps} steps, guidance={guidance})...")
         img_brute = generer_image_vulkan(
             prompt=prompt_complet,
             sd_cli=self.config.get("sd_cli"),
@@ -93,12 +93,12 @@ class GenerateWorkflow(BaseWorkflow):
             lora_dir=lora_dir
         )
 
-        # 3. Post-Processing & Détourage
+        # 3. Post-Processing & Cutout
         segmenter_mode = params.get("segmenter", "auto")
         if segmenter_mode != "none":
-            self.log("Détourage du fond et centrage carré...")
+            self.log("Cutting out the background and centering to a square...")
         else:
-            self.log("Cadrage de l'image (sans détourage de fond)...")
+            self.log("Framing the image (no background cutout)...")
         dim_redim = None if (upscale_actif or (taille_sprite and taille_sprite > 1024)) else taille_sprite
         img_finale = post_process_asset(
             image=img_brute,
@@ -107,10 +107,10 @@ class GenerateWorkflow(BaseWorkflow):
             segmenter=segmenter_mode
         )
 
-        # 4. Upscaling IA Optionnel (1024 -> 4096 px)
+        # 4. Optional AI Upscaling (1024 -> 4096 px)
         if upscale_actif or (taille_sprite and taille_sprite > 1024):
             taille_cible = taille_sprite if (taille_sprite and taille_sprite > 1024) else None
-            self.log(f"🔍 Upscaling IA ESRGAN ({facteur_upscale}x)...")
+            self.log(f"🔍 ESRGAN AI upscaling ({facteur_upscale}x)...")
             img_finale = upscaler_asset(
                 image_entree=img_finale,
                 facteur=facteur_upscale,
@@ -119,11 +119,11 @@ class GenerateWorkflow(BaseWorkflow):
                 sd_cli=self.config.get("sd_cli"),
                 backend=self.config.get("backend")
             )
-            self.log(f"Asset agrandi en résolution {img_finale.size[0]}x{img_finale.size[1]} px", emoji="✨")
+            self.log(f"Asset upscaled to resolution {img_finale.size[0]}x{img_finale.size[1]} px", emoji="✨")
 
         chemin_fichier = os.path.join(output_dir, f"{Path(nom_sortie).stem}.png")
         img_finale.save(chemin_fichier, "PNG")
-        self.log(f"Asset exporté avec succès : {chemin_fichier} ({img_finale.size[0]}x{img_finale.size[1]} px)", emoji="✅")
+        self.log(f"Asset exported successfully: {chemin_fichier} ({img_finale.size[0]}x{img_finale.size[1]} px)", emoji="✅")
 
         return {
             "output_path": chemin_fichier,

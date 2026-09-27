@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Upscale : Super-résolution haute fidélité pour assets 2D.
-Supporte les modèles IA ESRGAN (RealESRGAN_x4plus, Anime_6B, 4x-UltraSharp) sous Vulkan et Smart Lanczos.
+Upscale Workflow: high-fidelity super-resolution for 2D assets.
+Supports ESRGAN AI models (RealESRGAN_x4plus, Anime_6B, 4x-UltraSharp) on Vulkan and Smart Lanczos.
 """
 
 import os
@@ -18,13 +18,13 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class UpscaleWorkflow(BaseWorkflow):
     name = "upscale"
-    description = "Super-résolution IA (ESRGAN Vulkan / Lanczos) pour Images et Vidéos (.webm / .mp4)"
+    description = "AI super-resolution (ESRGAN Vulkan / Lanczos) for Images and Videos (.webm / .mp4)"
 
     emoji = "🔍"
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_path = params.get("input")
         if not input_path or not os.path.exists(input_path):
-            raise FileNotFoundError(f"Fichier source introuvable : {input_path}")
+            raise FileNotFoundError(f"Source file not found: {input_path}")
 
         facteur = float(params.get("factor", 2.0))
         taille_cible = params.get("size")
@@ -35,10 +35,10 @@ class UpscaleWorkflow(BaseWorkflow):
 
         os.makedirs(output_dir, exist_ok=True)
 
-        # 1. Détection et traitement des fichiers Vidéo (.webm, .mp4, .avi)
+        # 1. Detection and processing of Video files (.webm, .mp4, .avi)
         ext_in = Path(input_path).suffix.lower()
         if ext_in in [".webm", ".mp4", ".avi", ".mov", ".mkv"]:
-            self.log(f"🎬 Détection d'un fichier vidéo : {input_path}")
+            self.log(f"🎬 Video file detected: {input_path}")
             stem_source = Path(input_path).stem
             nom_final = nom_sortie or f"{stem_source}_upscaled_{int(facteur)}x.mp4"
             if not nom_final.lower().endswith((".mp4", ".webm")):
@@ -57,7 +57,7 @@ class UpscaleWorkflow(BaseWorkflow):
                 log_fn=self.log
             )
 
-            # Scène Godot 4 VideoStreamPlayer associée
+            # Associated Godot 4 VideoStreamPlayer scene
             godot_scene = os.path.splitext(video_upscaled)[0] + "_player.tscn"
             rel_name = os.path.basename(video_upscaled)
             try:
@@ -76,7 +76,7 @@ expand = true
 # stream = ExtResource("res://assets/{rel_name}")
 """)
             except Exception as e:
-                self.log(f"Avertissement création scène Godot : {e}", emoji="⚠️")
+                self.log(f"Warning during Godot scene creation: {e}", emoji="⚠️")
 
             return {
                 "output_path": video_upscaled,
@@ -84,9 +84,9 @@ expand = true
                 "is_video": True
             }
 
-        # 2. Traitement standard des Images 2D
+        # 2. Standard processing of 2D Images
         img_source = Image.open(input_path)
-        self.log(f"Chargement de l'image source : {input_path} ({img_source.size[0]}x{img_source.size[1]} {img_source.mode})")
+        self.log(f"Loading the source image: {input_path} ({img_source.size[0]}x{img_source.size[1]} {img_source.mode})")
 
         img_upscaled = upscaler_asset(
             image_entree=img_source,
@@ -103,7 +103,7 @@ expand = true
         chemin_sortie = os.path.join(output_dir, f"{Path(nom_final).stem}.png")
 
         img_upscaled.save(chemin_sortie, "PNG")
-        self.log(f"Image agrandie sauvegardée : {chemin_sortie} ({img_upscaled.size[0]}x{img_upscaled.size[1]} {img_upscaled.mode})", emoji="✅")
+        self.log(f"Upscaled image saved: {chemin_sortie} ({img_upscaled.size[0]}x{img_upscaled.size[1]} {img_upscaled.mode})", emoji="✅")
 
         return {
             "output_path": chemin_sortie,
