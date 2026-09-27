@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Création et Restauration du Skin Propre Officiel de Marc pour MakeHuman / MPFB2.
-Génère une texture de peau sans couture, homogène et anatomiquement parfaite,
-avec la colorimétrie canonique de Vent-Gris (teint diaphane/pâle d'hiver, sous-ton froid).
+Creation and Restoration of Marc's Official Clean Skin for MakeHuman / MPFB2.
+Generates a seamless, homogeneous, anatomically perfect skin texture,
+with the canonical Grey-Wind color grading (diaphanous/winter-pale complexion, cold undertone).
 """
 
 import os
@@ -41,32 +41,32 @@ DIFFUSE_POC = os.path.join(DOSSIER_POC, "marc_mpfb2_young_lightskinned_male_diff
 
 def main():
     print("=" * 65)
-    print(" 🎨 RESTAURATION DE LA PEAU OFFICIELLE DE MARC (VENT-GRIS) ")
+    print(" 🎨 RESTORATION OF MARC'S OFFICIAL SKIN (GREY-WIND) ")
     print("=" * 65)
 
     if not os.path.exists(SKIN_BASE_ORIGINALE):
-        raise FileNotFoundError(f"Texture originale MakeHuman introuvable : {SKIN_BASE_ORIGINALE}")
+        raise FileNotFoundError(f"Original MakeHuman texture not found: {SKIN_BASE_ORIGINALE}")
 
-    print(f"📖 Chargement du gabarit UV original MakeHuman : {SKIN_BASE_ORIGINALE}")
+    print(f"📖 Loading the original MakeHuman UV template: {SKIN_BASE_ORIGINALE}")
     base_img = Image.open(SKIN_BASE_ORIGINALE).convert("RGB")
 
-    # Colorimétrie Marc (Vent-Gris : enfant 8 ans, hiver, forteresse froide) :
-    # - Pâleur douce (luminosité légèrement augmentée)
-    # - Saturation ajustée (teint diaphane)
-    # - Sous-ton froid subtil
+    # Marc color grading (Grey-Wind: 8-year-old child, winter, cold fortress):
+    # - Soft paleness (slightly increased brightness)
+    # - Adjusted saturation (diaphanous complexion)
+    # - Subtle cold undertone
     enh_bright = ImageEnhance.Brightness(base_img)
     img_bright = enh_bright.enhance(1.04)
 
     enh_color = ImageEnhance.Color(img_bright)
     img_desat = enh_color.enhance(0.92)
 
-    # Teinte légèrement plus froide
+    # Slightly colder hue
     arr = np.array(img_desat, dtype=np.float32)
-    arr[:, :, 0] *= 0.99  # Rouge très légèrement adouci
-    arr[:, :, 2] = np.clip(arr[:, :, 2] * 1.02, 0, 255)  # Bleu subtilement rehaussé (froid)
+    arr[:, :, 0] *= 0.99  # Red very slightly softened
+    arr[:, :, 2] = np.clip(arr[:, :, 2] * 1.02, 0, 255)  # Blue subtly boosted (cold)
     skin_marc = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
 
-    # 1. Sauvegarde Diffuse
+    # 1. Diffuse save
     for d in [DOSSIER_MPFB, DOSSIER_LOCAL]:
         os.makedirs(d, exist_ok=True)
 
@@ -74,26 +74,26 @@ def main():
     skin_marc.save(DIFFUSE_LOCAL, "PNG", optimize=True)
     if os.path.exists(DOSSIER_POC):
         skin_marc.save(DIFFUSE_POC, "PNG", optimize=True)
-    print(f"✅ Texture Diffuse propre exportée : {DIFFUSE_MPFB}")
+    print(f"✅ Clean Diffuse texture exported: {DIFFUSE_MPFB}")
 
-    # 2. Génération de la Normal Map PBR (Micro-relief des pores)
+    # 2. PBR Normal Map generation (pore micro-relief)
     from core.image_ops import generer_normal_map
-    print("🧊 Génération de la Normal Map PBR...")
+    print("🧊 Generating the PBR Normal Map...")
     norm_img = generer_normal_map(skin_marc, strength=2.0)
     norm_img.save(NORMAL_MPFB, "PNG")
     norm_img.save(NORMAL_LOCAL, "PNG")
-    print(f"✅ Normal Map exportée : {NORMAL_MPFB}")
+    print(f"✅ Normal Map exported: {NORMAL_MPFB}")
 
-    # 3. Vignette .thumb propre pour MPFB
+    # 3. Clean .thumb thumbnail for MPFB
     w, h = skin_marc.size
     thumb_crop = skin_marc.crop((int(w * 0.35), int(h * 0.15), int(w * 0.65), int(h * 0.45)))
     thumb_img = thumb_crop.resize((256, 256), Image.Resampling.LANCZOS).convert("RGBA")
     thumb_img.save(THUMB_MPFB, "PNG")
     thumb_img.save(THUMB_LOCAL, "PNG")
-    print(f"✅ Vignette .thumb exportée : {THUMB_MPFB}")
+    print(f"✅ .thumb thumbnail exported: {THUMB_MPFB}")
 
-    # 4. Fichier Matériau .mhmat MakeHuman
-    mhmat_content = """# Material file for MakeHuman / MPFB - Marc Novice (Vent-Gris)
+    # 4. MakeHuman .mhmat material file
+    mhmat_content = """# Material file for MakeHuman / MPFB - Marc Novice (Grey-Wind)
 # Character: Marc (8 years old medieval novice boy)
 # Project: L'HERITIER DU VIDE
 
@@ -144,10 +144,10 @@ shaderConfig diffuse True
         f.write(mhmat_content)
     with open(MHMAT_LOCAL, "w", encoding="utf-8") as f:
         f.write(mhmat_content)
-    print(f"✅ Matériau .mhmat exporté : {MHMAT_MPFB}")
+    print(f"✅ .mhmat material exported: {MHMAT_MPFB}")
 
     print("\n" + "=" * 65)
-    print(" 🎉 PEAU ET MATÉRIAU OFFICIELS RESTAURÉS AVEC SUCCÈS ! ")
+    print(" 🎉 OFFICIAL SKIN AND MATERIAL SUCCESSFULLY RESTORED! ")
     print("=" * 65)
 
 

@@ -1,7 +1,7 @@
-# Beauty render Cycles GPU — pattern blender-skills "lighting/lookdev/rendering" :
-# studio 3 points renforcé, sol sombre récepteur d'ombres, Cycles HIP (RX 6950 XT),
-# débruitage activé. Adapté du worker scripts/blendkit_blender_job.py.
-# Usage : blender --background --python beauty_render.py -- <glb_in> <out_png> [res=1200] [samples=96]
+# Beauty render Cycles GPU — blender-skills pattern "lighting/lookdev/rendering":
+# reinforced 3-point studio, dark shadow-catching ground, Cycles HIP (RX 6950 XT),
+# denoising enabled. Adapted from the scripts/blendkit_blender_job.py worker.
+# Usage: blender --background --python beauty_render.py -- <glb_in> <out_png> [res=1200] [samples=96]
 
 import sys
 
@@ -16,7 +16,7 @@ samples = int(argv[3]) if len(argv) > 3 else 96
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
@@ -37,7 +37,7 @@ for o in meshes:
     o.location.z -= min(p.z for p in pts)
 bpy.context.view_layer.update()
 
-# Sol sombre récepteur d'ombres
+# Dark shadow-catching ground
 bpy.ops.mesh.primitive_plane_add(size=16, location=(0, 0, -0.001))
 sol = bpy.context.active_object
 sol.name = "COL_Sol"
@@ -49,7 +49,7 @@ bsdf_sol.inputs["Roughness"].default_value = 0.65
 bsdf_sol.inputs["Metallic"].default_value = 0.1
 sol.data.materials.append(mat_sol)
 
-# Studio 3 points (key chaude, fill froide, rim fort) + rim arrière
+# 3-point studio (warm key, cool fill, strong rim) + back rim
 def area_light(nom, energie, taille, loc, couleur):
     ld = bpy.data.lights.new(nom, type="AREA")
     ld.energy = energie
@@ -97,13 +97,13 @@ try:
     scn.cycles.device = "GPU"
     actifs = [d.name for d in prefs.devices if d.use]
     detail = ", ".join(actifs) or "CPU"
-except Exception as e:  # noqa: BLE001 — CPU en dernier recours
-    print(f"GPU indisponible ({e}), Cycles en CPU")
+except Exception as e:  # noqa: BLE001 — CPU as last resort
+    print(f"GPU unavailable ({e}), Cycles on CPU")
 scn.cycles.samples = samples
 scn.cycles.use_denoising = True
 scn.render.resolution_x = res
 scn.render.resolution_y = int(res * 0.75)
 scn.render.filepath = out_png
 bpy.ops.render.render(write_still=True)
-print(f"BEAUTY_OK: Cycles [{detail}] {samples} échantillons → {out_png}")
+print(f"BEAUTY_OK: Cycles [{detail}] {samples} samples → {out_png}")
 print("SUCCESS:")

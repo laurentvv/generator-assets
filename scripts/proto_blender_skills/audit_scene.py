@@ -1,6 +1,6 @@
-# Audit de scène GLB — pattern blender-skills "asset-optimization/qa-review", adapté headless.
-# Usage : blender --background --python audit_scene.py -- <glb_in> <json_out>
-# Sortie : AUDIT_JSON:{...} sur stdout + fichier JSON.
+# GLB scene audit — blender-skills pattern "asset-optimization/qa-review", adapted headless.
+# Usage: blender --background --python audit_scene.py -- <glb_in> <json_out>
+# Output: AUDIT_JSON:{...} on stdout + JSON file.
 
 import json
 import sys

@@ -1,8 +1,8 @@
-# Découpe multi-assets : éclater un GLB multi-meshes en GLB séparés (un par mesh) —
-# pattern blender-skills "scene-assembly/export-pipeline" : extraire des props d'une
-# scène CC0 ou d'un pack pour les rendre individuellement exploitables dans Godot.
-# Usage : blender --background --python decoupe_assets.py -- <glb_in> <out_dir>
-# Sortie : <slug>.glb par mesh + DECOUPE_JSON:{...} (avant/après, verts/faces).
+# Multi-asset split: break a multi-mesh GLB into separate GLBs (one per mesh) —
+# blender-skills pattern "scene-assembly/export-pipeline": extract props from a
+# CC0 scene or a pack to make them individually usable in Godot.
+# Usage: blender --background --python decoupe_assets.py -- <glb_in> <out_dir>
+# Output: one <slug>.glb per mesh + DECOUPE_JSON:{...} (before/after, verts/faces).
 
 import json
 import os
@@ -24,8 +24,8 @@ def slug(nom):
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
-assert len(meshes) > 1, "GLB mono-mesh : rien à découper"
+assert meshes, "no mesh in the GLB"
+assert len(meshes) > 1, "single-mesh GLB: nothing to split"
 
 sorties = []
 for i, o in enumerate(meshes):

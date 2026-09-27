@@ -4,9 +4,9 @@ import bpy
 blend_p = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.blend"
 bpy.ops.wm.open_mainfile(filepath=blend_p)
 
-# Position de chaque objet dans le monde
+# World position of each object
 print("=" * 60)
-print("=== POSITIONS GLOBALES DES MESHES DANS LE BLEND ===")
+print("=== GLOBAL MESH POSITIONS IN THE BLEND ===")
 for o in bpy.data.objects:
     if o.type == 'MESH':
         mw = o.matrix_world
@@ -19,20 +19,20 @@ for o in bpy.data.objects:
         print(f"  X bounds: {min(verts_x):.3f} -> {max(verts_x):.3f} m")
         print(f"  Modifiers: {[m.name + ' (' + m.type + ')' for m in o.modifiers]}")
 
-# Évaluer les vertices AVEC les modificateurs appliqués (depsgraph)
+# Evaluate the vertices WITH modifiers applied (depsgraph)
 dg = bpy.context.evaluated_depsgraph_get()
-print("\n=== POSITIONS ÉVALUÉES (AVEC MODIFICATEURS/ARMATURE) ===")
+print("\n=== EVALUATED POSITIONS (WITH MODIFIERS/ARMATURE) ===")
 for o in bpy.data.objects:
     if o.type == 'MESH':
         ev = o.evaluated_get(dg)
         mw = o.matrix_world
         eval_z = [ (mw @ v.co).z for v in ev.data.vertices ]
         eval_y = [ (mw @ v.co).y for v in ev.data.vertices ]
-        print(f"Mesh '{o.name}' ÉVALUÉ :")
+        print(f"Mesh '{o.name}' EVALUATED:")
         print(f"  Z bounds: {min(eval_z):.3f} -> {max(eval_z):.3f} m")
         print(f"  Y bounds: {min(eval_y):.3f} -> {max(eval_y):.3f} m")
 
-# Rendu de la vue 3D exacte du .blend
+# Render of the exact .blend 3D view
 cam_data = bpy.data.cameras.new("InspectCam")
 cam_obj = bpy.data.objects.new("InspectCam", cam_data)
 bpy.context.collection.objects.link(cam_obj)
@@ -43,4 +43,4 @@ bpy.context.scene.camera = cam_obj
 bpy.context.scene.render.engine = 'BLENDER_WORKBENCH'
 bpy.context.scene.render.filepath = r"C:\GIT\generator-assets\godot_assets\inspect_viewport_blend.png"
 bpy.ops.render.render(write_still=True)
-print(r"✅ Capture viewport enregistrée : C:\GIT\generator-assets\godot_assets\inspect_viewport_blend.png")
+print(r"✅ Viewport capture saved: C:\GIT\generator-assets\godot_assets\inspect_viewport_blend.png")

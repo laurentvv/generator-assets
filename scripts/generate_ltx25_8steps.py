@@ -17,14 +17,14 @@ OUTPUT_DIR = r"C:\GIT\generator-assets\output\comparatif"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 OUT_WEBM = os.path.join(OUTPUT_DIR, "ltx25_dragon_8steps.webm")
 
-# Prompt héroïque précis avec morphologie explicite
+# Precise heroic prompt with explicit morphology
 prompt = (
     "Cinematic heroic medium shot, a colossal golden dragon flying directly towards camera, "
     "jaws open roaring, sharp fangs, radiant glowing amber eyes, majestic curved horns, "
     "massive wings spread wide, shimmering iridescent gold scales, dramatic clouds, sunset lighting, masterpiece, 8k"
 )
 
-# Sigmas officiels distillés Lightricks
+# Official Lightricks distilled sigmas
 SIGMAS = "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0"
 
 cmd = [
@@ -50,14 +50,14 @@ cmd = [
 ]
 
 print("=" * 75)
-print("🎬 Lancement LTX-2.5 officiel en 8 étapes distillées avec sigmas Lightricks")
-print(f"   Sortie : {OUT_WEBM}")
+print("🎬 Launching official LTX-2.5 in 8 distilled steps with Lightricks sigmas")
+print(f"   Output: {OUT_WEBM}")
 print("=" * 75)
 
 t_start = time.time()
 res = subprocess.run(cmd)
 elapsed = time.time() - t_start
 if res.returncode == 0:
-    print(f"\n✅ LTX-2.5 8-steps généré en {elapsed:.2f}s ({elapsed/60:.2f} min) !")
+    print(f"\n✅ LTX-2.5 8-steps generated in {elapsed:.2f}s ({elapsed/60:.2f} min)!")
 else:
-    print(f"\n❌ Erreur code {res.returncode}")
+    print(f"\n❌ Error code {res.returncode}")

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Aperçu d'écoute d'un candidat music_bg : boucle corrigée (zone stable) répétée
-3 fois et normalisée à -16 LUFS → ECOUTE_cand<N>_boucle_x3.mp3.
-Permet de juger la musique ET la couture de boucle avant la finalisation.
+Listening preview of a music_bg candidate: fixed loop (stable zone) repeated
+3 times and normalized to -16 LUFS -> ECOUTE_cand<N>_boucle_x3.mp3.
+Lets you judge both the music AND the loop seam before finalization.
 
-Usage :
+Usage:
   uv run python scripts/ecoute_candidat_music_bg.py <N> [dossier_output]
 """
 
@@ -42,7 +42,7 @@ def main():
     dossier = sys.argv[2] if len(sys.argv) > 2 else os.path.join("output", "music_bg")
     brut = os.path.join(dossier, "candidats", f"cand_{index}_brut.wav")
     if not os.path.exists(brut):
-        print(f"❌ Introuvable : {brut}")
+        print(f"❌ Not found: {brut}")
         sys.exit(1)
 
     audio, sr = charger_audio(brut)
@@ -60,10 +60,10 @@ def main():
     os.remove(wav_ecoute)
 
     verifier_boucle(brut)
-    bpm_txt = f"{infos['bpm']:.0f} BPM" if infos.get("bpm") else "ambiante"
-    print(f"🎧 cand_{index} : {bpm_txt}, boucle {infos['duree']:.1f} s ({infos['mesures']} mesures), "
-          f"départ {infos['depart_s']} s")
-    print(f"   → {os.path.abspath(mp3)} ({os.path.getsize(mp3) / 1048576:.2f} Mo)")
+    bpm_txt = f"{infos['bpm']:.0f} BPM" if infos.get("bpm") else "ambient"
+    print(f"🎧 cand_{index}: {bpm_txt}, loop {infos['duree']:.1f} s ({infos['mesures']} bars), "
+          f"start {infos['depart_s']} s")
+    print(f"   → {os.path.abspath(mp3)} ({os.path.getsize(mp3) / 1048576:.2f} MB)")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 """
 run_overnight_batch.py
-Pipeline de rendu nocturne autonome pour AMD Radeon RX 6950 XT (16 Go VRAM).
-Permet de lancer une file de generation video haute qualite (Wan 2.1 14B, Wan 2.2, MiniMax, LTX-2.5)
-pendant la nuit, avec encodage automatique en Full HD 1080p YouTube.
+Autonomous overnight rendering pipeline for AMD Radeon RX 6950 XT (16 GB VRAM).
+Launches a queue of high quality video generations (Wan 2.1 14B, Wan 2.2, MiniMax, LTX-2.5)
+during the night, with automatic encoding to Full HD 1080p YouTube.
 """
 import os
 import sys
@@ -21,7 +21,7 @@ CONFORM_SCRIPT = r"C:\GIT\generator-assets\scripts\conform_youtube_hd.py"
 OUTPUT_DIR = r"C:\GIT\generator-assets\output\overnight"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Modèles disponibles
+# Available models
 MODELS = {
     "wan14b": {
         "diffusion": r"C:\Modeles_LLM\wan2.1-t2v-14b-Q4_K_M.gguf",
@@ -80,9 +80,9 @@ DEFAULT_QUEUE = [
 def process_queue(queue=DEFAULT_QUEUE):
     log_file = os.path.join(OUTPUT_DIR, f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
     print("=" * 80)
-    print(f"🌙 DÉMARRAGE DU BATCH OVERNIGHT ({len(queue)} générations en file d'attente)")
-    print(f"   Dossier de sortie : {OUTPUT_DIR}")
-    print(f"   Fichier de log : {log_file}")
+    print(f"🌙 STARTING THE OVERNIGHT BATCH ({len(queue)} queued generations)")
+    print(f"   Output folder: {OUTPUT_DIR}")
+    print(f"   Log file: {log_file}")
     print("=" * 80)
 
     summary = []
@@ -99,8 +99,8 @@ def process_queue(queue=DEFAULT_QUEUE):
         out_hd = os.path.join(OUTPUT_DIR, f"{i:02d}_{name}_1080p.mp4")
         out_png = os.path.join(OUTPUT_DIR, f"{i:02d}_{name}_preview.png")
 
-        print(f"\n[{i}/{len(queue)}] 🚀 Lancement : {name} ({model_key.upper()}, {frames} trames, {steps} steps)")
-        print(f"   Prompt : {prompt[:80]}...")
+        print(f"\n[{i}/{len(queue)}] 🚀 Launching: {name} ({model_key.upper()}, {frames} frames, {steps} steps)")
+        print(f"   Prompt: {prompt[:80]}...")
 
         cmd = [
             SD_CLI,
@@ -124,23 +124,23 @@ def process_queue(queue=DEFAULT_QUEUE):
         try:
             subprocess.run(cmd, check=True)
             elapsed = time.time() - t0
-            print(f"   ✅ Rendu brut terminé en {elapsed:.1f}s ({elapsed/60:.1f} min)")
+            print(f"   ✅ Raw render done in {elapsed:.1f}s ({elapsed/60:.1f} min)")
 
             subprocess.run([FFMPEG, "-y", "-i", out_raw, "-vframes", "1", out_png], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
             subprocess.run([sys.executable, CONFORM_SCRIPT, out_raw, out_hd], check=True)
-            print(f"   🎥 Vidéo Full HD prête : {out_hd}")
+            print(f"   🎥 Full HD video ready: {out_hd}")
 
-            summary.append({"name": name, "status": "SUCCÈS", "duree_sec": elapsed, "fichier": out_hd})
+            summary.append({"name": name, "status": "SUCCESS", "duree_sec": elapsed, "fichier": out_hd})
         except Exception as e:
-            print(f"   ❌ ERREUR lors de l'exécution : {e}")
-            summary.append({"name": name, "status": f"ERREUR: {e}", "duree_sec": time.time() - t0, "fichier": None})
+            print(f"   ❌ ERROR during execution: {e}")
+            summary.append({"name": name, "status": f"ERROR: {e}", "duree_sec": time.time() - t0, "fichier": None})
 
     print("\n" + "=" * 80)
-    print("🌅 BATCH OVERNIGHT TERMINÉ AVEC SUCCÈS !")
+    print("🌅 OVERNIGHT BATCH COMPLETED SUCCESSFULLY!")
     print("=" * 80)
     for s in summary:
-        print(f" - {s['name']} : {s['status']} ({s['duree_sec']/60:.1f} min)")
+        print(f" - {s['name']}: {s['status']} ({s['duree_sec']/60:.1f} min)")
 
 if __name__ == "__main__":
     process_queue()

@@ -9,7 +9,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {absolute_package_str} introuvable")
+    raise ValueError(f"Module {absolute_package_str} not found")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -21,17 +21,17 @@ HumanService = dynamic_import("mpfb.services.humanservice", "HumanService")
 TargetService = dynamic_import("mpfb.services.targetservice", "TargetService")
 
 basemesh = HumanService.create_human()
-print("Vertices avant suppression helpers :", len(basemesh.data.vertices))
+print("Vertices before helper removal:", len(basemesh.data.vertices))
 
-# Supprimer les helpers
-# Dans MPFB, le vertex group "HelperGeometry" contient tous les sommets d'aide
+# Delete the helpers
+# In MPFB, the "HelperGeometry" vertex group holds all the helper vertices
 helper_vg = basemesh.vertex_groups.get("HelperGeometry")
 if helper_vg:
-    print("HelperGeometry trouvé avec des sommets.")
+    print("HelperGeometry found with vertices.")
 
-# Test de suppression des helpers
+# Helper removal test
 try:
     HumanService.delete_helpers(basemesh)
-    print("Vertices après delete_helpers :", len(basemesh.data.vertices))
+    print("Vertices after delete_helpers:", len(basemesh.data.vertices))
 except Exception as e:
-    print("delete_helpers non trouvé, test alternatif :", e)
+    print("delete_helpers not found, alternative test:", e)

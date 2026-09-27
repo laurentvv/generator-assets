@@ -42,11 +42,11 @@ def download_file(file_info):
     if os.path.exists(dest):
         actual_size = os.path.getsize(dest)
         if actual_size > 1024 * 1024 * 100: # > 100 MB
-            print(f"✅ Déjà présent : {name} ({actual_size / (1024**3):.2f} Go)")
+            print(f"✅ Already present: {name} ({actual_size / (1024**3):.2f} GB)")
             return
 
-    print(f"\n⬇️ Téléchargement : {name} (~{file_info['size_gb']} Go)...")
-    print(f"   Source : {url}")
+    print(f"\n⬇️ Downloading: {name} (~{file_info['size_gb']} GB)...")
+    print(f"   Source: {url}")
 
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req) as resp, open(part_file, "wb") as out_f:
@@ -66,22 +66,22 @@ def download_file(file_info):
             if now - last_print >= 5.0:
                 speed = (downloaded / (1024 * 1024)) / (now - t0 + 1e-6)
                 pct = (downloaded / total_size * 100) if total_size > 0 else 0
-                print(f"   Progression : {downloaded / (1024**3):.2f} / {total_size / (1024**3):.2f} Go ({pct:.1f}%) - {speed:.1f} Mo/s")
+                print(f"   Progress: {downloaded / (1024**3):.2f} / {total_size / (1024**3):.2f} GB ({pct:.1f}%) - {speed:.1f} MB/s")
                 last_print = now
 
     os.replace(part_file, dest)
-    print(f"✅ Terminé avec succès : {name} ({os.path.getsize(dest) / (1024**3):.2f} Go) en {time.time() - t0:.1f}s")
+    print(f"✅ Completed successfully: {name} ({os.path.getsize(dest) / (1024**3):.2f} GB) in {time.time() - t0:.1f}s")
 
 def main():
     print("=" * 80)
-    print("📦 TÉLÉCHARGEMENT DE LA SUITE COMPLÈTE MINIMAX-H3 (T2VA)")
-    print(f"   Dossier de destination : {TARGET_DIR}")
+    print("📦 DOWNLOADING THE FULL MINIMAX-H3 SUITE (T2VA)")
+    print(f"   Destination folder: {TARGET_DIR}")
     print("=" * 80)
 
     for f in FILES:
         download_file(f)
 
-    print("\n🎉 SUCCÈS : Tous les composants MiniMax-H3 sont prêts !")
+    print("\n🎉 SUCCESS: All MiniMax-H3 components are ready!")
 
 if __name__ == "__main__":
     main()

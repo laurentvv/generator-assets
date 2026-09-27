@@ -45,14 +45,14 @@ cmd = [
 
 print("=" * 75)
 print("🚀 [BENCHMARK 3 STEPS] Wan 2.1 14B (Flagship T2V)")
-print(f"   Sortie : {OUT_WEBM}")
+print(f"   Output: {OUT_WEBM}")
 print("=" * 75)
 
 t_start = time.time()
 res = subprocess.run(cmd)
 elapsed = time.time() - t_start
 if res.returncode == 0:
-    print(f"\n✅ Wan 2.1 14B 3-steps généré en {elapsed:.2f}s ({elapsed/60:.2f} min) !")
+    print(f"\n✅ Wan 2.1 14B 3-steps generated in {elapsed:.2f}s ({elapsed/60:.2f} min)!")
 else:
-    print(f"\n❌ Erreur code {res.returncode}")
+    print(f"\n❌ Error code {res.returncode}")
     sys.exit(res.returncode)

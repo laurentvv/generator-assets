@@ -13,9 +13,9 @@ VAES = [
 for name, url in VAES:
     dest = os.path.join(TARGET_DIR, name)
     if os.path.exists(dest) and os.path.getsize(dest) > 10 * 1024 * 1024:
-        print(f"[OK] Déjà présent : {name}")
+        print(f"[OK] Already present: {name}")
         continue
-    print(f"\nTéléchargement de {name}...")
+    print(f"\nDownloading {name}...")
     cmd = [curl, "-L", "-C", "-", "--fail", "--retry", "3", "-o", dest, url]
     subprocess.run(cmd, check=True)
-    print(f"[SUCCÈS] {name} téléchargé !")
+    print(f"[SUCCESS] {name} downloaded!")

@@ -11,7 +11,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {absolute_package_str} introuvable")
+    raise ValueError(f"Module {absolute_package_str} not found")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -31,9 +31,9 @@ basemesh = HumanService.create_human(macro_detail_dict=macros)
 TargetService.reapply_macro_details(basemesh)
 bpy.context.view_layer.update()
 
-print("1. Vertices basemesh :", len(basemesh.data.vertices))
+print("1. Basemesh vertices:", len(basemesh.data.vertices))
 
-# Suppression des sommets d'aide internes AVANT le bake
+# Removal of the internal helper vertices BEFORE the bake
 helper_vg = basemesh.vertex_groups.get("HelperGeometry")
 if helper_vg:
     bm = bmesh.new()
@@ -41,7 +41,7 @@ if helper_vg:
     dlayer = bm.verts.layers.deform.verify()
     helper_idx = helper_vg.index
     verts_to_delete = [v for v in bm.verts if helper_idx in v[dlayer] and v[dlayer][helper_idx] > 0.5]
-    print(f"2. Suppression de {len(verts_to_delete)} sommets d'aide...")
+    print(f"2. Deleting {len(verts_to_delete)} helper vertices...")
     bmesh.ops.delete(bm, geom=verts_to_delete, context='VERTS')
     bm.to_mesh(basemesh.data)
     bm.free()
@@ -55,9 +55,9 @@ old = basemesh.data
 basemesh.data = me
 me.name = old.name
 bpy.data.meshes.remove(old)
-print("3. Vertices après bake shape keys :", len(basemesh.data.vertices))
+print("3. Vertices after shape keys bake:", len(basemesh.data.vertices))
 
-# Test skinning armature KayKit
+# KayKit armature skinning test
 kaykit_p = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\elian_kaykit.glb"
 bpy.ops.import_scene.gltf(filepath=kaykit_p)
 kaykit_armature = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
@@ -70,5 +70,5 @@ basemesh.select_set(True)
 kaykit_armature.select_set(True)
 bpy.context.view_layer.objects.active = kaykit_armature
 res = bpy.ops.object.parent_set(type='ARMATURE_AUTO')
-print("4. Résultat ARMATURE_AUTO :", res)
-print("5. Bones skinnés sur basemesh :", [vg.name for vg in basemesh.vertex_groups if vg.name in [b.name for b in kaykit_armature.data.bones]])
+print("4. ARMATURE_AUTO result:", res)
+print("5. Bones skinned on basemesh:", [vg.name for vg in basemesh.vertex_groups if vg.name in [b.name for b in kaykit_armature.data.bones]])

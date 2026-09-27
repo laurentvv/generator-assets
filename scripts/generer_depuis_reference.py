@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Génération d'une NOUVELLE musique avec l'ADN d'une référence : détection
-automatique du BPM et de la tonalité sur l'audio de référence (fichier
-complet recommandé), puis génération ACE-Step (xl-turbo par défaut) avec ces
-contraintes IMPOSÉES au planner LM. Méthode validée le 2026-09-06 sur
-« Johannesburg » de Love Like Blood (BPM rendu 83,3 vs 83,3 source).
+Generation of NEW music with the DNA of a reference: automatic BPM and key
+detection on the reference audio (full file recommended), then ACE-Step
+generation (xl-turbo by default) with those constraints IMPOSED on the
+planner LM. Method validated on 2026-09-06 on Love Like Blood's
+"Johannesburg" (rendered BPM 83.3 vs 83.3 source).
 
-Le style lui-même se décrit en texte (--style) : le script verrouille les
-nombres, l'humain (ou l'agent) fournit les mots.
+The style itself is described in text (--style): the script locks the numbers,
+the human (or the agent) provides the words.
 
-Usage :
+Usage:
   uv run python scripts/generer_depuis_reference.py <audio_ref> --style "<style EN>" [options]
 
-Exemple :
+Example:
   uv run python scripts/generer_depuis_reference.py "C:\\musique\\ref.mp3" \
     --style "German gothic rock 1990, dark wave, hypnotic tribal groove, pulsing bass, chiming chorus guitars" \
     --duree 240 -o mon_titre
@@ -48,7 +48,7 @@ PROFIL_MINEUR = np.array([6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 
 
 
 def convertir_en_wav(chemin: str) -> str:
-    """Convertit un audio quelconque (mp3…) en WAV 48 kHz si soundfile ne le lit pas."""
+    """Converts any audio (mp3…) to 48 kHz WAV if soundfile cannot read it."""
     try:
         charger_audio(chemin)
         return chemin
@@ -61,7 +61,7 @@ def convertir_en_wav(chemin: str) -> str:
 
 
 def detecter_tonalite(audio: np.ndarray, sr: int) -> str:
-    """Tonalité par corrélation du chroma avec les profils de Krumhansl."""
+    """Key via correlation of the chroma with the Krumhansl profiles."""
     mono = audio.mean(axis=1)
     fen, hop = 8192, 4096
     freqs = np.fft.rfftfreq(fen, 1 / sr)
@@ -83,38 +83,38 @@ def detecter_tonalite(audio: np.ndarray, sr: int) -> str:
 
 
 def main():
-    parseur = argparse.ArgumentParser(description="Nouvelle musique avec l'ADN (BPM + tonalité) d'une référence")
-    parseur.add_argument("reference", help="Audio de référence (MP3/WAV — fichier complet recommandé)")
+    parseur = argparse.ArgumentParser(description="New music with the DNA (BPM + key) of a reference")
+    parseur.add_argument("reference", help="Reference audio (MP3/WAV — full file recommended)")
     parseur.add_argument("--style", required=True,
-                         help="Description du style EN (le script ajoute BPM/tonalité et « instrumental »)")
-    parseur.add_argument("--duree", type=float, default=60.0, help="Durée en secondes (défaut : 60)")
+                         help="EN style description (the script appends BPM/key and \"instrumental\")")
+    parseur.add_argument("--duree", type=float, default=60.0, help="Duration in seconds (default: 60)")
     parseur.add_argument("--variante", choices=list(ACESTEP15_VARIANTES), default="xl-turbo",
-                         help="Variante ACE-Step (défaut : xl-turbo)")
+                         help="ACE-Step variant (default: xl-turbo)")
     parseur.add_argument("--avec-paroles", default=None,
-                         help="Fichier .txt de paroles (structure [Verse]/[Chorus]…) pour une chanson au lieu d'un instrumental")
-    parseur.add_argument("--langue", default="fr", help="Langue des paroles (défaut : fr)")
+                         help=".txt lyrics file ([Verse]/[Chorus]… structure) for a song instead of an instrumental")
+    parseur.add_argument("--langue", default="fr", help="Lyrics language (default: fr)")
     parseur.add_argument("--tonalite", default=None,
-                         help="Forcer la tonalité (ex: \"C# minor\") — sinon détection auto sur la référence")
+                         help="Force the key (e.g. \"C# minor\") — otherwise auto-detected from the reference")
     parseur.add_argument("--negatif", default=None,
-                         help="Prompt négatif EN — ce qu'on EXCLUT (ex: \"pop, soft, mellow, gentle, ambient, ballad\")")
+                         help="EN negative prompt — what to EXCLUDE (e.g. \"pop, soft, mellow, gentle, ambient, ballad\")")
     parseur.add_argument("--graine", type=int, default=-1)
-    parseur.add_argument("-o", "--output", default="inspire_de_ref", help="Nom de sortie (défaut : inspire_de_ref)")
+    parseur.add_argument("-o", "--output", default="inspire_de_ref", help="Output name (default: inspire_de_ref)")
     args = parseur.parse_args()
 
     if not os.path.exists(args.reference):
-        print(f"❌ Introuvable : {args.reference}")
+        print(f"❌ Not found: {args.reference}")
         sys.exit(1)
 
-    print(f"🔍 Analyse de la référence : {args.reference}")
+    print(f"🔍 Analyzing the reference: {args.reference}")
     chemin_wav = convertir_en_wav(args.reference)
     audio, sr = charger_audio(chemin_wav)
     bpm = estimer_bpm(audio, sr)
     if bpm is None:
-        print("❌ Aucun tempo détecté dans la référence (audio non pulsatif ?).")
+        print("❌ No tempo detected in the reference (non-pulsive audio?).")
         sys.exit(1)
     bpm = int(round(bpm))
     tonalite = args.tonalite or detecter_tonalite(audio, sr)
-    print(f"🧬 ADN détecté : {bpm} BPM • {tonalite} • {len(audio) / sr:.0f} s analysées")
+    print(f"🧬 Detected DNA: {bpm} BPM • {tonalite} • {len(audio) / sr:.0f} s analyzed")
 
     paroles = "[Instrumental]"
     if args.avec_paroles:
@@ -125,7 +125,7 @@ def main():
 
     sortie = os.path.join("output", "music_chanson", f"{args.output}.wav")
     os.makedirs(os.path.dirname(sortie), exist_ok=True)
-    print(f"🎵 Génération : {args.duree:.0f} s • variante {args.variante} • BPM {bpm} et {tonalite} imposés au planner")
+    print(f"🎵 Generation: {args.duree:.0f} s • variant {args.variante} • BPM {bpm} and {tonalite} imposed on the planner")
     chemin, backend = generer_musique_acestep(
         description=description,
         chemin_sortie=sortie,
@@ -140,7 +140,7 @@ def main():
         log=print,
     )
     mp3 = convertir_mp3(chemin, chemin.replace(".wav", ".mp3"), 224)
-    print(f"\n🎧 Écoute : {os.path.abspath(mp3)} ({os.path.getsize(mp3) / 1048576:.1f} Mo) — backend {backend}")
+    print(f"\n🎧 Listen: {os.path.abspath(mp3)} ({os.path.getsize(mp3) / 1048576:.1f} MB) — backend {backend}")
 
 
 if __name__ == "__main__":

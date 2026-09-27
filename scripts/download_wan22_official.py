@@ -32,11 +32,11 @@ def download_file(file_info):
     if os.path.exists(dest):
         actual_size = os.path.getsize(dest)
         if actual_size > 1024 * 1024 * 1024 * 8: # > 8 GB
-            print(f"✅ Déjà présent : {name} ({actual_size / (1024**3):.2f} Go)", flush=True)
+            print(f"✅ Already present: {name} ({actual_size / (1024**3):.2f} GB)", flush=True)
             return
 
-    print(f"\n⬇️ Téléchargement : {name} (~{file_info['size_gb']} Go)...", flush=True)
-    print(f"   Source : {url}", flush=True)
+    print(f"\n⬇️ Downloading: {name} (~{file_info['size_gb']} GB)...", flush=True)
+    print(f"   Source: {url}", flush=True)
 
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req) as resp, open(part_file, "wb") as out_f:
@@ -56,22 +56,22 @@ def download_file(file_info):
             if now - last_print >= 5.0:
                 speed = (downloaded / (1024 * 1024)) / (now - t0 + 1e-6)
                 pct = (downloaded / total_size * 100) if total_size > 0 else 0
-                print(f"   Progression : {downloaded / (1024**3):.2f} / {total_size / (1024**3):.2f} Go ({pct:.1f}%) - {speed:.1f} Mo/s", flush=True)
+                print(f"   Progress: {downloaded / (1024**3):.2f} / {total_size / (1024**3):.2f} GB ({pct:.1f}%) - {speed:.1f} MB/s", flush=True)
                 last_print = now
 
     os.replace(part_file, dest)
-    print(f"✅ Terminé : {name} ({os.path.getsize(dest) / (1024**3):.2f} Go) en {time.time() - t0:.1f}s", flush=True)
+    print(f"✅ Done: {name} ({os.path.getsize(dest) / (1024**3):.2f} GB) in {time.time() - t0:.1f}s", flush=True)
 
 def main():
     print("=" * 80, flush=True)
-    print("📦 TÉLÉCHARGEMENT OFFICIEL WAN 2.2 MoE (A14B LowNoise + HighNoise)", flush=True)
-    print(f"   Dossier de destination : {TARGET_DIR}", flush=True)
+    print("📦 OFFICIAL WAN 2.2 MoE DOWNLOAD (A14B LowNoise + HighNoise)", flush=True)
+    print(f"   Destination folder: {TARGET_DIR}", flush=True)
     print("=" * 80, flush=True)
 
     for f in FILES:
         download_file(f)
 
-    print("\n🎉 SUCCÈS : Wan 2.2 MoE est prêt !", flush=True)
+    print("\n🎉 SUCCESS: Wan 2.2 MoE is ready!", flush=True)
 
 if __name__ == "__main__":
     main()

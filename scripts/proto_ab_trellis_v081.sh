@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# proto_ab_trellis_v081.sh — A/B perf trellis v0.6.0 (production C:\trellis) vs v0.8.1 prébuilt (C:\trellis-081)
+# proto_ab_trellis_v081.sh — A/B perf trellis v0.6.0 (production C:\trellis) vs v0.8.1 prebuilt (C:\trellis-081)
 #
-# Contexte : régression +51 % de v0.8.0 confirmée par A/B propre nuit 24→25/09 → rollback v0.6.0.
-# v0.8.1 (publiée le 25/09) = packaging rétopologie, prebuilt annoncé sans changement fonctionnel
-# → A/B de contrôle demandé par l'utilisateur le 25/09 (« prépare le test et je reboot avant de le lancé »).
+# Context: +51 % regression of v0.8.0 confirmed by a clean A/B on the night of 24→25/09 → rollback to v0.6.0.
+# v0.8.1 (released on 25/09) = retopology packaging, prebuilt announced with no functional change
+# → control A/B requested by the user on 25/09 ("prepare the test and I'll reboot before you run it").
 #
-# LANCER APRÈS REBOOT (machine propre) :
+# RUN AFTER REBOOT (clean machine):
 #   cd /c/GIT/generator-assets && bash scripts/proto_ab_trellis_v081.sh
 #
-# Idempotent : chaque jambe déjà terminée (GLB + duree.txt présents) est skippée — relançable tel quel.
-# Jambes STRICTEMENT séquentielles (règle : jamais 2 jobs GPU en parallèle), seed 42 des deux côtés.
+# Idempotent: each leg already completed (GLB + duree.txt present) is skipped — can be re-run as-is.
+# Legs STRICTLY sequential (rule: never 2 GPU jobs in parallel), seed 42 on both sides.
 set -u
 
 REPO=/c/GIT/generator-assets
@@ -18,23 +18,23 @@ MODELES="C:/Modeles_LLM/trellis2-gguf"
 OUTROOT="$REPO/output/trellis_ab_v081"
 RES=512
 SEED=42
-BASELINE_S=644   # v0.6.0, matrice propre du 24/09 (même image, même résolution)
+BASELINE_S=644   # v0.6.0, clean matrix of 24/09 (same image, same resolution)
 
 leg() {
   local label="$1" bindir="$2"
   local outdir="$OUTROOT/$label"
   local glb="$outdir/casque_${label}.glb"
   echo ""
-  echo "================ JAMBE $label ($bindir) ================"
+  echo "================ LEG $label ($bindir) ================"
   if [ -f "$glb" ] && [ -f "$outdir/duree.txt" ]; then
-    echo "[$label] déjà fait ($(cat "$outdir/duree.txt")s) — skip"
+    echo "[$label] already done ($(cat "$outdir/duree.txt")s) — skip"
     return 0
   fi
   mkdir -p "$outdir"
   cd "$REPO" || return 1
   echo "[$label] check_charge_systeme…"
   if ! uv run python scripts/check_charge_systeme.py; then
-    echo "[$label] machine chargée — ABANDON. Relancer le script plus tard (jambes faites conservées)."
+    echo "[$label] loaded machine — ABORT. Run the script again later (completed legs are kept)."
     return 1
   fi
   local t0 t1 rc
@@ -44,9 +44,9 @@ leg() {
   rc=$?
   t1=$(date +%s)
   echo "$((t1-t0))" > "$outdir/duree.txt"
-  echo "[$label] rc=$rc durée=$((t1-t0))s (référence v0.6.0 du 24/09 : ${BASELINE_S}s)"
+  echo "[$label] rc=$rc duration=$((t1-t0))s (v0.6.0 reference of 24/09: ${BASELINE_S}s)"
   if [ "$rc" -ne 0 ]; then
-    echo "[$label] ÉCHEC — $outdir/run.log (10 dernières lignes) :"
+    echo "[$label] FAILURE — $outdir/run.log (last 10 lines):"
     tail -10 "$outdir/run.log"
     return 1
   fi
@@ -55,23 +55,23 @@ leg() {
 }
 
 echo "A/B trellis $RES px — image $(basename "$IMG") — seed $SEED"
-echo "Sorties : $OUTROOT"
+echo "Outputs: $OUTROOT"
 
 leg v060 /c/trellis      ; r1=$?
 leg v081 /c/trellis-081  ; r2=$?
 
 echo ""
-echo "================ RÉSUMÉ ================"
+echo "================ SUMMARY ================"
 for label in v060 v081; do
   glb="$OUTROOT/$label/casque_${label}.glb"
   if [ -f "$glb" ] && [ -f "$OUTROOT/$label/duree.txt" ]; then
-    echo "$label : $(cat "$OUTROOT/$label/duree.txt")s — GLB $(du -h "$glb" | cut -f1) — $glb"
+    echo "$label: $(cat "$OUTROOT/$label/duree.txt")s — GLB $(du -h "$glb" | cut -f1) — $glb"
   else
-    echo "$label : incomplet"
+    echo "$label: incomplete"
   fi
 done
 echo ""
-echo "Verdict : v081 ≈ v060 (±15 %) → upgrade production v0.8.1 (backup + version.json + README)."
-echo "          v081 ~ +50 % (comme v0.8.0) → conserver v0.6.0, purger l'entrée de veille (attendre un vrai fix perf)."
-echo "          Dans les deux cas : comparer AUSSI le rendu des 2 GLB (géométrie/textures) avant verdict."
+echo "Verdict: v081 ≈ v060 (±15 %) → upgrade production to v0.8.1 (backup + version.json + README)."
+echo "         v081 ~ +50 % (like v0.8.0) → keep v0.6.0, purge the watch entry (wait for a real perf fix)."
+echo "         In both cases: ALSO compare the render of the 2 GLBs (geometry/textures) before verdict."
 [ "$r1" -eq 0 ] && [ "$r2" -eq 0 ] || exit 1

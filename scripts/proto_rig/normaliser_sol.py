@@ -1,7 +1,7 @@
-"""Normalise un mesh de la session Blender MCP : échelle cible sur l'axe long,
-origine au monde, pieds au sol (Z=0), centré X/Y, sauvegarde .blend.
+"""Normalizes a mesh of the Blender MCP session: target scale on the long axis,
+origin at the world, feet on the ground (Z=0), centered X/Y, .blend save.
 
-Usage :
+Usage:
     uv run python scripts/proto_rig/normaliser_sol.py Wolf 1.32
     uv run python scripts/proto_rig/normaliser_sol.py Horse 2.2 --sauver output/test_rig/scenes/horse_mesh.blend
 """
@@ -28,7 +28,7 @@ cos = [v.co.copy() for v in obj.data.vertices]
 lx = max(c.x for c in cos) - min(c.x for c in cos)
 ly = max(c.y for c in cos) - min(c.y for c in cos)
 lz = max(c.z for c in cos) - min(c.z for c in cos)
-# axe long attendu = Y (convention sujet face -Y)
+# expected long axis = Y (subject faces -Y convention)
 facteur = cible / ly if ly >= max(lx, lz) else cible / max(lx, lz)
 obj.data.transform(mathutils.Matrix.Scale(facteur, 4))
 obj.scale = (1.0, 1.0, 1.0)
@@ -66,14 +66,14 @@ def normaliser(nom: str, cible: float, sauver: str = "") -> dict:
     for ligne in texte.splitlines():
         if ligne.startswith("NORMALISE:"):
             return json.loads(ligne[len("NORMALISE:"):])
-    raise RuntimeError(f"normalisation echouee : {texte!r}")
+    raise RuntimeError(f"normalization failed: {texte!r}")
 
 
 def main() -> int:
     parseur = argparse.ArgumentParser(description=__doc__)
-    parseur.add_argument("nom", help="nom de l'objet dans la scene")
-    parseur.add_argument("cible", type=float, help="longueur cible en metres (axe long)")
-    parseur.add_argument("--sauver", default="", help="chemin .blend de sauvegarde")
+    parseur.add_argument("nom", help="object name in the scene")
+    parseur.add_argument("cible", type=float, help="target length in meters (long axis)")
+    parseur.add_argument("--sauver", default="", help=".blend save path")
     args = parseur.parse_args()
     audit = normaliser(args.nom, args.cible, args.sauver)
     print(json.dumps(audit, indent=2, ensure_ascii=False))

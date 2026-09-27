@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gestionnaire unifié de la Suite IA Vulkan pour Generator Assets.
-Supervise et automatise la mise à jour et la compilation Vulkan de :
-  1. stable-diffusion.cpp (Moteur Image, Matériaux PBR, et Vidéo Wan/LTX/MiniMax)
-  2. llama.cpp (Moteur LLM Direction Artistique & Prompt Engineering)
+Unified manager of the Vulkan AI Suite for Generator Assets.
+Supervises and automates Vulkan updates and compilation for:
+  1. stable-diffusion.cpp (Image Engine, PBR Materials, and Wan/LTX/MiniMax Video)
+  2. llama.cpp (Art Direction & Prompt Engineering LLM Engine)
 """
 
 import argparse
@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Support UTF-8 sur consoles Windows (évite les erreurs UnicodeEncodeError cp1252)
+# UTF-8 support on Windows consoles (avoids cp1252 UnicodeEncodeError errors)
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -21,7 +21,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-# Résolution des imports quel que soit le dossier de travail courant
+# Import resolution regardless of the current working directory
 script_dir = Path(__file__).resolve().parent
 repo_root = script_dir.parent
 for p in [str(repo_root), str(script_dir)]:
@@ -67,14 +67,14 @@ except ImportError:
 
 
 def inspecter_gpu_vulkan() -> None:
-    """Affiche les informations sur le GPU et le pilote Vulkan du système."""
+    """Displays information about the system's Vulkan GPU and driver."""
     vulkaninfo_bin = shutil.which("vulkaninfo")
     sdk = detecter_vulkan_sdk()
 
     print("\n" + "=" * 70)
-    print(" 🎮 DIAGNOSTIC MATÉRIEL VULKAN DU SYSTÈME")
+    print(" 🎮 SYSTEM VULKAN HARDWARE DIAGNOSTIC")
     print("=" * 70)
-    print(f"  • SDK Vulkan installé : {sdk or '❌ Non détecté'}")
+    print(f"  • Vulkan SDK installed: {sdk or '❌ Not detected'}")
 
     if vulkaninfo_bin:
         try:
@@ -89,77 +89,77 @@ def inspecter_gpu_vulkan() -> None:
             for ligne in gpu_lines:
                 print(f"  • {ligne}")
         except Exception:
-            print("  • vulkaninfo disponible dans System32")
+            print("  • vulkaninfo available in System32")
     else:
-        print("  • vulkaninfo non trouvé dans le PATH")
+        print("  • vulkaninfo not found in PATH")
     print("=" * 70 + "\n")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Gestionnaire unifié de la Suite IA Vulkan (stable-diffusion.cpp + llama.cpp)."
+        description="Unified manager of the Vulkan AI Suite (stable-diffusion.cpp + llama.cpp)."
     )
     parser.add_argument(
         "--check", action="store_true",
-        help="Vérifie l'état de l'ensemble de la suite Vulkan (SD + LLaMA + GPU)."
+        help="Checks the state of the whole Vulkan suite (SD + LLaMA + GPU)."
     )
     parser.add_argument(
         "--download", action="store_true",
-        help="Met à jour l'ensemble de la suite Vulkan via les dernières releases officielles GitHub."
+        help="Updates the whole Vulkan suite via the latest official GitHub releases."
     )
     parser.add_argument(
         "--build", action="store_true",
-        help="Recompile nativement les deux moteurs avec Vulkan (CMake + MSVC)."
+        help="Rebuilds both engines natively with Vulkan (CMake + MSVC)."
     )
     parser.add_argument(
         "--rollback", action="store_true",
-        help="Restaure la sauvegarde précédente pour les deux moteurs."
+        help="Restores the previous backup for both engines."
     )
     parser.add_argument(
         "--clean", action="store_true",
-        help="Nettoie les dossiers build avant de recompiler."
+        help="Cleans the build folders before rebuilding."
     )
     parser.add_argument(
         "--jobs", "-j", type=int, default=None,
-        help="Nombre de cœurs processeur pour la compilation."
+        help="Number of CPU cores for compilation."
     )
 
     args = parser.parse_args()
 
-    # Si aucun argument spécifique, exécuter la vérification complète
+    # If no specific argument, run the full check
     if not (args.check or args.download or args.build or args.rollback):
         args.check = True
 
     inspecter_gpu_vulkan()
 
     if args.check:
-        print("▶️ [1/2] Inspection de stable-diffusion.cpp...")
+        print("▶️ [1/2] Inspecting stable-diffusion.cpp...")
         check_sd(DEFAULT_SD_DIR)
-        print("▶️ [2/2] Inspection de llama.cpp...")
+        print("▶️ [2/2] Inspecting llama.cpp...")
         check_llama(DEFAULT_LLAMA_DIR)
         sys.exit(0)
 
     if args.download:
-        print("\n🚀 Téléchargement et mise à jour de la Suite Vulkan...")
+        print("\n🚀 Downloading and updating the Vulkan Suite...")
         ok_sd = download_sd(DEFAULT_SD_DIR)
         ok_llama = download_llama(DEFAULT_LLAMA_DIR)
         if ok_sd and ok_llama:
-            print("\n🎉 SUITE VULKAN ENTIÈREMENT MISE À JOUR AVEC SUCCÈS !\n")
+            print("\n🎉 ENTIRE VULKAN SUITE SUCCESSFULLY UPDATED!\n")
             sys.exit(0)
         else:
-            print("\n⚠️ Certains composants ont rencontré une erreur.\n")
+            print("\n⚠️ Some components hit an error.\n")
             sys.exit(1)
 
     if args.build:
-        print("\n⚙️ Compilation native complète de la Suite Vulkan...")
-        print("\n▶️ [1/2] Compilation de stable-diffusion.cpp...")
+        print("\n⚙️ Full native compilation of the Vulkan Suite...")
+        print("\n▶️ [1/2] Compiling stable-diffusion.cpp...")
         ok_sd = build_sd(
             source_dir=DEFAULT_SD_SRC,
             install_dir=DEFAULT_SD_DIR,
             clean=args.clean,
             parallel_jobs=args.jobs
         )
-        print("\n▶️ [2/2] Compilation de llama.cpp...")
+        print("\n▶️ [2/2] Compiling llama.cpp...")
         ok_llama = build_llama(
             source_dir=DEFAULT_LLAMA_SRC,
             install_dir=DEFAULT_LLAMA_DIR,
@@ -167,13 +167,13 @@ def main() -> None:
             parallel_jobs=args.jobs
         )
         if ok_sd and ok_llama:
-            print("\n🎉 TOUS LES MOTEURS VULKAN ONT ÉTÉ RECOMPILÉS AVEC SUCCÈS !\n")
+            print("\n🎉 ALL VULKAN ENGINES WERE REBUILT SUCCESSFULLY!\n")
             sys.exit(0)
         else:
             sys.exit(1)
 
     if args.rollback:
-        print("\n⏪ Restauration des sauvegardes précédentes...")
+        print("\n⏪ Restoring previous backups...")
         rollback_sd(DEFAULT_SD_DIR)
         rollback_llama(DEFAULT_LLAMA_DIR)
         sys.exit(0)

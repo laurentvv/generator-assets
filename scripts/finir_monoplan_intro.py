@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scripts/finir_monoplan_intro.py — v6 « plan unique » de l'intro Vent-Gris (2026-09-10)
-Solution aux raccords loupés : UN SEUL plan généré d'une traite (65 trames, la
-valeur la plus éprouvée sur ce GPU), ralenti ×3,69 vers 10,0 s, puis zoom pur
-conçu (recette v5 validée) par-dessus — aucune coupe, aucune respiration de
-caméra. À lancer APRÈS redémarrage machine (le pilote GPU se dégrade après des
-device-lost en cascade — écueil §1.10 ; le 13:45 65f échouait, la nuit il passait).
+scripts/finir_monoplan_intro.py — v6 "single shot" of the Grey-Wind intro (2026-09-10)
+Fix for the missed cuts: ONE SINGLE shot generated in a take (65 frames, the most
+proven value on this GPU), slowed ×3.69 to 10.0 s, then a designed pure zoom
+(validated v5 recipe) on top — no cut, no camera breathing. To be run AFTER a
+machine restart (the GPU driver degrades after cascading device-losts — pitfall
+§1.10; at 13:45 the 65f run failed, overnight it passed).
 
-Étapes :
-  1. Monoplan 65 trames LTX-2.5 I2V depuis l'image de référence (recette nuit) ;
-  2. Ralenti 65f → 10,0 s : setpts ×3,6923 + interpolation motion-compensée 24 fps ;
-  3. Zoom pur 1,10→1,32 (smootherstep) autour de l'ancre donjon — rendu incapable
-     de trembler par construction (aucune mesure dans la boucle de warp) ;
-  4. Conform 1080p (lanczos + CAS 0.75) + ambiance tempête muxée + variante 48 fps.
+Steps:
+  1. 65-frame LTX-2.5 I2V single shot from the reference image (overnight recipe);
+  2. Slowdown 65f → 10.0 s: setpts ×3.6923 + 24 fps motion-compensated interpolation;
+  3. Pure zoom 1.10→1.32 (smootherstep) around the keep anchor — a render that
+     cannot shake by construction (no measurement in the warp loop);
+  4. 1080p conform (lanczos + CAS 0.75) + storm ambience muxed + 48 fps variant.
 """
 import os
 import shutil
@@ -36,8 +36,8 @@ V6_24 = os.path.join(ES, "intro_vent_gris_10s_1080p_v6_monoplan.mp4")
 V6_48 = os.path.join(ES, "intro_vent_gris_10s_v6_48fps.mp4")
 AMBIANCE = os.path.join(ES, "ambiance_tempete_vent_gris.wav")
 
-FACTEUR_LENT = 3.6923          # 65/24 s × 3,6923 = 10,000 s
-PATCH = (300, 40, 540, 300)    # ancre donjon (coords 640×360)
+FACTEUR_LENT = 3.6923          # 65/24 s × 3.6923 = 10.000 s
+PATCH = (300, 40, 540, 300)    # keep anchor (640×360 coords)
 ZOOM_DEBUT, ZOOM_FIN = 1.10, 1.32
 
 PROMPT_MONOPLAN = (
@@ -53,25 +53,25 @@ PROMPT_MONOPLAN = (
 
 def etape_1_monoplan() -> None:
     if os.path.exists(MONOPLAN):
-        log(f"⏭️ 1. monoplan déjà présent : {MONOPLAN}")
+        log(f"⏭️ 1. single shot already present: {MONOPLAN}")
         return
-    log("🎥 1/4 Génération du plan unique (65 trames LTX-2.5 I2V)…")
+    log("🎥 1/4 Generating the single shot (65 frames LTX-2.5 I2V)…")
     t0 = time.time()
     ok = generer_ltx_i2v(os.path.join(ES, "amorce_832x480.png"), PROMPT_MONOPLAN,
                          MONOPLAN, os.path.join(ES, "monoplan_65f.log"), frames=65)
     if not ok:
-        log("⛔ Monoplan impossible (pilote GPU à réinitialiser ? redémarrage machine).")
+        log("⛔ Single shot failed (GPU driver to reset? machine restart).")
         sys.exit(3)
-    log(f"  ✅ monoplan en {(time.time()-t0)/60:.1f} min")
+    log(f"  ✅ single shot in {(time.time()-t0)/60:.1f} min")
 
 
 def etape_2_ralenti() -> None:
     if os.path.exists(RALENTI):
-        log(f"⏭️ 2. ralenti déjà présent : {RALENTI}")
+        log(f"⏭️ 2. slowdown already present: {RALENTI}")
         return
-    log(f"⏱️ 2/4 Ralenti ×{FACTEUR_LENT} + interpolation 24 fps → 10,0 s…")
+    log(f"⏱️ 2/4 Slowdown ×{FACTEUR_LENT} + 24 fps interpolation → 10.0 s…")
     t0 = time.time()
-    # 1080p dés l'étape 2 : l'étape 3 (zoom pur) travaille en coordonnées 1920×1080
+    # 1080p from step 2: step 3 (pure zoom) works in 1920×1080 coordinates
     ok = subprocess.run(
         [FFMPEG, "-y", "-v", "error", "-i", MONOPLAN, "-vf",
          f"setpts={FACTEUR_LENT}*PTS,"
@@ -82,16 +82,16 @@ def etape_2_ralenti() -> None:
         capture_output=True,
     ).returncode == 0
     if not ok:
-        log("⛔ ralenti/interpolation échoué")
+        log("⛔ slowdown/interpolation failed")
         sys.exit(4)
-    log(f"  ✅ ralenti en {(time.time()-t0)/60:.1f} min")
+    log(f"  ✅ slowdown in {(time.time()-t0)/60:.1f} min")
 
 
 def etape_3_zoom_pur() -> None:
     if os.path.exists(V6_24):
-        log(f"⏭️ 3. v6 déjà présente : {V6_24}")
+        log(f"⏭️ 3. v6 already present: {V6_24}")
         return
-    log("🎨 3/4 Zoom pur 1,10→1,32 (aucune mesure → aucune vibration possible)…")
+    log("🎨 3/4 Pure zoom 1.10→1.32 (no measurement → no vibration possible)…")
     t0 = time.time()
     tmp = os.path.join(ES, "temp_v6")
     shutil.rmtree(tmp, ignore_errors=True)
@@ -125,14 +125,14 @@ def etape_3_zoom_pur() -> None:
                          "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames",
                          "-of", "csv=p=0", V6_24], capture_output=True, text=True).stdout.strip()
     if nb != str(n):
-        log(f"⛔ encodage v6 incomplet ({nb}/{n})")
+        log(f"⛔ incomplete v6 encode ({nb}/{n})")
         sys.exit(5)
     shutil.rmtree(tmp, ignore_errors=True)
-    log(f"  ✅ v6 ({n} trames) en {(time.time()-t0)/60:.1f} min")
+    log(f"  ✅ v6 ({n} frames) in {(time.time()-t0)/60:.1f} min")
 
 
 def etape_4_livrables() -> None:
-    log("🔊 4/4 Ambiance + variante 48 fps…")
+    log("🔊 4/4 Ambience + 48 fps variant…")
     if os.path.exists(AMBIANCE):
         subprocess.run(
             [FFMPEG, "-y", "-v", "error", "-i", V6_24, "-i", AMBIANCE,
@@ -147,8 +147,8 @@ def etape_4_livrables() -> None:
              "-c:v", "libx264", "-crf", "17", "-pix_fmt", "yuv420p", V6_48],
             capture_output=True,
         )
-    log(f"🌅 V6 PRÊTE : {V6_24}")
-    log("   + ambiance : intro_vent_gris_10s_v6_avec_ambiance.mp4")
+    log(f"🌅 V6 READY: {V6_24}")
+    log("   + ambience: intro_vent_gris_10s_v6_avec_ambiance.mp4")
     log(f"   + 48 fps   : {os.path.basename(V6_48)}")
 
 

@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 scripts/generate_wan22_single_image.py
-Génération d'une SEULE image de validation avec Wan 2.2 MoE (Dual-DiT 28B Photoréaliste)
-suivie de la Super-Résolution IA 4K (4x-UltraSharp + AMD FidelityFX CAS 0.75).
-Permet de valider l'esthétique exacte avant de lancer la cinématique vidéo.
+Generation of a SINGLE validation image with Wan 2.2 MoE (Dual-DiT 28B photorealistic)
+followed by 4K AI super-resolution (4x-UltraSharp + AMD FidelityFX CAS 0.75).
+Lets you validate the exact aesthetics before launching the video cinematics.
 """
 
 import os
@@ -42,13 +42,13 @@ ZOOM_COMP = os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_zoom_comparatif.png")
 
 def main():
     print("=" * 85)
-    print("👑 [VALIDATION IMAGE UNIQUE WAN 2.2 MoE 28B]")
-    print(f"   Dossier de sortie : {OUTPUT_DIR}")
+    print("👑 [WAN 2.2 MoE 28B SINGLE IMAGE VALIDATION]")
+    print(f"   Output dir        : {OUTPUT_DIR}")
     print(f"   Prompt            : {PROMPT[:90]}...")
     print("=" * 85)
 
-    # 1. Génération de l'image native avec Wan 2.2 MoE (1 seule trame)
-    print("\n🎬 1. Génération Wan 2.2 MoE (Dual-DiT 4 High + 4 Low steps)...")
+    # 1. Native image generation with Wan 2.2 MoE (single frame)
+    print("\n🎬 1. Wan 2.2 MoE generation (Dual-DiT 4 High + 4 Low steps)...")
     cmd_wan22 = [
         SD_CLI, "-M", "vid_gen",
         "--diffusion-model", os.path.join(MODELS_DIR, "Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf"),
@@ -77,7 +77,7 @@ def main():
     subprocess.run(cmd_wan22, check=True)
     t_gen = time.time() - t0
 
-    # sd-cli peut nommer l'image avec un suffixe _0 ou l'extension directe
+    # sd-cli may name the image with a _0 suffix or the direct extension
     if not os.path.exists(RAW_IMG):
         candidates = [
             os.path.join(OUTPUT_DIR, "ansible_nexus_wan22_raw_0.png"),
@@ -87,7 +87,7 @@ def main():
         for c in candidates:
             if os.path.exists(c):
                 if c.endswith(".webm"):
-                    # Extraire la première trame
+                    # Extract the first frame
                     cmd_ext = [FFMPEG, "-y", "-i", c, "-vframes", "1", RAW_IMG]
                     subprocess.run(cmd_ext, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 else:
@@ -95,12 +95,12 @@ def main():
                 break
 
     if not os.path.exists(RAW_IMG):
-        raise FileNotFoundError(f"Échec : impossible de trouver l'image brute générée {RAW_IMG}")
+        raise FileNotFoundError(f"Failure: could not find the generated raw image {RAW_IMG}")
 
-    print(f"✅ Image brute Wan 2.2 générée en {t_gen:.1f}s : {RAW_IMG}")
+    print(f"✅ Wan 2.2 raw image generated in {t_gen:.1f}s: {RAW_IMG}")
 
-    # 2. Super-Résolution IA 4K (Real-ESRGAN 4x-UltraSharp Vulkan)
-    print("\n🚀 2. Super-Résolution IA 4K (Real-ESRGAN Vulkan0)...")
+    # 2. 4K AI super-resolution (Real-ESRGAN 4x-UltraSharp Vulkan)
+    print("\n🚀 2. 4K AI super-resolution (Real-ESRGAN Vulkan0)...")
     t1 = time.time()
     upscaler_model = os.path.join(MODELS_DIR, "upscalers", "4x-UltraSharp.pth")
     temp_4k = os.path.join(OUTPUT_DIR, "temp_esrgan_wan22_4k.png")
@@ -113,8 +113,8 @@ def main():
     ]
     subprocess.run(cmd_up, check=True)
 
-    # 3. Conformation 4K Ultra HD (3840×2160) + AMD FidelityFX CAS 0.75
-    print("\n✨ 3. Filtre de contraste adaptatif AMD FidelityFX CAS 0.75...")
+    # 3. 4K Ultra HD conformance (3840x2160) + AMD FidelityFX CAS 0.75
+    print("\n✨ 3. AMD FidelityFX CAS 0.75 adaptive contrast filter...")
     cmd_cas = [
         FFMPEG, "-y",
         "-i", temp_4k,
@@ -128,9 +128,9 @@ def main():
         except Exception:
             pass
     t_up = time.time() - t1
-    print(f"✅ Master 4K Ultra HD produit en {t_up:.1f}s : {MASTER_4K_IMG}")
+    print(f"✅ 4K Ultra HD master produced in {t_up:.1f}s: {MASTER_4K_IMG}")
 
-    # 4. Zoom comparatif 100% côte à côte (Natif vs 4K CAS 0.75)
+    # 4. 100% side-by-side zoom comparison (Native vs 4K CAS 0.75)
     img_raw = Image.open(RAW_IMG).convert("RGB")
     img_up = Image.open(MASTER_4K_IMG).convert("RGB")
     img_raw_scaled = img_raw.resize(img_up.size, Image.Resampling.BICUBIC)
@@ -145,14 +145,14 @@ def main():
     comp.paste(crop_base, (0, 0))
     comp.paste(crop_ai, (1200, 0))
     comp.save(ZOOM_COMP, quality=95)
-    print(f"🔍 Comparatif Zoom 100% créé : {ZOOM_COMP}")
+    print(f"🔍 100% zoom comparison created: {ZOOM_COMP}")
 
     total_time = time.time() - t0
     print("\n" + "=" * 85)
-    print(f"🏆 VALIDATION WAN 2.2 MoE ACHEVÉE EN {total_time:.1f}s ({total_time/60:.2f} min) !")
-    print(f"   🖼️ Image Brute Native : {RAW_IMG}")
-    print(f"   👑 Master 4K Ultra HD : {MASTER_4K_IMG}")
-    print(f"   🔍 Zoom Comparatif 100%: {ZOOM_COMP}")
+    print(f"🏆 WAN 2.2 MoE VALIDATION COMPLETED IN {total_time:.1f}s ({total_time/60:.2f} min)!")
+    print(f"   🖼️ Native Raw Image  : {RAW_IMG}")
+    print(f"   👑 4K Ultra HD Master: {MASTER_4K_IMG}")
+    print(f"   🔍 100% Zoom Comparison: {ZOOM_COMP}")
     print("=" * 85)
 
 if __name__ == "__main__":

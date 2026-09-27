@@ -1,9 +1,9 @@
-# Recettes de style extraites de blender-skills (anime/cel, lowpoly/PS1, materials/usure)
-# — démo headless sur nos GLB. Trois modes :
-#   toon : diffuse → ColorRamp constant 3 paliers + bande rim (cel-shading)
-#   psx  : snap des sommets sur grille, flat shading, AA off, brouillard Mist + rendu 640x480
-#   wear : usure procédurale Pointiness → arêtes métal claires (sur l'albedo existant)
-# Usage : blender --background --python styles_demo.py -- <glb_in> <out_png> <mode>
+# Style recipes borrowed from blender-skills (anime/cel, lowpoly/PS1, materials/wear)
+# — headless demo on our GLBs. Three modes:
+#   toon : diffuse → constant ColorRamp 3 steps + rim band (cel-shading)
+#   psx  : snap vertices to grid, flat shading, AA off, Mist fog + 640x480 render
+#   wear : procedural Pointiness wear → bright metal edges (over the existing albedo)
+# Usage: blender --background --python styles_demo.py -- <glb_in> <out_png> <mode>
 
 import sys
 
@@ -16,7 +16,7 @@ glb_in, out_png, mode = argv[0], argv[1], argv[2]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
@@ -50,7 +50,7 @@ for moteur in ("BLENDER_EEVEE_NEXT_RENDER", "BLENDER_EEVEE_RENDER", "BLENDER_EEV
 
 
 def eclairage_simple(energie_key=3.0):
-    """Une seule key + monde clair (règle cel : tester tôt sous une key unique)."""
+    """Single key + clear world (cel rule: test early under a single key light)."""
     ld = bpy.data.lights.new("Soleil", type="SUN")
     ld.energy = energie_key
     lo = bpy.data.objects.new("Soleil", ld)
@@ -64,8 +64,8 @@ def eclairage_simple(energie_key=3.0):
 
 
 def camera_studio(lens=50):
-    # Distance sur la bbox ACTUELLE (après normalisation) : le max_dim global
-    # est calculé AVANT le passage à l'échelle → cadrage faux sinon.
+    # Distance on the CURRENT bbox (after normalization): the global max_dim
+    # is computed BEFORE scaling → wrong framing otherwise.
     pts_actuel = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
     md = max(max(p.x for p in pts_actuel) - min(p.x for p in pts_actuel),
              max(p.y for p in pts_actuel) - min(p.y for p in pts_actuel),
@@ -82,7 +82,7 @@ def camera_studio(lens=50):
 
 
 if mode == "toon":
-    # Diffuse → ColorRamp CONSTANT 3 paliers + bande rim (Layer Weight → Emission).
+    # Diffuse → CONSTANT ColorRamp 3 steps + rim band (Layer Weight → Emission).
     for o in meshes:
         o.data.materials.clear()
         mat = bpy.data.materials.new("MAT_Toon")
@@ -121,9 +121,9 @@ if mode == "toon":
     scn.render.resolution_x = scn.render.resolution_y = 700
 
 elif mode == "psx":
-    # Snap des sommets (grille monde 0.01), flat shading, AA minimal, brouillard
-    # volumétrique bleu-gris (le passe Mist n'est plus exposé par le compositing 5.2),
-    # rendu 640×480.
+    # Vertex snapping (world grid 0.01), flat shading, minimal AA, volumetric
+    # blue-gray fog (the Mist pass is no longer exposed by 5.2 compositing),
+    # 640×480 render.
     for o in meshes:
         for v in o.data.vertices:
             v.co.x = round(v.co.x, 2)
@@ -149,7 +149,7 @@ elif mode == "psx":
     camera_studio()
     bpy.context.scene.world.node_tree.nodes["Background"].inputs[0].default_value = (0.55, 0.6, 0.68, 1.0)
     bpy.context.scene.world.node_tree.nodes["Background"].inputs[1].default_value = 1.0
-    # Cube de brouillard : surface transparente + Volume Scatter teinté.
+    # Fog cube: transparent surface + tinted Volume Scatter.
     bpy.ops.mesh.primitive_cube_add(size=16, location=centre)
     cube = bpy.context.active_object
     fog = bpy.data.materials.new("MAT_Brouillard_PSX")
@@ -165,17 +165,17 @@ elif mode == "psx":
     fnt.links.new(transp.outputs["BSDF"], out_f.inputs["Surface"])
     fnt.links.new(vol.outputs["Volume"], out_f.inputs["Volume"])
     cube.data.materials.append(fog)
-    cube.display_type = "WIRE"  # n'apparaît pas en rendu, volume quand même évalué
+    cube.display_type = "WIRE"  # not shown in render, volume still evaluated
 
 elif mode == "wear":
-    # Usure procédurale : Pointiness → ramp → mix métal clair sur les arêtes.
+    # Procedural wear: Pointiness → ramp → light metal mix on edges.
     for o in meshes:
         o.data.materials.clear()
         mat = bpy.data.materials.new("MAT_Wear")
         mat.use_nodes = True
         nt = mat.node_tree
         b = nt.nodes["Principled BSDF"]
-        b.inputs["Base Color"].default_value = (0.35, 0.22, 0.12, 1.0)  # bois sombre
+        b.inputs["Base Color"].default_value = (0.35, 0.22, 0.12, 1.0)  # dark wood
         b.inputs["Roughness"].default_value = 0.85
         geo = nt.nodes.new("ShaderNodeNewGeometry")
         cr = nt.nodes.new("ShaderNodeValToRGB")
@@ -186,7 +186,7 @@ elif mode == "wear":
         mix.data_type = "RGBA"
         mix.blend_type = "MIX"
         mix.inputs["A"].default_value = (0.35, 0.22, 0.12, 1.0)
-        mix.inputs["B"].default_value = (0.62, 0.58, 0.52, 1.0)  # bois usé clair
+        mix.inputs["B"].default_value = (0.62, 0.58, 0.52, 1.0)  # light worn wood
         nt.links.new(geo.outputs["Pointiness"], cr.inputs["Fac"])
         nt.links.new(cr.outputs["Color"], mix.inputs["Factor"])
         nt.links.new(mix.outputs["Result"], b.inputs["Base Color"])
@@ -196,8 +196,8 @@ elif mode == "wear":
     scn.render.resolution_x = scn.render.resolution_y = 700
 
 elif mode == "rust":
-    # Rouille procédurale : Noise (scale 8) → ramp seuil → mix orange-brun,
-    # roughness ↑ et metallic ↓ dans les zones rouillées.
+    # Procedural rust: Noise (scale 8) → threshold ramp → orange-brown mix,
+    # roughness ↑ and metallic ↓ in rusty areas.
     for o in meshes:
         o.data.materials.clear()
         mat = bpy.data.materials.new("MAT_Rust")
@@ -216,7 +216,7 @@ elif mode == "rust":
         mixc.data_type = "RGBA"
         mixc.blend_type = "MIX"
         mixc.inputs["A"].default_value = (0.45, 0.44, 0.43, 1.0)
-        mixc.inputs["B"].default_value = (0.38, 0.16, 0.06, 1.0)  # orange-brun
+        mixc.inputs["B"].default_value = (0.38, 0.16, 0.06, 1.0)  # orange-brown
         mixr = nt.nodes.new("ShaderNodeMix")
         mixr.data_type = "FLOAT"
         mixr.inputs["A"].default_value = 0.35
@@ -238,8 +238,8 @@ elif mode == "rust":
     scn.render.resolution_x = scn.render.resolution_y = 700
 
 elif mode == "moss":
-    # Mousse : pointiness (creux) + normale vers le haut (Z+) → vert mousse,
-    # roughness ↑ (la mousse accroît l'aspérité).
+    # Moss: pointiness (crevices) + upward normal (Z+) → moss green,
+    # roughness ↑ (moss increases roughness).
     for o in meshes:
         o.data.materials.clear()
         mat = bpy.data.materials.new("MAT_Moss")
@@ -262,7 +262,7 @@ elif mode == "moss":
         mixc = nt.nodes.new("ShaderNodeMix")
         mixc.data_type = "RGBA"
         mixc.inputs["A"].default_value = (0.30, 0.20, 0.12, 1.0)
-        mixc.inputs["B"].default_value = (0.10, 0.22, 0.05, 1.0)  # vert mousse
+        mixc.inputs["B"].default_value = (0.10, 0.22, 0.05, 1.0)  # moss green
         mixr = nt.nodes.new("ShaderNodeMix")
         mixr.data_type = "FLOAT"
         mixr.inputs["A"].default_value = 0.8
@@ -282,21 +282,21 @@ elif mode == "moss":
     scn.render.resolution_x = scn.render.resolution_y = 700
 
 elif mode == "water":
-    # Taches d'eau : dégradé vertical (Generated Z inversé) × noise → albedo
-    # assombri + roughness légèrement augmentée (haut de mur/coins).
+    # Water stains: vertical gradient (inverted Generated Z) × noise → darkened
+    # albedo + slightly increased roughness (top of wall/corners).
     for o in meshes:
         o.data.materials.clear()
         mat = bpy.data.materials.new("MAT_WaterStain")
         mat.use_nodes = True
         nt = mat.node_tree
         b = nt.nodes["Principled BSDF"]
-        b.inputs["Base Color"].default_value = (0.55, 0.52, 0.48, 1.0)  # plâtre
+        b.inputs["Base Color"].default_value = (0.55, 0.52, 0.48, 1.0)  # plaster
         b.inputs["Roughness"].default_value = 0.7
         texco = nt.nodes.new("ShaderNodeTexCoord")
         sep = nt.nodes.new("ShaderNodeSeparateXYZ")
         grad = nt.nodes.new("ShaderNodeMapRange")
         grad.inputs["From Min"].default_value = 0.9
-        grad.inputs["From Max"].default_value = 0.4  # inversé : haut = 1
+        grad.inputs["From Max"].default_value = 0.4  # inverted: top = 1
         noise = nt.nodes.new("ShaderNodeTexNoise")
         noise.inputs["Scale"].default_value = 5.0
         mult = nt.nodes.new("ShaderNodeMath")
@@ -304,7 +304,7 @@ elif mode == "water":
         mixc = nt.nodes.new("ShaderNodeMix")
         mixc.data_type = "RGBA"
         mixc.inputs["A"].default_value = (0.55, 0.52, 0.48, 1.0)
-        mixc.inputs["B"].default_value = (0.22, 0.18, 0.14, 1.0)  # auréole sombre
+        mixc.inputs["B"].default_value = (0.22, 0.18, 0.14, 1.0)  # dark halo
         mixr = nt.nodes.new("ShaderNodeMix")
         mixr.data_type = "FLOAT"
         mixr.inputs["A"].default_value = 0.7
@@ -323,8 +323,8 @@ elif mode == "water":
     scn.render.resolution_x = scn.render.resolution_y = 700
 
 elif mode == "panel":
-    # Variation de couleur par matériau (pattern « panel variation » adapté) :
-    # Hue Shift aléatoire seedé par index de matériau, ±10 % de value max.
+    # Per-material color variation (adapted "panel variation" pattern):
+    # random Hue Shift seeded by material index, ±10 % max value.
     for i, o in enumerate(meshes):
         o.data.materials.clear()
         mat = bpy.data.materials.new(f"MAT_Panel_{i:02d}")
@@ -335,7 +335,7 @@ elif mode == "panel":
         hsv = nt.nodes.new("ShaderNodeHueSaturation")
         rgb = nt.nodes.new("ShaderNodeRGB")
         rgb.outputs[0].default_value = (0.42, 0.44, 0.48, 1.0)
-        hsv.inputs["Hue"].default_value = 0.5 + ((i * 37 % 11) - 5) * 0.008  # ±0.04 seedé
+        hsv.inputs["Hue"].default_value = 0.5 + ((i * 37 % 11) - 5) * 0.008  # seeded ±0.04
         hsv.inputs["Value"].default_value = 1.0 - (i * 23 % 9) * 0.015       # −0..12 %
         nt.links.new(rgb.outputs["Color"], hsv.inputs["Color"])
         nt.links.new(hsv.outputs["Color"], b.inputs["Base Color"])

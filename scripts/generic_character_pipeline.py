@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Pipeline Générique de Création de Personnages 3D MakeHuman / MPFB2 pour Godot 4.
-Processus universel, propre et reproductible :
-1. Part du skin d'origine MakeHuman (non modifié).
-2. Applique un étalonnage colorimétrique sans déformation (teint, sous-ton, SSS).
-3. Compile le pack MPFB officiel (.mhmat, .thumb, diffuse.png, normal.png).
-4. Construit le corps 3D headless dans Blender (macros, morphologie, squelette, shape keys).
-5. Ajoute les assets 3D anatomiques natifs (yeux, sourcils, cils, cheveux, tenue).
-6. Exporte le modèle GLB pour Godot (statique & animé) et génère un rendu de validation.
+Generic MakeHuman / MPFB2 3D Character Creation Pipeline for Godot 4.
+Universal, clean and reproducible process:
+1. Starts from the origin MakeHuman skin (unmodified).
+2. Applies a distortion-free colorimetric calibration (complexion, undertone, SSS).
+3. Compiles the official MPFB pack (.mhmat, .thumb, diffuse.png, normal.png).
+4. Builds the 3D body headless in Blender (macros, morphology, skeleton, shape keys).
+5. Adds the native anatomical 3D assets (eyes, eyebrows, eyelashes, hair, outfit).
+6. Exports the GLB model for Godot (static & animated) and generates a validation render.
 """
 
 import argparse
@@ -33,25 +33,25 @@ SKIN_ORIGINAL_DEFAULT = os.path.join(MPFB_SKINS_DIR, "young_caucasian_male", "yo
 
 
 def etalonner_peau(image_pil: Image.Image, teinte: str) -> Image.Image:
-    """Ajuste proprement la teinte de peau sans aucun artefact ni collage."""
+    """Cleanly adjusts the skin complexion without any artifact or patchwork."""
     arr = np.array(image_pil.convert("RGB"), dtype=np.float32)
 
     if teinte == "cold_pale":
-        # Teint diaphane/pâle d'hiver (ex: Marc de Vent-Gris)
-        arr[:, :, 0] *= 0.99  # Rouge adouci
-        arr[:, :, 2] = np.clip(arr[:, :, 2] * 1.02, 0, 255)  # Sous-ton froid
+        # Diaphanous/pale winter complexion (e.g. Marc of Vent-Gris)
+        arr[:, :, 0] *= 0.99  # Softened red
+        arr[:, :, 2] = np.clip(arr[:, :, 2] * 1.02, 0, 255)  # Cold undertone
         img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
         img = ImageEnhance.Brightness(img).enhance(1.04)
         img = ImageEnhance.Color(img).enhance(0.92)
         return img
     elif teinte == "warm_tan":
-        # Teint hâlé / aventurier
+        # Tanned / adventurer complexion
         arr[:, :, 0] = np.clip(arr[:, :, 0] * 1.03, 0, 255)
         arr[:, :, 1] = np.clip(arr[:, :, 1] * 0.98, 0, 255)
         img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
         return ImageEnhance.Color(img).enhance(1.08)
     elif teinte == "dark":
-        # Teint mat / sombre
+        # Matte / dark complexion
         img = ImageEnhance.Brightness(image_pil).enhance(0.85)
         return ImageEnhance.Color(img).enhance(0.95)
     else:
@@ -64,16 +64,16 @@ def generer_pack_skin(
     teinte: str = "cold_pale",
     dossier_sortie_projet: str = r"godot_assets\skins"
 ) -> dict:
-    """Génère le pack de skin complet MPFB (.mhmat, .thumb, diffuse.png, normal.png)."""
-    print(f"\n[1/4] 🎨 Génération du pack de skin '{nom_skin}' à partir du skin d'origine...")
+    """Generates the full MPFB skin pack (.mhmat, .thumb, diffuse.png, normal.png)."""
+    print(f"\n[1/4] 🎨 Generation of the '{nom_skin}' skin pack from the origin skin...")
 
     if not os.path.exists(skin_base_path):
-        raise FileNotFoundError(f"Skin d'origine introuvable : {skin_base_path}")
+        raise FileNotFoundError(f"Origin skin not found: {skin_base_path}")
 
     base_img = Image.open(skin_base_path).convert("RGB")
     skin_traitee = etalonner_peau(base_img, teinte)
 
-    # Dossiers cibles
+    # Target folders
     dossier_mpfb = os.path.join(MPFB_SKINS_DIR, nom_skin)
     dossier_local = os.path.join(dossier_sortie_projet, nom_skin)
     os.makedirs(dossier_mpfb, exist_ok=True)
@@ -85,7 +85,7 @@ def generer_pack_skin(
     skin_traitee.save(diff_mpfb, "PNG", optimize=True)
     skin_traitee.save(diff_local, "PNG", optimize=True)
 
-    # 2. Normal Map PBR
+    # 2. PBR Normal Map
     from core.image_ops import generer_normal_map
     norm_img = generer_normal_map(skin_traitee, strength=2.0)
     norm_mpfb = os.path.join(dossier_mpfb, f"{nom_skin}_normal.png")
@@ -93,7 +93,7 @@ def generer_pack_skin(
     norm_img.save(norm_mpfb, "PNG")
     norm_img.save(norm_local, "PNG")
 
-    # 3. Vignette .thumb
+    # 3. .thumb vignette
     w, h = skin_traitee.size
     thumb_crop = skin_traitee.crop((int(w * 0.35), int(h * 0.15), int(w * 0.65), int(h * 0.45)))
     thumb_img = thumb_crop.resize((256, 256), Image.Resampling.LANCZOS).convert("RGBA")
@@ -102,7 +102,7 @@ def generer_pack_skin(
     thumb_img.save(thumb_mpfb, "PNG")
     thumb_img.save(thumb_local, "PNG")
 
-    # 4. Matériau .mhmat
+    # 4. .mhmat material
     mhmat_content = f"""# Material file for MakeHuman / MPFB
 name {nom_skin}
 tag MakeHuman™
@@ -150,7 +150,7 @@ shaderConfig diffuse True
     with open(mhmat_local, "w", encoding="utf-8") as f:
         f.write(mhmat_content)
 
-    print(f"  ✅ Pack skin MPFB installé : {dossier_mpfb}")
+    print(f"  ✅ MPFB skin pack installed: {dossier_mpfb}")
     return {
         "diffuse": diff_mpfb,
         "normal": norm_mpfb,
@@ -160,7 +160,7 @@ shaderConfig diffuse True
 
 
 def generer_script_blender_personnage(config: dict) -> str:
-    """Génère un script Blender Python headless éphémère pour assembler le personnage."""
+    """Generates an ephemeral headless Blender Python script to assemble the character."""
     nom = config["name"]
     age = config.get("age", 0.17)
     gender = config.get("gender", 1.0)
@@ -180,7 +180,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {{absolute_package_str}} introuvable")
+    raise ValueError(f"Module {{absolute_package_str}} not found")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -192,7 +192,7 @@ HumanService = dynamic_import("mpfb.services.humanservice", "HumanService")
 AssetService = dynamic_import("mpfb.services.assetservice", "AssetService")
 TargetService = dynamic_import("mpfb.services.targetservice", "TargetService")
 
-# 1. Corps de base anatomique MakeHuman
+# 1. Anatomical MakeHuman base body
 macros = {{
     "gender": {gender},
     "age": {age},
@@ -206,18 +206,18 @@ basemesh = HumanService.create_human(macro_detail_dict=macros)
 TargetService.reapply_macro_details(basemesh)
 bpy.context.view_layer.update()
 
-# 2. Application du Skin Personnalisé
+# 2. Applying the Custom Skin
 skin_path = os.path.join(r"C:/Users/laurent/AppData/Roaming/Blender Foundation/Blender/5.2/mpfb/data/skins", "{nom}", "{nom}.mhmat")
 if not os.path.exists(skin_path):
     skin_path = AssetService.find_asset_absolute_path("{nom}.mhmat", asset_subdir="skins")
 
 if skin_path and os.path.exists(skin_path):
     HumanService.set_character_skin(skin_path, basemesh, skin_type="GAMEENGINE")
-    print(f"[BLENDER] Skin '{nom}' appliqué avec succès depuis : {{skin_path}}")
+    print(f"[BLENDER] Skin '{nom}' successfully applied from: {{skin_path}}")
 else:
-    print(f"[BLENDER] Note: Skin '{nom}' introuvable.")
+    print(f"[BLENDER] Note: Skin '{nom}' not found.")
 
-# 3. Ajout des Assets 3D Séparés (Yeux, Sourcils, Cils, Dents, Cheveux)
+# 3. Adding the Separate 3D Assets (Eyes, Eyebrows, Eyelashes, Teeth, Hair)
 for subdir, fname, atype in [
     ("eyes",      "low-poly.mhclo",     "Eyes"),
     ("eyebrows",  "eyebrow001.mhclo",   "Eyebrows"),
@@ -230,7 +230,7 @@ for subdir, fname, atype in [
     if p:
         HumanService.add_mhclo_asset(p, basemesh, asset_type=atype, material_type="GAMEENGINE")
 
-# Tenue de base
+# Base outfit
 suit_p = AssetService.find_asset_absolute_path("male_worksuit01.mhclo", asset_subdir="clothes")
 shoes_p = AssetService.find_asset_absolute_path("shoes01.mhclo", asset_subdir="clothes")
 if suit_p:
@@ -240,7 +240,7 @@ if shoes_p:
 
 bpy.context.view_layer.update()
 
-# 4. Bake des shape keys pour figer la morphologie exacte
+# 4. Bake the shape keys to freeze the exact morphology
 dg = bpy.context.evaluated_depsgraph_get()
 for obj in [basemesh] + [o for o in bpy.data.objects if o.type == 'MESH' and o is not basemesh]:
     if obj.data.shape_keys:
@@ -251,14 +251,14 @@ for obj in [basemesh] + [o for o in bpy.data.objects if o.type == 'MESH' and o i
         me.name = old_me.name
         bpy.data.meshes.remove(old_me)
 
-# Retrait des masques
+# Remove the masks
 for o in bpy.data.objects:
     if o.type == 'MESH':
         for m in list(o.modifiers):
             if m.type == 'MASK':
                 o.modifiers.remove(m)
 
-# 5. Calibrage Hauteur ({target_height}m) et Pieds au sol (Z=0)
+# 5. Height calibration ({target_height}m) and feet on the ground (Z=0)
 all_objs = [o for o in bpy.data.objects if o.type == 'MESH']
 all_verts = [o.matrix_world @ v.co for o in all_objs for v in o.data.vertices]
 z_min, z_max = min(p.z for p in all_verts), max(p.z for p in all_verts)
@@ -275,12 +275,12 @@ for o in all_objs:
     o.location.z -= z_min_s
 bpy.context.view_layer.update()
 
-# 6. Export GLB pour Godot
+# 6. GLB export for Godot
 os.makedirs(os.path.dirname(r"{glb_out}"), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=r"{glb_out}", export_format='GLB', use_selection=False)
-print(f"[BLENDER] Modèle GLB exporté : r'{glb_out}'")
+print(f"[BLENDER] GLB model exported: r'{glb_out}'")
 
-# 7. Rendu Studio de Validation
+# 7. Validation Studio Render
 if bpy.context.scene.world is None:
     bpy.context.scene.world = bpy.data.worlds.new("World")
 bpy.context.scene.world.use_nodes = True
@@ -320,7 +320,7 @@ bpy.context.scene.render.image_settings.file_format = 'PNG'
 
 os.makedirs(os.path.dirname(r"{preview_out}"), exist_ok=True)
 bpy.ops.render.render(write_still=True)
-print(f"[BLENDER] Rendu de validation enregistré : r'{preview_out}'")
+print(f"[BLENDER] Validation render saved: r'{preview_out}'")
 """
     chemin_script_temp = os.path.join(racine, "scripts", "temp_blender_gen.py")
     with open(chemin_script_temp, "w", encoding="utf-8") as f:
@@ -329,21 +329,21 @@ print(f"[BLENDER] Rendu de validation enregistré : r'{preview_out}'")
 
 
 def executer_pipeline_complet(config: dict):
-    """Orchestration globale du pipeline générique."""
+    """Global orchestration of the generic pipeline."""
     nom = config["name"]
     print("=" * 65)
-    print(f" 🚀 PIPELINE GÉNÉRIQUE PERSONNAGE 3D : '{nom.upper()}'")
+    print(f" 🚀 GENERIC 3D CHARACTER PIPELINE: '{nom.upper()}'")
     print("=" * 65)
 
-    # 1. Génération du pack de skin propre
+    # 1. Generation of the clean skin pack
     generer_pack_skin(
         nom_skin=nom,
         skin_base_path=config.get("skin_base", SKIN_ORIGINAL_DEFAULT),
         teinte=config.get("skin_tone", "cold_pale")
     )
 
-    # 2. Génération et exécution du script Blender
-    print("\n[2/4] 🔨 Assemblage anatomique du modèle 3D sous Blender 5.2...")
+    # 2. Generation and execution of the Blender script
+    print("\n[2/4] 🔨 Anatomical assembly of the 3D model under Blender 5.2...")
     script_blender = generer_script_blender_personnage(config)
     cmd = [BLENDER_EXE, "--background", "--python", script_blender]
     res = subprocess.run(cmd, capture_output=True, text=True)
@@ -352,25 +352,25 @@ def executer_pipeline_complet(config: dict):
         os.remove(script_blender)
 
     if res.returncode != 0:
-        print(f"❌ Erreur Blender : {res.stderr}")
+        print(f"❌ Blender error: {res.stderr}")
         sys.exit(1)
 
     print(res.stdout)
     print("=" * 65)
-    print(f" 🎉 PERSONNAGE '{nom}' CRÉÉ, PACKAGÉ ET EXPORTÉ AVEC SUCCÈS !")
+    print(f" 🎉 CHARACTER '{nom}' CREATED, PACKAGED AND EXPORTED SUCCESSFULLY!")
     print("=" * 65)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Pipeline générique de création de personnages 3D MakeHuman pour Godot.")
-    parser.add_argument("--name", default="marc_novice", help="Identifiant unique du personnage (ex: marc_novice, elian_peasant).")
-    parser.add_argument("--age", type=float, default=0.17, help="Âge MakeHuman (0.0=bébé, 0.18=enfant 8 ans, 0.5=adulte).")
-    parser.add_argument("--gender", type=float, default=1.0, help="Genre MakeHuman (1.0=homme, 0.0=femme).")
-    parser.add_argument("--height", type=float, default=1.18, help="Taille réelle calibrée en mètres (ex: 1.18).")
-    parser.add_argument("--skin-tone", choices=["cold_pale", "warm_tan", "dark", "neutral"], default="cold_pale", help="Étalonnage colorimétrique de la peau.")
-    parser.add_argument("--hair", default="short01.mhclo", help="Modèle de cheveux MakeHuman (.mhclo).")
-    parser.add_argument("--export-glb", help="Chemin du fichier GLB de sortie.")
-    parser.add_argument("--render-preview", help="Chemin de l'image de rendu studio PNG.")
+    parser = argparse.ArgumentParser(description="Generic MakeHuman 3D character creation pipeline for Godot.")
+    parser.add_argument("--name", default="marc_novice", help="Unique identifier of the character (e.g. marc_novice, elian_peasant).")
+    parser.add_argument("--age", type=float, default=0.17, help="MakeHuman age (0.0=baby, 0.18=8-year-old child, 0.5=adult).")
+    parser.add_argument("--gender", type=float, default=1.0, help="MakeHuman gender (1.0=male, 0.0=female).")
+    parser.add_argument("--height", type=float, default=1.18, help="Calibrated real height in meters (e.g. 1.18).")
+    parser.add_argument("--skin-tone", choices=["cold_pale", "warm_tan", "dark", "neutral"], default="cold_pale", help="Skin colorimetric calibration.")
+    parser.add_argument("--hair", default="short01.mhclo", help="MakeHuman hair model (.mhclo).")
+    parser.add_argument("--export-glb", help="Path of the output GLB file.")
+    parser.add_argument("--render-preview", help="Path of the PNG studio render image.")
     args = parser.parse_args()
 
     config = {

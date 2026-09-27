@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Worker Blendkit exécuté DANS Blender en mode background.
+"""Blendkit worker executed INSIDE Blender in background mode.
 
-Lit un fichier de job JSON (écrit par core/blendkit.py), télécharge l'asset
-via l'API Blendkit avec la clé du compte connecté (lue dans les préférences de
-l'addon, jamais logguée), puis :
-  - mode « prop »  : append des objets -> export GLB + rendu de contrôle Workbench ;
-  - mode « plate » : ouverture de la scène -> rendu Cycles/EEVEE (plaque de compositing).
+Reads a JSON job file (written by core/blendkit.py), downloads the asset
+via the Blendkit API with the connected account key (read from the addon
+preferences, never logged), then:
+  - "prop" mode  : append of the objects -> GLB export + Workbench control render;
+  - "plate" mode : opening of the scene -> Cycles/EEVEE render (compositing plate).
 
-Appel :
+Call:
   blender.exe --background --python scripts/blendkit_blender_job.py -- <job.json>
 
-Le worker écrit <job_dir>/resultat.json (statut + infos) et loggue avec le
-préfixe [blendkit_workflow].
+The worker writes <job_dir>/resultat.json (status + info) and logs with the
+[blendkit_workflow] prefix.
 """
 
 import bpy
@@ -37,9 +37,9 @@ def lire_cle_api(module_addon: str) -> str:
 
 
 def telecharger_blend(api_key: str, file_id: str, cache_path: str, no_cache: bool) -> str:
-    """Télécharge le .blend de l'asset (endpoint authentifié -> URL signée), avec cache."""
+    """Downloads the asset .blend (authenticated endpoint -> signed URL), with cache."""
     if not no_cache and os.path.isfile(cache_path) and os.path.getsize(cache_path) > 0:
-        log(f".blend déjà en cache : {cache_path}")
+        log(f".blend already cached: {cache_path}")
         return cache_path
     req = urllib.request.Request(
         f"{BLENDERKIT_API}/downloads/{file_id}/?scene_uuid={uuid_mod.uuid4()}",
@@ -49,16 +49,16 @@ def telecharger_blend(api_key: str, file_id: str, cache_path: str, no_cache: boo
         dl = json.load(reponse)
     url_signee = dl.get("filePath")
     if not url_signee:
-        raise RuntimeError(f"pas de filePath dans la réponse téléchargement : {str(dl)[:200]}")
-    log("téléchargement de l'asset en cours…")
+        raise RuntimeError(f"no filePath in the download response: {str(dl)[:200]}")
+    log("downloading the asset…")
     req_fichier = urllib.request.Request(url_signee, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req_fichier, timeout=1800) as reponse, open(cache_path, "wb") as f:
         f.write(reponse.read())
-    log(f".blend téléchargé : {os.path.getsize(cache_path) / 1e6:.1f} Mo")
+    log(f".blend downloaded: {os.path.getsize(cache_path) / 1e6:.1f} MB")
     return cache_path
 
 
-# ---------------------------------------------------------------- mode « prop »
+# ---------------------------------------------------------------- "prop" mode
 
 def importer_objets(chemin_blend: str) -> list:
     with bpy.data.libraries.load(chemin_blend, link=False) as (src, dst):
@@ -80,7 +80,7 @@ def cadrer_camera(scene: bpy.types.Scene, meshes: list) -> None:
     mx = Vector((max(p.x for p in points), max(p.y for p in points), max(p.z for p in points)))
     centre = (mn + mx) / 2
     rayon = (mx - mn).length / 2
-    demi_fov = math.radians(20.0)  # lentille 50 mm, capteur 36 mm
+    demi_fov = math.radians(20.0)  # 50 mm lens, 36 mm sensor
     distance = (rayon / math.sin(demi_fov)) * 1.25 if rayon > 0 else 4.0
     direction = Vector((1.0, -1.0, 0.7)).normalized()
     donnees = bpy.data.cameras.new("CamControle")
@@ -98,10 +98,10 @@ def executer_mode_prop(job: dict, chemin_blend: str, resultat: dict) -> None:
     importes = importer_objets(chemin_blend)
     meshes = [o for o in importes if o.type == "MESH"]
     if not meshes:
-        raise RuntimeError("aucun maillage importé")
+        raise RuntimeError("no imported mesh")
     faces = sum(len(o.data.polygons) for o in meshes)
     materiaux = sorted({m.name for o in meshes for m in o.data.materials if m})
-    log(f"import OK : {len(importes)} objets, {len(meshes)} maillages, {faces} faces")
+    log(f"import OK: {len(importes)} objects, {len(meshes)} meshes, {faces} faces")
     resultat.update(objets=len(importes), maillages=len(meshes), faces=faces, materiaux=materiaux)
 
     cadrer_camera(scene, meshes)
@@ -114,19 +114,19 @@ def executer_mode_prop(job: dict, chemin_blend: str, resultat: dict) -> None:
     scene.render.filepath = job["prop"]["apercu"]
     bpy.ops.render.render(write_still=True)
     resultat["apercu"] = job["prop"]["apercu"]
-    log("rendu de contrôle Workbench OK")
+    log("Workbench control render OK")
 
     glb = job["prop"]["glb"]
     bpy.ops.export_scene.gltf(filepath=glb, export_format="GLB")
     resultat["glb"] = glb
     resultat["glb_mo"] = round(os.path.getsize(glb) / 1e6, 1)
-    log(f"export GLB : {resultat['glb_mo']} Mo -> {glb}")
+    log(f"GLB export: {resultat['glb_mo']} MB -> {glb}")
 
 
-# ---------------------------------------------------------------- mode « plate »
+# ---------------------------------------------------------------- "plate" mode
 
 def configurer_cycles_gpu(scene: bpy.types.Scene) -> str:
-    """Active l'accélération GPU Cycles (HIP/Vulkan/CUDA selon dispo) ; retourne le détail."""
+    """Enables Cycles GPU acceleration (HIP/Vulkan/CUDA depending on availability); returns the detail."""
     detail = "CPU"
     try:
         prefs = bpy.context.preferences.addons["cycles"].preferences
@@ -144,8 +144,8 @@ def configurer_cycles_gpu(scene: bpy.types.Scene) -> str:
                 actifs.append(f"{d.name} ({d.type})")
         scene.cycles.device = "GPU"
         detail = ", ".join(actifs) or "CPU"
-    except Exception as e:  # noqa: BLE001 - CPU en dernier recours
-        log(f"config GPU impossible ({e}), Cycles en CPU")
+    except Exception as e:  # noqa: BLE001 - CPU as last resort
+        log(f"GPU config impossible ({e}), Cycles on CPU")
     return detail
 
 
@@ -154,22 +154,22 @@ def executer_mode_plate(job: dict, chemin_blend: str, resultat: dict) -> None:
     scene = bpy.context.scene
     resultat["objets"] = len(bpy.data.objects)
     resultat["lumieres"] = len(bpy.data.lights)
-    log(f"scène ouverte : {resultat['objets']} objets, {resultat['lumieres']} lumières")
+    log(f"scene opened: {resultat['objets']} objects, {resultat['lumieres']} lights")
 
     options = job["plate"]
     cams = [o for o in bpy.data.objects if o.type == "CAMERA"]
     if not cams:
-        raise RuntimeError("aucune caméra dans la scène (rendre un prop en mode prop, ou choisir une autre scène)")
+        raise RuntimeError("no camera in the scene (render a prop in prop mode, or pick another scene)")
     nom_demande = options.get("camera")
     if nom_demande:
         cam = next((c for c in cams if c.name == nom_demande), None)
         if cam is None:
-            raise RuntimeError(f"caméra '{nom_demande}' introuvable ; disponibles : {[c.name for c in cams]}")
+            raise RuntimeError(f"camera '{nom_demande}' not found; available: {[c.name for c in cams]}")
         scene.camera = cam
     elif scene.camera is None:
         scene.camera = cams[0]
     resultat["camera"] = scene.camera.name
-    log(f"caméra : {resultat['camera']}")
+    log(f"camera: {resultat['camera']}")
 
     vt = scene.view_settings
     transform_demande = options.get("view_transform") or "AgX"
@@ -179,7 +179,7 @@ def executer_mode_plate(job: dict, chemin_blend: str, resultat: dict) -> None:
             break
     vt.exposure = float(options.get("exposure", -1.0))
     resultat["view_transform"] = vt.view_transform
-    log(f"colorimétrie : {vt.view_transform}, exposure {vt.exposure}")
+    log(f"colorimetry: {vt.view_transform}, exposure {vt.exposure}")
 
     scene.render.resolution_x = int(options.get("width", 1920))
     scene.render.resolution_y = int(options.get("height", 1080))
@@ -188,17 +188,17 @@ def executer_mode_plate(job: dict, chemin_blend: str, resultat: dict) -> None:
         f"{scene.render.resolution_x * scene.render.resolution_percentage // 100}"
         f"x{scene.render.resolution_y * scene.render.resolution_percentage // 100}"
     )
-    log(f"résolution effective : {resultat['resolution']}")
+    log(f"effective resolution: {resultat['resolution']}")
 
     moteur_demande = options.get("engine", "cycles")
     if moteur_demande == "eevee":
-        scene.render.engine = "BLENDER_EEVEE"  # enum RNA incomplet : affectation directe
+        scene.render.engine = "BLENDER_EEVEE"  # incomplete RNA enum: direct assignment
     if scene.render.engine == "CYCLES":
         resultat["gpu"] = configurer_cycles_gpu(scene)
         scene.cycles.samples = int(options.get("samples", 48))
-        log(f"GPU Cycles : {resultat['gpu']} | samples {scene.cycles.samples}")
+        log(f"Cycles GPU: {resultat['gpu']} | samples {scene.cycles.samples}")
     else:
-        log("moteur : EEVEE")
+        log("engine: EEVEE")
     resultat["engine"] = scene.render.engine
 
     scene.render.image_settings.file_format = "PNG"
@@ -206,7 +206,7 @@ def executer_mode_plate(job: dict, chemin_blend: str, resultat: dict) -> None:
     bpy.ops.render.render(write_still=True)
     resultat["png"] = options["png"]
     resultat["png_mo"] = round(os.path.getsize(options["png"]) / 1e6, 1)
-    log(f"rendu OK : {resultat['png_mo']} Mo -> {options['png']}")
+    log(f"render OK: {resultat['png_mo']} MB -> {options['png']}")
 
 
 def main() -> int:
@@ -220,10 +220,10 @@ def main() -> int:
         api_key = lire_cle_api(job.get("addon_module", "bl_ext.user_default.blenderkit"))
         if not api_key:
             raise RuntimeError(
-                "aucune clé API dans les préférences de l'addon Blendkit "
-                "(ouvrir Blender en GUI, se connecter à Blendkit, puis relancer)"
+                "no API key in the Blendkit addon preferences "
+                "(open Blender in GUI, log in to Blendkit, then rerun)"
             )
-        log(f"clé API lue ({len(api_key)} caractères, masquée)")
+        log(f"API key read ({len(api_key)} characters, masked)")
         chemin_blend = telecharger_blend(
             api_key, job["download"]["file_id"], job["download"]["cache"], job["download"].get("no_cache", False)
         )
@@ -232,9 +232,9 @@ def main() -> int:
         else:
             executer_mode_plate(job, chemin_blend, resultat)
         resultat["ok"] = True
-    except Exception as e:  # noqa: BLE001 - on renvoie l'erreur au workflow
+    except Exception as e:  # noqa: BLE001 - the error is sent back to the workflow
         resultat["erreur"] = str(e)
-        log(f"ERREUR : {e}")
+        log(f"ERROR: {e}")
 
     with open(os.path.join(dossier, "resultat.json"), "w", encoding="utf-8") as f:
         json.dump(resultat, f, ensure_ascii=False, indent=1)
