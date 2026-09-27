@@ -14,7 +14,7 @@
 [![Video Generation](https://img.shields.io/badge/Video%20AI-Wan%202.1%2F2.2%20%E2%80%A2%20LTX--2.5%20%E2%80%A2%20MiniMax--H3-8A2BE2.svg)](#-generation-video-native-webm)
 [![Music Generation](https://img.shields.io/badge/Music%20AI-MiniMax--Music3%20Loops%20(audiocpp)-1DB954.svg)](#43-music_bg--ai-music-loops-as-background-beds-minimax-music3-gguf-vulkan)
 [![AI-Ready Skill](https://img.shields.io/badge/AI--Ready-agent%20skill%20included-8A2BE2.svg)](#skill-ia)
-[![sd.cpp Auto-Update](https://img.shields.io/badge/sd.cpp-Vulkan%20Auto--Update%20%26%20Build-blue.svg)](#-automatisation-de-la-mise-a-jour--compilation-vulkan-stable-diffusioncpp)
+[![sd.cpp Auto-Update](https://img.shields.io/badge/sd.cpp-Vulkan%20Auto--Update%20%26%20Build-blue.svg)](#-vulkan-update--build-automation-stable-diffusioncpp)
 [![Flux.1 & SDXL](https://img.shields.io/badge/Models-Flux.1%20Dev%20%26%20SDXL-black.svg)](https://blackforestlabs.ai/)
 [![PBR 3D Materials](https://img.shields.io/badge/3D-PBR%20Materials%20%26%20ORM-orange.svg)](#-3d-materials--geometry)
 [![LoRA Support](https://img.shields.io/badge/LoRA-Multi--LoRA%20SDXL-ff69b4.svg)](#-ai-models--lora-library)
