@@ -37,6 +37,7 @@ def run_engine(
     capture: bool = True,
     cwd: Optional[str] = None,
     etiquette: str = "moteur",
+    entree_stdin: Optional[str] = None,
 ) -> subprocess.CompletedProcess:
     """Runs an external engine and centralizes error handling.
 
@@ -49,6 +50,8 @@ def run_engine(
       feeds `EngineError.stderr_fin`;
     - `capture=False`: output left live on the console (long jobs where
       progress matters) — EngineError will then carry only the code;
+    - `entree_stdin`: text piped to the engine's stdin (engines reading
+      their payload from stdin, e.g. qwentts.cpp's qwen-tts);
     - `check=True` (default): raises EngineError if return code ≠ 0.
     """
     affichage = subprocess.list2cmdline(commande)
@@ -66,6 +69,7 @@ def run_engine(
             timeout=timeout,
             check=False,
             cwd=cwd,
+            input=entree_stdin,
         )
     except subprocess.TimeoutExpired as e:
         stderr_fin = e.stderr or ""

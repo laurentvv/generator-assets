@@ -155,6 +155,17 @@
  ],
  [
   [
+   "--brut"
+  ],
+  "brut",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
    "--camera"
   ],
   "camera",
@@ -517,6 +528,17 @@
  ],
  [
   [
+   "--hollow"
+  ],
+  "hollow",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
    "--index"
   ],
   "index",
@@ -580,6 +602,17 @@
   "False",
   null,
   0,
+  null
+ ],
+ [
+  [
+   "--kokoro-voice"
+  ],
+  "kokoro_voice",
+  "_StoreAction",
+  "None",
+  null,
+  null,
   null
  ],
  [
@@ -1048,6 +1081,17 @@
   "pitch",
   "_StoreAction",
   "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
+   "--pitch-ratio"
+  ],
+  "pitch_ratio",
+  "_StoreAction",
+  "1.0",
   null,
   null,
   "float"
@@ -1755,6 +1799,17 @@
   null,
   null,
   "float"
+ ],
+ [
+  [
+   "--whisper"
+  ],
+  "whisper",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
  ],
  [
   [

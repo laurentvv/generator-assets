@@ -454,7 +454,7 @@ The engine features **38 modular workflows** organized into 5 functional categor
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, monoplan_ia
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, monoplan_ia
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -1500,6 +1500,24 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   ```
 * **Status (2026-09-18)**: ✅ **User-validated** — native Quaternius gallop rendered from this exact chain graded *« parfait »* (the quality bar: native mocap on a textured character beats any procedural/retargeted motion). Full campaign details (agentique Rigify rigs, Kimodo text→mocap CPU, parked retarget): MEMORY_BANK §1.28 + skill `.agents/skills/blender-rig/`.
 * **Quality rule of thumb**: native pack mocap on a textured character = best; procedural FK loops = ambient only; inter-rig retarget = parked (works, below the bar).
+
+#### 4.17. `voix_perso` — English Character Voice (Kokoro preset or Qwen3 VoiceDesign + validated post chains)
+* **Process** (recipes validated on the novel2video-ai pilot casting, 2026-09-27 — MEMORY_BANK §1.31):
+  1. **Engine auto-selection**: `--kokoro-voice <id>` → raw HUMAN Kokoro-82M preset render (audio.cpp Vulkan — no robot effect; language auto-resolved from the voice prefix: `a*` → en-us, `b*` → en-gb, the engine rejecting `b*` voices with en-us); otherwise `--instruct "<EN>"` → **Qwen3-TTS 1.7B VoiceDesign** via qwentts.cpp (`--lang English`, text on stdin, seed 42 default) — the `voix_off` qwen3 path forces `--language French` + a mandatory voice reference and cannot do 100 % English instruct voices.
+  2. **Composable post chains** (FFmpeg, 44.1 kHz PCM16): `--pitch-ratio` (duration-preserving, **source-rate aware** — engine outputs are 24 kHz, a 44100-based `asetrate` would apply ~1.8× the intended factor), `--whisper` (Elder treatment: lowpass 1800 Hz + 60 ms echo), `--hollow` (Void treatment: lowpass 900 Hz + 120 ms echo + **6 dB compensation** — a bare lowpass chain measures −35 dB mean = inaudible).
+  3. Final normalization **−16 LUFS** (YouTube dialogue standard) + listening MP3; `--brut` skips it for raw comparison renders.
+* **Inputs**: `prompt` (English text or `.txt`), `--kokoro-voice` (e.g. `am_onyx`, `bm_george`), `--instruct` (VoiceDesign instruction, reused flag from `voix_off`), `--pitch-ratio` (default 1.0), `--whisper`, `--hollow`, `--brut`, `--seed` (default 42), `--lufs-voix` (default −16).
+* **Engines**: Kokoro-82M q8_0 (audio.cpp, same eSpeak binary resolution as `voix_robot`) + qwentts.cpp VoiceDesign talker Q8_0 (`C:\IA\qwentts.cpp`, health: `scripts/manage_qwentts.py --check`).
+* **Outputs** (`output/voix_perso/<name>/`): `<name>_brut.wav` (engine render), `<name>.wav` (post chains), `<name>_final.wav` (−16 LUFS) + `<name>_final.mp3`.
+* **Example** (the validated pilot cast):
+  ```bash
+  LINE="Empty ruins of a burnt medieval forge inside a decayed castle."
+  uv run python main.py -w voix_perso "$LINE" --kokoro-voice am_onyx -o alaric          # Alaric (baron ~90)
+  uv run python main.py -w voix_perso "$LINE" --kokoro-voice am_michael -o elder       # The Elder (hermit)
+  uv run python main.py -w voix_perso "$LINE" --instruct "very young boy of exactly eight years old, extremely high pitched child voice, energetic bratty teasing, fast excited speech" --pitch-ratio 0.90 -o marc   # Marc (8 y.o.)
+  uv run python main.py -w voix_perso "$LINE" --kokoro-voice am_onyx --pitch-ratio 0.85 --hollow -o void  # The Void
+  ```
+* **Status (2026-09-27)**: ✅ **User-validated** end-to-end — 5/5 roles of the novel2video-ai E01 pilot cast by ear in 2 rounds (Alaric `am_onyx`, Elder `am_michael`, Marc VoiceDesign ×0.90, Elian VoiceDesign natural, Void `am_onyx` + hollow). Children voices by instruction work (Marc/Elian); extreme-age adult instructs still lose to Kokoro presets. Batch dialogue rendering (line list + casting file) = future workflow when the pilot script is final.
 
 ---
 

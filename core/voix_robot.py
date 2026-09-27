@@ -66,8 +66,14 @@ def generer_base_kokoro(
     voice_id: str = "af_heart",
     speaking_rate: float = 1.0,
     backend: str = "vulkan",
+    language: str = "en-us",
 ) -> Dict[str, Any]:
-    """Synthesizes English speech (Kokoro-82M, 24 kHz mono) before the robot effect."""
+    """Synthesizes English speech (Kokoro-82M, 24 kHz mono) before the robot effect.
+
+    `language` must match the voice family: audio.cpp rejects `b*` (British)
+    voices with en-us ("voice bm_george requires lang_code=b") — see
+    langue_kokoro() in core/voix_perso.py for the prefix-based resolution.
+    """
     if not os.path.exists(MODELE_KOKORO):
         raise FileNotFoundError(
             f"Kokoro-82M not found: {MODELE_KOKORO} — download it from "
@@ -77,7 +83,7 @@ def generer_base_kokoro(
     cmd = [
         audiocpp, "--task", "tts", "--family", "kokoro_tts",
         "--model", MODELE_KOKORO, "--backend", backend,
-        "--language", "en-us", "--voice-id", voice_id,
+        "--language", language, "--voice-id", voice_id,
         "--metrics", "--out", sortie,
     ]
     if speaking_rate != 1.0:
