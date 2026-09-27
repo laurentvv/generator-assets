@@ -1,6 +1,6 @@
-# Turntable animé d'un GLB — pattern blender-skills "rendering/camera-cinematography",
-# adapté headless (EEVEE, éclairage 3 points calqué sur core/mesh_ia.py).
-# Usage : blender --background --python turntable.py -- <glb_in> <out_dir> [frames=48] [res=800]
+# Animated turntable of a GLB — blender-skills pattern "rendering/camera-cinematography",
+# adapted headless (EEVEE, 3-point lighting copied from core/mesh_ia.py).
+# Usage: blender --background --python turntable.py -- <glb_in> <out_dir> [frames=48] [res=800]
 
 import math
 import os
@@ -18,7 +18,7 @@ os.makedirs(out_dir, exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes:
@@ -35,7 +35,7 @@ def bbox_monde():
     return pts
 
 
-# Normalisation : dimension max ramenée à 2.0, base posée sur z=0 (identique mesh_ia).
+# Normalization: max dimension brought to 2.0, base resting on z=0 (same as mesh_ia).
 pts = bbox_monde()
 max_dim = max(max(p.x for p in pts) - min(p.x for p in pts),
               max(p.y for p in pts) - min(p.y for p in pts),
@@ -49,7 +49,7 @@ for o in meshes:
     o.location.z -= min(p.z for p in pts)
 bpy.context.view_layer.update()
 
-# Caméra orbitale : parentée à un empty qui tourne (keyframes 0 -> 360°).
+# Orbital camera: parented to a rotating empty (keyframes 0 -> 360°).
 pivot = bpy.data.objects.new("Pivot", None)
 bpy.context.scene.collection.objects.link(pivot)
 cam_data = bpy.data.cameras.new("Cam")
@@ -83,8 +83,8 @@ def area_light(nom, energie, taille, loc):
     return lo
 
 
-# Lumières FIXES (non parentées au pivot) : les reflets balayent l'objet au fil de l'orbite,
-# comme un turntable classique où l'objet tourne sous un éclairage studio fixe.
+# FIXED lights (not parented to the pivot): reflections sweep across the object along the orbit,
+# like a classic turntable where the object spins under fixed studio lighting.
 for nom, energie, taille, loc in (("Cle", 400, 3, (3.5, -3.5, 3.5)),
                                   ("Contre", 150, 4, (-4, -1, 2)),
                                   ("Fond", 250, 3, (0, 5, 4))):
@@ -119,5 +119,5 @@ scn.render.image_settings.file_format = "PNG"
 
 bpy.ops.render.render(animation=True)
 pngs = [f for f in os.listdir(out_dir) if f.startswith("tt_") and f.endswith(".png")]
-print(f"TURNTABLE_OK: {len(pngs)} frames dans {out_dir}")
+print(f"TURNTABLE_OK: {len(pngs)} frames in {out_dir}")
 print("SUCCESS:")

@@ -1,131 +1,135 @@
-# Pipeline 3D : Blender headless → GLB → Godot
+# 3D pipeline: Blender headless → GLB → Godot
 
-Prérequis, standards game-ready et écueils pour tout asset 3D produit par la fabrique
-(`mesh3d`, `mesh_ia`, `voxel3d`, `asset_blendkit`, suite MakeHuman `character3d`/`makehuman_clothes`/`outfit`).
-Standards adaptés du pack blender-skills (arjun988, MIT) — seule la partie moteur-agnostique a été
-reprise : ici tout est **headless CLI** (`blender --background --python`), pas d'addon MCP.
-Les budgets sont des ordres de grandeur « AAA-informed », à ajuster par projet.
+Prerequisites, game-ready standards and pitfalls for any 3D asset produced by the factory
+(`mesh3d`, `mesh_ia`, `voxel3d`, `asset_blendkit`, MakeHuman suite
+`character3d`/`makehuman_clothes`/`outfit`). Standards adapted from the blender-skills pack
+(arjun988, MIT) — only the engine-agnostic part was retained: here everything is **headless CLI**
+(`blender --background --python`), no MCP addon. The budgets are "AAA-informed" orders of
+magnitude, to be adjusted per project.
 
-## 1. Prérequis (bloquants selon le workflow)
+## 1. Prerequisites (blocking depending on the workflow)
 
-| Composant | Requis par | Détail |
+| Component | Required by | Detail |
 | :--- | :--- | :--- |
-| **Blender 4.0→5.2** | `mesh3d`, `voxel3d`, `asset_blendkit` (bloquant) ; `mesh_ia` (optionnel : décimation + planche de contrôle sautées silencieusement si absent) ; suite MakeHuman (bloquant) | Résolution `core/blender_ops.py::trouver_blender()` : env `BLENDER_PATH` → `blender` dans le PATH → `C:\Program Files\Blender Foundation\Blender 4.0…5.2\blender.exe`. `uv run python main.py --check` le détecte |
-| **Addon MPFB2** | `character3d`, `character_makeup`, `makehuman_clothes`, `outfit` | Extension `bl_ext.user_default.mpfb` installée dans Blender ; data dir `%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data` (surcharge env `MPFB_DATA_DIR`, cf. `core/config.py`) |
-| **Addon BlenderKit connecté** | `asset_blendkit` | Login fait **une fois en GUI** (la clé API n'est lisible que dans le processus Blender, jamais hors process) ; le code force la licence CC0 |
+| **Blender 4.0→5.2** | `mesh3d`, `voxel3d`, `asset_blendkit` (blocking); `mesh_ia` (optional: decimation + control contact sheet silently skipped if absent); MakeHuman suite (blocking) | Resolution `core/blender_ops.py::trouver_blender()`: env `BLENDER_PATH` → `blender` in the PATH → `C:\Program Files\Blender Foundation\Blender 4.0…5.2\blender.exe`. `uv run python main.py --check` detects it |
+| **MPFB2 addon** | `character3d`, `character_makeup`, `makehuman_clothes`, `outfit` | Extension `bl_ext.user_default.mpfb` installed in Blender; data dir `%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data` (env override `MPFB_DATA_DIR`, cf. `core/config.py`) |
+| **BlenderKit addon connected** | `asset_blendkit` | Login done **once in the GUI** (the API key is only readable inside the Blender process, never out of process); the code forces the CC0 license |
 
-Blender est toujours invoqué en subprocess headless avec scripts bpy générés (`--background --python`) ;
-le succès se détecte par marqueurs stdout (`SUCCESS:`, `RENDERS_RESULT_JSON:`) — toujours vérifier les
-fichiers de sortie annoncés, pas seulement le code retour.
+Blender is always invoked as a headless subprocess with generated bpy scripts
+(`--background --python`); success is detected via stdout markers (`SUCCESS:`,
+`RENDERS_RESULT_JSON:`) — always check the announced output files, not only the return code.
 
-## 2. Standards game-ready (cible Godot 4)
+## 2. Game-ready standards (Godot 4 target)
 
-### Unités, axes, échelle
-- **1 unité Blender = 1 mètre** ; exporter en **GLB, +Y up** (déjà le cas : `export_yup=True` côté MPFB,
-  GLB partout ailleurs).
-- Vérifier l'échelle à l'import Godot avec un repère connu (porte ≈ 2 m de haut, sol à y = 0).
+### Units, axes, scale
+- **1 Blender unit = 1 meter**; export as **GLB, +Y up** (already the case: `export_yup=True` on
+  the MPFB side, GLB everywhere else).
+- Check the scale at Godot import with a known reference (door ≈ 2 m tall, floor at y = 0).
 
-### Nommage (préfixes moteur)
-| Type | Préfixe | Exemple |
+### Naming (engine prefixes)
+| Type | Prefix | Example |
 | :--- | :--- | :--- |
 | Mesh | `SM_` | `SM_Weapon_Rifle_A`, `SM_Prop_Crate_Wood_01` |
-| Matériau | `MAT_` | `MAT_Metal_Painted_Red` |
+| Material | `MAT_` | `MAT_Metal_Painted_Red` |
 | Texture | `T_` | `T_Console_BC`, `T_Console_N`, `T_Console_ORM` |
 | Animation | `AN_` | `AN_Door_Open` |
 | Armature | `ARM_` | `ARM_Robot_Loader` |
 
-Règles : PascalCase + underscores, `_01` (pas `_1`), descriptif (pas `SM_Thing`), **≤ 64 caractères**.
-Suffixes textures : `_BC` albedo, `_N` normal, `_ORM` packé (R=AO, G=Roughness, B=Metallic), `_E` émission.
-NB : les sorties `material3d` du dépôt utilisent leurs propres suffixes (`_albedo/_normal/_orm…`) —
-renommer vers la convention ci-dessus au moment d'intégrer dans le jeu.
+Rules: PascalCase + underscores, `_01` (not `_1`), descriptive (not `SM_Thing`), **≤ 64
+characters**. Texture suffixes: `_BC` albedo, `_N` normal, `_ORM` packed (R=AO, G=Roughness,
+B=Metallic), `_E` emission. NB: this repo's `material3d` outputs use their own suffixes
+(`_albedo/_normal/_orm…`) — rename to the convention above when integrating into the game.
 
-**Collision Godot** : à l'import GLB, Godot 4 génère automatiquement les formes de collision pour les
-nœuds suffixés `-col`, `-colonly` (trimesh), `-convcol`, `-convcolonly` (convexe) — pas la convention
-`COL_`/`UCX_` (Unreal). Pour un prop décoratif simple, préférer un `-convcolonly` sur un proxy basse
-définition plutôt que la trimesh complète.
+**Godot collision**: at GLB import, Godot 4 automatically generates collision shapes for nodes
+suffixed `-col`, `-colonly` (trimesh), `-convcol`, `-convcolonly` (convex) — not the `COL_`/`UCX_`
+convention (Unreal). For a simple decorative prop, prefer `-convcolonly` on a low-poly proxy
+rather than the full trimesh.
 
-### Budgets triangles
-| Catégorie | Tier | Tris |
+### Triangle budgets
+| Category | Tier | Tris |
 | :--- | :--- | :--- |
-| Props | Héros (tenu, gros plan) | 15 000–50 000 |
-| Props | Standard (scène, moyenne distance) | 5 000–15 000 |
-| Props | Arrière-plan / clutter | 500–5 000 |
-| Props | Petit (pièces, débris) | 100–500 |
-| Personnages | Héros | 50 000–100 000 |
-| Personnages | NPC | 20 000–40 000 |
-| Personnages | Foule | 5 000–10 000 |
-| Environnement | Mur modulaire 2 m / dalle sol | 200–800 / 100–400 |
-| Environnement | Bâtiment héros / rocher héros | 5 000–20 000 / 1 000–5 000 |
-| Environnement | Arbre réaliste / stylisé | 5 000–15 000 / 200–2 000 |
+| Props | Hero (held, close-up) | 15,000–50,000 |
+| Props | Standard (scene, medium distance) | 5,000–15,000 |
+| Props | Background / clutter | 500–5,000 |
+| Props | Small (pieces, debris) | 100–500 |
+| Characters | Hero | 50,000–100,000 |
+| Characters | NPC | 20,000–40,000 |
+| Characters | Crowd | 5,000–10,000 |
+| Environment | 2 m modular wall / floor slab | 200–800 / 100–400 |
+| Environment | Hero building / hero rock | 5,000–20,000 / 1,000–5,000 |
+| Environment | Realistic / stylized tree | 5,000–15,000 / 200–2,000 |
 
-Mapping direct sur `mesh_ia --faces-cible` : **30000 = prop héros, 10000 = prop standard,
-2 000–3 000 = clutter répété, ≥ 8000 si silhouette très courbée**. Style lowpoly : −50 à −90 %.
+Direct mapping onto `mesh_ia --faces-cible`: **30000 = hero prop, 10000 = standard prop,
+2,000–3,000 = repeated clutter, ≥ 8000 if the silhouette is highly curved**. Lowpoly style: −50
+to −90%.
 
-Si au-dessus du budget : supprimer les faces internes/non visibles, passer le détail en normal map,
-créer une chaîne LOD avant validation finale.
+If over budget: remove internal/non-visible faces, move detail to the normal map, build a LOD
+chain before final validation.
 
 ### LOD
 | LOD | % tris | Distance |
 | :--- | :--- | :--- |
-| LOD0 | 100 % | 0–10 m |
-| LOD1 | 50 % | 10–25 m |
-| LOD2 | 25 % | 25–50 m |
-| LOD3 | 10 % | 50 m+ |
+| LOD0 | 100% | 0–10 m |
+| LOD1 | 50% | 10–25 m |
+| LOD2 | 25% | 25–50 m |
+| LOD3 | 10% | 50 m+ |
 
-Dans ce dépôt, la décimation passe par `mesh_ia --faces-cible` (Decimate **COLLAPSE**, delimiters
-`SHARP`/`UV` — préserve les UV). En Blender manuel : `planar` convient au hard-surface, `collapse`
-à l'organique. Nommage `SM_Asset_LOD0…LOD3`.
+In this repo, decimation goes through `mesh_ia --faces-cible` (Decimate **COLLAPSE**, delimiters
+`SHARP`/`UV` — preserves UVs). In manual Blender: `planar` suits hard-surface, `collapse` for
+organic. Naming `SM_Asset_LOD0…LOD3`.
 
-### Textures & matériaux
-| Tier | Résolution | Texel density |
+### Textures & materials
+| Tier | Resolution | Texel density |
 | :--- | :--- | :--- |
-| Héros | 2048–4096 | 512–1024 px/m |
+| Hero | 2048–4096 | 512–1024 px/m |
 | Standard | 1024–2048 | 256–512 px/m |
-| Arrière-plan | 512–1024 | 128–256 px/m |
+| Background | 512–1024 | 128–256 px/m |
 
-Texel density = résolution ÷ taille physique (m) — ex. 1024 px sur 2 m = 512 px/m ; rester cohérent
-entre assets d'une même scène. Matériaux par asset : héros 3–5, standard 1–2, kit modulaire 1 (atlas).
-Le pipeline du dépôt produit du **Principled BSDF** → converti nativement en PBR glTF/Godot ;
-le packing ORM attendu est R=AO, G=Roughness, B=Metallic.
+Texel density = resolution ÷ physical size (m) — e.g. 1024 px over 2 m = 512 px/m; stay
+consistent across assets in the same scene. Materials per asset: hero 3–5, standard 1–2, modular
+kit 1 (atlas). The repo pipeline produces **Principled BSDF** → natively converted to glTF/Godot
+PBR; the expected ORM packing is R=AO, G=Roughness, B=Metallic.
 
-## 3. Checklist de validation avant livraison (headless)
+## 3. Pre-delivery validation checklist (headless)
 
-1. **Regarder l'asset** — jamais livrer un GLB non vu : planche de contrôle `mesh_ia` (4 vues orbitales
-   EEVEE 900²), rendus Cycles `character3d`, aperçu `asset_blendkit`. Rendu subjectif → soumettre à
-   l'utilisateur (règle du dépôt).
-2. **Auditer** : nb de triangles vs budget (`--faces-cible` réellement appliqué ?), nb de matériaux,
-   échelle, pas de normales inversées visibles sur la planche.
-3. **Test d'import Godot** : échelle correcte (repère connu), matériaux importés (StandardMaterial3D),
-   collision si requise (`-colonly`), silhouette lisible à distance de gameplay, animations en clips
-   nommés si applicable.
+1. **Look at the asset** — never deliver an unseen GLB: `mesh_ia` control contact sheet (4 EEVEE
+   orbital views 900²), `character3d` Cycles renders, `asset_blendkit` preview. Subjective
+   render → submit to the user (repo rule).
+2. **Audit**: triangle count vs budget (was `--faces-cible` really applied?), material count,
+   scale, no visible inverted normals on the sheet.
+3. **Godot import test**: correct scale (known reference), imported materials
+   (StandardMaterial3D), collision if required (`-colonly`), readable silhouette at gameplay
+   distance, animations as named clips if applicable.
 
-Rapport type : statut PASS/FAIL, polycount (vs budget), nb matériaux, dimensions, problème(s) trouvé(s)
-+ correctif appliqué, vues vérifiées.
+Typical report: PASS/FAIL status, polycount (vs budget), material count, dimensions, issue(s)
+found + fix applied, views checked.
 
-## 4. Écueils consolidés (Blender / MPFB / BlendKit)
+## 4. Consolidated pitfalls (Blender / MPFB / BlendKit)
 
-- **Ordre rig Mixamo AVANT les `.mhclo`** : sinon les vêtements ne sont pas skinnés (`creer_corps_personnage_mpfb`
-  garantit l'ordre — le respecter dans tout script dérivé).
-- **Area lights** : ajouter des contraintes `TRACK_TO` vers la cible (elles pointent en −Z par défaut).
-- **Rendus de tête MPFB** : désactiver les modificateurs MASK « delete » avant le rendu.
-- **UV visage MakeHuman (hm08)** : l'îlot visage vit dans X ∈ [1450..2000] — ne pas le déplacer lors des
-  calques d'encre MakeUp.
-- **BlendKit headless** : le daemon local de l'addon est inutilisable en `--background` → passer par
-  `scripts/blendkit_blender_job.py` ; lire la clé API dans les préférences **avant** `read_factory_settings`
-  (qui les réinitialise) ; chemins **absolus** dans le job JSON ; EEVEE sature certaines scènes →
-  basculer le rendu en Cycles HIP.
-- **Blender absent** : `mesh_ia` rend `None` silencieusement pour la décimation/planche (non bloquant) —
-  vérifier que les sorties attendues existent avant d'annoncer la livraison.
+- **Mixamo rig order BEFORE the `.mhclo`**: otherwise the clothes are not skinned
+  (`creer_corps_personnage_mpfb` guarantees the order — respect it in any derived script).
+- **Area lights**: add `TRACK_TO` constraints toward the target (they point in −Z by default).
+- **MPFB head renders**: disable the "delete" MASK modifiers before rendering.
+- **MakeHuman face UVs (hm08)**: the face island lives in X ∈ [1450..2000] — do not move it
+  during MakeUp ink layers.
+- **Headless BlendKit**: the addon's local daemon is unusable with `--background` → go through
+  `scripts/blendkit_blender_job.py`; read the API key from the preferences **before**
+  `read_factory_settings` (which resets them); **absolute** paths in the job JSON; EEVEE
+  saturates some scenes → switch the render to Cycles HIP.
+- **Blender absent**: `mesh_ia` silently returns `None` for decimation/contact sheet
+  (non-blocking) — check that the expected outputs exist before announcing delivery.
 
-## 5. Brief mini avant tout asset 3D jeu (pattern « director »)
+## 5. Mini brief before any 3D game asset ("director" pattern)
 
-Quatre questions avant de lancer — elles déterminent workflow et budget :
-1. **Type** : prop / personnage / environnement / voxel ?
-2. **Tier** : héros (gros plan), standard (scène), arrière-plan (clutter) ? → budget tris + textures §2.
-3. **Cible** : jeu Godot (GLB + standards §2) ou rendu YouTube (qualité brute, budgets souples) ?
-4. **Animé/riggé** ? → rig nécessaire (`character3d`), clips `AN_*`, prévoir marge de topo sur les zones
-   de déformation.
+Four questions before launching — they determine workflow and budget:
+1. **Type**: prop / character / environment / voxel?
+2. **Tier**: hero (close-up), standard (scene), background (clutter)? → triangle + texture
+   budget §2.
+3. **Target**: Godot game (GLB + §2 standards) or YouTube render (raw quality, flexible
+   budgets)?
+4. **Animated/rigged?** → rig required (`character3d`), `AN_*` clips, plan topology margin on
+   the deformation zones.
 
-Chaîne typique prop héros : `generate` (concept) → `mesh_ia --res 512` itération (~11 min) →
-`mesh_ia --res 1024` master (~55 min) → `--faces-cible 30000` → checklist §3. Après validation
-utilisateur, la recette devient workflow (règle du dépôt).
+Typical hero-prop chain: `generate` (concept) → `mesh_ia --res 512` iteration (~11 min) →
+`mesh_ia --res 1024` master (~55 min) → `--faces-cible 30000` → §3 checklist. After user
+validation, the recipe becomes a workflow (repo rule).

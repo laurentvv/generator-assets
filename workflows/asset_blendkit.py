@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Asset Blendkit : asset CC0 de blendkit.com -> prop Godot (.glb) ou
-plaque de décor pour la chaîne YouTube (rendu Blender headless).
+Asset Blendkit workflow: CC0 asset from blendkit.com -> Godot prop (.glb) or
+scenery plate for the YouTube channel (Blender headless render).
 
-Deux modes VALIDÉS par l'utilisateur le 2026-09-15 (MEMORY_BANK §1.23) :
-  - « prop »  : recherche -> téléchargement (compte Blendkit connecté, clé lue
-    dans Blender) -> append -> export GLB + rendu de contrôle Workbench ;
-  - « plate » : recherche de scène -> téléchargement -> rendu Cycles GPU (HIP)
-    avec la caméra de la scène (AgX + exposure pour reproduire le look officiel).
+Two modes VALIDATED by the user on 2026-09-15 (MEMORY_BANK §1.23):
+  - "prop"  : search -> download (connected Blendkit account, key read
+    in Blender) -> append -> GLB export + Workbench control render;
+  - "plate" : scene search -> download -> Cycles GPU render (HIP)
+    with the scene camera (AgX + exposure to reproduce the official look).
 
-La recherche est anonyme ; seul le téléchargement requiert le compte connecté
-dans le GUI Blender (clé jamais logguée, cf. core/blendkit.py).
+Search is anonymous; only the download requires the connected account
+in the Blender GUI (key never logged, see core/blendkit.py).
 """
 
 import os
@@ -30,57 +30,57 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class AssetBlendkitWorkflow(BaseWorkflow):
-    """Recherche Blendkit CC0 -> prop .glb Godot (mode prop) ou plaque décor rendue (mode plate)."""
+    """Blendkit CC0 search -> Godot .glb prop (prop mode) or rendered scenery plate (plate mode)."""
 
     name = "asset_blendkit"
-    description = ("Asset CC0 blendkit.com : prop .glb prêt Godot (mode prop) ou plaque de décor "
-                   "rendue Blender Cycles GPU pour la chaîne (mode plate) — compte Blendkit requis")
+    description = ("CC0 asset blendkit.com: Godot-ready .glb prop (prop mode) or scenery plate "
+                   "rendered Blender Cycles GPU for the channel (plate mode) — Blendkit account required")
 
     emoji = "🧰"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --mode reste en table
-    # plate (dest lu aussi par upscale et video, cross-familles).
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --mode stays in the flat
+    # table (dest also read by upscale and video, cross-family).
     PARAMETRES = [
         dict(flags=("--query",),
-             help="Mots-clés de recherche Blendkit (workflow asset_blendkit) — ex: 'wooden barrel'."),
+             help="Blendkit search keywords (asset_blendkit workflow) — e.g.: 'wooden barrel'."),
         dict(flags=("--asset-type",), dest="asset_type", choices=["model", "scene", "material"], default="model",
-             help="Type d'asset Blendkit pour asset_blendkit (défaut: model ; mode plate utilise scene)."),
+             help="Blendkit asset type for asset_blendkit (default: model; plate mode uses scene)."),
         dict(flags=("--licence",), choices=["cc_zero", "any"], default="cc_zero",
-             help="Filtre de licence Blendkit (défaut: cc_zero — recommandé jeu + monétisation)."),
+             help="Blendkit licence filter (default: cc_zero — recommended for game + monetization)."),
         dict(flags=("--index",), type=int, default=0,
-             help="Index du résultat Blendkit à télécharger (voir --list-assets ; défaut: 0)."),
+             help="Index of the Blendkit result to download (see --list-assets; default: 0)."),
         dict(flags=("--list-assets",), dest="list_assets", action="store_true",
-             help="asset_blendkit : affiche les résultats de recherche puis s'arrête."),
+             help="asset_blendkit: shows the search results then stops."),
         dict(flags=("--resolution",), choices=["blend", "8K", "4K", "2K", "1K", "0.5K"], default="2K",
-             help="asset_blendkit mode prop : variante de textures du .blend (défaut: 2K, léger pour le jeu ; blend = qualité max)."),
+             help="asset_blendkit prop mode: texture variant of the .blend (default: 2K, light for the game; blend = max quality)."),
         dict(flags=("--engine",), choices=["cycles", "eevee"], default="cycles",
-             help="asset_blendkit mode plate : moteur de rendu (défaut: cycles, GPU HIP — EEVEE sature certaines scènes, MEMORY_BANK 1.23)."),
+             help="asset_blendkit plate mode: render engine (default: cycles, GPU HIP — EEVEE chokes on some scenes, MEMORY_BANK 1.23)."),
         dict(flags=("--camera",), default=None,
-             help="asset_blendkit mode plate : nom de la caméra de la scène à utiliser (défaut: caméra de la scène)."),
+             help="asset_blendkit plate mode: name of the scene camera to use (default: scene camera)."),
         dict(flags=("--exposure",), type=float, default=-1.0,
-             help="asset_blendkit mode plate : exposition du rendu (défaut: -1.0, look officiel des scènes néon)."),
+             help="asset_blendkit plate mode: render exposure (default: -1.0, official look of the neon scenes)."),
         dict(flags=("--percentage",), type=int, default=100,
-             help="asset_blendkit mode plate : pourcentage de résolution Blender (défaut: 100 ; les fichiers scène imposent parfois 300 = 6K, à maîtriser)."),
+             help="asset_blendkit plate mode: Blender resolution percentage (default: 100; scene files sometimes force 300 = 6K, keep it under control)."),
         dict(flags=("--no-cache",), dest="no_cache", action="store_true",
-             help="asset_blendkit : force le retéléchargement du .blend (défaut: cache local)."),
+             help="asset_blendkit: forces re-downloading the .blend (default: local cache)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         query = params.get("query")
         if not query:
-            raise ValueError("Fournir --query \"<mots-clés>\" (ex: --query \"wooden barrel\").")
+            raise ValueError("Provide --query \"<keywords>\" (e.g.: --query \"wooden barrel\").")
 
         ok, manquants = verifier_prerequis_blendkit()
         if not ok:
-            raise EnvironmentError("Prérequis manquants : " + " ; ".join(manquants))
+            raise EnvironmentError("Missing prerequisites: " + " ; ".join(manquants))
 
         mode = (params.get("mode") or "prop").lower()
         if mode not in ("prop", "plate"):
-            raise ValueError(f"Mode '{mode}' invalide (prop ou plate).")
+            raise ValueError(f"Invalid mode '{mode}' (prop or plate).")
         asset_type = "scene" if mode == "plate" else (params.get("asset_type") or "model").lower()
 
-        self.log(f"recherche Blendkit : « {query} » (type={asset_type}, licence={params.get('licence') or 'cc_zero'})…", "🔎")
+        self.log(f"Blendkit search: \"{query}\" (type={asset_type}, licence={params.get('licence') or 'cc_zero'})…", "🔎")
         assets = rechercher_assets(query, asset_type=asset_type, licence=params.get("licence") or "cc_zero")
         afficher_assets(assets)
 
@@ -89,15 +89,15 @@ class AssetBlendkitWorkflow(BaseWorkflow):
 
         index = int(params.get("index") or 0)
         if not assets or index >= len(assets):
-            raise ValueError(f"--index {index} hors limites ({len(assets)} résultats).")
+            raise ValueError(f"--index {index} out of bounds ({len(assets)} results).")
         asset = assets[index]
         if "blend" not in asset["fichiers"]:
-            raise ValueError(f"l'asset « {asset['nom']} » n'a pas de fichier .blend téléchargeable.")
+            raise ValueError(f"the asset \"{asset['nom']}\" has no downloadable .blend file.")
         if not asset["gratuit"]:
-            self.log("⚠️ cet asset semble réservé à un plan payant — le téléchargement risque d'échouer.", "⚠️")
+            self.log("⚠️ this asset seems reserved for a paid plan — the download may fail.", "⚠️")
 
-        # Chemins ABSOLUS obligatoires : read_factory_settings/open_mainfile côté
-        # worker réinitialisent le répertoire courant de Blender.
+        # ABSOLUTE paths mandatory: read_factory_settings/open_mainfile on the
+        # worker side reset Blender's current directory.
         dossier = os.path.abspath(os.path.join("output", "blendkit", slugifier_texte(asset["nom"])[:50]))
         os.makedirs(dossier, exist_ok=True)
         nom_base = slugifier_texte(asset["nom"])[:40]
@@ -119,7 +119,7 @@ class AssetBlendkitWorkflow(BaseWorkflow):
                 "glb": os.path.join(dossier, f"{nom_base}.glb"),
                 "apercu": os.path.join(dossier, "apercu.png"),
             }
-            self.log(f"téléchargement + conversion GLB de « {asset['nom']} » (résolution {params.get('resolution') or '2K'})…", "🧱")
+            self.log(f"download + GLB conversion of \"{asset['nom']}\" (resolution {params.get('resolution') or '2K'})…", "🧱")
         else:
             job["plate"] = {
                 "png": os.path.join(dossier, "plaque.png"),
@@ -132,14 +132,14 @@ class AssetBlendkitWorkflow(BaseWorkflow):
                 "exposure": float(params.get("exposure") if params.get("exposure") is not None else -1.0),
                 "view_transform": params.get("view_transform") or "AgX",
             }
-            self.log(f"téléchargement + rendu {job['plate']['engine']} de la scène « {asset['nom']} »…", "🎬")
+            self.log(f"download + {job['plate']['engine']} render of the scene \"{asset['nom']}\"…", "🎬")
 
         resultat = executer_job_blender(job, dossier)
 
-        self.log("TERMINÉ ✅", "🏁")
+        self.log("DONE ✅", "🏁")
         if mode == "prop":
-            self.log(f"GLB Godot : {resultat['glb']} ({resultat['glb_mo']} Mo, {resultat['faces']} faces)", "📦")
-            self.log(f"aperçu de contrôle : {resultat['apercu']}", "🖼️")
+            self.log(f"Godot GLB: {resultat['glb']} ({resultat['glb_mo']} MB, {resultat['faces']} faces)", "📦")
+            self.log(f"control preview: {resultat['apercu']}", "🖼️")
         else:
-            self.log(f"plaque {resultat['resolution']} ({resultat['engine']}, {resultat['png_mo']} Mo) : {resultat['png']}", "🖼️")
+            self.log(f"plate {resultat['resolution']} ({resultat['engine']}, {resultat['png_mo']} MB): {resultat['png']}", "🖼️")
         return resultat

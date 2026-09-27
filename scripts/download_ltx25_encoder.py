@@ -11,10 +11,10 @@ URL = "https://huggingface.co/DeepNeuralNerd/Gemma-4-12B-it-uncensored-heretic-D
 
 dest = os.path.join(TARGET_DIR, DEST_NAME)
 if os.path.exists(dest) and os.path.getsize(dest) > 10 * 1024 * 1024 * 1024:
-    print(f"[OK] {DEST_NAME} déjà présent.")
+    print(f"[OK] {DEST_NAME} already present.")
     sys.exit(0)
 
-print(f"Téléchargement de {DEST_NAME} (12.26 Go)...")
+print(f"Downloading {DEST_NAME} (12.26 GB)...")
 cmd = [curl, "-L", "-C", "-", "--fail", "--retry", "5", "-o", dest, URL]
 subprocess.run(cmd, check=True)
-print(f"[SUCCÈS] {DEST_NAME} téléchargé !")
+print(f"[SUCCESS] {DEST_NAME} downloaded!")

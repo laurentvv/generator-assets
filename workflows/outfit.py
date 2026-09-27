@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Workflow Outfit : Génération 100% automatisée de tenues PBR pour personnages MakeHuman / Godot 4.
-Génère des textures PBR sans raccord (Albedo + Normal + Roughness) par IA locale (Flux.1 / SDXL)
-et les applique directement sur les vêtements 3D du personnage dans Blender sans aucune action manuelle.
+Outfit workflow: 100% automated PBR outfit generation for MakeHuman / Godot 4 characters.
+Generates seamless PBR textures (Albedo + Normal + Roughness) with local AI (Flux.1 / SDXL)
+and applies them directly onto the character's 3D clothes in Blender without any manual action.
 """
 
 import os
@@ -19,28 +19,28 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class OutfitWorkflow(BaseWorkflow):
     name = "outfit"
-    description = "Génération 100% automatique de tenues PBR (tissus/cuirs) pour personnages 3D"
+    description = "100% automatic PBR outfit generation (fabrics/leathers) for 3D characters"
 
     emoji = "👔"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --character est partagé
-    # avec character_makeup : il vit ici, premier utilisateur dans le registre.
-    # --blend-file (partagé) vit dans character_makeup.
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --character is shared
+    # with character_makeup: it lives here, first user in the registry.
+    # --blend-file (shared) lives in character_makeup.
     PARAMETRES = [
         dict(flags=("--character",), default="marc_novice",
-             help="Nom du personnage cible (workflows outfit, character_makeup)."),
+             help="Name of the target character (outfit, character_makeup workflows)."),
         dict(flags=("--top",), default="rustic medieval beige burlap tunic fabric",
-             help="Description du tissu/matière pour le haut/tunique (workflow outfit)."),
+             help="Fabric/material description for the top/tunic (outfit workflow)."),
         dict(flags=("--shoes",), default="worn dark brown medieval leather shoes texture",
-             help="Description de la matière pour les chaussures/bottes (workflow outfit)."),
+             help="Material description for the shoes/boots (outfit workflow)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         char_name = params.get("character", "marc_novice")
         top_prompt = params.get("top", "rustic medieval beige burlap tunic fabric")
         shoes_prompt = params.get("shoes", "worn dark brown medieval leather shoes texture")
-        # NB : le CLI et la console interactive transmettent la clé "blend_file"
+        # NB: the CLI and the interactive console pass the "blend_file" key
         blend_file = params.get("blend_file") or params.get("blend") or os.path.join(DEFAULT_OUTPUT_DIR, f"{char_name}.blend")
         glb_file = os.path.join(DEFAULT_OUTPUT_DIR, f"{char_name}.glb")
         render_file = os.path.join(DEFAULT_OUTPUT_DIR, f"{char_name}_beauty_render.png")
@@ -48,10 +48,10 @@ class OutfitWorkflow(BaseWorkflow):
         text_dir = os.path.join(DEFAULT_OUTPUT_DIR, "textures", char_name)
         os.makedirs(text_dir, exist_ok=True)
 
-        self.log(f"🚀 Génération automatique de la tenue PBR pour '{char_name}'...")
+        self.log(f"🚀 Automatic PBR outfit generation for '{char_name}'...")
 
-        # 1. Génération Albedo + Normal + Roughness pour le Torse / Tunique
-        self.log(f"🎨 [1/3] Génération du tissu pour le haut : '{top_prompt}'...")
+        # 1. Albedo + Normal + Roughness generation for the Torso / Tunic
+        self.log(f"🎨 [1/3] Fabric generation for the top: '{top_prompt}'...")
         top_slug = slugifier_texte(top_prompt)[:20]
         top_albedo_path = os.path.join(text_dir, f"top_{top_slug}_albedo.png")
         top_norm_path = os.path.join(text_dir, f"top_{top_slug}_normal.png")
@@ -85,8 +85,8 @@ class OutfitWorkflow(BaseWorkflow):
             norm_top = generer_normal_map(img_top, strength=3.0)
             norm_top.save(top_norm_path, "PNG")
 
-        # 2. Génération Albedo + Normal pour les Chaussures
-        self.log(f"👢 [2/3] Génération de la matière pour les chaussures : '{shoes_prompt}'...")
+        # 2. Albedo + Normal generation for the Shoes
+        self.log(f"👢 [2/3] Material generation for the shoes: '{shoes_prompt}'...")
         shoes_slug = slugifier_texte(shoes_prompt)[:20]
         shoes_albedo_path = os.path.join(text_dir, f"shoes_{shoes_slug}_albedo.png")
         shoes_norm_path = os.path.join(text_dir, f"shoes_{shoes_slug}_normal.png")
@@ -118,11 +118,11 @@ class OutfitWorkflow(BaseWorkflow):
             norm_shoes = generer_normal_map(img_shoes, strength=3.0)
             norm_shoes.save(shoes_norm_path, "PNG")
 
-        # 3. Application 100% automatique dans Blender
-        self.log("🔨 [3/3] Application des shaders PBR dans Blender...")
+        # 3. 100% automatic application in Blender
+        self.log("🔨 [3/3] Applying the PBR shaders in Blender...")
         blender_bin = trouver_blender()
         if not blender_bin:
-            raise RuntimeError("Exécutable Blender introuvable.")
+            raise RuntimeError("Blender executable not found.")
 
         script_blender = f"""# -*- coding: utf-8 -*-
 import bpy, os
@@ -134,7 +134,7 @@ if os.path.exists(blend_file):
 def apply_pbr_material(obj_part_name, albedo_file, normal_file, uv_scale, roughness_val):
     obj = next((o for o in bpy.data.objects if obj_part_name.lower() in o.name.lower()), None)
     if not obj:
-        print(f"⚠️ Objet {{obj_part_name}} non trouvé dans la scène.")
+        print(f"⚠️ Object {{obj_part_name}} not found in the scene.")
         return
 
     mat_name = f"PBR_{{obj.name}}"
@@ -181,15 +181,15 @@ def apply_pbr_material(obj_part_name, albedo_file, normal_file, uv_scale, roughn
 
     obj.data.materials.clear()
     obj.data.materials.append(mat)
-    print(f"✅ Matériau PBR appliqué sur {{obj.name}}")
+    print(f"✅ PBR material applied on {{obj.name}}")
 
 apply_pbr_material("worksuit", r"{os.path.abspath(top_albedo_path)}", r"{os.path.abspath(top_norm_path)}", 4.0, 0.85)
 apply_pbr_material("shoes", r"{os.path.abspath(shoes_albedo_path)}", r"{os.path.abspath(shoes_norm_path)}", 3.0, 0.70)
 
 bpy.ops.wm.save_as_mainfile(filepath=blend_file)
-print(f"💾 Scène Blender sauvegardée : {{blend_file}}")
+print(f"💾 Blender scene saved: {{blend_file}}")
 
-# Export GLB pour Godot
+# GLB export for Godot
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(
     filepath=r"{os.path.abspath(glb_file)}",
@@ -199,17 +199,17 @@ bpy.ops.export_scene.gltf(
     export_materials='EXPORT',
     export_yup=True
 )
-print(f"🎮 GLB Godot exporté : {glb_file}")
+print(f"🎮 Godot GLB exported: {glb_file}")
 """
         res = run_engine([blender_bin, "--background", "--python-expr", script_blender],
                          check=False, timeout=1800, etiquette="blender outfit")
         self.log(res.stdout)
 
-        # 4. Rendu de validation Cycles
+        # 4. Cycles validation render
         from scripts.character_pipeline import etape_3_rendre_validation
         etape_3_rendre_validation(blender_bin, glb_file, render_file)
 
-        self.log(f"🎉 Tenue générée et appliquée avec succès pour '{char_name}' !")
+        self.log(f"🎉 Outfit generated and applied successfully for '{char_name}'!")
         return {
             "blend": blend_file,
             "glb": glb_file,

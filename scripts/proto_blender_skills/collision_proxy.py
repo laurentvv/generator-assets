@@ -1,8 +1,8 @@
-# Proxy de collision Godot — pattern blender-skills "collision-proxy", adapté :
-# coque convexe (convex hull) du GLB nommée "<base>-convcolonly" → à l'import Godot,
-# StaticBody3D + CollisionShape3D générés automatiquement, sans mesh visible.
-# Usage : blender --background --python collision_proxy.py -- <glb_in> <out_glb> <out_png>
-# Sortie : GLB (original + proxy) + PNG de contrôle (original + coque en filaire magenta).
+# Godot collision proxy — blender-skills pattern "collision-proxy", adapted:
+# convex hull of the GLB named "<base>-convcolonly" → on Godot import,
+# StaticBody3D + CollisionShape3D generated automatically, without a visible mesh.
+# Usage: blender --background --python collision_proxy.py -- <glb_in> <out_glb> <out_png>
+# Output: GLB (original + proxy) + control PNG (original + hull as magenta wireframe).
 
 import os
 import sys
@@ -17,10 +17,10 @@ glb_in, out_glb, out_png = argv[0], argv[1], argv[2]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes, "aucun maillage dans le GLB"
+assert meshes, "no mesh in the GLB"
 base = os.path.splitext(os.path.basename(glb_in))[0]
 
-# Fusion des meshes (copies) en un seul, transforms appliqués → coque convexe.
+# Merge the meshes (copies) into a single one, transforms applied → convex hull.
 bpy.ops.object.select_all(action="DESELECT")
 copies = []
 for o in meshes:
@@ -37,8 +37,8 @@ joint = bpy.context.view_layer.objects.active
 bm = bmesh.new()
 bm.from_mesh(joint.data)
 hull = bmesh.ops.convex_hull(bm, input=list(bm.verts))
-# geom_interior ne contient que sommets/arêtes : on garde uniquement les faces de
-# l'enveloppe (hull["geom"]) et l'on supprime tout le reste du maillage original.
+# geom_interior only contains verts/edges: keep only the envelope faces
+# (hull["geom"]) and delete everything else from the original mesh.
 faces_hull = {e for e in hull["geom"] if isinstance(e, bmesh.types.BMFace)}
 bmesh.ops.delete(bm, geom=[f for f in bm.faces if f not in faces_hull], context="FACES")
 bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
@@ -48,13 +48,13 @@ bm.free()
 
 coque = bpy.data.objects.new(f"SM_{base}-convcolonly", coque_data)
 bpy.context.scene.collection.objects.link(coque)
-# La coque vit dans le repère monde appliqué de l'original ; on lui rend sa transformation.
+# The hull lives in the applied world space of the original; give it its transform back.
 coque.matrix_world = joint.matrix_world.copy()
 bpy.data.objects.remove(joint, do_unlink=True)
 for m in [m for m in bpy.data.meshes if m.users == 0 and m != coque_data]:
     bpy.data.meshes.remove(m)
 
-# Vue de contrôle : original + coque en filaire (cadrage dynamique sur bbox réelle).
+# Control view: original + wireframe hull (dynamic framing on the real bbox).
 pts = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
 max_dim = max(max(p.x for p in pts) - min(p.x for p in pts),
               max(p.y for p in pts) - min(p.y for p in pts),
@@ -80,12 +80,12 @@ bpy.context.scene.world = monde
 
 mat_filaire = bpy.data.materials.new("MAT_Debug_Collision")
 mat_filaire.use_nodes = True
-# EEVEE Next (5.x) : transparence via surface_render_method='BLENDED'
-# (blend_method/shadow_method ont disparu).
+# EEVEE Next (5.x): transparency via surface_render_method='BLENDED'
+# (blend_method/shadow_method are gone).
 if hasattr(mat_filaire, "surface_render_method"):
     mat_filaire.surface_render_method = "BLENDED"
 for attr, valeur in (("blend_method", "BLEND"), ("shadow_method", "NONE")):
-    if hasattr(mat_filaire, attr):  # EEVEE legacy uniquement
+    if hasattr(mat_filaire, attr):  # EEVEE legacy only
         setattr(mat_filaire, attr, valeur)
 mat_filaire.use_backface_culling = False
 bsdf = mat_filaire.node_tree.nodes["Principled BSDF"]
@@ -131,5 +131,5 @@ bpy.ops.object.select_all(action="DESELECT")
 for o in bpy.context.scene.objects:
     o.select_set(o.type in ("MESH", "EMPTY"))
 bpy.ops.export_scene.gltf(filepath=out_glb, export_format="GLB", use_selection=True)
-print(f"COLLISION_OK: coque {len(coque_data.polygons)} faces → {out_glb}")
+print(f"COLLISION_OK: hull {len(coque_data.polygons)} faces → {out_glb}")
 print("SUCCESS:")

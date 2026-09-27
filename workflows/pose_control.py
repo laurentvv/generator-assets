@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Pose Control : Contrôle d'Armatures & Poses de Personnages (ControlNet OpenPose / DWPose) pour Godot 4.
-Produit :
-- Carte squelette OpenPose (RGB COCO 18 points)
-- Sprite de personnage détouré et aligné avec la pose
-- Scène Godot 4 (.tscn) avec Sprite2D et points d'ancrage dynamiques Marker2D (mains, tête, pieds)
-- Fichier JSON d'armature et boîtes d'ancrage
+Pose Control workflow: Armature & character pose control (ControlNet OpenPose / DWPose) for Godot 4.
+Produces:
+- OpenPose skeleton map (RGB COCO 18 points)
+- Cut-out character sprite aligned with the pose
+- Godot 4 scene (.tscn) with Sprite2D and dynamic Marker2D anchor points (hands, head, feet)
+- Armature JSON file and anchor boxes
 """
 
 import json
@@ -29,18 +29,18 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class PoseControlWorkflow(BaseWorkflow):
-    """Génération de personnages sous pose contrôlée (OpenPose) avec hiérarchie Marker2D Godot 4."""
+    """Character generation under controlled pose (OpenPose) with Godot 4 Marker2D hierarchy."""
 
     name = "pose_control"
-    description = "Contrôle d'armatures & poses de personnages (ControlNet OpenPose) + Scène Godot (.tscn) et Marker2D"
+    description = "Armature & character pose control (ControlNet OpenPose) + Godot scene (.tscn) and Marker2D"
 
     emoji = "🕺"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declaration (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--pose",), choices=["idle", "slash_attack", "cast_spell", "shield_block", "jump", "walk"], default="idle",
-             help="Pose OpenPose pour pose_control."),
+             help="OpenPose pose for pose_control."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -56,9 +56,9 @@ class PoseControlWorkflow(BaseWorkflow):
 
         os.makedirs(output_dir, exist_ok=True)
 
-        self.log(f"Préparation de la pose OpenPose : [{pose_nom}] pour '{concept}'...")
+        self.log(f"Preparing the OpenPose pose: [{pose_nom}] for '{concept}'...")
 
-        # 1. Obtenir les coordonnées et dessiner le squelette OpenPose
+        # 1. Get the coordinates and draw the OpenPose skeleton
         points_pose = obtenir_pose(pose_nom)
         img_squelette = dessiner_squelette_openpose(points_pose, largeur=taille, hauteur=taille)
         chemin_squelette = os.path.join(output_dir, f"{nom_base}_openpose_skeleton.png")
@@ -66,11 +66,11 @@ class PoseControlWorkflow(BaseWorkflow):
 
         input_image = params.get("input")
         if input_image and os.path.exists(input_image):
-            self.log(f"Utilisation de l'image source existante : {input_image}")
+            self.log(f"Using the existing source image: {input_image}")
             img_brute = Image.open(input_image)
         else:
-            # 2. Construction du prompt orienté pose
-            self.log("Génération du sprite de personnage guidé par l'armature...")
+            # 2. Pose-oriented prompt construction
+            self.log("Generating the armature-guided character sprite...")
             prompt_pose = f"{concept}, in dynamic {pose_nom} action stance, full body character sprite"
             prompt_complet = construire_prompt_coherant(
                 concept=prompt_pose,
@@ -82,10 +82,10 @@ class PoseControlWorkflow(BaseWorkflow):
                 sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
-            # 3. Rendu par diffusion — conditionnement ControlNet RÉEL quand le modèle
-            # ControlNet OpenPose est présent (recette validée 2026-09-26, MEMORY_BANK §1.29 :
-            # le squelette impose la pose au lieu d'orienter seulement le prompt) ;
-            # sinon repli historique prompt seul (squelette = artefact Marker2D uniquement).
+            # 3. Diffusion render — REAL ControlNet conditioning when the OpenPose
+            # ControlNet model is present (recipe validated 2026-09-26, MEMORY_BANK §1.29:
+            # the skeleton imposes the pose instead of only steering the prompt);
+            # otherwise historical prompt-only fallback (skeleton = Marker2D artifact only).
             kwargs_rendu = dict(
                 prompt=prompt_complet,
                 sd_cli=self.config.get("sd_cli"),
@@ -101,27 +101,27 @@ class PoseControlWorkflow(BaseWorkflow):
                 loras=params.get("loras")
             )
             if os.path.exists(chemin_squelette) and os.path.exists(chemin_controlnet):
-                # Le ControlNet xinsir est SDXL uniquement (refus sd-cli sur Flux) :
-                # bascule sur le checkpoint SDXL validé avec la recette.
+                # The xinsir ControlNet is SDXL only (sd-cli refuses Flux):
+                # switch to the SDXL checkpoint validated with the recipe.
                 modele_controlnet = self.config.get("controlnet_sd_model", DEFAULT_SDXL_MODEL)
                 if os.path.exists(modele_controlnet):
                     self.log(f"Conditionnement ControlNet OpenPose : {os.path.basename(chemin_controlnet)}"
-                             f" + modèle SDXL {os.path.basename(modele_controlnet)}")
+                             f" + SDXL model {os.path.basename(modele_controlnet)}")
                     kwargs_rendu.update(sd_model=modele_controlnet, control_image=chemin_squelette,
                                         control_net=chemin_controlnet, control_strength=0.9)
                 else:
-                    self.log(f"⚠️ Checkpoint SDXL introuvable ({modele_controlnet}) — génération prompt seul.")
+                    self.log(f"⚠️ SDXL checkpoint not found ({modele_controlnet}) — prompt-only generation.")
             else:
-                self.log("⚠️ ControlNet OpenPose absent — génération prompt seul (pose non garantie).")
+                self.log("⚠️ OpenPose ControlNet missing — prompt-only generation (pose not guaranteed).")
             img_brute = generer_image_vulkan(**kwargs_rendu)
 
-        # 4. Détourage et centrage
+        # 4. Cutout and centering
         img_propre = post_process_asset(img_brute, redimensionner=taille)
         chemin_sprite = os.path.join(output_dir, f"{nom_base}.png")
         img_propre.save(chemin_sprite, "PNG")
 
-        # 5. Extraction des points d'ancrage Godot (Marker2D)
-        self.log("Calcul des points d'ancrage Godot (Mains, Tête, Pieds)...")
+        # 5. Godot anchor point extraction (Marker2D)
+        self.log("Computing the Godot anchor points (Hands, Head, Feet)...")
         ancrages = extraire_points_ancrage_godot(points_pose, largeur=taille, hauteur=taille)
 
         # Export JSON
@@ -133,15 +133,15 @@ class PoseControlWorkflow(BaseWorkflow):
                 "markers": ancrages
             }, f, indent=2)
 
-        # 6. Export Scène Godot (.tscn)
+        # 6. Godot scene export (.tscn)
         nom_rel_tex = f"res://{nom_base}.png"
         chemin_tscn = exporter_scene_pose_godot(nom_base, output_dir, ancrages, nom_rel_tex)
 
-        self.log(f"Personnage et armature OpenPose générés dans '{output_dir}/' :", emoji="🎉")
+        self.log(f"Character and OpenPose armature generated in '{output_dir}/':", emoji="🎉")
         self.log(f"  • Sprite 2D       : {chemin_sprite}")
-        self.log(f"  • Squelette Pose  : {chemin_squelette}")
-        self.log(f"  • Scène Godot 4   : {chemin_tscn} (Marker2D intégrés)")
-        self.log(f"  • Manifeste Rig   : {chemin_json}", emoji="💎")
+        self.log(f"  • Pose skeleton   : {chemin_squelette}")
+        self.log(f"  • Godot 4 scene   : {chemin_tscn} (built-in Marker2D)")
+        self.log(f"  • Rig manifest    : {chemin_json}", emoji="💎")
 
         return {
             "sprite": chemin_sprite,

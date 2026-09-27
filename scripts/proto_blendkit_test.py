@@ -1,10 +1,10 @@
-"""Test Blendkit headless : telechargement CC0 + export GLB (NON valide, pas un workflow).
+"""Blendkit headless test: CC0 download + GLB export (NOT validated, not a workflow).
 
-Execute DANS Blender en mode background :
+Executes INSIDE Blender in background mode:
   blender.exe --background --python scripts/proto_blendkit_test.py -- <out_dir> <search_json> <asset_index>
 
-La cle API du compte connecte est lue depuis les preferences de l'addon Blendkit
-et ne quitte jamais ce processus (jamais affichee, jamais ecrite sur disque).
+The API key of the logged-in account is read from the Blendkit addon preferences
+and never leaves this process (never displayed, never written to disk).
 """
 
 import bpy
@@ -28,26 +28,26 @@ def main() -> int:
     asset_index = int(argv[2])
     os.makedirs(out_dir, exist_ok=True)
 
-    # 1) Cle API du compte connecte (lecture seule, jamais logguee)
+    # 1) API key of the logged-in account (read-only, never logged)
     prefs = bpy.context.preferences.addons.get(ADDON_MODULE)
     api_key = getattr(prefs.preferences, "api_key", "") if prefs else ""
     if not api_key:
-        log("ERREUR: aucune cle API dans les preferences de l'addon Blendkit (compte non connecte ?)")
+        log("ERROR: no API key in the Blendkit addon preferences (account not logged in?)")
         return 2
-    log(f"cle API lue depuis les preferences ({len(api_key)} caracteres, masquee)")
+    log(f"API key read from the preferences ({len(api_key)} characters, masked)")
 
-    # 2) Choix de l'asset dans les resultats de recherche
+    # 2) Asset selection from the search results
     with open(search_json_path, "r", encoding="utf-8") as f:
         meta = json.load(f)
     asset = meta["results"][asset_index]
-    log(f"asset cible: {asset['displayName']} (license={asset['license']}, baseId={asset['assetBaseId']})")
+    log(f"target asset: {asset['displayName']} (license={asset['license']}, baseId={asset['assetBaseId']})")
 
     blend_file = next((f_ for f_ in asset["files"] if f_["fileType"] == "blend"), None)
     if blend_file is None:
-        log("ERREUR: aucun fichier .blend dans cet asset")
+        log("ERROR: no .blend file in this asset")
         return 2
 
-    # 3) URL signée via l'endpoint authentifié (scene_uuid au format UUID requis)
+    # 3) Signed URL via the authenticated endpoint (scene_uuid in UUID format required)
     import uuid as uuid_mod
 
     req = urllib.request.Request(
@@ -58,26 +58,26 @@ def main() -> int:
         dl = json.load(r)
     signed_url = dl.get("filePath")
     if not signed_url:
-        log(f"ERREUR: pas de filePath dans la réponse ({str(dl)[:200]})")
+        log(f"ERROR: no filePath in the response ({str(dl)[:200]})")
         return 3
-    log(f"URL signée obtenue ({dl.get('fileType')})")
+    log(f"Signed URL obtained ({dl.get('fileType')})")
 
-    # 4) Téléchargement du .blend (URL signée, sans auth ; UA navigateur exigée par le CDN)
+    # 4) .blend download (signed URL, no auth; browser UA required by the CDN)
     blend_path = os.path.join(out_dir, "source.blend")
     if os.path.isfile(blend_path) and os.path.getsize(blend_path) > 0:
-        log(f".blend déjà en cache: {blend_path}")
+        log(f".blend already cached: {blend_path}")
     else:
-        log("téléchargement du .blend en cours...")
+        log("downloading the .blend...")
         req_file = urllib.request.Request(signed_url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req_file, timeout=600) as r, open(blend_path, "wb") as f:
             f.write(r.read())
-        log(f".blend téléchargé: {os.path.getsize(blend_path) / 1e6:.1f} Mo -> {blend_path}")
+        log(f".blend downloaded: {os.path.getsize(blend_path) / 1e6:.1f} MB -> {blend_path}")
 
-    # 5) Scene vide (prefs en memoire reinitialisees : la cle est deja lue)
+    # 5) Empty scene (in-memory prefs reset: the key is already read)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
 
-    # 6) Append des objets du .blend source (materiaux et images suivent les objets)
+    # 6) Append of the source .blend objects (materials and images follow the objects)
     with bpy.data.libraries.load(blend_path, link=False) as (src, dst):
         dst.objects = src.objects
     imported = []
@@ -87,13 +87,13 @@ def main() -> int:
             imported.append(obj)
     meshes = [o for o in imported if o.type == "MESH"]
     if not meshes:
-        log("ERREUR: aucun maillage importe")
+        log("ERROR: no mesh imported")
         return 4
     faces = sum(len(o.data.polygons) for o in meshes)
     mats = {m.name for o in meshes for m in o.data.materials if m}
-    log(f"import OK: {len(imported)} objets, {len(meshes)} maillages, {faces} faces, materiaux={sorted(mats)}")
+    log(f"import OK: {len(imported)} objects, {len(meshes)} meshes, {faces} faces, materials={sorted(mats)}")
 
-    # 7) Camera auto-framee sur l'englobant global (fit FOV 50mm avec marge)
+    # 7) Camera auto-framed on the global bounding box (50mm FOV fit with margin)
     from mathutils import Vector
 
     pts = [o.matrix_world @ Vector(corner) for o in meshes for corner in o.bound_box]
@@ -103,7 +103,7 @@ def main() -> int:
     radius = (mx - mn).length / 2
     import math
 
-    half_fov = math.radians(40 / 2)  # lentille 50mm, capteur 36mm -> ~40 deg horizontal
+    half_fov = math.radians(40 / 2)  # 50mm lens, 36mm sensor -> ~40 deg horizontal
     distance = radius / math.sin(half_fov) * 1.25
     direction = Vector((1.0, -1.0, 0.7)).normalized()
     cam_data = bpy.data.cameras.new("Cam")
@@ -115,13 +115,13 @@ def main() -> int:
     cam_data.clip_end = 1000.0
     scene.camera = cam_obj
 
-    # Fond neutre gris pour le preview
+    # Neutral gray background for the preview
     world = bpy.data.worlds.new("World")
     world.use_nodes = True
     world.node_tree.nodes["Background"].inputs[0].default_value = (0.35, 0.35, 0.35, 1)
     scene.world = world
 
-    # 8) Rendu de controle Workbench (textures visibles, pas besoin de lumieres)
+    # 8) Workbench control render (textures visible, no lights needed)
     scene.render.engine = "BLENDER_WORKBENCH"
     scene.display.shading.light = "STUDIO"
     scene.display.shading.color_type = "TEXTURE"
@@ -129,12 +129,12 @@ def main() -> int:
     scene.render.resolution_y = 800
     scene.render.filepath = os.path.join(out_dir, "apercu_workbench.png")
     bpy.ops.render.render(write_still=True)
-    log("rendu de controle Workbench OK")
+    log("Workbench control render OK")
 
-    # 9) Export GLB (toute la scene)
+    # 9) GLB export (whole scene)
     glb_path = os.path.join(out_dir, "asset.glb")
     bpy.ops.export_scene.gltf(filepath=glb_path, export_format="GLB")
-    log(f"export GLB: {os.path.getsize(glb_path) / 1e6:.1f} Mo -> {glb_path}")
+    log(f"export GLB: {os.path.getsize(glb_path) / 1e6:.1f} MB -> {glb_path}")
     return 0
 
 

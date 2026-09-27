@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script de téléchargement automatique des modèles : socle image (Flux.1 Dev,
-encodeurs CLIP-L/T5-XXL, VAE, LLM LFM2.5), Upscaling (ESRGAN), ONNX (RMBG,
-DeepBump, RIFE) et Modèles Vidéo DiT (Wan 2.1 1.3B / 14B).
+Automatic model download script: image base (Flux.1 Dev,
+CLIP-L/T5-XXL encoders, VAE, LFM2.5 LLM), Upscaling (ESRGAN), ONNX (RMBG,
+DeepBump, RIFE) and DiT Video Models (Wan 2.1 1.3B / 14B).
 
-Les chemins cibles correspondent aux valeurs par défaut de core/config.py
-(racine de MODEL_DIR, surchargeable via la variable d'environnement MODEL_DIR).
+The target paths match the default values of core/config.py
+(MODEL_DIR root, overridable via the MODEL_DIR environment variable).
 """
 
 import argparse
@@ -16,7 +16,7 @@ import subprocess
 import sys
 import urllib.request
 
-# Console Windows : force l'UTF-8 pour les emojis/accents
+# Windows console: force UTF-8 for emojis/accents
 for flux in (sys.stdout, sys.stderr):
     if hasattr(flux, "reconfigure"):
         flux.reconfigure(encoding="utf-8", errors="replace")
@@ -26,11 +26,11 @@ DOSSIER_UPSCALERS = os.path.join(DOSSIER_MODELES, "upscalers")
 DOSSIER_ONNX = os.path.join(DOSSIER_MODELES, "onnx")
 DOSSIER_LORAS = os.path.join(DOSSIER_MODELES, "loras")
 
-# Socle image 2D : moteur par défaut (Flux.1 Dev Q6_K) + encodeurs + VAE + LLM
-# directeur artistique. Le dépôt officiel BFL FLUX.1-dev est gated : on passe
-# par les miroirs non gated usuels (city96 / comfyanonymous) — ae.safetensors
-# (VAE fp16, ~335 Mo) est identique entre FLUX.1-schnell et dev (Apache/MIT).
-# SDXL Juggernaut (Civitai, login requis) reste un téléchargement manuel.
+# 2D image base: default engine (Flux.1 Dev Q6_K) + encoders + VAE + art
+# director LLM. The official BFL FLUX.1-dev repo is gated: we go through
+# the usual non-gated mirrors (city96 / comfyanonymous) — ae.safetensors
+# (VAE fp16, ~335 MB) is identical between FLUX.1-schnell and dev (Apache/MIT).
+# SDXL Juggernaut (Civitai, login required) remains a manual download.
 IMAGE_BASE_URLS = {
     "flux1-dev-Q6_K.gguf": "https://huggingface.co/city96/FLUX.1-dev-gguf/resolve/main/flux1-dev-Q6_K.gguf",
     "clip_l.safetensors": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors",
@@ -71,18 +71,18 @@ VIDEO_14B_URLS = {
 
 
 def telecharger_avec_progression(url: str, destination: str, force: bool = False):
-    """Télécharge un fichier distant avec reprise (curl ou streaming python)."""
+    """Downloads a remote file with resume (curl or python streaming)."""
     nom_fichier = os.path.basename(destination)
     if not force and os.path.exists(destination):
         taille_mo = os.path.getsize(destination) / (1024 * 1024)
         if taille_mo > 1:
-            print(f"✅ Déjà présent : {nom_fichier} ({taille_mo:.1f} Mo)")
+            print(f"✅ Already present: {nom_fichier} ({taille_mo:.1f} MB)")
             return
 
     os.makedirs(os.path.dirname(os.path.abspath(destination)), exist_ok=True)
-    print(f"⏳ Téléchargement de {nom_fichier}...")
-    print(f"   Source : {url}")
-    print(f"   Cible  : {destination}")
+    print(f"⏳ Downloading {nom_fichier}...")
+    print(f"   Source: {url}")
+    print(f"   Target: {destination}")
 
     curl_path = shutil.which("curl.exe") or shutil.which("curl")
     if curl_path:
@@ -99,28 +99,28 @@ def telecharger_avec_progression(url: str, destination: str, force: bool = False
             res = subprocess.run(commande)
             if res.returncode == 0 and os.path.exists(destination):
                 taille_mo = os.path.getsize(destination) / (1024 * 1024)
-                print(f"🎉 Téléchargé avec succès via curl : {nom_fichier} ({taille_mo:.1f} Mo)\n")
+                print(f"🎉 Successfully downloaded via curl: {nom_fichier} ({taille_mo:.1f} MB)\n")
                 return
         except Exception as e:
-            print(f"⚠️  Échec curl ({e}), bascule sur urllib...")
+            print(f"⚠️  curl failure ({e}), switching to urllib...")
 
     try:
         urllib.request.urlretrieve(url, destination)
         taille_mo = os.path.getsize(destination) / (1024 * 1024)
-        print(f"🎉 Téléchargé avec succès : {nom_fichier} ({taille_mo:.1f} Mo)\n")
+        print(f"🎉 Successfully downloaded: {nom_fichier} ({taille_mo:.1f} MB)\n")
     except Exception as e:
-        print(f"❌ Erreur lors du téléchargement de {nom_fichier} : {e}\n")
+        print(f"❌ Error while downloading {nom_fichier}: {e}\n")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Gestionnaire de téléchargement des modèles IA pour generator-assets.")
+    parser = argparse.ArgumentParser(description="AI model download manager for generator-assets.")
     parser.add_argument(
         "--pack",
         choices=["all", "base", "onnx", "upscalers", "video", "video-1.3b", "video-14b", "video-vae"],
         default="base",
-        help="Pack de modèles à télécharger (défaut : base / socle image Flux.1)."
+        help="Model pack to download (default: base / Flux.1 image base)."
     )
-    parser.add_argument("--force", action="store_true", help="Force le re-téléchargement même si le fichier existe.")
+    parser.add_argument("--force", action="store_true", help="Forces the re-download even if the file exists.")
     args = parser.parse_args()
 
     os.makedirs(DOSSIER_MODELES, exist_ok=True)
@@ -129,51 +129,51 @@ def main():
     os.makedirs(DOSSIER_LORAS, exist_ok=True)
 
     print("=" * 70)
-    print(" 🚀 Gestionnaire de Modèles IA (Flux.1, Vidéos Wan 2.1, ONNX, Upscalers)")
-    print(f" 📂 Emplacement cible : {DOSSIER_MODELES}")
+    print(" 🚀 AI Model Manager (Flux.1, Wan 2.1 Videos, ONNX, Upscalers)")
+    print(f" 📂 Target location: {DOSSIER_MODELES}")
     print("=" * 70)
 
     if args.pack in ("all", "base"):
-        print("\n--- Socle Image 2D : Flux.1 Dev Q6_K + encodeurs + VAE + LLM (~10 Go) ---")
+        print("\n--- 2D Image Base: Flux.1 Dev Q6_K + encoders + VAE + LLM (~10 GB) ---")
         for nom, url in IMAGE_BASE_URLS.items():
             dest = os.path.join(DOSSIER_MODELES, nom)
             telecharger_avec_progression(url, dest, force=args.force)
 
     if args.pack in ("video", "video-1.3b", "all"):
-        print("\n--- Pack Vidéo Wan 2.1 (1.3B Rapide & Léger ~5.2 Go total) ---")
+        print("\n--- Wan 2.1 Video Pack (1.3B Fast & Light ~5.2 GB total) ---")
         for nom, url in VIDEO_1_3B_URLS.items():
             dest = os.path.join(DOSSIER_MODELES, nom)
             telecharger_avec_progression(url, dest, force=args.force)
 
     if args.pack in ("video-14b",):
-        print("\n--- Pack Vidéo Wan 2.1 (14B Haute Définition Studio ~25 Go total) ---")
+        print("\n--- Wan 2.1 Video Pack (14B High-Definition Studio ~25 GB total) ---")
         for nom, url in VIDEO_14B_URLS.items():
             dest = os.path.join(DOSSIER_MODELES, nom)
             telecharger_avec_progression(url, dest, force=args.force)
 
     if args.pack in ("video-vae",):
-        print("\n--- Décodeur VAE Vidéo Wan 2.1 (~242 Mo) ---")
+        print("\n--- Wan 2.1 Video VAE Decoder (~242 MB) ---")
         for nom, url in VIDEO_VAE_URLS.items():
             dest = os.path.join(DOSSIER_MODELES, nom)
             telecharger_avec_progression(url, dest, force=args.force)
 
     if args.pack in ("all", "onnx"):
-        print("\n--- Modèles Neuronaux Légers ONNX (Détourage, PBR, Fluidité) ---")
+        print("\n--- Light ONNX Neural Models (Matting, PBR, Smoothness) ---")
         for nom, url in ONNX_URLS.items():
             dest = os.path.join(DOSSIER_ONNX, nom)
             telecharger_avec_progression(url, dest, force=args.force)
 
     if args.pack in ("all", "upscalers"):
-        print("\n--- Modèles d'Upscaling ESRGAN ---")
+        print("\n--- ESRGAN Upscaling Models ---")
         for nom, url in UPSCALERS_URLS.items():
             dest = os.path.join(DOSSIER_UPSCALERS, nom)
             telecharger_avec_progression(url, dest, force=args.force)
 
     print("\n" + "=" * 70)
-    print("✨ Téléchargements terminés ou vérifiés avec succès !")
-    print(f"👉 Modèles installés dans : {DOSSIER_MODELES}")
-    print("🎬 Pour tester une vidéo :")
-    print('   uv run python main.py -w video "un dragon volant dans un ciel d orage" --frames 33 --fps 24')
+    print("✨ Downloads finished or successfully verified!")
+    print(f"👉 Models installed in: {DOSSIER_MODELES}")
+    print("🎬 To test a video:")
+    print('   uv run python main.py -w video "a flying dragon in a stormy sky" --frames 33 --fps 24')
     print("=" * 70 + "\n")
 
 

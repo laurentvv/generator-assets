@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Material 3D (PBR) : Génération complète de pack de textures PBR pour Godot 3D.
-Produit :
-- Albedo (Texture de couleur)
-- Normal Map (Format tangent OpenGL)
-- Roughness Map (Micro-rugosité)
-- Height Map (Déplacement / Relief)
+Material 3D (PBR) workflow: complete PBR texture pack generation for Godot 3D.
+Produces:
+- Albedo (color texture)
+- Normal Map (OpenGL tangent format)
+- Roughness Map (micro-roughness)
+- Height Map (displacement / relief)
 - Ambient Occlusion (AO)
 - ORM Pack (Occlusion R, Roughness G, Metallic B)
-- Fichier ressource Godot 4 StandardMaterial3D (.tres)
-- Aperçu de tuilage 3x3
+- Godot 4 StandardMaterial3D resource file (.tres)
+- 3x3 tiling preview
 """
 
 import os
@@ -36,17 +36,17 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class Material3DWorkflow(BaseWorkflow):
     name = "material3d"
-    description = "Pack Matériau 3D PBR complet (Albedo, Normal, Roughness, Height, AO, ORM + .tres Godot)"
+    description = "Complete PBR 3D material pack (Albedo, Normal, Roughness, Height, AO, ORM + Godot .tres)"
 
     emoji = "🧱"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--normal-strength",), type=float, default=3.5,
-             help="Intensité du relief pour la Normal Map PBR (défaut: 3.5)."),
+             help="Relief intensity for the PBR Normal Map (default: 3.5)."),
         dict(flags=("--pbr-engine",), default="auto", choices=["auto", "deep", "sobel"],
-             help="Moteur d'estimation PBR (deep = DeepBump ONNX, sobel = filtres 2D)."),
+             help="PBR estimation engine (deep = DeepBump ONNX, sobel = 2D filters)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -54,7 +54,7 @@ class Material3DWorkflow(BaseWorkflow):
         input_image = params.get("input")
 
         if not concept and not input_image:
-            raise ValueError("Le paramètre 'prompt' ou 'input' (texture existante) est requis pour material3d.")
+            raise ValueError("The 'prompt' or 'input' (existing texture) parameter is required for material3d.")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         taille = params.get("size", 1024) or 1024
@@ -63,11 +63,11 @@ class Material3DWorkflow(BaseWorkflow):
         os.makedirs(output_dir, exist_ok=True)
 
         if input_image and os.path.exists(input_image):
-            self.log(f"Chargement de la texture source : {input_image}...")
+            self.log(f"Loading the source texture: {input_image}...")
             img_albedo = Image.open(input_image).convert("RGB")
             nom_base = params.get("output") or f"{Path(input_image).stem}_pbr"
         else:
-            self.log(f"Génération d'une texture PBR pour '{concept}'...")
+            self.log(f"Generating a PBR texture for '{concept}'...")
             nom_base = params.get("output") or slugifier_texte(concept)
 
             style_pbr = (
@@ -85,7 +85,7 @@ class Material3DWorkflow(BaseWorkflow):
                 sans_llm=params.get("sans_llm", params.get("no_llm", True))
             )
 
-            # Rendu avec padding circulaire
+            # Render with circular padding
             img_brute = generer_image_vulkan(
                 prompt=prompt_complet,
                 sd_cli=self.config.get("sd_cli"),
@@ -106,14 +106,14 @@ class Material3DWorkflow(BaseWorkflow):
         if taille and img_albedo.size != (taille, taille):
             img_albedo = img_albedo.resize((taille, taille), Image.Resampling.LANCZOS)
 
-        # 1. Calcul des différentes maps PBR (Deep Learning ou Sobel)
+        # 1. Computation of the various PBR maps (Deep Learning or Sobel)
         pbr_engine = params.get("pbr_engine", "auto")
         maps_pbr = None
 
         if pbr_engine != "sobel":
             try:
                 from core.pbr_deep import estimer_pbr_complet
-                self.log("Estimation PBR par Deep Learning (DeepBump ONNX)...")
+                self.log("PBR estimation via Deep Learning (DeepBump ONNX)...")
                 maps_pbr = estimer_pbr_complet(img_albedo, strength=strength_normal)
                 img_normal = maps_pbr["normal"]
                 img_roughness = maps_pbr["roughness"]
@@ -121,20 +121,20 @@ class Material3DWorkflow(BaseWorkflow):
                 img_ao = maps_pbr["ao"]
                 img_orm = maps_pbr["orm"]
             except Exception as e:
-                self.log(f"⚠️ Erreur DeepPBR ({e}), bascule sur filtres Sobel standard...")
+                self.log(f"⚠️ DeepPBR error ({e}), falling back to standard Sobel filters...")
                 maps_pbr = None
 
         if maps_pbr is None:
-            self.log("Calcul de la Normal Map (Gradients Sobel OpenGL)...")
+            self.log("Computing the Normal Map (OpenGL Sobel gradients)...")
             img_normal = generer_normal_map(img_albedo, strength=strength_normal)
-            self.log("Calcul de la Roughness Map & Height Map...")
+            self.log("Computing the Roughness Map & Height Map...")
             img_roughness = generer_roughness_map(img_albedo)
             img_height = generer_height_map(img_albedo)
-            self.log("Calcul de l'Ambient Occlusion & Pack ORM Godot...")
+            self.log("Computing the Ambient Occlusion & Godot ORM Pack...")
             img_ao = generer_ao_map(img_albedo)
             img_orm = generer_orm_pack(img_ao, img_roughness)
 
-        # 2. Sauvegarde des fichiers
+        # 2. Saving the files
         chemin_albedo = os.path.join(output_dir, f"{nom_base}_albedo.png")
         chemin_normal = os.path.join(output_dir, f"{nom_base}_normal.png")
         chemin_roughness = os.path.join(output_dir, f"{nom_base}_roughness.png")
@@ -149,20 +149,20 @@ class Material3DWorkflow(BaseWorkflow):
         img_ao.save(chemin_ao, "PNG")
         img_orm.save(chemin_orm, "PNG")
 
-        # 3. Aperçu 3x3
+        # 3. 3x3 preview
         img_preview = creer_apercu_tuilage(img_albedo, rep_x=3, rep_y=3)
         chemin_preview = os.path.join(output_dir, f"{nom_base}_preview3x3.png")
         img_preview.save(chemin_preview, "PNG")
 
-        # 4. Fichier ressource Matériau Godot (.tres)
+        # 4. Godot material resource file (.tres)
         chemin_tres = exporter_fichier_materiau_godot(nom_base, output_dir)
 
-        self.log(f"Pack PBR complet exporté dans '{output_dir}/' :", emoji="🎉")
+        self.log(f"Complete PBR pack exported to '{output_dir}/':", emoji="🎉")
         self.log(f"  • Albedo    : {chemin_albedo}")
         self.log(f"  • Normal    : {chemin_normal}")
         self.log(f"  • ORM       : {chemin_orm} (R=AO, G=Roughness, B=Metallic)")
         self.log(f"  • Height    : {chemin_height}")
-        self.log(f"  • Matériau  : {chemin_tres} (StandardMaterial3D Godot 4)", emoji="💎")
+        self.log(f"  • Material  : {chemin_tres} (StandardMaterial3D Godot 4)", emoji="💎")
 
         return {
             "albedo": chemin_albedo,

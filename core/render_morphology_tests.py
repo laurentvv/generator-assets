@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script d'automatisation des tests morphologiques (Homme, Femme, Enfant) pour chaque thème médiéval.
-Gère :
- - L'adaptation morphologique native de MakeHuman / MPFB (Option B)
- - La préservation exacte des mains, doigts, poignets, tête et cou via les 8398 indices de sommets MakeHuman universels
- - Le cadrage studio 3/4 parfait adapté à la hauteur du personnage (adulte vs enfant)
- - L'application des textures PBR AI distinctes pour Torso, Pants et Shoes
+Automation script for the morphology tests (Homme, Femme, Enfant) for each medieval theme.
+Handles:
+ - Native MakeHuman / MPFB morphological adaptation (Option B)
+ - Exact preservation of hands, fingers, wrists, head and neck via the 8398 universal MakeHuman vertex indices
+ - Perfect 3/4 studio framing adapted to the character height (adult vs child)
+ - Application of the distinct AI PBR textures for Torso, Pants and Shoes
 """
 
 import bpy
@@ -21,8 +21,8 @@ except ImportError:
     from mpfb.services import HumanService
     from mpfb.ui.apply_assets.assetlibrary.assetsettingspanel import ASSET_SETTINGS_PROPERTIES
 
-# Script exécuté dans Blender (pas d'import core.config garanti) : chemins dérivés.
-# Racine MPFB de l'utilisateur (%APPDATA%) et racine du dépôt (parent de core/).
+# Script executed inside Blender (core.config import not guaranteed): derived paths.
+# User MPFB root (%APPDATA%) and repository root (parent of core/).
 MPFB_ROOT = os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data")
 MPFB_OBJSDIR = os.path.expandvars(
     r"%APPDATA%\Blender Foundation\Blender\5.2\extensions\user_default\mpfb\data\3dobjs"
@@ -82,9 +82,9 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
     rendered_images = []
 
     for morph_name, macro_dict in morphologies:
-        print(f"=== [Morphologie: {morph_name.upper()}] Thème: {theme_slug} ===")
+        print(f"=== [Morphology: {morph_name.upper()}] Theme: {theme_slug} ===")
 
-        # 1. Nettoyage de la scène
+        # 1. Scene cleanup
         for o in list(bpy.data.objects):
             bpy.data.objects.remove(o, do_unlink=True)
 
@@ -94,7 +94,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
         ASSET_SETTINGS_PROPERTIES.set_value("delete_group", False, entity_reference=bpy.context.scene)
         ASSET_SETTINGS_PROPERTIES.set_value("mask_base_mesh", False, entity_reference=bpy.context.scene)
 
-        # 2. Studio Lighting & Caméra
+        # 2. Studio lighting & camera
         cam_data = bpy.data.cameras.new("Camera")
         cam = bpy.data.objects.new("Camera", cam_data)
         bpy.context.collection.objects.link(cam)
@@ -121,7 +121,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
         add_light("Fill_Light", 450.0, (-2.2, -2.5, 2.0), size=2.5)
         add_light("Rim_Light", 650.0, (0.0, 3.0, 2.5), size=2.0)
 
-        # 3. Création du Human MPFB avec la morphologie ciblée
+        # 3. Creating the MPFB Human with the targeted morphology
         human = HumanService.create_human(
             mask_helpers=False,
             detailed_helpers=True,
@@ -132,7 +132,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
         bpy.context.view_layer.objects.active = human
         human.select_set(True)
 
-        # 4. Chargement et adaptation automatique des vêtements MPFB
+        # 4. Loading and automatic fitting of the MPFB clothes
         bpy.ops.mpfb.load_library_clothes(filepath=suit_mhclo, object_type="Clothes")
         suit_obj = [o for o in bpy.context.selected_objects if o != human][0]
         suit_obj.name = f"{theme_slug}_{morph_name}_suit"
@@ -143,7 +143,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
         shoes_obj = [o for o in bpy.context.selected_objects if o != human and o != suit_obj][0]
         shoes_obj.name = f"{theme_slug}_{morph_name}_shoes"
 
-        # 5. Séparation du pantalon en objet 3D indépendant
+        # 5. Separating the pants into an independent 3D object
         bm_s = bmesh.new()
         bm_s.from_mesh(suit_obj.data)
         bm_s.faces.ensure_lookup_table()
@@ -183,15 +183,15 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
         bm_s.free()
         suit_obj.name = f"{theme_slug}_{morph_name}_torso"
 
-        # 6. Masquage du corps sous les vêtements :
-        # APPLICATION EXACTE DES 8398 SOMMETS UNIVERSELS (TÊTE, COU, VISAGE, MAINS, DOIGTS)
+        # 6. Masking the body under the clothes:
+        # EXACT APPLICATION OF THE 8398 UNIVERSAL VERTICES (HEAD, NECK, FACE, HANDS, FINGERS)
         vg_keep = human.vertex_groups.new(name="Visible_Skin")
         vg_keep.add(skin_indices_to_keep, 1.0, 'REPLACE')
 
         mask_skin = human.modifiers.new("Mask_Skin", 'MASK')
         mask_skin.vertex_group = "Visible_Skin"
 
-        # Matériau Peau Réaliste
+        # Realistic skin material
         skin_mat = bpy.data.materials.new(name=f"Human_Skin_{morph_name}")
         skin_mat.use_nodes = True
         s_bsdf = skin_mat.node_tree.nodes.get("Principled BSDF")
@@ -202,7 +202,7 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
         human.data.materials.clear()
         human.data.materials.append(skin_mat)
 
-        # 7. Application des Matériaux PBR Thématiques
+        # 7. Applying the thematic PBR materials
         parts_meta = [
             ("torso", suit_obj, config.get("torso_scale", 3.0), config.get("torso_roughness", 0.5), config.get("torso_metallic", 0.0), config.get("torso_normal_str", 1.5)),
             ("pants", pants_obj, config.get("pants_scale", 4.0), config.get("pants_roughness", 0.6), config.get("pants_metallic", 0.0), config.get("pants_normal_str", 1.5)),
@@ -253,14 +253,14 @@ def render_theme_morphologies(theme_name: str, config: dict, output_base_dir: st
             obj.data.materials.clear()
             obj.data.materials.append(mat)
 
-            # Modificateurs Solidify & Subsurf
+            # Solidify & Subsurf modifiers
             sol = obj.modifiers.new("Solidify", 'SOLIDIFY')
             sol.thickness = 0.005
             sol.offset = 1.0
             sub = obj.modifiers.new("Subsurf", 'SUBSURF')
             sub.levels = 1
 
-        # 8. Cadrage Studio Plein Pied Centré (3/4 dynamique)
+        # 8. Centered full-standing-body studio framing (dynamic 3/4)
         all_objs = [human, suit_obj, pants_obj, shoes_obj]
         all_zs = []
         for o in all_objs:

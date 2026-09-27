@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow VFX Flipbook : Génération de Planches de Particules et Effets Visuels Animés (Flipbooks) pour Godot 4.
-Produit :
-- Texture Flipbook (Atlas 4x4 ou 8x8)
-- Ressource Godot 4 StandardMaterial3D / CanvasItemMaterial configurée avec UV Flipbook
-- Ressource ParticleProcessMaterial (.tres)
-- Scène d'exemple GPUParticles (.tscn)
+VFX Flipbook workflow: generating particle sheets and animated visual effects (Flipbooks) for Godot 4.
+Produces:
+- Flipbook texture (4x4 or 8x8 atlas)
+- Godot 4 StandardMaterial3D / CanvasItemMaterial resource configured with UV Flipbook
+- ParticleProcessMaterial resource (.tres)
+- Sample GPUParticles scene (.tscn)
 """
 
 import os
@@ -26,7 +26,7 @@ def exporter_materiau_flipbook_godot(
     v_frames: int = 4,
     mode_2d: bool = False
 ) -> Tuple[str, str, str]:
-    """Génère le matériau Flipbook, le ParticleProcessMaterial et la scène GPUParticles pour Godot 4."""
+    """Generates the Flipbook material, the ParticleProcessMaterial and the GPUParticles scene for Godot 4."""
     chemin_mat = os.path.join(output_dir, f"{nom_base}_vfx_material.tres")
     chemin_part = os.path.join(output_dir, f"{nom_base}_particles_process.tres")
     chemin_tscn = os.path.join(output_dir, f"{nom_base}_vfx.tscn")
@@ -112,20 +112,20 @@ one_shot = false
 
 @WorkflowRegistry.register
 class VFXFlipbookWorkflow(BaseWorkflow):
-    """Génération de Planches de Particules et Effets Visuels (Flipbooks) pour Godot 4."""
+    """Particle sheet and visual effect (Flipbook) generation for Godot 4."""
 
     name = "vfx_flipbook"
-    description = "Planches d'animation d'effets visuels / particules (Flipbooks 4x4) et matériaux Godot 4"
+    description = "Visual effect / particle animation sheets (4x4 Flipbooks) and Godot 4 materials"
 
     emoji = "💥"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --vfx-type est aussi lu
-    # en secours par anim_loop et audio_ambience ; --mode-2d (partagé) vit dans
-    # anim_loop ; --frames reste en table plate (cross-familles).
+    # CLI declaration (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --vfx-type is also read
+    # as a fallback by anim_loop and audio_ambience; --mode-2d (shared) lives in
+    # anim_loop; --frames stays in the flat table (cross-family).
     PARAMETRES = [
         dict(flags=("--vfx-type",), default="explosion", choices=["explosion", "fire", "lightning", "portal", "slash", "aura"],
-             help="Type d'effet pour vfx_flipbook."),
+             help="Effect type for vfx_flipbook."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -145,10 +145,10 @@ class VFXFlipbookWorkflow(BaseWorkflow):
         total_frames = h_frames * v_frames
 
         if input_image and os.path.exists(input_image):
-            self.log(f"Chargement de l'image source : {input_image}...")
+            self.log(f"Loading the source image: {input_image}...")
             img_src = Image.open(input_image).convert("RGBA")
         else:
-            self.log(f"Génération de la planche VFX Flipbook 4x4 ({total_frames} frames) pour '{concept}'...")
+            self.log(f"Generating the 4x4 VFX Flipbook sheet ({total_frames} frames) for '{concept}'...")
 
             style_vfx = (
                 f"game visual effect sprite sheet, 4x4 animated grid sprite sequence of {vfx_type}, "
@@ -181,14 +181,14 @@ class VFXFlipbookWorkflow(BaseWorkflow):
             )
             img_src = img_brute.convert("RGBA")
 
-        # Redimensionnement vers la résolution cible
+        # Resizing to the target resolution
         if img_src.size != (resolution, resolution):
             img_src = img_src.resize((resolution, resolution), Image.Resampling.LANCZOS)
 
         img_src.save(chemin_flipbook, "PNG")
 
-        # Export des ressources Godot 4
-        self.log("Génération des ressources Godot 4 (Material, ParticleProcessMaterial, GPUParticles)...")
+        # Godot 4 resource export
+        self.log("Generating the Godot 4 resources (Material, ParticleProcessMaterial, GPUParticles)...")
         chemin_mat, chemin_part, chemin_tscn = exporter_materiau_flipbook_godot(
             nom_base=nom_base,
             output_dir=output_dir,
@@ -197,11 +197,11 @@ class VFXFlipbookWorkflow(BaseWorkflow):
             mode_2d=mode_2d
         )
 
-        self.log(f"Pack VFX Flipbook prêt pour Godot 4 dans '{output_dir}/' :", emoji="🎉")
-        self.log(f"  • Texture Flipbook  : {chemin_flipbook} ({h_frames}x{v_frames} frames)")
-        self.log(f"  • Matériau Godot 4  : {chemin_mat} (Particles Anim)", emoji="💎")
-        self.log(f"  • Émetteur Particules: {chemin_part}")
-        self.log(f"  • Scène GPUParticles: {chemin_tscn}")
+        self.log(f"VFX Flipbook pack ready for Godot 4 in '{output_dir}/':", emoji="🎉")
+        self.log(f"  • Flipbook texture : {chemin_flipbook} ({h_frames}x{v_frames} frames)")
+        self.log(f"  • Godot 4 material : {chemin_mat} (Particles Anim)", emoji="💎")
+        self.log(f"  • Particle emitter : {chemin_part}")
+        self.log(f"  • GPUParticles scene: {chemin_tscn}")
 
         return {
             "flipbook": chemin_flipbook,

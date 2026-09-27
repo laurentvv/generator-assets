@@ -1,10 +1,10 @@
-"""Chasse aux workflows blender-skills — driver de la campagne de tests (2026-09-17).
+"""Hunt for blender-skills workflows — driver of the test campaign (2026-09-17).
 
-Lance chaque prototype bpy dans Blender headless, collecte les marqueurs stdout,
-encode le turntable en MP4 (ffmpeg) et assemble la planche de contact LODs (Pillow).
-Les prototypes s'inspirent du pack blender-skills (arjun988, MIT) adaptés headless.
+Runs each bpy prototype in Blender headless, collects the stdout markers,
+encodes the turntable to MP4 (ffmpeg) and assembles the LOD contact sheet (Pillow).
+The prototypes are inspired by the blender-skills pack (arjun988, MIT) adapted headless.
 
-Usage : uv run python scripts/proto_blender_skills/run_all.py
+Usage: uv run python scripts/proto_blender_skills/run_all.py
 """
 
 import json
@@ -48,7 +48,7 @@ TESTS = [
      [BARIL, os.path.join(OUT, "scatter_barils.png"), "40", "42", "0.5"], 600),
     ("beauty_casque", "beauty_render.py",
      [CASQUE, os.path.join(OUT, "beauty_casque.png"), "1200", "96"], 900),
-    # --- vague 2 ---
+    # --- wave 2 ---
     ("spritesheet3d_casque", "spritesheet3d.py",
      [CASQUE, os.path.join(OUT, "spritesheet3d_casque"), "512", "8"], 600),
     ("bake_ao_casque", "bake_ao.py",
@@ -58,9 +58,9 @@ TESTS = [
      [BARIL, os.path.join(OUT, "decoupe_baril")], 300),
     ("composite_beauty", "composite_beauty.py",
      [CASQUE, os.path.join(OUT, "beauty_casque_composite.png"), "1200"], 900),
-    # --- vague 3 : styles & recettes matériaux (blender-skills anime/lowpoly/materials) ---
-    # Leçon 2026-09-17 : blender headless sans blend sauvegardé AVALÉ les chemins
-    # relatifs (rendus perdus sans erreur) → TOUJOURS chemins absolus via ce driver.
+    # --- wave 3: styles & material recipes (blender-skills anime/lowpoly/materials) ---
+    # Lesson 2026-09-17: headless blender without a saved .blend SWALLOWED relative
+    # paths (renders lost without error) → ALWAYS absolute paths via this driver.
     ("style_toon", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_toon.png"), "toon"], 300),
     ("style_psx", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_psx.png"), "psx"], 300),
     ("style_wear", "styles_demo.py", [CASQUE, os.path.join(OUT, "style_wear.png"), "wear"], 300),
@@ -82,16 +82,16 @@ def lancer(blender, script, args, timeout):
         proc = subprocess.run(cmd, cwd=RACINE, capture_output=True, text=True,
                               timeout=timeout, encoding="utf-8", errors="replace")
         marqueurs = [ligne for ligne in (proc.stdout or "").splitlines()
-                     if any(m in ligne for m in ("_OK:", "_JSON:", "GPU indisponible"))]
+                     if any(m in ligne for m in ("_OK:", "_JSON:", "GPU unavailable"))]
         return proc.returncode == 0 and any("SUCCESS:" in ligne for ligne in (proc.stdout or "").splitlines()), marqueurs, proc
     except subprocess.TimeoutExpired:
-        return False, [f"TIMEOUT après {timeout} s"], None
+        return False, [f"TIMEOUT after {timeout} s"], None
 
 
 def encoder_turntable(dossier, fps=24):
     ffmpeg = trouver_ffmpeg()
     if not ffmpeg:
-        return "ffmpeg introuvable, frames PNG conservées"
+        return "ffmpeg not found, PNG frames kept"
     sortie = os.path.join(dossier, "turntable.mp4")
     cmd = [ffmpeg, "-y", "-framerate", str(fps), "-i", os.path.join(dossier, "tt_%04d.png"),
            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", sortie]
@@ -100,13 +100,13 @@ def encoder_turntable(dossier, fps=24):
 
 
 def atlas_spritesheet(dossier):
-    """Assemble les sprites RGBA en atlas 4×2 + JSON de mapping (grille Godot)."""
+    """Assembles the RGBA sprites into a 4×2 atlas + mapping JSON (Godot grid)."""
     import glob
     import json as js
     from PIL import Image
     pngs = sorted(glob.glob(os.path.join(dossier, "sprite_*.png")))
     if not pngs:
-        return "aucun sprite trouvé"
+        return "no sprite found"
     with open(os.path.join(dossier, "spritesheet_infos.json"), encoding="utf-8") as f:
         infos = js.load(f)
     cols, lignes = 4, 2
@@ -150,9 +150,9 @@ def main():
     seuls = sys.argv[1:]
     blender = trouver_blender()
     if not blender:
-        print("ERREUR: Blender introuvable (BLENDER_PATH / PATH / Program Files 4.0-5.2)")
+        print("ERROR: Blender not found (BLENDER_PATH / PATH / Program Files 4.0-5.2)")
         sys.exit(1)
-    print(f"Blender : {blender}\nSorties : {OUT}\n")
+    print(f"Blender: {blender}\nOutputs: {OUT}\n")
     resultats = {}
     for nom, script, args, timeout in TESTS:
         if seuls and nom not in seuls:
@@ -164,33 +164,33 @@ def main():
             print(f"    {m[:250]}")
         if not ok and proc is not None:
             erreurs = [ligne for ligne in (proc.stderr or "").splitlines() if "Error" in ligne or "error" in ligne]
-            print(f"    ECHEC (exit {proc.returncode}) — {erreurs[-3:] if erreurs else 'voir stderr'}")
+            print(f"    FAIL (exit {proc.returncode}) — {erreurs[-3:] if erreurs else 'see stderr'}")
     post = {}
     if resultats.get("turntable_casque", {}).get("ok"):
         post["turntable_mp4"] = str(encoder_turntable(os.path.join(OUT, "turntable_casque")))
-        print(f"— turntable encodé : {post['turntable_mp4']}")
+        print(f"— turntable encoded: {post['turntable_mp4']}")
     if resultats.get("lod_casque", {}).get("ok"):
         try:
             post["planche_lods"] = str(planche_lods(os.path.join(OUT, "lod_casque")))
-            print(f"— planche LODs : {post['planche_lods']}")
+            print(f"— LOD sheet: {post['planche_lods']}")
         except Exception as e:  # noqa: BLE001
-            post["planche_lods"] = f"échec assemblage : {e}"
+            post["planche_lods"] = f"assembly failed: {e}"
     if resultats.get("spritesheet3d_casque", {}).get("ok"):
         try:
             post["atlas_sprites"] = str(atlas_spritesheet(os.path.join(OUT, "spritesheet3d_casque")))
-            print(f"— atlas sprites : {post['atlas_sprites']}")
+            print(f"— sprite atlas: {post['atlas_sprites']}")
         except Exception as e:  # noqa: BLE001
-            post["atlas_sprites"] = f"échec assemblage : {e}"
+            post["atlas_sprites"] = f"assembly failed: {e}"
     with open(os.path.join(OUT, "resume_campagne.json"), encoding="utf-8") as f:
         resume = json.load(f) if not seuls else {"tests": {}, "post": {}}
     resume["tests"].update(resultats)
     resume["post"].update(post)
     with open(os.path.join(OUT, "resume_campagne.json"), "w", encoding="utf-8") as f:
         json.dump(resume, f, ensure_ascii=False, indent=2)
-    print("\n=== RÉSUMÉ ===")
+    print("\n=== SUMMARY ===")
     for nom, r in resultats.items():
         print(f"  {'✅' if r['ok'] else '❌'} {nom}")
-    print(f"\nRésumé JSON : {os.path.join(OUT, 'resume_campagne.json')}")
+    print(f"\nSummary JSON: {os.path.join(OUT, 'resume_campagne.json')}")
 
 
 if __name__ == "__main__":

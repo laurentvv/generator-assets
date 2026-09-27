@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow H3 Ref2VA : continuation vidéo+audio par référence MiniMax-H3 (sd-cli Vulkan).
+H3 Ref2VA Workflow: video+audio continuation by MiniMax-H3 reference (sd-cli Vulkan).
 
-Génère une vidéo (webm, audio inclus) qui continue une vidéo source : la queue de
-la source (N dernières trames + WAV appairé, extraits par ffmpeg) devient la
-référence Ref2VA <Video 1>/<Audio 1> du DiT H3. Brique validée le 2026-09-09
-(MEMORY_BANK §1.16) — mécanisme du nœud ComfyUI « HR Endless Sampler » reproduit
-en CLI, ici pour UN chunk (la boucle multi-chunks reste à valider séparément).
-Fenêtre de référence = recette validée (12 trames + 0,5 s audio finissant au
-raccord) ; les leviers de raccord « endless » (fenêtre audio qui remonte, 5 trames
-de réf sur le raccord, downscale réf) sont testés en amont par
-`scripts/proto_endless_h3.py` et ne remonteront ici qu'une fois validés.
+Generates a video (webm, audio included) that continues a source video: the tail of
+the source (last N frames + paired WAV, extracted by ffmpeg) becomes the
+Ref2VA <Video 1>/<Audio 1> reference of the H3 DiT. Brick validated on 2026-09-09
+(MEMORY_BANK §1.16) — the mechanism of the ComfyUI node "HR Endless Sampler" reproduced
+in CLI, here for ONE chunk (the multi-chunk loop remains to be validated separately).
+Reference window = validated recipe (12 frames + 0.5 s of audio ending at the
+join); the "endless" join levers (audio window reaching backwards, 5 reference
+frames on the join, reference downscale) are tested upstream by
+`scripts/proto_endless_h3.py` and will only land here once validated.
 
-⚠️ Lourd : ~70 min pour 22 trames sur RX 6950 XT en recette de base, ~38 min avec le
-mode turbo (LoRA distillé 8 steps, validé le 2026-09-09 — `--turbo`). Le pré-contrôle
-de charge système bloque si la machine est occupée.
+⚠️ Heavy: ~70 min for 22 frames on RX 6950 XT in the base recipe, ~38 min with the
+turbo mode (distilled 8-step LoRA, validated on 2026-09-09 — `--turbo`). The load
+pre-check blocks if the machine is busy.
 """
 
 import json
@@ -39,14 +39,14 @@ SCRIPT_CHECK_CHARGE = Path(__file__).resolve().parent.parent / "scripts" / "chec
 
 
 def _duree_et_audio(ffmpeg: str, video_path: str) -> tuple:
-    """Retourne (durée_s, a_piste_audio) d'une vidéo via ffprobe/ffmpeg."""
+    """Returns (duration_s, has_audio_track) of a video via ffprobe/ffmpeg."""
     probe = str(ffmpeg).replace("ffmpeg.exe", "ffprobe.exe")
     duree = None
     try:
         sortie = run_engine(
             [probe, "-v", "error", "-show_entries", "format=duration",
              "-of", "csv=p=0", video_path],
-            check=True, timeout=60, etiquette="ffprobe durée",
+            check=True, timeout=60, etiquette="ffprobe duration",
         ).stdout.strip()
         duree = float(sortie)
     except Exception:
@@ -65,36 +65,36 @@ def _duree_et_audio(ffmpeg: str, video_path: str) -> tuple:
 
 @WorkflowRegistry.register
 class H3Ref2VAWorkflow(BaseWorkflow):
-    """Continuation vidéo+audio par référence Ref2VA (MiniMax-H3, sortie webm avec audio)."""
+    """Video+audio continuation by Ref2VA reference (MiniMax-H3, webm output with audio)."""
 
     name = "h3_ref2va"
-    description = "Continuation vidéo+audio via MiniMax-H3 Ref2VA (réf = queue d'une vidéo source, webm avec audio)"
+    description = "Video+audio continuation via MiniMax-H3 Ref2VA (ref = tail of a source video, webm with audio)"
 
     emoji = "🗣️"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --frames et --width/
-    # --height restent dans la table plate (partagés entre familles).
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface). --frames and --width/
+    # --height stay in the flat table (shared across families).
     PARAMETRES = [
         dict(flags=("--ref-frames",), type=int, default=12,
-             help="h3_ref2va : trames de queue extraites de la vidéo source comme référence (défaut: 12)."),
+             help="h3_ref2va: tail frames extracted from the source video as reference (default: 12)."),
         dict(flags=("--ref-audio",),
-             help="h3_ref2va : WAV de référence Ref2VA (extrait automatiquement de la source si omis)."),
+             help="h3_ref2va: Ref2VA reference WAV (extracted automatically from the source if omitted)."),
         dict(flags=("--max-vram",), type=int, default=10,
-             help="h3_ref2va : budget VRAM Gio du DiT via graph-cut sd-cli (défaut: 10, obligatoire sur 16 Go)."),
+             help="h3_ref2va: VRAM GiB budget of the DiT via sd-cli graph-cut (default: 10, mandatory on 16 GB)."),
         dict(flags=("--turbo",), action="store_true",
-             help="h3_ref2va : LoRA turbo distillé 8 steps (recette VALIDÉE 2026-09-09 — ~2x plus rapide, qualité et raccord référence >= baseline ; MEMORY_BANK §1.16)."),
+             help="h3_ref2va: distilled 8-step turbo LoRA (VALIDATED recipe 2026-09-09 — ~2x faster, quality and reference join >= baseline; MEMORY_BANK §1.16)."),
         dict(flags=("--dry-run",), action="store_true", default=False,
-             help="Construit la commande (extraction + sd-cli) sans exécuter la génération."),
+             help="Builds the command (extraction + sd-cli) without running the generation."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt:
-            raise ValueError("Le paramètre 'prompt' est requis pour le workflow h3_ref2va (décrire la SUITE, avec <Video 1>/<Audio 1>).")
+            raise ValueError("The 'prompt' parameter is required for the h3_ref2va workflow (describe the SEQUEL, with <Video 1>/<Audio 1>).")
         source = params.get("input")
         if not source:
-            raise ValueError("Le paramètre '-i <vidéo source | dossier de trames>' est requis (référence Ref2VA).")
+            raise ValueError("The '-i <source video | frame folder>' parameter is required (Ref2VA reference).")
 
         dry_run = bool(params.get("dry_run"))
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
@@ -103,48 +103,48 @@ class H3Ref2VAWorkflow(BaseWorkflow):
         nom_base = params.get("output") or f"{slugifier_texte(prompt)[:60]}_h3"
         video_output_path = os.path.join(output_dir, f"{nom_base}.webm")
 
-        # --- Pré-contrôle de charge (règle AGENTS.md : jamais de génération lourde sur machine occupée)
+        # --- Load pre-check (AGENTS.md rule: never launch heavy generation on a busy machine)
         if not dry_run and SCRIPT_CHECK_CHARGE.exists():
-            self.log("Pré-contrôle de charge système (CPU/GPU/RAM/VRAM)...")
+            self.log("System load pre-check (CPU/GPU/RAM/VRAM)...")
             retour = run_engine(
                 [sys.executable, str(SCRIPT_CHECK_CHARGE)],
-                capture=False, check=False, timeout=300, etiquette="check charge",
+                capture=False, check=False, timeout=300, etiquette="load check",
             )
             if retour.returncode == 1:
-                raise RuntimeError("Machine occupée (check_charge_systeme exit 1) — attendre un créneau libre avant de relancer.")
+                raise RuntimeError("Busy machine (check_charge_systeme exit 1) — wait for a free slot before relaunching.")
 
-        # --- Résolution de la référence : dossier de trames direct, ou extraction de la queue d'une vidéo
+        # --- Reference resolution: direct frame folder, or extraction of a video's tail
         ref_frames_dir: Optional[str] = None
         ref_audio_path: Optional[str] = params.get("ref_audio")
         source_abs = os.path.abspath(source)
 
         if os.path.isdir(source_abs):
             ref_frames_dir = source_abs
-            self.log(f"Référence = dossier de trames fourni : {ref_frames_dir}"
-                     + (f" + WAV {ref_audio_path}" if ref_audio_path else " (sans WAV → ne pas mentionner <Audio 1>)"))
+            self.log(f"Reference = provided frame folder: {ref_frames_dir}"
+                     + (f" + WAV {ref_audio_path}" if ref_audio_path else " (no WAV → do not mention <Audio 1>)"))
         else:
             if not os.path.exists(source_abs):
-                raise FileNotFoundError(f"Source introuvable : {source_abs}")
+                raise FileNotFoundError(f"Source not found: {source_abs}")
             n_ref = int(params.get("ref_frames", 12) or 12)
             duree_ref = n_ref / 24.0
             duree_src, a_audio = _duree_et_audio(DEFAULT_FFMPEG, source_abs)
             if duree_src is None:
-                raise RuntimeError(f"Impossible de lire la durée de {source_abs} via ffprobe.")
+                raise RuntimeError(f"Cannot read the duration of {source_abs} via ffprobe.")
 
             ref_dir = os.path.join(output_dir, f"{nom_base}_ref")
             os.makedirs(ref_dir, exist_ok=True)
             ref_frames_dir = ref_dir
             start = max(0.0, duree_src - duree_ref)
-            self.log(f"Extraction de la queue de référence : {n_ref} trames ({duree_ref:.2f}s) à partir de {start:.2f}s / {duree_src:.2f}s...")
+            self.log(f"Extracting the reference tail: {n_ref} frames ({duree_ref:.2f}s) starting at {start:.2f}s / {duree_src:.2f}s...")
 
             cmd_frames = [
                 DEFAULT_FFMPEG, "-y", "-v", "error",
                 "-ss", f"{start:.3f}", "-i", source_abs, "-t", f"{duree_ref:.3f}",
                 "-vf", "fps=24", os.path.join(ref_dir, "frame_%04d.png")
             ]
-            run_engine(cmd_frames, capture=False, check=True, timeout=600, etiquette="ffmpeg trames référence")
+            run_engine(cmd_frames, capture=False, check=True, timeout=600, etiquette="ffmpeg reference frames")
             n_extraits = len([f for f in os.listdir(ref_dir) if f.endswith(".png")])
-            self.log(f"→ {n_extraits} trames extraites dans {ref_dir}")
+            self.log(f"→ {n_extraits} frames extracted into {ref_dir}")
 
             if a_audio and not ref_audio_path:
                 ref_audio_path = os.path.join(ref_dir, "ref_audio.wav")
@@ -152,14 +152,14 @@ class H3Ref2VAWorkflow(BaseWorkflow):
                     [DEFAULT_FFMPEG, "-y", "-v", "error",
                      "-ss", f"{start:.3f}", "-i", source_abs, "-t", f"{duree_ref:.3f}",
                      "-vn", "-acodec", "pcm_s16le", ref_audio_path],
-                    capture=False, check=True, timeout=300, etiquette="ffmpeg audio référence",
+                    capture=False, check=True, timeout=300, etiquette="ffmpeg reference audio",
                 )
-                self.log(f"→ WAV de référence extrait : {ref_audio_path}")
+                self.log(f"→ Reference WAV extracted: {ref_audio_path}")
             elif not a_audio:
-                self.log("Source sans piste audio → référence vidéo seule (prompt sans <Audio 1>).", emoji="⚠️")
+                self.log("Source without audio track → video-only reference (prompt without <Audio 1>).", emoji="⚠️")
 
-        # --- Génération (recette validée §1.16 : te=cpu, vae=cpu, max-vram 10, cfg 1.0, rng cpu)
-        # Mode turbo (validé 2026-09-09) : LoRA distillé + 8 steps → ~38 min au lieu de ~70.
+        # --- Generation (validated recipe §1.16: te=cpu, vae=cpu, max-vram 10, cfg 1.0, rng cpu)
+        # Turbo mode (validated 2026-09-09): distilled LoRA + 8 steps → ~38 min instead of ~70.
         turbo = bool(params.get("turbo"))
         lora = DEFAULT_H3_REF2VA_TURBO_LORA if turbo else None
         steps_demandes = params.get("steps")
@@ -167,15 +167,15 @@ class H3Ref2VAWorkflow(BaseWorkflow):
             steps = 8 if turbo else 20
             if steps_demandes == 25:
                 self.log(
-                    f"steps=25 (défaut CLI global) → recette H3 validée = {steps} steps"
-                    + (" (turbo)" if turbo else "") + ", ajusté.", emoji="ℹ️"
+                    f"steps=25 (global CLI default) → validated H3 recipe = {steps} steps"
+                    + (" (turbo)" if turbo else "") + ", adjusted.", emoji="ℹ️"
                 )
         else:
             steps = int(steps_demandes)
         if turbo:
-            self.log("Mode turbo : LoRA distillé 8 steps (recette validée 2026-09-09, MEMORY_BANK §1.16)...")
+            self.log("Turbo mode: distilled 8-step LoRA (validated recipe 2026-09-09, MEMORY_BANK §1.16)...")
 
-        self.log(f"Génération H3 Ref2VA (compter ~{38 if turbo else 70} min pour 22 trames sur ce poste)...")
+        self.log(f"H3 Ref2VA generation (allow ~{38 if turbo else 70} min for 22 frames on this machine)...")
         debut = time.time()
         generer_video_ref2va_h3(
             prompt=prompt,
@@ -183,7 +183,7 @@ class H3Ref2VAWorkflow(BaseWorkflow):
             ref_video_dir=ref_frames_dir,
             ref_audio_path=ref_audio_path,
             video_frames=int(params.get("frames") or 22),
-            fps=24,  # H3 impose 24 fps (toute autre valeur est surchargée par le modèle)
+            fps=24,  # H3 enforces 24 fps (any other value is overridden by the model)
             width=int(params.get("width") or 864),
             height=int(params.get("height") or 480),
             steps=steps,

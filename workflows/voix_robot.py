@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Voix de Robot : synthèse anglaise Kokoro-82M (audio.cpp Vulkan) + effet
-« petit robot » FFmpeg (pitch +30 %, ring modulation 120 Hz, débit posé, gain -4 dB).
+Robot Voice Workflow: English synthesis by Kokoro-82M (audio.cpp Vulkan) + FFmpeg
+"little robot" effect (+30 % pitch, 120 Hz ring modulation, laid-back pace, -4 dB gain).
 
-Recette VALIDÉE utilisateur le 2026-09-17 (essai 17 : « c'est bien ») — détails et
-écueil moteur (espeak) dans MEMORY_BANK §1.21 et docstring de core/voix_robot.py.
-Texte en anglais (prompts modèles en anglais, conventions dépôt).
+RECIPE USER-VALIDATED on 2026-09-17 (attempt 17: "c'est bien") — details and
+engine pitfall (espeak) in MEMORY_BANK §1.21 and the docstring of core/voix_robot.py.
+Text in English (model prompts in English, repo conventions).
 """
 
 import os
@@ -19,41 +19,41 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class VoixRobotWorkflow(BaseWorkflow):
-    """Voix de robot en anglais (Kokoro + ring modulation, recette validée)."""
+    """Robot voice in English (Kokoro + ring modulation, validated recipe)."""
 
     name = "voix_robot"
-    description = ("Voix de robot en anglais — TTS Kokoro-82M (Vulkan) + effet FFmpeg "
-                   "pitch/ring modulation (recette validée 2026-09-17) — .wav + .mp3")
+    description = ("Robot voice in English — Kokoro-82M TTS (Vulkan) + FFmpeg effect "
+                   "pitch/ring modulation (validated recipe 2026-09-17) — .wav + .mp3")
 
     emoji = "🤖"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--robot-voice",), default="af_heart",
-             help="Voix Kokoro pour voix_robot (défaut: af_heart, validée)."),
+             help="Kokoro voice for voix_robot (default: af_heart, validated)."),
         dict(flags=("--robot-pitch",), type=float, default=1.30,
-             help="Facteur de pitch voix_robot (défaut: 1.30 = +30 %%, validé)."),
+             help="voix_robot pitch factor (default: 1.30 = +30 %%, validated)."),
         dict(flags=("--robot-ringmod",), type=float, default=120.0,
-             help="Fréquence de ring modulation voix_robot en Hz (défaut: 120, validé)."),
+             help="voix_robot ring modulation frequency in Hz (default: 120, validated)."),
         dict(flags=("--robot-tempo",), type=float, default=0.65,
-             help="atempo post-pitch voix_robot (défaut: 0.65, débit « tranquille » validé)."),
+             help="voix_robot post-pitch atempo (default: 0.65, validated \"relaxed\" pace)."),
         dict(flags=("--robot-gain",), type=float, default=-4.0,
-             help="Gain final voix_robot en dB (défaut: -4, voix « calme » validée)."),
+             help="voix_robot final gain in dB (default: -4, validated \"calm\" voice)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         brut = (params.get("prompt") or "").strip()
         if not brut:
-            raise ValueError("Fournir le texte anglais à lire (paramètre positionnel).")
+            raise ValueError("Provide the English text to read (positional parameter).")
         if os.path.isfile(brut) and brut.lower().endswith(".txt"):
             with open(brut, encoding="utf-8") as f:
                 texte = f.read().strip()
-            self.log(f"Texte chargé depuis {brut} ({len(texte)} caractères)", "📄")
+            self.log(f"Text loaded from {brut} ({len(texte)} characters)", "📄")
         else:
             texte = brut
         if not texte:
-            raise ValueError("Le texte à lire est vide.")
+            raise ValueError("The text to read is empty.")
 
         voice_id = params.get("robot_voice") or RECIPE["voice_id"]
         pitch = float(params.get("robot_pitch") or RECIPE["pitch"])
@@ -68,16 +68,16 @@ class VoixRobotWorkflow(BaseWorkflow):
         dossier = os.path.join(output_dir, nom)
         os.makedirs(dossier, exist_ok=True)
 
-        self.log(f"Recette validée : voix {voice_id}, pitch +{int((pitch - 1) * 100)} %, "
+        self.log(f"Validated recipe: voice {voice_id}, pitch +{int((pitch - 1) * 100)} %, "
                  f"ring mod {ringmod_hz:g} Hz, atempo {tempo}, gain {gain_db:+g} dB", "🤖")
         res = generer_voix_robot(
             texte=texte, dossier=dossier, nom=nom, voice_id=voice_id,
             pitch=pitch, ringmod_hz=ringmod_hz, tempo=tempo, gain_db=gain_db,
         )
 
-        self.log("Voix de robot générée :", emoji="🎉")
-        self.log(f"  • WAV : {res['wav']} (PCM 16-bit, 24 kHz)")
-        self.log(f"  • MP3 d'écoute : {res['mp3']}", emoji="💎")
+        self.log("Robot voice generated:", emoji="🎉")
+        self.log(f"  • WAV: {res['wav']} (PCM 16-bit, 24 kHz)")
+        self.log(f"  • Listening MP3: {res['mp3']}", emoji="💎")
 
         return {"wav": res["wav"], "mp3": res["mp3"], "brut": res["brut"],
                 "files": [res["wav"], res["mp3"]]}

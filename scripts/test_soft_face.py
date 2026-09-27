@@ -12,7 +12,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {absolute_package_str} introuvable dans sys.modules")
+    raise ValueError(f"Module {absolute_package_str} not found in sys.modules")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -24,7 +24,7 @@ HumanService = dynamic_import("mpfb.services.humanservice", "HumanService")
 AssetService = dynamic_import("mpfb.services.assetservice", "AssetService")
 TargetService = dynamic_import("mpfb.services.targetservice", "TargetService")
 
-# 1. Corps enfant natif
+# 1. Native child body
 macros = {
     "gender": 1.0, "age": 0.18, "muscle": 0.30, "weight": 0.25,
     "proportions": 0.50, "height": 0.50,
@@ -39,8 +39,8 @@ skin_mhmat = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\m
 if os.path.exists(skin_mhmat):
     HumanService.set_character_skin(skin_mhmat, basemesh, skin_type="GAMEENGINE")
 
-# 3. Assets tête et vêtements (SANS eyelashes01 qui créait le gros cerne noir autour des yeux)
-# Sourcils fins et doux
+# 3. Head and clothes assets (WITHOUT eyelashes01 which created the big dark ring around the eyes)
+# Fine soft eyebrows
 assets = [
     ("eyes",      "low-poly.mhclo",        "Eyes"),
     ("eyebrows",  "eyebrow001.mhclo",      "Eyebrows"),
@@ -57,7 +57,7 @@ for subdir, fname, atype in assets:
 
 bpy.context.view_layer.update()
 
-# 4. Suppression des sommets d'aide MakeHuman
+# 4. Removal of the MakeHuman helper vertices
 helper_vg = basemesh.vertex_groups.get("HelperGeometry")
 if helper_vg:
     bm = bmesh.new()
@@ -81,7 +81,7 @@ for obj in list(bpy.data.objects):
         me.name = old.name
         bpy.data.meshes.remove(old)
 
-# 6. Retrait des masques
+# 6. Mask removal
 for obj in list(bpy.data.objects):
     if obj.type == 'MESH':
         for m in list(obj.modifiers):
@@ -91,22 +91,22 @@ for obj in list(bpy.data.objects):
             if vg.name.startswith("Delete."):
                 obj.vertex_groups.remove(vg)
 
-# 7. Matériaux doux et naturels pour les sourcils et cheveux (châtain doux naturel au lieu de noir charbon)
+# 7. Soft natural materials for the eyebrows and hair (natural soft brown instead of coal black)
 eyebrow_obj = next((o for o in bpy.data.objects if "eyebrow" in o.name.lower()), None)
 if eyebrow_obj:
-    # Créer un matériau châtain doux naturel
+    # Create a natural soft brown material
     mat_eb = bpy.data.materials.new(name="Marc_Eyebrows_Soft")
     mat_eb.use_nodes = True
     nodes = mat_eb.node_tree.nodes
     bsdf = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
-    bsdf.inputs['Base Color'].default_value = (0.22, 0.16, 0.12, 1.0)  # Châtain naturel doux
+    bsdf.inputs['Base Color'].default_value = (0.22, 0.16, 0.12, 1.0)  # Natural soft brown
     bsdf.inputs['Roughness'].default_value = 0.9
     eyebrow_obj.data.materials.clear()
     eyebrow_obj.data.materials.append(mat_eb)
 
 hair_obj = next((o for o in bpy.data.objects if "short01" in o.name.lower()), None)
 if hair_obj:
-    # Matériau cheveux châtain naturel assorti
+    # Matching natural brown hair material
     mat_hair = bpy.data.materials.new(name="Marc_Hair_Soft")
     mat_hair.use_nodes = True
     nodes = mat_hair.node_tree.nodes
@@ -116,7 +116,7 @@ if hair_obj:
     hair_obj.data.materials.clear()
     hair_obj.data.materials.append(mat_hair)
 
-# Nettoyage des prises Alpha résiduelles
+# Cleanup of the residual Alpha hooks
 for obj in list(bpy.data.objects):
     if obj.type == 'MESH':
         for mat in obj.data.materials:
@@ -130,7 +130,7 @@ for obj in list(bpy.data.objects):
                 if an:
                     mat.node_tree.nodes.remove(an)
 
-# 8. Sauvegarde et export
+# 8. Save and export
 out_blend = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.blend"
 out_glb = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.glb"
 bpy.ops.wm.save_as_mainfile(filepath=out_blend)
@@ -138,7 +138,7 @@ bpy.ops.wm.save_as_mainfile(filepath=out_blend)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=out_glb, export_format='GLB', use_selection=True)
 
-# 9. Rendu portrait de validation
+# 9. Validation portrait render
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=out_glb)
 
@@ -172,4 +172,4 @@ bpy.context.scene.camera = cam
 bpy.context.scene.render.engine = 'BLENDER_EEVEE_NEXT' if hasattr(bpy.types.RenderSettings, 'engine') else 'CYCLES'
 bpy.context.scene.render.filepath = r"C:\GIT\generator-assets\godot_assets\marc_novice_beauty_render.png"
 bpy.ops.render.render(write_still=True)
-print("✅ Rendu adouci terminé !")
+print("✅ Softened render done!")

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Super-Résolution Audio : restauration → 48 kHz via UniverSR
-(audio.cpp, backend CPU — Vulkan cassé sur cette famille, cf. docstring
-de core/audio_upscale.py).
+Audio Super-Resolution Workflow: restoration → 48 kHz via UniverSR
+(audio.cpp, CPU backend — Vulkan broken on this family, see the docstring
+of core/audio_upscale.py).
 
-Recette VALIDÉE utilisateur le 2026-09-18 : voix 16 kHz « copie sans bug,
-parfait même », musique 24 kHz « très bien » (MEMORY_BANK §1.27).
-Sortie WAV 48 kHz mono + MP3 d'écoute.
+RECIPE USER-VALIDATED on 2026-09-18: 16 kHz voice "copie sans bug,
+parfait même", 24 kHz music "très bien" (MEMORY_BANK §1.27).
+Output 48 kHz mono WAV + listening MP3.
 """
 
 import os
@@ -21,36 +21,36 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class AudioUpscaleWorkflow(BaseWorkflow):
-    """Super-résolution audio → 48 kHz (UniverSR CPU, recette validée)."""
+    """Audio super-resolution → 48 kHz (UniverSR CPU, validated recipe)."""
 
     name = "audio_upscale"
-    description = ("Super-résolution audio → 48 kHz via UniverSR (CPU) : voix 16 kHz "
-                   "ou musique 24 kHz restaurées (recette validée 2026-09-18) — "
-                   "WAV 48 kHz mono + MP3, RTF ~13")
+    description = ("Audio super-resolution → 48 kHz via UniverSR (CPU): 16 kHz voice "
+                   "or 24 kHz music restored (validated recipe 2026-09-18) — "
+                   "48 kHz mono WAV + MP3, RTF ~13")
 
     emoji = "🔊"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--upsr-variante",), dest="upsr_variante", choices=["speech", "audio"], default="speech",
-             help="Variante UniverSR pour audio_upscale : speech = voix (défaut, cas principal) | audio = musique."),
+             help="UniverSR variant for audio_upscale: speech = voice (default, main case) | audio = music."),
         dict(flags=("--upsr-rate",), dest="upsr_rate", type=int, default=0,
-             help="Bande d'entrée déclarée à UniverSR en Hz (8000/12000/16000/24000 ; défaut: 0 = auto depuis la fréquence du fichier ; au-dessus de 24000 = refus)."),
+             help="Input band declared to UniverSR in Hz (8000/12000/16000/24000; default: 0 = auto from the file's sample rate; above 24000 = refused)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):
             raise ValueError(
-                f"Fichier audio source introuvable : {source} — "
-                f"passer un WAV/MP3 à bande réduite (8/12/16/24 kHz) via -i."
+                f"Source audio file not found: {source} — "
+                f"pass a reduced-band WAV/MP3 (8/12/16/24 kHz) via -i."
             )
 
         variante = params.get("upsr_variante") or RECIPE["variante"]
         bande = int(params.get("upsr_rate") or 0)
-        # --seed global du CLI vaut -1 (« aléatoire ») par défaut : universr exige
-        # un entier non signé → graine négative = défaut de la recette (42).
+        # The CLI global --seed is -1 ("random") by default: universr requires
+        # an unsigned integer → negative seed = recipe default (42).
         seed = int(params.get("seed") or 0)
         if seed < 0:
             seed = RECIPE["seed"]
@@ -73,11 +73,11 @@ class AudioUpscaleWorkflow(BaseWorkflow):
         convertir_mp3(wav, mp3)
 
         self.log(
-            f"Restauration {res['frequence_source']} → 48 kHz "
-            f"(variante {res['variante']}, bande déclarée {res['bande']} Hz) :",
+            f"Restoration {res['frequence_source']} → 48 kHz "
+            f"(variant {res['variante']}, declared band {res['bande']} Hz):",
             emoji="🎉",
         )
-        self.log(f"  • WAV : {wav} (48 kHz mono)", "💾")
-        self.log(f"  • MP3 d'écoute : {mp3}", "💎")
+        self.log(f"  • WAV: {wav} (48 kHz mono)", "💾")
+        self.log(f"  • Listening MP3: {mp3}", "💎")
 
         return {"wav": wav, "mp3": mp3, "files": [wav, mp3]}

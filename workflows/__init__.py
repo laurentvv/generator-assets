@@ -1,12 +1,12 @@
 """
-Enregistrement des workflows 2D & 3D.
+Registration of the 2D & 3D workflows.
 
-Chaque module `workflows/<nom>.py` déclare sa (ou ses) classe(s) via
-`@WorkflowRegistry.register`. L'import est piloté par la liste ordonnée
-`_MODULES_ORDONNES` : c'est elle qui fixe l'ordre du menu interactif et de
-`--list-workflows`. Tout nouveau module non listé est découvert automatiquement
-(pkgutil) et enregistré en fin de liste — un workflow ne peut plus être absent
-du registre par oubli d'import.
+Each module `workflows/<name>.py` declares its class(es) via
+`@WorkflowRegistry.register`. Imports are driven by the ordered list
+`_MODULES_ORDONNES`: it sets the order of the interactive menu and of
+`--list-workflows`. Any new unlisted module is discovered automatically
+(pkgutil) and registered at the end of the list — a workflow can no longer
+be missing from the registry due to a forgotten import.
 """
 
 import importlib
@@ -32,16 +32,16 @@ _decouverts = sorted(
 for _nom in _MODULES_ORDONNES + _decouverts:
     importlib.import_module(f"workflows.{_nom}")
 
-# Exports nommés historiques : liste complète par construction (inclut les classes
-# oubliées de l'ancien __all__, ex. AnimalGodotWorkflow).
+# Historical named exports: complete list by construction (includes classes
+# forgotten from the old __all__, e.g. AnimalGodotWorkflow).
 __all__ = ["BaseWorkflow", "WorkflowRegistry"] + [
     cls.__name__ for cls in WorkflowRegistry._workflows.values()
 ]
 
 
 def __getattr__(nom: str):
-    """Résout les anciens imports `from workflows import XWorkflow` via le registre."""
+    """Resolves the legacy `from workflows import XWorkflow` imports via the registry."""
     for cls in WorkflowRegistry._workflows.values():
         if cls.__name__ == nom:
             return cls
-    raise AttributeError(f"module 'workflows' n'a pas d'attribut '{nom}'")
+    raise AttributeError(f"module 'workflows' has no attribute '{nom}'")

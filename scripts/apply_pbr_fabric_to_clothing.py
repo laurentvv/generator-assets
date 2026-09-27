@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 apply_pbr_fabric_to_clothing.py
-Applique des textures de tissu/cuir/métal PBR sans raccord (Seamless / Tileable)
-sur n'importe quel vêtement MakeHuman officiel dans Blender.
+Applies seamless (Seamless / Tileable) PBR fabric/leather/metal textures
+to any official MakeHuman garment in Blender.
 
-Garantit un rendu ultra-détaillé et réaliste sous tous les angles avec :
-- Albedo / Diffuse sans couture
-- Normal Map de tissage/grain
-- Roughness PBR
-- Tiling UV paramétrable (ex: échelle 3.0 ou 5.0)
+Guarantees an ultra-detailed, realistic render from any angle with:
+- Seamless Albedo / Diffuse
+- Weave/grain Normal Map
+- PBR Roughness
+- Configurable UV tiling (e.g. scale 3.0 or 5.0)
 
 Usage:
     uv run python scripts/apply_pbr_fabric_to_clothing.py --blend "godot_assets/marc_novice.blend" --object "Human.male_worksuit01" --albedo "godot_assets/textures/burlap_albedo.png" --normal "godot_assets/textures/burlap_normal.png" --scale 4.0
@@ -26,13 +26,13 @@ for stream in (sys.stdout, sys.stderr):
 BLENDER_EXE = r"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"
 
 def main():
-    parser = argparse.ArgumentParser(description="Appliquer un matériau PBR Seamless sur un vêtement MakeHuman")
-    parser.add_argument("--blend", required=True, help="Chemin du fichier .blend")
-    parser.add_argument("--object", required=True, help="Nom de l'objet vêtement (ex: Human.male_worksuit01)")
-    parser.add_argument("--albedo", required=True, help="Texture Albedo seamless (.png)")
-    parser.add_argument("--normal", default="", help="Texture Normal Map seamless (.png)")
-    parser.add_argument("--scale", type=float, default=4.0, help="Échelle de répétition UV (défaut: 4.0)")
-    parser.add_argument("--roughness", type=float, default=0.85, help="Rugosité du tissu (défaut: 0.85)")
+    parser = argparse.ArgumentParser(description="Apply a Seamless PBR material to a MakeHuman garment")
+    parser.add_argument("--blend", required=True, help="Path of the .blend file")
+    parser.add_argument("--object", required=True, help="Name of the garment object (e.g. Human.male_worksuit01)")
+    parser.add_argument("--albedo", required=True, help="Seamless Albedo texture (.png)")
+    parser.add_argument("--normal", default="", help="Seamless Normal Map texture (.png)")
+    parser.add_argument("--scale", type=float, default=4.0, help="UV tiling scale (default: 4.0)")
+    parser.add_argument("--roughness", type=float, default=0.85, help="Fabric roughness (default: 0.85)")
     args = parser.parse_args()
 
     blend_path = os.path.abspath(args.blend)
@@ -40,13 +40,13 @@ def main():
     normal_path = os.path.abspath(args.normal) if args.normal else ""
 
     if not os.path.exists(blend_path):
-        print(f"❌ Erreur : Fichier .blend introuvable : {blend_path}")
+        print(f"❌ Error: .blend file not found: {blend_path}")
         sys.exit(1)
 
     print("=" * 65)
-    print(f" 🧵 APPLICATION MATÉRIAU PBR SEAMLESS SUR '{args.object}'")
-    print(f" 🎨 Albedo : {albedo_path}")
-    print(f" 📐 Échelle UV : {args.scale}")
+    print(f" 🧵 APPLYING SEAMLESS PBR MATERIAL TO '{args.object}'")
+    print(f" 🎨 Albedo: {albedo_path}")
+    print(f" 📐 UV scale: {args.scale}")
     print("=" * 65)
 
     script_blender = f"""# -*- coding: utf-8 -*-
@@ -57,13 +57,13 @@ bpy.ops.wm.open_mainfile(filepath=blend_file)
 
 obj = bpy.data.objects.get("{args.object}")
 if not obj:
-    # Recherche partielle
+    # Partial search
     obj = next((o for o in bpy.data.objects if "{args.object}".lower() in o.name.lower()), None)
 
 if not obj:
-    raise RuntimeError(f"Objet '{args.object}' introuvable dans la scène.")
+    raise RuntimeError(f"Object '{args.object}' not found in the scene.")
 
-# Création du matériau PBR ShaderNode
+# Creating the PBR ShaderNode material
 mat_name = f"PBR_{{obj.name}}"
 mat = bpy.data.materials.new(name=mat_name)
 mat.use_nodes = True
@@ -112,22 +112,22 @@ if normal_file and os.path.exists(normal_file):
     links.new(tex_norm.outputs['Color'], norm_node.inputs['Color'])
     links.new(norm_node.outputs['Normal'], bsdf.inputs['Normal'])
 
-# Assignation à l'objet
+# Assignment to the object
 obj.data.materials.clear()
 obj.data.materials.append(mat)
-print(f"✅ Matériau PBR {{mat_name}} assigné avec succès à {{obj.name}}.")
+print(f"✅ PBR material {{mat_name}} successfully assigned to {{obj.name}}.")
 
-# Sauvegarde
+# Save
 bpy.ops.wm.save_as_mainfile(filepath=blend_file)
-print(f"💾 Scène sauvegardée : {{blend_file}}")
+print(f"💾 Scene saved: {{blend_file}}")
 """
     cmd = [BLENDER_EXE, "--background", "--python-expr", script_blender]
     res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     print(res.stdout)
     if res.returncode == 0:
-        print(f"🎉 Matériau PBR appliqué avec succès sur '{args.object}' !")
+        print(f"🎉 PBR material successfully applied to '{args.object}'!")
     else:
-        print(f"⚠️ Erreur lors de l'application du matériau PBR : {res.stderr}")
+        print(f"⚠️ Error while applying the PBR material: {res.stderr}")
 
 if __name__ == "__main__":
     main()

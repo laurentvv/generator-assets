@@ -1,9 +1,9 @@
-# Retarget local : animations du loup Quaternius (ref, 51 os) -> notre rig Rigify.
-# Principe : delta de rotation MONDE de chaque os ref (pose vs rest), applique au
-# rest de l'os cible mappe ; echantillonne frame par frame puis cuit en quaternions.
-# Translation ignoree (le reste sur place) : le sol ne glisse pas, le gallop reste lisible.
+# Local retarget: animations of the Quaternius wolf (ref, 51 bones) -> our Rigify rig.
+# Principle: WORLD rotation delta of each ref bone (pose vs rest), applied to the
+# rest of the mapped target bone; sampled frame by frame then baked into quaternions.
+# Translation ignored (the rest stays in place): the ground does not slide, the gallop stays readable.
 #
-# Usage : blender -b output/test_rig/scenes/wolf_rigify.blend -P retarget_quaternius.py -- <action_ref> <sortie_blend>
+# Usage: blender -b output/test_rig/scenes/wolf_rigify.blend -P retarget_quaternius.py -- <action_ref> <sortie_blend>
 
 import os
 import sys
@@ -20,25 +20,25 @@ REF_BLEND = r"C:\GIT\generator-assets\output\test_rig\meshes\quaternius_animaux\
 scene = bpy.context.scene
 rig = bpy.data.objects["rig_loup"]
 
-# ---- import de l'armature de reference + ses actions ----
+# ---- import of the reference armature + its actions ----
 objets_avant_import = set(bpy.data.objects.keys())
 with bpy.data.libraries.load(REF_BLEND, link=False) as (src, dst):
-    dst.objects = list(src.objects)  # import COMPLET : sinon les contraintes IK sont cassees
+    dst.objects = list(src.objects)  # FULL import: otherwise the IK constraints are broken
     dst.actions = list(src.actions)
 ref = bpy.data.objects["AnimalArmature"]
 ref.hide_set(False)
 ref.select_set(False)
-# libraries.load ne lie PAS les objets a la collection de la scene : sans lien,
-# le depsgraph n'evalue ni l'animation ni les contraintes IK (pose figee au rest)
+# libraries.load does NOT link the objects to the scene collection: without a link,
+# the depsgraph evaluates neither the animation nor the IK constraints (pose frozen at rest)
 scene.collection.objects.link(ref)
 bpy.context.view_layer.update()
 print("REF_OBJS:", [o for o in bpy.data.objects.keys() if o not in objets_avant_import])
 print("REF_ACTIONS:", len(bpy.data.actions))
 
-# ---- mapping ref -> DEF de notre rig (explicite, verifie sur les listes reelles) ----
-# Notre chaine DEF-spine : spine = bout de queue, .001-.002 queue, .003 arriere,
-# .004-.006 torse, .007-.008 garrot, .009-.010 cou, .011 tete.
-# Os ref ignores : IK*/FF*/PoleTarget* (helpers), Ear*.001+ (nos DEF s'arretent a 1).
+# ---- mapping ref -> DEF of our rig (explicit, checked against the real lists) ----
+# Our DEF-spine chain: spine = tail tip, .001-.002 tail, .003 rear,
+# .004-.006 torso, .007-.008 withers, .009-.010 neck, .011 head.
+# Ignored ref bones: IK*/FF*/PoleTarget* (helpers), Ear*.001+ (our DEFs stop at 1).
 MAPPING = {
     "Torso": "DEF-spine.004",
     "Torso2": "DEF-spine.005",
@@ -73,10 +73,10 @@ ref_noms = [b.name for b in ref.pose.bones]
 print("REF_BONES:", ref_noms)
 
 manquants = [t for t in MAPPING.values() if t not in rig.pose.bones]
-assert not manquants, "DEF absents dans notre rig : %s" % manquants
+assert not manquants, "DEF missing from our rig: %s" % manquants
 
-# Les DEF Rigify sont contraints par la chaine MCH (controles au rest) : les
-# contraintes ecraseraient nos cles. On les desactive sur TOUS les DEF.
+# The Rigify DEFs are driven by the MCH chain (controls at rest): the
+# constraints would override our keys. We disable them on ALL the DEFs.
 nb_mutees = 0
 for pb in rig.pose.bones:
     if pb.name.startswith("DEF-"):
@@ -84,11 +84,11 @@ for pb in rig.pose.bones:
             if c.type not in {"VISUAL_TRANSFORM"}:
                 c.mute = True
                 nb_mutees += 1
-print("CONTRAINTES_MUTEES:", nb_mutees)
+print("MUTED_CONSTRAINTS:", nb_mutees)
 
-# Rigify dedouble les deformateurs (DEF-x + DEF-x.001) : le meme delta
-# s'applique aux deux, sinon la moitie du membre reste au rest.
-# Structure : liste de paires (os_ref, os_cible) — PAS de clés fantômes.
+# Rigify duplicates the deformers (DEF-x + DEF-x.001): the same delta
+# applies to both, otherwise half of the limb stays at rest.
+# Structure: list of (ref_bone, target_bone) pairs — NO ghost keys.
 paires = list(MAPPING.items())
 for os_ref, os_cible in list(MAPPING.items()):
     if os_cible + ".001" in rig.pose.bones:
@@ -98,21 +98,21 @@ print("MAPPING_FINAL(%d paires)" % len(paires))
 
 # ---- bake ----
 action_ref = bpy.data.actions.get(action_ref_nom)
-assert action_ref, "action absente : " + action_ref_nom
-# L'evaluation frame_set des actions importees (legacy 2.79 -> slots 5.2) ne se
-# fait PAS en headless : on evalue les fcurves a la main, os par os.
+assert action_ref, "missing action: " + action_ref_nom
+# The frame_set evaluation of the imported actions (legacy 2.79 -> 5.2 slots) does
+# NOT happen headless: we evaluate the fcurves by hand, bone by bone.
 canalbag = None
 for layer in action_ref.layers:
     for strip in layer.strips:
         for cb in strip.channelbags:
             canalbag = cb
-assert canalbag is not None, "action sans channelbag"
+assert canalbag is not None, "action without channelbag"
 courbes = {}
 for fc in canalbag.fcurves:
     courbes.setdefault(fc.data_path, {})[fc.array_index] = fc
-print("FCURVES_MANUELLES:", len(canalbag.fcurves), "| os touches:", len(courbes))
+print("MANUAL_FCURVES:", len(canalbag.fcurves), "| bones touched:", len(courbes))
 
-# rest du ref en pose neutre (on ecrase la pose avec les fcurves a chaque frame)
+# ref rest in neutral pose (we overwrite the pose with the fcurves at each frame)
 ref.animation_data_create()
 ref.animation_data.action = None
 bpy.context.view_layer.update()
@@ -121,12 +121,12 @@ rest_tgt = {b.name: b.bone.matrix_local.copy() for b in rig.pose.bones}
 
 
 def pose_ref_manuelle(frame):
-    """Pose de la ref a `frame` reconstruite depuis les fcurves (sans frame_set).
+    """Pose of the ref at `frame` rebuilt from the fcurves (without frame_set).
 
-    Le rig Quaternius est un rig IK : les actions animent les CONTROLLEURS IK
-    en LOCATION ; les os des membres suivent via contraintes IK resolues par le
-    depsgraph. On applique donc locations ET rotations, puis on laisse le
-    solveur travailler dans update().
+    The Quaternius rig is an IK rig: the actions animate the IK CONTROLLERS
+    in LOCATION; the limb bones follow via IK constraints solved by the
+    depsgraph. We therefore apply locations AND rotations, then let the
+    solver work in update().
     """
     for chemin_os, canaux in courbes.items():
         nom_os = chemin_os.split('"')[1]
@@ -142,7 +142,7 @@ def pose_ref_manuelle(frame):
         elif "rotation_euler" in chemin_os and {0, 1, 2} <= canaux.keys():
             pb.rotation_mode = "XYZ"
             pb.rotation_euler = [canaux[i].evaluate(frame) for i in range(3)]
-    ref.update_tag()  # force la re-evaluation des contraintes IK en headless
+    ref.update_tag()  # forces the re-evaluation of the IK constraints headless
     bpy.context.view_layer.update()
     if frame == 9:
         ik = ref.pose.bones.get('IKFrontLeg.L')
@@ -150,7 +150,7 @@ def pose_ref_manuelle(frame):
         if ik:
             print('DBG9 ik.location=', tuple(round(v, 3) for v in ik.location),
                   'lock=', list(ik.lock_location),
-                  'nb_contraintes_sur_FrontLower=', len(ref.pose.bones['FrontLowerLeg.L'].constraints))
+                  'nb_constraints_on_FrontLower=', len(ref.pose.bones['FrontLowerLeg.L'].constraints))
         if haut:
             print('DBG9 FrontUpper.matrix=', tuple(round(v, 3) for v in haut.matrix.translation))
 
@@ -164,7 +164,7 @@ echelle = 0.25
 rig.animation_data_create()
 rig.animation_data.action = notre_action
 
-# pose rest de reference memoire
+# reference rest pose kept in memory
 rest_ref = {b.name: b.bone.matrix_local.copy() for b in ref.pose.bones}
 rest_tgt = {b.name: b.bone.matrix_local.copy() for b in rig.pose.bones}
 
@@ -184,11 +184,11 @@ for f in range(debut, fin + 1):
     for _, nom_ref, tgt_nom in ordre:
         pb_ref = ref.pose.bones[nom_ref]
         pb_tgt = rig.pose.bones[tgt_nom]
-        # delta monde du ref (pose vs rest), armatures identites -> monde = armature
+        # world delta of the ref (pose vs rest), armatures identity -> world = armature
         q_ref_pose = pb_ref.matrix.to_quaternion()
         q_ref_rest = rest_ref[nom_ref].to_quaternion()
         q_delta = q_ref_pose @ q_ref_rest.inverted()
-        # frame cible en espace armature, convertie en basis locale du bone
+        # target frame in armature space, converted to the bone's local basis
         q_frame = q_delta @ rest_tgt[tgt_nom].to_quaternion()
         q_basis = rest_tgt[tgt_nom].to_quaternion().inverted() @ q_frame
         pb_tgt.rotation_mode = "QUATERNION"

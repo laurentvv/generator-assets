@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Tests du manifeste des moteurs (audit §2.6) — schéma, sans réseau.
+"""Tests of the engines manifest (audit §2.6) — schema, no network.
 
-Vérifie que scripts/engines_manifest.json reste lisible par les deux
-installateurs : clés attendues, empreintes sha256 au bon format, et
-cohérence des fiches plateforme (une source de résolution par fiche).
+Checks that scripts/engines_manifest.json stays readable by both
+installers: expected keys, well-formed sha256 fingerprints, and
+consistency of the platform cards (one resolution source per card).
 """
 
 import json
@@ -23,7 +23,7 @@ def manifeste():
 
 
 def test_manifeste_non_vide(manifeste):
-    assert manifeste.get("moteurs"), "aucun moteur dans le manifeste"
+    assert manifeste.get("moteurs"), "no engine in the manifest"
 
 
 def test_chaque_moteur_a_un_repo_ou_des_url_directes(manifeste):
@@ -33,7 +33,7 @@ def test_chaque_moteur_a_un_repo_ou_des_url_directes(manifeste):
             for f in moteur.get("plateformes", {}).values()
         )
         assert moteur.get("repo") or has_url_directe, (
-            f"{nom} : ni 'repo' (releases GitHub) ni 'url'/'gestionnaire' direct"
+            f"{nom}: neither 'repo' (GitHub releases) nor direct 'url'/'gestionnaire'"
         )
 
 
@@ -42,23 +42,23 @@ def test_sha256_bien_forme_si_present(manifeste):
         for plat, fiche in moteur.get("plateformes", {}).items():
             if "sha256" in fiche:
                 assert MOTIF_SHA256.match(fiche["sha256"]), (
-                    f"{nom}/{plat} : sha256 mal formé (64 hex minuscules attendus) : {fiche['sha256']!r}"
+                    f"{nom}/{plat}: malformed sha256 (64 lowercase hex expected): {fiche['sha256']!r}"
                 )
 
 
 def test_asset_epingle_porte_sha256(manifeste):
-    """Un asset 'epingle'+'asset' doit porter son empreinte (résolution déterministe)."""
+    """An 'epingle'+'asset' card must carry its fingerprint (deterministic resolution)."""
     manquants = []
     for nom, moteur in manifeste["moteurs"].items():
         for plat, fiche in moteur.get("plateformes", {}).items():
             if fiche.get("epingle") and fiche.get("asset") and not fiche.get("sha256"):
                 manquants.append(f"{nom}/{plat}")
-    assert not manquants, f"assets épinglés sans sha256 : {', '.join(manquants)}"
+    assert not manquants, f"pinned assets without sha256: {', '.join(manquants)}"
 
 
 def test_fiche_plateforme_resolvable(manifeste):
-    """Chaque fiche plateforme expose au moins une source de résolution
-    (url directe, gestionnaire, epingle+asset, release, scan_releases)."""
+    """Each platform card exposes at least one resolution source
+    (direct url, manager, epingle+asset, release, scan_releases)."""
     incompletes = []
     for nom, moteur in manifeste["moteurs"].items():
         for plat, fiche in moteur.get("plateformes", {}).items():
@@ -71,4 +71,4 @@ def test_fiche_plateforme_resolvable(manifeste):
             )
             if not complete:
                 incompletes.append(f"{nom}/{plat}")
-    assert not incompletes, f"fiches sans source de résolution : {', '.join(incompletes)}"
+    assert not incompletes, f"cards without a resolution source: {', '.join(incompletes)}"

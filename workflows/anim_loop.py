@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Anim Loop : Boucles de Textures & Shaders Animés (AnimateDiff / LTX Loop Engine) pour Godot 4.
-Produit :
-- Planche de spritesheet d'animation cyclique (Atlas)
-- Shader Godot 4 (.gdshader) avec double-échantillonnage temporel déphasé sans saccade
-- Ressource ShaderMaterial (.tres)
-- Ressource AnimatedTexture (.tres) pour UI et CanvasItem
+Anim Loop workflow: texture loops & animated shaders (AnimateDiff / LTX Loop Engine) for Godot 4.
+Produces:
+- Cyclic animation spritesheet (Atlas)
+- Godot 4 shader (.gdshader) with phase-shifted temporal double-sampling without judder
+- ShaderMaterial resource (.tres)
+- AnimatedTexture resource (.tres) for UI and CanvasItem
 """
 
 import os
@@ -26,21 +26,21 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class AnimLoopWorkflow(BaseWorkflow):
-    """Génération de boucles de textures et shaders animés continus pour Godot 4."""
+    """Continuous texture loop and animated shader generation for Godot 4."""
 
     name = "anim_loop"
-    description = "Boucles de textures & shaders animés fluides (AnimateDiff / LTX Loop) pour Godot 4 (.gdshader / .tres)"
+    description = "Smooth animated texture loops & shaders (AnimateDiff / LTX Loop) for Godot 4 (.gdshader / .tres)"
 
     emoji = "🔄"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --mode-2d est partagé
-    # avec flowmap et vfx_flipbook (même famille 2D) : il vit ici, premier
-    # utilisateur dans le registre. --frames/--fps/--columns restent en table
-    # plate (partagés avec video/rife_interp, cross-familles).
+    # CLI declaration (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --mode-2d is shared
+    # with flowmap and vfx_flipbook (same 2D family): it lives here, first
+    # user in the registry. --frames/--fps/--columns stay in the flat
+    # table (shared with video/rife_interp, cross-family).
     PARAMETRES = [
         dict(flags=("--mode-2d",), action="store_true",
-             help="Génère un shader ou setup orienté Godot 2D au lieu de 3D."),
+             help="Generates a Godot 2D-oriented shader or setup instead of 3D."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -56,13 +56,13 @@ class AnimLoopWorkflow(BaseWorkflow):
         nom_base = params.get("output") or f"{slugifier_texte(prompt)}_loop"
         os.makedirs(output_dir, exist_ok=True)
 
-        self.log(f"Génération de la séquence temporelle en boucle ({nb_trames} trames, type '{vfx_type}')...")
+        self.log(f"Generating the looping temporal sequence ({nb_trames} frames, type '{vfx_type}')...")
 
-        # 1. Génération de la séquence d'animation
+        # 1. Animation sequence generation
         if input_image and os.path.exists(input_image):
-            self.log(f"Utilisation de l'image source pour bouclage : {input_image}")
+            self.log(f"Using the source image for looping: {input_image}")
             img_src = Image.open(input_image).convert("RGBA")
-            # Création de variations périodiques
+            # Creating periodic variations
             trames_brutes = []
             for i in range(nb_trames):
                 angle = (360.0 * i) / nb_trames
@@ -71,23 +71,23 @@ class AnimLoopWorkflow(BaseWorkflow):
         else:
             trames_brutes = generer_sequence_vfx_boucle(resolution=512, nb_trames=nb_trames, type_effet=vfx_type)
 
-        # 2. Bouclage harmonique 360° (phase blending)
-        self.log("Application du fondu croisé circulaire harmonique (Seamless Time Loop)...")
+        # 2. Harmonic 360° looping (phase blending)
+        self.log("Applying the harmonic circular cross-fade (Seamless Time Loop)...")
         trames_bouclees = creer_boucle_temporelle_circulaire(trames_brutes)
 
-        # 3. Assemblage Spritesheet
+        # 3. Spritesheet assembly
         spritesheet = assembler_spritesheet_loop(trames_bouclees, colonnes=colonnes)
         chemin_sheet = os.path.join(output_dir, f"{nom_base}_spritesheet.png")
         spritesheet.save(chemin_sheet, "PNG")
 
-        # 4. Exportation Shaders et AnimatedTexture Godot 4
-        self.log("Génération des shaders et ressources Godot 4...")
+        # 4. Godot 4 shader and AnimatedTexture export
+        self.log("Generating the Godot 4 shaders and resources...")
         chemin_shader, chemin_mat = exporter_shader_loop_godot(nom_base, output_dir, mode_2d=mode_2d)
         chemin_anim = exporter_animated_texture_godot(nom_base, output_dir, nb_trames=nb_trames, fps=fps)
 
-        self.log(f"Boucle animée exportée avec succès dans '{output_dir}/' :", emoji="🎉")
+        self.log(f"Animated loop exported successfully to '{output_dir}/':", emoji="🎉")
         self.log(f"  • Spritesheet Loop : {chemin_sheet}")
-        self.log(f"  • Shader Godot 4   : {chemin_shader}")
+        self.log(f"  • Godot 4 shader   : {chemin_shader}")
         self.log(f"  • ShaderMaterial   : {chemin_mat}")
         self.log(f"  • AnimatedTexture  : {chemin_anim}", emoji="💎")
 

@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 scripts/upscale_video_ai.py
-Module et CLI de Super-Résolution Vidéo IA 4K / 1080p pour generator-assets.
-Exécute Real-ESRGAN / 4x-UltraSharp frame par frame sur AMD Radeon RX 6950 XT (Vulkan),
-préserve la piste audio native, et encode en AMD AMF Hardware Ultra HD.
+Module and CLI of 4K / 1080p AI Video Super-Resolution for generator-assets.
+Runs Real-ESRGAN / 4x-UltraSharp frame by frame on AMD Radeon RX 6950 XT (Vulkan),
+preserves the native audio track, and encodes in AMD AMF Hardware Ultra HD.
 """
 
 import os
@@ -20,15 +20,15 @@ for f in (sys.stdout, sys.stderr):
         f.reconfigure(encoding="utf-8", errors="replace")
 
 SD_CLI = r"C:\SD\sd-cli.exe"
-# ffmpeg 9.0.1 custom prioritaire (règle §1.10 MEMORY_BANK) ; l'ancien build
-# Amuse 7.1.1 a disparu avec la migration MSYS2 du 2026-09-09.
+# custom ffmpeg 9.0.1 takes priority (rule §1.10 MEMORY_BANK); the old
+# Amuse 7.1.1 build disappeared with the MSYS2 migration of 2026-09-09.
 FFMPEG = r"C:\ffmpeg\dist\bin\ffmpeg.exe"
 if not os.path.exists(FFMPEG):
     FFMPEG = r"C:\Program Files\Amuse\ffmpeg.exe"
 DEFAULT_MODEL = r"C:\Modeles_LLM\upscalers\4x-UltraSharp.pth"
 
 def get_video_info(video_path):
-    """Extrait le framerate, la durée et la présence d'audio via ffprobe/ffmpeg."""
+    """Extracts the framerate, the duration and the audio presence via ffprobe/ffmpeg."""
     cmd = [FFMPEG, "-i", video_path]
     res = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.DEVNULL, text=True, encoding="utf-8", errors="replace")
     err = res.stderr
@@ -56,9 +56,9 @@ def upscale_video_ai(
     work_dir: str = None
 ) -> str:
     if not os.path.exists(input_video):
-        raise FileNotFoundError(f"Vidéo source introuvable : {input_video}")
+        raise FileNotFoundError(f"Source video not found: {input_video}")
     if not os.path.exists(upscaler_model):
-        raise FileNotFoundError(f"Modèle upscaler introuvable : {upscaler_model}")
+        raise FileNotFoundError(f"Upscaler model not found: {upscaler_model}")
 
     base_name = Path(input_video).stem
     if not output_video:
@@ -75,18 +75,18 @@ def upscale_video_ai(
     fps, has_audio = get_video_info(input_video)
 
     print("=" * 80)
-    print(f"🚀 [SUPER-RÉSOLUTION VIDÉO IA 4K] : {Path(input_video).name}")
-    print(f"   Modèle IA    : {Path(upscaler_model).name}")
-    print(f"   Framerate    : {fps} FPS | Audio : {'OUI (préservé)' if has_audio else 'NON (muet)'}")
-    print(f"   Résolution   : {target_res} | Débit : {bitrate} (AMD AMF)")
+    print(f"🚀 [4K AI VIDEO SUPER-RESOLUTION]: {Path(input_video).name}")
+    print(f"   AI model     : {Path(upscaler_model).name}")
+    print(f"   Framerate    : {fps} FPS | Audio: {'YES (preserved)' if has_audio else 'NO (silent)'}")
+    print(f"   Resolution   : {target_res} | Bitrate: {bitrate} (AMD AMF)")
     print(f"   Destination  : {output_video}")
     print("=" * 80)
 
-    # 1. Extraction des trames
-    print("\n📸 1. Extraction des trames sources...")
+    # 1. Frame extraction
+    print("\n📸 1. Extraction of the source frames...")
     cmd_extract = [
         FFMPEG, "-y", "-i", input_video,
-        # -vsync retiré en ffmpeg 9.0 → -fps_mode (build custom 9.0.1)
+        # -vsync removed in ffmpeg 9.0 → -fps_mode (custom 9.0.1 build)
         "-fps_mode", "passthrough", "-q:v", "2",
         os.path.join(raw_frames, "frame_%04d.png")
     ]
@@ -94,10 +94,10 @@ def upscale_video_ai(
 
     frames = sorted([f for f in os.listdir(raw_frames) if f.endswith(".png")])
     total = len(frames)
-    print(f"   -> {total} trames prêtes pour le traitement IA.")
+    print(f"   -> {total} frames ready for the AI processing.")
 
-    # 2. Upscaling IA Vulkan trame par trame
-    print(f"\n⚡ 2. Traitement par réseau de neurones Vulkan ({total} trames)...")
+    # 2. Vulkan AI upscaling frame by frame
+    print(f"\n⚡ 2. Vulkan neural network processing ({total} frames)...")
     t0 = time.time()
     for idx, fname in enumerate(frames, 1):
         in_f = os.path.join(raw_frames, fname)
@@ -114,15 +114,15 @@ def upscale_video_ai(
             ]
             subprocess.run(cmd_up, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
             elapsed_f = time.time() - tf
-            print(f"   [Trame {idx}/{total}] Reconstruite en {elapsed_f:.2f}s")
+            print(f"   [Frame {idx}/{total}] Reconstructed in {elapsed_f:.2f}s")
         else:
-            print(f"   [Trame {idx}/{total}] Déjà en cache.")
+            print(f"   [Frame {idx}/{total}] Already cached.")
 
     t_upscale = time.time() - t0
-    print(f"\n✅ Upscaling terminé en {t_upscale:.1f}s ({t_upscale/60:.2f} min, moy. {t_upscale/total:.1f}s/trame) !")
+    print(f"\n✅ Upscaling finished in {t_upscale:.1f}s ({t_upscale/60:.2f} min, avg. {t_upscale/total:.1f}s/frame)!")
 
-    # 3. Assemblage & Conformation Master 4K
-    print("\n🎬 3. Encodage Master 4K matériel (AMD AMF + FidelityFX CAS)...")
+    # 3. Assembly & 4K Master Conform
+    print("\n🎬 3. Hardware 4K Master encoding (AMD AMF + FidelityFX CAS)...")
     frame_pattern = os.path.join(up_frames, "frame_%04d.png")
     vf_filter = f"scale={target_res}:flags=lanczos,cas={cas_strength}"
 
@@ -152,23 +152,23 @@ def upscale_video_ai(
         ]
     subprocess.run(cmd_asm, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
-    # Nettoyage
+    # Cleanup
     try:
         shutil.rmtree(work_dir)
     except Exception:
         pass
 
-    print(f"\n🏆 MASTER VIDÉO 4K DISPONIBLE : {output_video}")
+    print(f"\n🏆 4K VIDEO MASTER AVAILABLE: {output_video}")
     return output_video
 
 def main():
-    parser = argparse.ArgumentParser(description="Super-Résolution Vidéo IA 4K / 1080p sous Vulkan")
-    parser.add_argument("input", help="Chemin du fichier vidéo source (.webm ou .mp4)")
-    parser.add_argument("-o", "--output", help="Chemin du master de sortie", default=None)
-    parser.add_argument("-m", "--model", help="Modèle ESRGAN", default=DEFAULT_MODEL)
-    parser.add_argument("-r", "--res", help="Résolution cible (ex: 3840:2160 ou 1920:1080)", default="3840:2160")
-    parser.add_argument("-b", "--bitrate", help="Débit vidéo (ex: 45M)", default="50M")
-    parser.add_argument("--cas", help="Intensité AMD CAS", type=float, default=0.3)
+    parser = argparse.ArgumentParser(description="4K / 1080p AI Video Super-Resolution under Vulkan")
+    parser.add_argument("input", help="Path of the source video file (.webm or .mp4)")
+    parser.add_argument("-o", "--output", help="Path of the output master", default=None)
+    parser.add_argument("-m", "--model", help="ESRGAN model", default=DEFAULT_MODEL)
+    parser.add_argument("-r", "--res", help="Target resolution (e.g. 3840:2160 or 1920:1080)", default="3840:2160")
+    parser.add_argument("-b", "--bitrate", help="Video bitrate (e.g. 45M)", default="50M")
+    parser.add_argument("--cas", help="AMD CAS strength", type=float, default=0.3)
     args = parser.parse_args()
 
     upscale_video_ai(

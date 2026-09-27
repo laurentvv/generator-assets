@@ -12,7 +12,7 @@ def dynamic_import(absolute_package_str, key):
             mpfb_mod = importlib.import_module(amod)
             if hasattr(mpfb_mod, key):
                 return getattr(mpfb_mod, key)
-    raise ValueError(f"Module {absolute_package_str} introuvable")
+    raise ValueError(f"Module {absolute_package_str} not found")
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 try:
@@ -24,7 +24,7 @@ HumanService = dynamic_import("mpfb.services.humanservice", "HumanService")
 AssetService = dynamic_import("mpfb.services.assetservice", "AssetService")
 TargetService = dynamic_import("mpfb.services.targetservice", "TargetService")
 
-# 1. Création corps enfant natif
+# 1. Native child body creation
 macros = {
     "gender": 1.0, "age": 0.18, "muscle": 0.30, "weight": 0.25,
     "proportions": 0.50, "height": 0.50,
@@ -39,7 +39,7 @@ skin_mhmat = r"C:\Users\laurent\AppData\Roaming\Blender Foundation\Blender\5.2\m
 if os.path.exists(skin_mhmat):
     HumanService.set_character_skin(skin_mhmat, basemesh, skin_type="GAMEENGINE")
 
-# 3. Ajout des assets natifs (ajustés sur le morph enfant)
+# 3. Adding the native assets (adjusted on the child morph)
 assets = [
     ("eyes",      "low-poly.mhclo",        "Eyes"),
     ("eyebrows",  "eyebrow001.mhclo",      "Eyebrows"),
@@ -57,8 +57,8 @@ for subdir, fname, atype in assets:
 
 bpy.context.view_layer.update()
 
-# 4. SUPPRESSION PROPRE DES GÉOMÉTRIES D'AIDE (HelperGeometry)
-# MakeHuman génère des géométries d'aide (jupes, yeux internes, etc.) qui doivent être retirées
+# 4. CLEAN REMOVAL OF THE HELPER GEOMETRIES (HelperGeometry)
+# MakeHuman generates helper geometries (skirts, inner eyes, etc.) that must be removed
 helper_vg = basemesh.vertex_groups.get("HelperGeometry")
 if helper_vg:
     bm = bmesh.new()
@@ -71,7 +71,7 @@ if helper_vg:
     bm.free()
     basemesh.data.update()
 
-# 5. Fix opacité matériaux
+# 5. Material opacity fix
 for obj in bpy.data.objects:
     if obj.type == 'MESH':
         for mat in obj.data.materials:
@@ -85,7 +85,7 @@ for obj in bpy.data.objects:
                 if an:
                     mat.node_tree.nodes.remove(an)
 
-# 6. Sauvegarde et export GLB
+# 6. Save and GLB export
 out_blend = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.blend"
 out_glb = r"C:\test\L'HERITIER DU VIDE\poc_3d\exports\marc_mpfb2.glb"
 bpy.ops.wm.save_as_mainfile(filepath=out_blend)
@@ -93,7 +93,7 @@ bpy.ops.wm.save_as_mainfile(filepath=out_blend)
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=out_glb, export_format='GLB', use_selection=True)
 
-# 7. Rendu portrait propre
+# 7. Clean portrait render
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=out_glb)
 
@@ -103,7 +103,7 @@ z_max, z_min = max(p.z for p in all_verts), min(p.z for p in all_verts)
 y_center = (min(p.y for p in all_verts) + max(p.y for p in all_verts)) / 2.0
 head_z = z_max - 0.12
 
-# Éclairage 3 points
+# 3-point lighting
 k_data = bpy.data.lights.new("Key", 'AREA')
 k_data.energy = 50.0
 k = bpy.data.objects.new("Key", k_data)
@@ -127,4 +127,4 @@ bpy.context.scene.camera = cam
 bpy.context.scene.render.engine = 'BLENDER_EEVEE_NEXT' if hasattr(bpy.types.RenderSettings, 'engine') else 'CYCLES'
 bpy.context.scene.render.filepath = r"C:\GIT\generator-assets\godot_assets\marc_3d_beauty_render.png"
 bpy.ops.render.render(write_still=True)
-print("✅ Rendu propre terminé !")
+print("✅ Clean render done!")

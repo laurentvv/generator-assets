@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 register_peasant_pack.py
-1. Copie tous les pack JSONs dans MPFB data/packs et data/data/packs.
-2. Crée les assets officiels MakeHuman de vêtements de paysan médiéval :
+1. Copies all the JSON packs into MPFB data/packs and data/data/packs.
+2. Creates the official MakeHuman assets of medieval peasant clothing:
    - paysan_medieval_worksuit (.mhclo, .obj, .mhmat, .thumb, _diffuse.png, _normal.png)
    - paysan_medieval_shoes (.mhclo, .obj, .mhmat, .thumb, _diffuse.png, _normal.png)
-3. Les enregistre dans generator_assets.json pour affichage 1-clic avec vignettes dans Blender MPFB.
+3. Registers them in generator_assets.json for 1-click display with thumbnails in Blender MPFB.
 """
 
 import json
@@ -35,27 +35,27 @@ SYS_SH_DIR = os.path.join(MPFB_DATA_DIR, "data", "clothes", "shoes01")
 
 def main():
     print("=" * 65)
-    print(" 👗 INSTALLATION DE LA TENUE DE PAYSAN MÉDIÉVAL DANS MPFB")
+    print(" 👗 INSTALLING THE MEDIEVAL PEASANT OUTFIT IN MPFB")
     print("=" * 65)
 
     os.makedirs(PACKS_DIR_1, exist_ok=True)
     os.makedirs(PACKS_DIR_2, exist_ok=True)
 
-    # 1. Synchroniser tous les packs JSON entre les dossiers packs
+    # 1. Synchronize all the JSON packs between the packs folders
     for json_file in Path(PACKS_DIR_2).glob("*.json"):
         shutil.copyfile(str(json_file), os.path.join(PACKS_DIR_1, json_file.name))
     for json_file in Path(PACKS_DIR_1).glob("*.json"):
         shutil.copyfile(str(json_file), os.path.join(PACKS_DIR_2, json_file.name))
-    print(f"✅ Packs JSON synchronisés dans : {PACKS_DIR_1} et {PACKS_DIR_2}")
+    print(f"✅ JSON packs synchronized in {PACKS_DIR_1} and {PACKS_DIR_2}")
 
-    # 2. Créer l'asset 'paysan_medieval_worksuit'
+    # 2. Create the 'paysan_medieval_worksuit' asset
     ws_dest_dir = os.path.join(CLOTHES_DIR, "paysan_medieval_worksuit")
     os.makedirs(ws_dest_dir, exist_ok=True)
 
-    # Copie du maillage 3D propre et du .mhclo
+    # Copy of the clean 3D mesh and of the .mhclo
     shutil.copyfile(os.path.join(SYS_WS_DIR, "male_worksuit01.obj"), os.path.join(ws_dest_dir, "paysan_medieval_worksuit.obj"))
 
-    # Adapter le fichier .mhclo
+    # Adapt the .mhclo file
     with open(os.path.join(SYS_WS_DIR, "male_worksuit01.mhclo"), "r", encoding="utf-8") as f:
         mhclo_content = f.read()
     mhclo_content = mhclo_content.replace("male_worksuit01.obj", "paysan_medieval_worksuit.obj")
@@ -64,11 +64,11 @@ def main():
     with open(os.path.join(ws_dest_dir, "paysan_medieval_worksuit.mhclo"), "w", encoding="utf-8") as f:
         f.write(mhclo_content)
 
-    # Textures UV
+    # UV textures
     shutil.copyfile(SRC_WS_DIFF, os.path.join(ws_dest_dir, "paysan_medieval_worksuit_diffuse.png"))
     shutil.copyfile(SRC_WS_NORM, os.path.join(ws_dest_dir, "paysan_medieval_worksuit_normal.png"))
 
-    # Fichier .mhmat
+    # .mhmat file
     mhmat_ws = """# Material Paysan Medieval Worksuit
 name paysan_medieval_worksuit
 tag MakeHuman(TM)
@@ -93,12 +93,12 @@ shaderConfig diffuse True
     with open(os.path.join(ws_dest_dir, "paysan_medieval_worksuit.mhmat"), "w", encoding="utf-8") as f:
         f.write(mhmat_ws)
 
-    # Vignette .thumb (128x128)
+    # .thumb thumbnail (128x128)
     thumb_ws = Image.open(SRC_WS_DIFF).resize((128, 128), Image.Resampling.LANCZOS)
     thumb_ws.save(os.path.join(ws_dest_dir, "paysan_medieval_worksuit.thumb"), format="PNG")
-    print("✅ Asset 'paysan_medieval_worksuit' créé avec succès !")
+    print("✅ Asset 'paysan_medieval_worksuit' created successfully!")
 
-    # 3. Créer l'asset 'paysan_medieval_shoes'
+    # 3. Create the 'paysan_medieval_shoes' asset
     sh_dest_dir = os.path.join(CLOTHES_DIR, "paysan_medieval_shoes")
     os.makedirs(sh_dest_dir, exist_ok=True)
 
@@ -141,9 +141,9 @@ shaderConfig diffuse True
 
     thumb_sh = Image.open(SRC_SH_DIFF).resize((128, 128), Image.Resampling.LANCZOS)
     thumb_sh.save(os.path.join(sh_dest_dir, "paysan_medieval_shoes.thumb"), format="PNG")
-    print("✅ Asset 'paysan_medieval_shoes' créé avec succès !")
+    print("✅ Asset 'paysan_medieval_shoes' created successfully!")
 
-    # 4. Enregistrer dans generator_assets.json
+    # 4. Register in generator_assets.json
     for pack_dir in [PACKS_DIR_1, PACKS_DIR_2]:
         pfile = os.path.join(pack_dir, "generator_assets.json")
         pdata = {}
@@ -183,24 +183,24 @@ shaderConfig diffuse True
         with open(pfile, "w", encoding="utf-8") as f:
             json.dump(pdata, f, indent=4, ensure_ascii=False)
 
-    # 5. Mettre à jour le catalogue local
-    print("\n🔍 Actualisation du catalogue de vêtements...")
+    # 5. Update the local catalog
+    print("\n🔍 Refreshing the clothes catalog...")
     racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if racine not in sys.path:
         sys.path.insert(0, racine)
     from core.clothes_catalog import construire_catalogue_vetements
     cat = construire_catalogue_vetements()
-    print(f"🎉 Nouveau total d'assets indexés : {len(cat)} modèles !")
+    print(f"🎉 New total of indexed assets: {len(cat)} models!")
 
-    # 6. Actualiser le cache MPFB dans Blender
+    # 6. Refresh the MPFB cache in Blender
     from core.blender_ops import trouver_blender
     bbin = trouver_blender()
     if bbin:
-        cmd = [bbin, "--background", "--python-expr", "import bpy, importlib, sys; [(importlib.import_module(m).AssetService.update_all_asset_lists(), print('✅ MPFB synchronisé')) for m in sys.modules if m.endswith('mpfb.services.assetservice')]"]
+        cmd = [bbin, "--background", "--python-expr", "import bpy, importlib, sys; [(importlib.import_module(m).AssetService.update_all_asset_lists(), print('✅ MPFB synced')) for m in sys.modules if m.endswith('mpfb.services.assetservice')]"]
         subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
 
     print("=" * 65)
-    print(" 🎉 TOUS LES VÊTEMENTS SONT DISPONIBLES DANS BLENDER MPFB !")
+    print(" 🎉 ALL CLOTHES ARE AVAILABLE IN BLENDER MPFB!")
     print("=" * 65)
 
 if __name__ == "__main__":

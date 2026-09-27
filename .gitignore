@@ -8,20 +8,20 @@ dist/
 wheels/
 *.egg-info/
 
-# Environnements virtuels
+# Virtual environments
 .venv/
 env/
 venv/
 ENV/
 
-# Fichiers temporaires de rendu
+# Temporary render files
 temp_*.png
 temp_*.py
 preview.png
 temp_render.png
 *.blend1
 
-# Modèles IA lourds (à stocker hors git)
+# Heavy AI models (stored out of git)
 *.gguf
 *.safetensors
 *.pth
@@ -31,7 +31,7 @@ models/
 upscalers/
 loras/
 
-# Rendu vidéo & outputs lourds
+# Video rendering & heavy outputs
 output/
 scratch/
 *.webm
@@ -48,14 +48,14 @@ test_*
 .DS_Store
 Thumbs.db
 
-# Exceptions : exemples de showcase (videos et audio commités explicitement)
+# Exceptions: showcase examples (videos and audio committed explicitly)
 !docs/exemples/videos/*.mp4
 
-# Config locale des agents IA (symlink .qwen -> .agents, non représentable en git Windows)
+# Local AI agent config (symlink .qwen -> .agents, not representable in Windows git)
 .zcode/
 .qwen/
 
-# Configuration locale (.env — copier .env.example ; jamais versionné)
+# Local configuration (.env — copy .env.example; never versioned)
 .env
 
 # pytest

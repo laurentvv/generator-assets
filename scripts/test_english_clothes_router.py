@@ -13,7 +13,7 @@ prompts = [
     "woman chic casual everyday shirt and denim"
 ]
 
-print("=== TEST AIGUILLAGE PROMPTS EN ANGLAIS ===")
+print("=== ENGLISH PROMPT ROUTING TEST ===")
 for p in prompts:
     res = aiguiller_modele_vetement(p)
-    print(f"🔹 '{p}' \n   ➔ ID: {res['id']} | Nom: {res['name']} | Catégorie: {res['category']}\n")
+    print(f"🔹 '{p}' \n   ➔ ID: {res['id']} | Name: {res['name']} | Category: {res['category']}\n")

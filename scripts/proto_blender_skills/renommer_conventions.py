@@ -1,7 +1,7 @@
-# Normalisation du nommage moteur — pattern blender-skills "naming-conventions" :
-# meshes → SM_<Base>_<n>, matériaux → MAT_<slug>, images → T_<Base>_<n>.
-# Usage : blender --background --python renommer_conventions.py -- <glb_in> <out_glb>
-# Sortie : RENAME_JSON:{...} (avant/après) + GLB ré-exporté.
+# Engine naming normalization — blender-skills pattern "naming-conventions":
+# meshes → SM_<Base>_<n>, materials → MAT_<slug>, images → T_<Base>_<n>.
+# Usage: blender --background --python renommer_conventions.py -- <glb_in> <out_glb>
+# Output: RENAME_JSON:{...} (before/after) + re-exported GLB.
 
 import json
 import os

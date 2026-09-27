@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Finalisation de boucles musicales « music_bg » à partir des WAV bruts générés.
-Rejoue les phases 2-6 du workflow (bouclage zone stable, post-traitement lit de
-voix, bed LUFS, MP3, sélection du meilleur) — utile après un batch ou pour
-retraiter d'anciens candidats avec un algorithme amélioré.
+Finalization of "music_bg" music loops from the generated raw WAVs.
+Replays phases 2-6 of the workflow (stable-zone looping, voice-bed
+post-processing, LUFS bed, MP3, best-candidate selection) — useful after a
+batch or to reprocess old candidates with an improved algorithm.
 
-Usage :
-  uv run python scripts/finaliser_boucles_music_bg.py [dossier_output]
-  (défaut : output/music_bg — scanne candidats/cand_*_brut.wav)
+Usage:
+  uv run python scripts/finaliser_boucles_music_bg.py [output_folder]
+  (default: output/music_bg — scans candidats/cand_*_brut.wav)
 """
 
 import os
@@ -49,10 +49,10 @@ def main():
         f for f in os.listdir(dossier_bruts) if f.startswith("cand_") and f.endswith("_brut.wav")
     )
     if not bruts:
-        print(f"❌ Aucun candidat brut dans {dossier_bruts}")
+        print(f"❌ No raw candidate in {dossier_bruts}")
         sys.exit(1)
 
-    print(f"🎵 Finalisation de {len(bruts)} boucle(s) depuis {dossier_bruts}")
+    print(f"🎵 Finalizing {len(bruts)} loop(s) from {dossier_bruts}")
     candidats = []
     for nom in bruts:
         chemin = os.path.join(dossier_bruts, nom)
@@ -71,7 +71,7 @@ def main():
         mesures = exporter_bed_lufs(chemin_full, bed, LUFS_CIBLE)
         mp3 = convertir_mp3(bed, os.path.join(dossier_bruts, f"cand_{index}_preview.mp3"))
 
-        # Aperçu d'écoute : boucle ×3 à -16 LUFS (juger musique + couture)
+        # Listening preview: loop ×3 at -16 LUFS (judge music + seam)
         tmp_x3 = os.path.join(dossier_bruts, f"_ecoute_{index}_tmp.wav")
         wav_x3 = os.path.join(dossier_bruts, f"_ecoute_{index}_x3.wav")
         soundfile.write(tmp_x3, np.tile(boucle, (3, 1)), sr, subtype="PCM_16")
@@ -80,11 +80,11 @@ def main():
         os.remove(tmp_x3)
         os.remove(wav_x3)
 
-        bpm_txt = f"{infos['bpm']:.0f} BPM" if infos.get("bpm") else "ambiante"
+        bpm_txt = f"{infos['bpm']:.0f} BPM" if infos.get("bpm") else "ambient"
         propre = "✅" if verification["propre"] else "⚠️"
         print(
-            f"  cand_{index} : {bpm_txt}, {infos['duree']:.1f} s, "
-            f"couture Δ{verification['ecart_couture_db']} dB, bed {mesures['I']:.1f} LUFS {propre}"
+            f"  cand_{index}: {bpm_txt}, {infos['duree']:.1f} s, "
+            f"seam Δ{verification['ecart_couture_db']} dB, bed {mesures['I']:.1f} LUFS {propre}"
         )
         candidats.append({
             "index": index, "chemin": chemin_full, "bed": bed, "mp3": mp3, "ecoute": ecoute,
@@ -94,10 +94,10 @@ def main():
     valides = [c for c in candidats if c["verification"]["propre"]]
     pool = valides or candidats
     meilleur = min(pool, key=lambda c: c["verification"]["ecart_couture_db"])
-    print(f"\n🏆 Meilleure boucle : cand_{meilleur['index']} "
-          f"(couture Δ{meilleur['verification']['ecart_couture_db']} dB)")
+    print(f"\n🏆 Best loop: cand_{meilleur['index']} "
+          f"(seam Δ{meilleur['verification']['ecart_couture_db']} dB)")
 
-    # Promotion du meilleur au niveau racine
+    # Promoting the best one to the root level
     nom_base = "tech_loop_minimal"
     shutil.copyfile(meilleur["chemin"], os.path.join(dossier, f"{nom_base}_full.wav"))
     shutil.copyfile(meilleur["bed"], os.path.join(dossier, f"{nom_base}_bed.wav"))
@@ -109,32 +109,32 @@ def main():
     chemin_recette = os.path.join(dossier, "recette_mixage_voix.txt")
     with open(chemin_recette, "w", encoding="utf-8") as f:
         f.write(
-            "RECETTE : mixage de la boucle sous une voix off (ducking automatique)\n"
-            "=====================================================================\n\n"
-            "1) Placez ce fichier à côté de votre voix off : voix_off.wav\n"
-            "2) Lancez la commande :\n\n"
+            "RECIPE: mixing the loop under a voice-over (automatic ducking)\n"
+            "=============================================================\n\n"
+            "1) Place this file next to your voice-over: voix_off.wav\n"
+            "2) Run the command:\n\n"
             f"    {recette}\n\n"
-            "3) Résultat : mix_final.wav — la boucle est répétée à la durée de la\n"
-            "   voix et atténuée automatiquement dès que la voix parle.\n"
-            "   Ajustements :\n"
-            "   - musique trop présente → abaisser volume=1.0 (ex: 0.7)\n"
-            "   - ducking plus marqué → ratio=8 et/ou threshold=0.03\n"
-            "   - retour plus rapide après la voix → release=350\n"
+            "3) Result: mix_final.wav — the loop is repeated to the length of the\n"
+            "   voice and automatically attenuated as soon as the voice speaks.\n"
+            "   Adjustments:\n"
+            "   - music too present → lower volume=1.0 (e.g. 0.7)\n"
+            "   - stronger ducking → ratio=8 and/or threshold=0.03\n"
+            "   - faster recovery after the voice → release=350\n"
         )
 
-    print(f"\n🎉 Livrables dans '{dossier}/' :")
-    print(f"  • {nom_base}_full.wav (boucle complète 48 kHz)")
-    print(f"  • {nom_base}_bed.wav ({LUFS_CIBLE:.0f} LUFS, prêt derrière une voix)")
+    print(f"\n🎉 Deliverables in '{dossier}/':")
+    print(f"  • {nom_base}_full.wav (full 48 kHz loop)")
+    print(f"  • {nom_base}_bed.wav ({LUFS_CIBLE:.0f} LUFS, ready behind a voice)")
     print(f"  • {nom_base}.ogg / {nom_base}_preview.mp3")
     print("  • recette_mixage_voix.txt")
-    print(f"  • {len(candidats)} boucles finalisées dans candidats/ (bed + MP3)")
-    print(f"  • {len(candidats)} aperçus d'écoute ECOUTE_cand<N>_boucle_x3.mp3 (×3, -16 LUFS)")
-    print("\n📋 Récapitulatif :")
+    print(f"  • {len(candidats)} finalized loops in candidats/ (bed + MP3)")
+    print(f"  • {len(candidats)} listening previews ECOUTE_cand<N>_boucle_x3.mp3 (×3, -16 LUFS)")
+    print("\n📋 Summary:")
     for c in sorted(candidats, key=lambda c: int(c["index"]) if c["index"].isdigit() else 0):
         b = c["infos"]
-        bpm_txt = f"{b['bpm']:.0f} BPM" if b.get("bpm") else "ambiante"
-        print(f"  cand_{c['index']:>2} | {bpm_txt:>8} | {b['duree']:5.1f} s | {b.get('mesures') or '-':>2} mesures | "
-              f"couture {c['verification']['ecart_couture_db']:4.1f} dB")
+        bpm_txt = f"{b['bpm']:.0f} BPM" if b.get("bpm") else "ambient"
+        print(f"  cand_{c['index']:>2} | {bpm_txt:>8} | {b['duree']:5.1f} s | {b.get('mesures') or '-':>2} measures | "
+              f"seam {c['verification']['ecart_couture_db']:4.1f} dB")
 
 
 if __name__ == "__main__":

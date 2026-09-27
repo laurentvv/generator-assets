@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Prototype d'animation de personnage par ControlNet OpenPose (route 2D frame par frame).
+"""Character animation prototype via ControlNet OpenPose (2D route, frame by frame).
 
-Recette (validée statiquement le 2026-09-26, cf. MEMORY_BANK §1.29) :
-- chorégraphie : action Blender exportée en keypoints COCO 18 (exporter_squelettes_punch.py),
-  projection VUE DE FACE avec transformation FIXE sur toute la séquence (pas de saut d'échelle) ;
-- cohérence d'apparence : topologie ÉTOILE — chaque frame est dérivée de la frame 0 en
-  img2img (strength 0.55) + ControlNet de pose (strength 0.9), même prompt, même seed.
-  (Le workflow « ip_adapter » du dépôt verrouille le style par prompt, pas par image :
-  pas de vrai IP-Adapter en local, l'img2img étoile est la parade robuste zéro téléchargement.)
+Recipe (statically validated on 2026-09-26, see MEMORY_BANK §1.29):
+- choreography: Blender action exported as 18 COCO keypoints (exporter_squelettes_punch.py),
+  FRONT-VIEW projection with a FIXED transform across the whole sequence (no scale jump);
+- appearance consistency: STAR topology — every frame is derived from frame 0 via
+  img2img (strength 0.55) + pose ControlNet (strength 0.9), same prompt, same seed.
+  (The repo's "ip_adapter" workflow locks style by prompt, not by image:
+  no real IP-Adapter locally, the star img2img is the robust zero-download workaround.)
 
-Usage : uv run python scripts/proto_anim_controlnet/generer_boucle_punch.py [--debut 0 --fin 5]
-Reprenable : les frames déjà produites sont sautées.
+Usage: uv run python scripts/proto_anim_controlnet/generer_boucle_punch.py [--debut 0 --fin 5]
+Resumable: already-produced frames are skipped.
 """
 
 import argparse
@@ -36,19 +36,19 @@ CLIP_VISION = r"C:/Modeles_LLM/clip_vision_h.safetensors"
 PROMPT = ("fantasy knight in shining steel plate armor, running, dynamic action, "
           "full body, game character sprite, isolated on plain white background")
 L, H = 768, 1024
-MARGE = 0.10          # fraction de marge autour du bbox de la séquence
-FORCE_POSE = 1.0      # --control-strength (recette validée)
-FORCE_APPARENCE = 0.55  # img2img depuis la frame 0 (topologie étoile)
-FORCE_IP = 0.45        # --ip-adapter-strength : verrou d'apparence sans ancrer la pose
-REFERENCE_APPARENCE = os.path.join(DOSSIER, "reference_apparence.png")  # chevalier statique validé
+MARGE = 0.10          # margin fraction around the sequence bbox
+FORCE_POSE = 1.0      # --control-strength (validated recipe)
+FORCE_APPARENCE = 0.55  # img2img from frame 0 (star topology)
+FORCE_IP = 0.45        # --ip-adapter-strength: appearance lock without anchoring the pose
+REFERENCE_APPARENCE = os.path.join(DOSSIER, "reference_apparence.png")  # validated static knight
 SEED = 42
 
 
 def transformation_fixe(poses):
-    """Bbox global de la séquence -> échelle/centre constants pour toutes les frames.
+    """Global sequence bbox -> constant scale/center for all frames.
 
-    Projection VUE DE PROFIL : image_x = -Y monde (l'action se lit latéralement, un punch
-    de face est foreshortened et illisible en 2D), image_y = -Z monde (Z up -> y image).
+    PROFILE-VIEW projection: image_x = -Y world (the action reads laterally, a front
+    punch is foreshortened and unreadable in 2D), image_y = -Z world (Z up -> image y).
     """
     tous = [p for pose in poses.values() for p in pose.values()]
     ymin, ymax = min(p[1] for p in tous), max(p[1] for p in tous)
@@ -83,7 +83,7 @@ def generer(chemins, debut, fin):
     for cle in cles:
         chemin_frame = os.path.join(DOSSIER, f"frame_{cle}.png")
         if os.path.exists(chemin_frame):
-            print(f"frame {cle} déjà produite, sautée")
+            print(f"frame {cle} already produced, skipped")
             continue
         t0 = time.time()
         kw = dict(
@@ -92,13 +92,13 @@ def generer(chemins, debut, fin):
             width=L, height=H, steps=25, seed=SEED,
         )
         if cle == "00" and not os.path.exists(REFERENCE_APPARENCE):
-            print(f"[{cle}] txt2img + ControlNet (passe 1)...")
+            print(f"[{cle}] txt2img + ControlNet (pass 1)...")
         else:
-            # IP-Adapter (apparence verrouillée sur la référence) + ControlNet (pose) :
-            # l'img2img étoile ancre la pose de départ (strength 0.55 = pose figée),
-            # le txt2img + IP-Adapter laisse le ControlNet déplacer les membres.
-            # Passe 2 : référence = frame médiane de la passe 1 pour TOUTES les frames
-            # (y compris 00) -> apparence homogène sur toute la boucle.
+            # IP-Adapter (appearance locked to the reference) + ControlNet (pose):
+            # the star img2img anchors the starting pose (strength 0.55 = frozen pose),
+            # the txt2img + IP-Adapter lets the ControlNet move the limbs.
+            # Pass 2: reference = median frame of pass 1 for ALL frames
+            # (including 00) -> homogeneous appearance across the whole loop.
             kw.update(ip_adapter=IP_ADAPTER,
                       ip_adapter_image=REFERENCE_APPARENCE,
                       ip_adapter_strength=FORCE_IP,
@@ -114,15 +114,15 @@ def assembler():
     if len(fichiers) < 12:
         return
     frames = [Image.open(os.path.join(DOSSIER, f)).convert("RGB") for f in fichiers]
-    # GIF boucle directe (Run = cycle : frame 12 == frame 0)
+    # direct-loop GIF (Run = cycle: frame 12 == frame 0)
     frames[0].save(os.path.join(DOSSIER, "boucle_run.gif"), save_all=True,
                    append_images=frames[1:], duration=100, loop=0)
-    # bande horizontale
+    # horizontal strip
     bande = Image.new("RGB", (L // 2 * len(frames), H // 2), "white")
     for i, f in enumerate(frames):
         bande.paste(f.resize((L // 2, H // 2)), (i * L // 2, 0))
     bande.save(os.path.join(DOSSIER, "bande_run.png"), "PNG")
-    print("GIF + bande assemblés")
+    print("GIF + strip assembled")
 
 
 def chemins_cles():

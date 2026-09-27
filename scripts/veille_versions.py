@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Veille des versions de la stack locale : audio.cpp, sd-cli (stable-diffusion.cpp),
-trellis.cpp (image → 3D, workflow mesh_ia) + GGUF TRELLIS.2 sur HF, FFmpeg,
-Python + paquets uv, paquets GGUF de modèles (ACE-Step 1.5…), org audio-cpp
-sur HF (repos dédiés + nouveaux fichiers), repos officiels (ACE-Step, sa3.cpp —
-port C++/GGML de Stable Audio 3, commits en source info, llama.cpp, qwentts.cpp —
-port C++/GGML de Qwen3-TTS installé dans C:\\IA\\qwentts.cpp, commits comparés au
-HEAD local), écosystème ComfyUI
-(releases du cœur, commits de repos clés, nouveaux repos topic:comfyui — source
-d'idées de workflows, cf. docs/recherche_comfyui_2026-09-09.md), outils système
-versionnés (SDK Vulkan LunarG — prérequis des builds natifs ; Blender — skins
-MPFB ; Godot — moteur du jeu ; uv ; CMake).
+Version watch of the local stack: audio.cpp, sd-cli (stable-diffusion.cpp),
+trellis.cpp (image → 3D, mesh_ia workflow) + TRELLIS.2 GGUF on HF, FFmpeg,
+Python + uv packages, GGUF model packages (ACE-Step 1.5…), the audio-cpp org
+on HF (dedicated repos + new files), official repos (ACE-Step, sa3.cpp —
+C++/GGML port of Stable Audio 3, commits as info source, llama.cpp, qwentts.cpp —
+C++/GGML port of Qwen3-TTS installed in C:\\IA\\qwentts.cpp, commits compared to
+the local HEAD), the ComfyUI ecosystem
+(core releases, commits of key repos, new topic:comfyui repos — source of
+workflow ideas, see docs/recherche_comfyui_2026-09-09.md), versioned system
+tools (LunarG Vulkan SDK — prerequisite of native builds; Blender — MPFB
+skins; Godot — game engine; uv; CMake).
 
-Chaque source est comparée à l'état mémorisé (output/veille/etat.json) : seules
-les NOUVEAUTÉS sont signalées (🆕), avec les notes de release complètes archivées
-dans output/veille/notes/. Le rapport complet est journalisé dans
-output/veille/rapports.log. Jamais bloquant : une source indisponible est
-signalée et ignorée.
+Each source is compared against the remembered state (output/veille/etat.json): only
+NEW items are reported (🆕), with full release notes archived
+in output/veille/notes/. The complete report is logged in
+output/veille/rapports.log. Never blocking: an unavailable source is
+reported and skipped.
 
-Quand une mise à jour est décidée : suivre la section « 🔄 Process de mise à
-jour » de AGENTS.md (une composante à la fois, smoke test, READMEs, rollback).
+When an update is decided: follow the "🔄 Update process" section of AGENTS.md
+(one component at a time, smoke test, READMEs, rollback).
 """
 
 import json
@@ -43,20 +43,20 @@ CHEMIN_ETAT = os.path.join(DOSSIER_ETAT, "etat.json")
 CHEMIN_LOG = os.path.join(DOSSIER_ETAT, "rapports.log")
 CHEMIN_MAJ = os.path.join(DOSSIER_ETAT, "maj_en_attente.json")
 
-VERSION_AUDIOCPP_INSTALLEE = "v0.7.2"  # fallback si version.json illisible
+VERSION_AUDIOCPP_INSTALLEE = "v0.7.2"  # fallback if version.json is unreadable
 
-# Repos ComfyUI surveillés au commit près (veille idées de workflows vidéo/3D ;
-# libellé court → source « comfyui-<libellé> » dans le rapport)
+# ComfyUI repos watched at commit level (video/3D workflow idea watch;
+# short label → "comfyui-<label>" source in the report)
 COMFYUI_REPOS_SURVEILLES = [
-    ("hr-endless", "hradec/ComfyUI-HR-Endless-Sampler"),       # base du workflow h3_ref2va
-    ("h3-motion-context", "NikoDemon80/ComfyUI-H3-Motion-Context"),  # chaînage clips H3
-    ("exemples", "comfyanonymous/ComfyUI_examples"),           # workflows d'exemple officiels
-    ("ltxvideo", "Lightricks/ComfyUI-LTXVideo"),               # workflows LTX-2 (IC-LoRA…)
+    ("hr-endless", "hradec/ComfyUI-HR-Endless-Sampler"),       # base of the h3_ref2va workflow
+    ("h3-motion-context", "NikoDemon80/ComfyUI-H3-Motion-Context"),  # H3 clip chaining
+    ("exemples", "comfyanonymous/ComfyUI_examples"),           # official example workflows
+    ("ltxvideo", "Lightricks/ComfyUI-LTXVideo"),               # LTX-2 workflows (IC-LoRA…)
 ]
 
 
 def _github_derniere_release(repo: str) -> dict:
-    """Dernière release d'un repo GitHub (tag, nom, date, notes complètes)."""
+    """Latest release of a GitHub repo (tag, name, date, full notes)."""
     r = requests.get(f"https://api.github.com/repos/{repo}/releases/latest", timeout=30)
     r.raise_for_status()
     donnees = r.json()
@@ -65,8 +65,8 @@ def _github_derniere_release(repo: str) -> dict:
 
 
 def _commits_entre(repo: str, ref_avant: str, ref_apres: str, limite: int = 40) -> str:
-    """Liste les commits entre deux refs (API compare GitHub) — section de notes
-    de repli quand une release amont n'a pas de corps (snapshots master sd-cli)."""
+    """List the commits between two refs (GitHub compare API) — fallback notes
+    section when an upstream release has no body (sd-cli master snapshots)."""
     try:
         r = requests.get(f"https://api.github.com/repos/{repo}/compare/{ref_avant}...{ref_apres}",
                          timeout=30)
@@ -75,18 +75,18 @@ def _commits_entre(repo: str, ref_avant: str, ref_apres: str, limite: int = 40) 
         lignes = [f"- {c['sha'][:7]} {c['commit']['message'].splitlines()[0]}"
                   for c in commits[-limite:]]
         if lignes:
-            return (f"\n## Commits {ref_avant} → {ref_apres} ({len(commits)} au total)\n"
+            return (f"\n## Commits {ref_avant} → {ref_apres} ({len(commits)} total)\n"
                     + "\n".join(lignes) + "\n")
     except Exception:
-        pass  # pas bloquant : des notes vides restent acceptables
+        pass  # not blocking: empty notes remain acceptable
     return ""
 
 
 def _archiver_notes(source: str, release: dict, repo: str = "", ref_avant: str = ""):
-    """Archive les notes de release d'une nouveauté → output/veille/notes/.
-    Si la release amont n'a pas de notes (ex. snapshots master de sd-cli) et que
-    repo+ref_avant sont fournis, complète avec la liste des commits entre la
-    dernière version vue et celle-ci (sinon le savoir amont est perdu)."""
+    """Archive the release notes of a new item → output/veille/notes/.
+    If the upstream release has no notes (e.g. sd-cli master snapshots) and
+    repo+ref_avant are provided, complete with the list of commits between the
+    last seen version and this one (otherwise the upstream knowledge is lost)."""
     dossier = os.path.join(DOSSIER_ETAT, "notes")
     os.makedirs(dossier, exist_ok=True)
     corps = release.get("notes") or ""
@@ -99,15 +99,15 @@ def _archiver_notes(source: str, release: dict, repo: str = "", ref_avant: str =
 
 
 def _version_normale(v: str) -> str:
-    """« v5.2.1 » / « 4.7.2-stable » → « 5.2.1 » / « 4.7.2 » (comparaison souple)."""
+    """'v5.2.1' / '4.7.2-stable' → '5.2.1' / '4.7.2' (loose comparison)."""
     v = (v or "").strip().lstrip("v")
     return v.split("-")[0].split("+")[0]
 
 
 def _derniere_version_lunarg_sdk():
-    """Dernière version du SDK Vulkan LunarG (Windows) via l'URL « latest »
-    officielle : la version se lit dans l'en-tête Content-Disposition du
-    téléchargement (pas de flux JSON public, pas de releases GitHub)."""
+    """Latest LunarG Vulkan SDK version (Windows) via the official "latest"
+    URL: the version is read from the download's Content-Disposition
+    header (no public JSON feed, no GitHub releases)."""
     try:
         r = requests.head("https://sdk.lunarg.com/sdk/download/latest/windows/vulkan-sdk.zip",
                           timeout=30, allow_redirects=True)
@@ -119,7 +119,7 @@ def _derniere_version_lunarg_sdk():
 
 
 def _github_dernier_tag(repo: str):
-    """Dernier tag d'un repo GitHub (projets sans « releases », ex. Blender)."""
+    """Latest tag of a GitHub repo (projects without "releases", e.g. Blender)."""
     try:
         r = requests.get(f"https://api.github.com/repos/{repo}/tags?per_page=1", timeout=30)
         r.raise_for_status()
@@ -130,7 +130,7 @@ def _github_dernier_tag(repo: str):
 
 
 def _version_exe(commande: list, motif: str):
-    """Version installée d'un exécutable (regex sur la sortie de --version)."""
+    """Installed version of an executable (regex on the --version output)."""
     try:
         r = subprocess.run(commande, capture_output=True, text=True, timeout=60)
         m = re.search(motif, (r.stdout or "") + (r.stderr or ""))
@@ -140,8 +140,8 @@ def _version_exe(commande: list, motif: str):
 
 
 def _dernier_sous_dossier(parent: str, motif: str):
-    """Sous-dossier de plus haute version sous `parent` (ex. C:/VulkanSDK/1.4.304.1,
-    « Blender 5.2 ») — détection de la version installée sans lancer l'outil."""
+    """Highest-version subdirectory under `parent` (e.g. C:/VulkanSDK/1.4.304.1,
+    "Blender 5.2") — detects the installed version without launching the tool."""
     try:
         candidats = [d for d in os.listdir(parent) if re.fullmatch(motif, d)]
         if not candidats:
@@ -152,21 +152,21 @@ def _dernier_sous_dossier(parent: str, motif: str):
 
 
 def _veille_version_outil(etat, rapport, cle, version_amont, version_installee, contexte):
-    """Source générique « outil système versionné » : alerte une seule fois par
-    version amont nouvelle, en affichant toujours la version installée. Pure
-    info : aucune maj automatique (process AGENTS.md + accord utilisateur)."""
+    """Generic "versioned system tool" source: alert only once per new
+    upstream version, while always showing the installed version. Pure
+    info: no automatic update (AGENTS.md process + user approval)."""
     deja_vue = etat.get(cle, {}).get("derniere_vue")
     if not version_amont:
-        rapport.ajouter("⚠️", cle, "vérification impossible : version amont indisponible")
+        rapport.ajouter("⚠️", cle, "check impossible: upstream version unavailable")
         return
     if version_amont != deja_vue and _version_normale(version_amont) != _version_normale(version_installee or ""):
-        rapport.ajouter("🆕", cle, f"nouvelle version disponible : {version_amont} "
-                        f"(installé : {version_installee or '?'}) — {contexte}")
+        rapport.ajouter("🆕", cle, f"new version available: {version_amont} "
+                        f"(installed: {version_installee or '?'}) — {contexte}")
     elif version_amont != deja_vue:
-        rapport.ajouter("✅", cle, f"dernière version : {version_amont} (installé identique)")
+        rapport.ajouter("✅", cle, f"latest version: {version_amont} (installed identical)")
     else:
-        rapport.ajouter("✅", cle, f"aucune nouvelle version ({version_amont}) — "
-                        f"installé : {version_installee or '?'}")
+        rapport.ajouter("✅", cle, f"no new version ({version_amont}) — "
+                        f"installed: {version_installee or '?'}")
     etat[cle] = {"derniere_vue": version_amont}
 
 
@@ -184,12 +184,12 @@ def _sauver_etat(etat: dict):
 
 
 def _sauver_maj_en_attente(rapport: "Rapport", resolus: dict):
-    """Synchronise output/veille/maj_en_attente.json (lu par le hook SessionStart).
+    """Synchronizes output/veille/maj_en_attente.json (read by the SessionStart hook).
 
-    Une entrée persiste tant que la mise à jour n'est pas appliquée : une
-    nouveauté signalée une fois reste en attente même si les runs suivants
-    reviennent au ✅ ; elle disparaît quand la version installée rattrape la
-    dernière vue (resolus) ou si l'agent la retire (convention AGENTS.md).
+    An entry persists as long as the update is not applied: an item
+    reported once stays pending even if subsequent runs
+    go back to ✅; it disappears when the installed version catches up with the
+    last seen one (resolus) or when the agent removes it (AGENTS.md convention).
     """
     existant = {}
     if os.path.exists(CHEMIN_MAJ):
@@ -218,7 +218,7 @@ def _sauver_maj_en_attente(rapport: "Rapport", resolus: dict):
 class Rapport:
     def __init__(self):
         self.lignes: list = []
-        self.nouveautes: list = []  # (source, message, chemin_notes) pour maj_en_attente.json
+        self.nouveautes: list = []  # (source, message, notes_path) for maj_en_attente.json
 
     def ajouter(self, emoji: str, source: str, message: str, notes: str = ""):
         self.lignes.append(f"{emoji} [{source}] {message}")
@@ -233,7 +233,7 @@ def veille() -> tuple:
     etat = _charger_etat()
     etat_avant = json.dumps(etat, sort_keys=True)
     rapport = Rapport()
-    resolus: dict = {}  # source → True si la version installée rattrape la dernière vue
+    resolus: dict = {}  # source → True if the installed version caught up with the last seen one
     maintenant = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     # ------------------------------------------------------------------ audio.cpp
@@ -248,19 +248,19 @@ def veille() -> tuple:
         if derniere["tag"] != deja_vue:
             chemin_notes = _archiver_notes("audio-cpp", derniere)
             rapport.ajouter("🆕", "audio.cpp",
-                            f"nouvelle release {derniere['tag']} (installée : {installee}, le {derniere['date']}) — "
-                            f"« {derniere['nom']} » → mise à jour : C:\\audio-cpp\\update.ps1 — "
-                            f"nouveautés détaillées : {chemin_notes}", notes=chemin_notes)
+                            f"new release {derniere['tag']} (installed: {installee}, on {derniere['date']}) — "
+                            f"'{derniere['nom']}' → update: C:\\audio-cpp\\update.ps1 — "
+                            f"detailed changes: {chemin_notes}", notes=chemin_notes)
         else:
-            rapport.ajouter("✅", "audio.cpp", f"à jour ({installee}, dernière release {derniere['tag']})")
+            rapport.ajouter("✅", "audio.cpp", f"up to date ({installee}, latest release {derniere['tag']})")
         etat["audio.cpp"] = {"installee": installee, "derniere_vue": derniere["tag"]}
         resolus["audio.cpp"] = (installee == derniere["tag"])
     except Exception as e:
-        rapport.ajouter("⚠️", "audio.cpp", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "audio.cpp", f"check impossible: {e}")
 
     # ------------------------------------------- sd-cli (stable-diffusion.cpp)
-    # Pas de version.json : le commit est embarqué dans le binaire, et le tag
-    # de release amont est de la forme « master-841-6b3edaa » (sha en suffixe).
+    # No version.json: the commit is embedded in the binary, and the upstream
+    # release tag looks like "master-841-6b3edaa" (sha as suffix).
     try:
         r = subprocess.run([r"C:\SD\sd-cli.exe", "--version"],
                            capture_output=True, text=True, timeout=30)
@@ -272,27 +272,27 @@ def veille() -> tuple:
         commit_dernier = m2.group(1)[:7] if m2 else derniere["tag"]
         deja_vue = etat.get("sd_cli", {}).get("derniere_vue", commit_dernier)
         if commit_dernier != deja_vue:
-            # snapshots master SANS changelog amont → notes complétées par le
-            # compare commits entre la version déjà vue et la nouvelle
+            # master snapshots WITHOUT upstream changelog → notes completed with the
+            # commit compare between the already-seen version and the new one
             chemin_notes = _archiver_notes("sd-cli", derniere,
                                            repo="leejet/stable-diffusion.cpp",
                                            ref_avant=deja_vue)
             rapport.ajouter("🆕", "sd-cli",
-                            f"nouvelle release {derniere['tag']} (installé : commit {installe}, le {derniere['date']}) — "
-                            f"asset : sd-master-<sha>-bin-win-vulkan-x64.zip ; sauvegarder C:\\SD\\*.exe/*.dll dans "
-                            f"backups/ avant remplacement — nouveautés détaillées : {chemin_notes}", notes=chemin_notes)
+                            f"new release {derniere['tag']} (installed: commit {installe}, on {derniere['date']}) — "
+                            f"asset: sd-master-<sha>-bin-win-vulkan-x64.zip ; back up C:\\SD\\*.exe/*.dll to "
+                            f"backups/ before replacing — detailed changes: {chemin_notes}", notes=chemin_notes)
         else:
-            rapport.ajouter("✅", "sd-cli", f"à jour (commit {installe}, dernière release {derniere['tag']})")
+            rapport.ajouter("✅", "sd-cli", f"up to date (commit {installe}, latest release {derniere['tag']})")
         etat["sd_cli"] = {"installe": installe, "derniere_vue": commit_dernier}
         resolus["sd-cli"] = (installe != "?" and installe == commit_dernier)
     except Exception as e:
-        rapport.ajouter("⚠️", "sd-cli", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "sd-cli", f"check impossible: {e}")
 
     # ------------------------------------------- trellis.cpp (image → 3D, mesh_ia)
-    # Pas de flag --version dans trellis-cli : la version installée est
-    # consignée manuellement dans C:\trellis\version.json (à chaque maj).
+    # No --version flag in trellis-cli: the installed version is
+    # recorded manually in C:\trellis\version.json (at every update).
     try:
-        installee = "inconnue"
+        installee = "unknown"
         chemin_vj = r"C:\trellis\version.json"
         if os.path.exists(chemin_vj):
             with open(chemin_vj, encoding="utf-8-sig") as f:
@@ -302,18 +302,18 @@ def veille() -> tuple:
         if derniere["tag"] != deja_vue:
             chemin_notes = _archiver_notes("trellis-cpp", derniere)
             rapport.ajouter("🆕", "trellis.cpp",
-                            f"nouvelle release {derniere['tag']} (installée : {installee}, le {derniere['date']}) — "
-                            f"asset : trellis-vulkan-windows-x64.zip ; sauvegarder C:\\trellis\\*.exe/*.dll dans "
-                            f"C:\\trellis\\backups\\ avant remplacement, puis mettre à jour version.json et "
-                            f"C:\\trellis\\README.md — nouveautés détaillées : {chemin_notes}", notes=chemin_notes)
+                            f"new release {derniere['tag']} (installed: {installee}, on {derniere['date']}) — "
+                            f"asset: trellis-vulkan-windows-x64.zip ; back up C:\\trellis\\*.exe/*.dll to "
+                            f"C:\\trellis\\backups\\ before replacing, then update version.json and "
+                            f"C:\\trellis\\README.md — detailed changes: {chemin_notes}", notes=chemin_notes)
         else:
-            rapport.ajouter("✅", "trellis.cpp", f"à jour ({installee}, dernière release {derniere['tag']})")
+            rapport.ajouter("✅", "trellis.cpp", f"up to date ({installee}, latest release {derniere['tag']})")
         etat["trellis.cpp"] = {"installee": installee, "derniere_vue": derniere["tag"]}
         resolus["trellis.cpp"] = (installee == derniere["tag"])
     except Exception as e:
-        rapport.ajouter("⚠️", "trellis.cpp", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "trellis.cpp", f"check impossible: {e}")
 
-    # -------------------------------- GGUF TRELLIS.2 (ilintar/trellis2-gguf sur HF)
+    # -------------------------------- GGUF TRELLIS.2 (ilintar/trellis2-gguf on HF)
     try:
         r = requests.get(
             "https://huggingface.co/api/models/ilintar/trellis2-gguf/tree/main?recursive=true",
@@ -325,15 +325,15 @@ def veille() -> tuple:
         nouveaux = [f for f in fichiers if f not in deja_vus]
         if nouveaux:
             rapport.ajouter("🆕", "trellis-gguf",
-                            f"nouveaux GGUF sur ilintar/trellis2-gguf : {', '.join(nouveaux)} — "
-                            f"variante quantifiée ou nouveau cascade potentiellement à tester (workflow mesh_ia)")
+                            f"new GGUF on ilintar/trellis2-gguf: {', '.join(nouveaux)} — "
+                            f"quantized variant or new cascade potentially worth testing (mesh_ia workflow)")
         else:
-            rapport.ajouter("✅", "trellis-gguf", f"{len(fichiers)} GGUF, aucun nouveau (ilintar/trellis2-gguf)")
+            rapport.ajouter("✅", "trellis-gguf", f"{len(fichiers)} GGUF, none new (ilintar/trellis2-gguf)")
         etat["trellis_gguf"] = {"fichiers": fichiers}
     except Exception as e:
-        rapport.ajouter("⚠️", "trellis-gguf", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "trellis-gguf", f"check impossible: {e}")
 
-    # ------------------------------------------------------- FFmpeg (tags GitHub)
+    # ------------------------------------------------------- FFmpeg (GitHub tags)
     try:
         r = subprocess.run([r"C:\ffmpeg\dist\bin\ffmpeg.exe", "-version"],
                            capture_output=True, text=True, timeout=30)
@@ -350,15 +350,15 @@ def veille() -> tuple:
         deja_vue = etat.get("ffmpeg", {}).get("derniere_vue", installee)
         if derniere != deja_vue:
             rapport.ajouter("🆕", "ffmpeg",
-                            f"nouvelle version {derniere} (build local : {installee}) → "
+                            f"new version {derniere} (local build: {installee}) → "
                             f"MSYSTEM=UCRT64 /c/msys64/usr/bin/bash.exe -lc 'cd /c/ffmpeg && bash update.sh' — "
-                            f"nouveautés : https://ffmpeg.org/index.html#news")
+                            f"changes: https://ffmpeg.org/index.html#news")
         else:
-            rapport.ajouter("✅", "ffmpeg", f"à jour (build local {installee})")
+            rapport.ajouter("✅", "ffmpeg", f"up to date (local build {installee})")
         etat["ffmpeg"] = {"installee": installee, "derniere_vue": derniere}
         resolus["ffmpeg"] = (installee == derniere)
     except Exception as e:
-        rapport.ajouter("⚠️", "ffmpeg", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "ffmpeg", f"check impossible: {e}")
 
     # ------------------------------------------------------------------- Python
     try:
@@ -372,15 +372,15 @@ def veille() -> tuple:
         mineur_installee = ".".join(installee.split(".")[:2])
         mineur_derniere = ".".join(derniere.split(".")[:2])
         if derniere != deja_vue and mineur_derniere == mineur_installee:
-            rapport.ajouter("🆕", "python", f"{mineur_installee}.{derniere.split('.')[-1]} disponible "
-                            f"(utilisée : {installee}) → uv python install {mineur_derniere} si utile")
+            rapport.ajouter("🆕", "python", f"{mineur_installee}.{derniere.split('.')[-1]} available "
+                            f"(in use: {installee}) → uv python install {mineur_derniere} if useful")
         else:
-            rapport.ajouter("✅", "python", f"utilisée : {installee} (dernière stable : {derniere})")
+            rapport.ajouter("✅", "python", f"in use: {installee} (latest stable: {derniere})")
         etat["python"] = {"installee": installee, "derniere_vue": derniere}
     except Exception as e:
-        rapport.ajouter("⚠️", "python", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "python", f"check impossible: {e}")
 
-    # --------------------------------------------------- Paquets Python (uv env)
+    # --------------------------------------------------- Python packages (uv env)
     try:
         r = subprocess.run(["uv", "pip", "list", "--outdated"], capture_output=True,
                            text=True, timeout=300, cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -390,7 +390,7 @@ def veille() -> tuple:
         deja_vues = etat.get("paquets_python", {}).get("obsolete", [])
         nouvelles = [p for p in cles if p not in deja_vues]
         if nouvelles:
-            # Lien changelog/dépôt pour chaque nouveau paquet (via PyPI)
+            # changelog/repo link for each new package (via PyPI)
             details = []
             for paquet in nouvelles[:5]:
                 try:
@@ -402,19 +402,19 @@ def veille() -> tuple:
                 except Exception:
                     details.append(paquet)
             rapport.ajouter("🆕", "paquets-python",
-                            f"{len(cles)} paquet(s) avec mise à jour disponible, dont nouveaux : "
+                            f"{len(cles)} package(s) with an update available, including new: "
                             f"{', '.join(nouvelles[:8])}{'…' if len(nouvelles) > 8 else ''} "
-                            f"→ uv lock --upgrade && uv sync — changelogs : {' | '.join(details)}")
+                            f"→ uv lock --upgrade && uv sync — changelogs: {' | '.join(details)}")
         elif cles:
-            rapport.ajouter("✅", "paquets-python", f"{len(cles)} mise(s) à jour possible(s), déjà signalées")
+            rapport.ajouter("✅", "paquets-python", f"{len(cles)} possible update(s), already reported")
         else:
-            rapport.ajouter("✅", "paquets-python", "tous à jour")
+            rapport.ajouter("✅", "paquets-python", "all up to date")
         etat["paquets_python"] = {"obsolete": cles}
         resolus["paquets-python"] = (not cles)
     except Exception as e:
-        rapport.ajouter("⚠️", "paquets-python", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "paquets-python", f"check impossible: {e}")
 
-    # --------------------------------------------- Paquets GGUF ACE-Step 1.5 (HF)
+    # --------------------------------------------- ACE-Step 1.5 GGUF packages (HF)
     try:
         r = requests.get("https://huggingface.co/api/models/audio-cpp/audio.cpp-gguf", timeout=30)
         r.raise_for_status()
@@ -423,19 +423,19 @@ def veille() -> tuple:
         deja_vus = etat.get("acestep_gguf", {}).get("fichiers", [])
         nouveaux = [f for f in fichiers if f not in deja_vus]
         if deja_vus and nouveaux:
-            rapport.ajouter("🆕", "modeles-gguf", f"nouveaux paquets HF : {', '.join(nouveaux)} "
+            rapport.ajouter("🆕", "modeles-gguf", f"new HF packages: {', '.join(nouveaux)} "
                             f"→ uv run python scripts/download_acestep15_gguf.py")
         elif fichiers:
-            rapport.ajouter("✅", "modeles-gguf", f"{len(fichiers)} paquets ACE-Step sur HF (aucun nouveau)")
+            rapport.ajouter("✅", "modeles-gguf", f"{len(fichiers)} ACE-Step packages on HF (none new)")
         etat["acestep_gguf"] = {"fichiers": fichiers}
     except Exception as e:
-        rapport.ajouter("⚠️", "modeles-gguf", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "modeles-gguf", f"check impossible: {e}")
 
-    # ------------------------------------ Org audio-cpp : repos et fichiers (HF)
-    # Certains modèles vivent dans des repos DÉDIÉS hors de la collection
-    # principale (ex. MiniMax-Music3-GGUF, VibeVoice-7B-GGUF) : on surveille
-    # donc toute l'org — nouveaux repos ET nouveaux fichiers (nouvelles
-    # familles/variantes dans audio.cpp-gguf y compris).
+    # ------------------------------------ audio-cpp org: repos and files (HF)
+    # Some models live in DEDICATED repos outside the main
+    # collection (e.g. MiniMax-Music3-GGUF, VibeVoice-7B-GGUF): we therefore watch
+    # the whole org — new repos AND new files (new
+    # families/variants in audio.cpp-gguf included).
     try:
         r = requests.get("https://huggingface.co/api/models?author=audio-cpp&limit=100", timeout=30)
         r.raise_for_status()
@@ -454,26 +454,26 @@ def veille() -> tuple:
             if nouveaux_repos or nouveaux_fichiers:
                 resume = (["repo " + x for x in nouveaux_repos] + nouveaux_fichiers)[:6]
                 rapport.ajouter("🆕", "org-audio-cpp",
-                                f"nouveautés : {'; '.join(resume)}"
+                                f"new items: {'; '.join(resume)}"
                                 f"{'…' if len(nouveaux_repos) + len(nouveaux_fichiers) > 6 else ''}")
             else:
                 rapport.ajouter("✅", "org-audio-cpp",
-                                f"{len(repos)} repos ({', '.join(repos)}) — aucun nouveau fichier")
+                                f"{len(repos)} repos ({', '.join(repos)}) — no new file")
         else:
-            rapport.ajouter("✅", "org-audio-cpp", f"baseline enregistrée : {len(repos)} repos ({', '.join(repos)})")
+            rapport.ajouter("✅", "org-audio-cpp", f"baseline recorded: {len(repos)} repos ({', '.join(repos)})")
         etat["org_audio_cpp"] = {"repos": fichiers_par_repo}
     except Exception as e:
-        rapport.ajouter("⚠️", "org-audio-cpp", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "org-audio-cpp", f"check impossible: {e}")
 
-    # --------------------- Nouveaux modèles LLM/VLM/audio GGUF tendance (HF)
-    # Objectif : repérer les modèles GGUF qui ÉMERGENT sur Hugging Face (top
-    # trending), pas tout HF (des milliers de dépôts/jour). Diff du top
-    # trending (text-generation + image-text-to-text + text-to-audio, dont les
-    # moteurs musicaux — plafond actuel : réalisme instrumental rock, cf.
-    # MEMORY_BANK §1.11) entre deux runs ; le premier run enregistre la
-    # baseline sans rien signaler. Rôle : info uniquement — vérifier la
-    # compatibilité (llama.cpp, audio.cpp, Vulkan) avant tout téléchargement,
-    # selon le process AGENTS.md.
+    # --------------------- New trending LLM/VLM/audio GGUF models (HF)
+    # Goal: spot the GGUF models EMERGING on Hugging Face (top
+    # trending), not all of HF (thousands of repos/day). Diff of the
+    # trending top (text-generation + image-text-to-text + text-to-audio, including the
+    # music engines — current ceiling: rock instrumental realism, see
+    # MEMORY_BANK §1.11) between two runs; the first run records the
+    # baseline without reporting anything. Role: info only — check
+    # compatibility (llama.cpp, audio.cpp, Vulkan) before any download,
+    # following the AGENTS.md process.
     try:
         modeles = []
         for pipeline in ("text-generation", "image-text-to-text", "text-to-audio"):
@@ -485,14 +485,14 @@ def veille() -> tuple:
             r.raise_for_status()
             modeles += r.json()
         vus, top = set(), []
-        for m in modeles:  # dédoublonnage en gardant le meilleur rang trending
+        for m in modeles:  # dedupe keeping the best trending rank
             if m.get("id") and m["id"] not in vus:
                 vus.add(m["id"])
                 top.append(m)
 
         def _resume_modele(m: dict) -> str:
             return (f"{m['id']} (dl {m.get('downloads', 0)}, ♥{m.get('likes', 0)}, "
-                    f"créé {m.get('createdAt', '?')[:10]})")
+                    f"created {m.get('createdAt', '?')[:10]})")
 
         deja_vus = etat.get("hf_modeles_gguf", {}).get("top")
         if deja_vus:
@@ -500,19 +500,19 @@ def veille() -> tuple:
             if nouveaux:
                 details = ", ".join(_resume_modele(m) for m in nouveaux[:5])
                 rapport.ajouter("🆕", "hf-modeles-gguf",
-                                f"{len(nouveaux)} nouveau(x) modèle(s) GGUF en tendance HF : "
-                                f"{details}{'…' if len(nouveaux) > 5 else ''} → info : vérifier "
-                                f"compatibilité moteur (llama.cpp/audio.cpp, Vulkan) avant usage")
+                                f"{len(nouveaux)} new GGUF model(s) trending on HF: "
+                                f"{details}{'…' if len(nouveaux) > 5 else ''} → info: check "
+                                f"engine compatibility (llama.cpp/audio.cpp, Vulkan) before use")
             else:
                 rapport.ajouter("✅", "hf-modeles-gguf",
-                                f"top tendance GGUF stable ({len(top)} modèles, aucun nouveau)")
+                                f"stable GGUF trending top ({len(top)} models, none new)")
         else:
             rapport.ajouter("✅", "hf-modeles-gguf",
-                            f"baseline enregistrée : top {len(top)} GGUF tendance HF (ex. "
+                            f"baseline recorded: top {len(top)} GGUF trending on HF (e.g. "
                             f"{', '.join(_resume_modele(m) for m in top[:3])})")
         etat["hf_modeles_gguf"] = {"top": [m["id"] for m in top]}
     except Exception as e:
-        rapport.ajouter("⚠️", "hf-modeles-gguf", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "hf-modeles-gguf", f"check impossible: {e}")
 
     # ----------------------------------------------------------- ACE-Step (repo)
     try:
@@ -520,23 +520,23 @@ def veille() -> tuple:
         deja_vue = etat.get("acestep_repo", {}).get("derniere_vue", derniere["tag"])
         if derniere["tag"] != deja_vue:
             chemin_notes = _archiver_notes("ace-step", derniere)
-            rapport.ajouter("🆕", "ace-step", f"nouvelle release modèle {derniere['tag']} "
-                            f"« {derniere['nom']} » ({derniere['date']}) — vérifier si audio.cpp la supporte — "
-                            f"nouveautés détaillées : {chemin_notes}")
+            rapport.ajouter("🆕", "ace-step", f"new model release {derniere['tag']} "
+                            f"'{derniere['nom']}' ({derniere['date']}) — check whether audio.cpp supports it — "
+                            f"detailed changes: {chemin_notes}")
         else:
-            rapport.ajouter("✅", "ace-step", f"dernière release modèle : {derniere['tag']}")
+            rapport.ajouter("✅", "ace-step", f"latest model release: {derniere['tag']}")
         etat["acestep_repo"] = {"derniere_vue": derniere["tag"]}
     except Exception as e:
-        rapport.ajouter("⚠️", "ace-step", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "ace-step", f"check impossible: {e}")
 
     # ---------------------------------------------------------------- sa3.cpp
-    # Port C++/GGML alternatif de Stable Audio 3 (CPU/CUDA/Vulkan/Metal, zéro
-    # PyTorch), découvert le 2026-09-09 via les GGUF multi-fichiers thepatch —
-    # la famille stable_audio est VALIDÉE sur ce poste via audio.cpp (workflow
-    # sfx, MEMORY_BANK §1.11) : un moteur dédié plus rapide/riche serait un
-    # candidat direct. Source info : pas installé localement, à évaluer au
-    # besoin. Repo SANS releases ni tags (404 sur /releases/latest) →
-    # surveillance au commit près, même mécanique que les repos ComfyUI.
+    # Alternative C++/GGML port of Stable Audio 3 (CPU/CUDA/Vulkan/Metal, zero
+    # PyTorch), discovered on 2026-09-09 via the thepatch multi-file GGUFs —
+    # the stable_audio family is VALIDATED on this machine via audio.cpp (sfx
+    # workflow, MEMORY_BANK §1.11): a dedicated faster/richer engine would be a
+    # direct candidate. Info source: not installed locally, to evaluate as
+    # needed. Repo WITHOUT releases or tags (404 on /releases/latest) →
+    # commit-level watch, same mechanism as the ComfyUI repos.
     try:
         r = requests.get(
             "https://api.github.com/repos/betweentwomidnights/sa3.cpp/commits?per_page=1",
@@ -546,28 +546,28 @@ def veille() -> tuple:
         sha, sujet = commit["sha"][:7], (commit["commit"]["message"] or "").split("\n")[0][:90]
         deja_vu = etat.get("sa3.cpp", {}).get("dernier_commit")
         if deja_vu and sha != deja_vu:
-            rapport.ajouter("🆕", "sa3.cpp", f"nouveaux commits sur betweentwomidnights/sa3.cpp : "
-                            f"{sujet} — port C++/GGML de Stable Audio 3 (Vulkan, zéro PyTorch ; famille "
-                            f"stable_audio déjà validée via audio.cpp, workflow sfx) — pas installé "
-                            f"localement : à évaluer si besoin SFX/musique")
+            rapport.ajouter("🆕", "sa3.cpp", f"new commits on betweentwomidnights/sa3.cpp: "
+                            f"{sujet} — C++/GGML port of Stable Audio 3 (Vulkan, zero PyTorch; "
+                            f"stable_audio family already validated via audio.cpp, sfx workflow) — not installed "
+                            f"locally: to evaluate if SFX/music is needed")
         elif deja_vu:
-            rapport.ajouter("✅", "sa3.cpp", f"sa3.cpp : aucun nouveau commit ({sha})")
+            rapport.ajouter("✅", "sa3.cpp", f"sa3.cpp: no new commit ({sha})")
         else:
-            rapport.ajouter("✅", "sa3.cpp", f"baseline enregistrée : sa3.cpp ({sha}) — pas installé, source info")
+            rapport.ajouter("✅", "sa3.cpp", f"baseline recorded: sa3.cpp ({sha}) — not installed, info source")
         etat["sa3.cpp"] = {"dernier_commit": sha}
     except Exception as e:
-        rapport.ajouter("⚠️", "sa3.cpp", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "sa3.cpp", f"check impossible: {e}")
 
     # ------------------------------------------------------------ qwentts.cpp
-    # Moteur TTS C++17/GGML (port de Qwen3-TTS 12 Hz : speakers nommés, clonage
-    # de voix zero-shot, voice design, streaming, serveur OpenAI-compatible ;
-    # build Vulkan sur ce poste), installé dans C:\IA\qwentts.cpp (clone
-    # ServeurpersoCom/qwentts.cpp) — candidat voix off de la chaîne YouTube.
-    # Règle de gestion (accord utilisateur 2026-09-12) : le clone n'est JAMAIS
-    # modifié à la main (aucun README custom dedans, doc dans le dépôt) ; la
-    # gestion (maj + modèles) a été récupérée du projet ai-doc2video le soir
-    # même : scripts/manage_qwentts.py. Repo SANS releases → surveillance au
-    # commit près, comparée au HEAD local.
+    # C++17/GGML TTS engine (port of Qwen3-TTS 12 Hz: named speakers, zero-shot
+    # voice cloning, voice design, streaming, OpenAI-compatible server;
+    # Vulkan build on this machine), installed in C:\IA\qwentts.cpp (clone of
+    # ServeurpersoCom/qwentts.cpp) — voice-over candidate for the YouTube channel.
+    # Management rule (user approval 2026-09-12): the clone is NEVER
+    # modified by hand (no custom README inside, docs live in the repo); its
+    # management (updates + models) was taken over from the ai-doc2video project
+    # that same evening: scripts/manage_qwentts.py. Repo WITHOUT releases →
+    # commit-level watch, compared to the local HEAD.
     try:
         r = requests.get(
             "https://api.github.com/repos/ServeurpersoCom/qwentts.cpp/commits?per_page=1",
@@ -581,34 +581,34 @@ def veille() -> tuple:
                 ["git", "-C", r"C:\IA\qwentts.cpp", "log", "-1", "--format=%h %cs"],
                 capture_output=True, text=True, timeout=30)
             if g.returncode == 0 and g.stdout.strip():
-                local = g.stdout.strip()  # ex. « 779c7cb 2026-09-11 »
+                local = g.stdout.strip()  # e.g. "779c7cb 2026-09-11"
         except Exception:
             pass
         if local:
             sha_local = local.split()[0]
             if sha == sha_local:
-                rapport.ajouter("✅", "qwentts.cpp", f"à jour (amont {sha} = installé)")
+                rapport.ajouter("✅", "qwentts.cpp", f"up to date (upstream {sha} = installed)")
             else:
-                rapport.ajouter("🆕", "qwentts.cpp", f"nouveaux commits amont sur "
-                                f"ServeurpersoCom/qwentts.cpp (amont {sha} vs installé {local}) — "
-                                f"moteur TTS Qwen3-TTS (clonage de voix, speakers nommés, serveur "
-                                f"OpenAI) — procédure : `uv run python scripts/manage_qwentts.py "
-                                f"--update` (sauvegarde binaire + git pull + build Vulkan + smoke "
-                                f"test + rollback auto) ; ne jamais éditer les fichiers du clone "
-                                f"à la main (doc dans le dépôt, MEMORY_BANK §1.20)")
+                rapport.ajouter("🆕", "qwentts.cpp", f"new upstream commits on "
+                                f"ServeurpersoCom/qwentts.cpp (upstream {sha} vs installed {local}) — "
+                                f"Qwen3-TTS TTS engine (voice cloning, named speakers, OpenAI "
+                                f"server) — procedure: `uv run python scripts/manage_qwentts.py "
+                                f"--update` (binary backup + git pull + Vulkan build + smoke "
+                                f"test + auto rollback) ; never edit the clone's files "
+                                f"by hand (docs in the repo, MEMORY_BANK §1.20)")
         else:
             deja_vu = etat.get("qwentts.cpp", {}).get("dernier_commit")
             if deja_vu and sha != deja_vu:
-                rapport.ajouter("🆕", "qwentts.cpp", f"nouveaux commits sur "
-                                f"ServeurpersoCom/qwentts.cpp ({sha}) — pas de clone local détecté")
+                rapport.ajouter("🆕", "qwentts.cpp", f"new commits on "
+                                f"ServeurpersoCom/qwentts.cpp ({sha}) — no local clone detected")
             elif not deja_vu:
-                rapport.ajouter("✅", "qwentts.cpp", f"baseline enregistrée : qwentts.cpp ({sha}) "
-                                f"— pas de clone local détecté")
+                rapport.ajouter("✅", "qwentts.cpp", f"baseline recorded: qwentts.cpp ({sha}) "
+                                f"— no local clone detected")
             else:
-                rapport.ajouter("✅", "qwentts.cpp", f"qwentts.cpp : aucun nouveau commit ({sha})")
+                rapport.ajouter("✅", "qwentts.cpp", f"qwentts.cpp: no new commit ({sha})")
         etat["qwentts.cpp"] = {"dernier_commit": sha}
     except Exception as e:
-        rapport.ajouter("⚠️", "qwentts.cpp", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "qwentts.cpp", f"check impossible: {e}")
 
     # ------------------------------------------------------------- llama.cpp
     try:
@@ -616,28 +616,28 @@ def veille() -> tuple:
         deja_vue = etat.get("llama.cpp", {}).get("derniere_vue", derniere["tag"])
         if derniere["tag"] != deja_vue:
             chemin_notes = _archiver_notes("llama-cpp", derniere)
-            rapport.ajouter("🆕", "llama.cpp", f"nouvelle release {derniere['tag']} ({derniere['date']}) — "
-                            f"mise à jour via C:\\llama.cpp si utilisée — nouveautés détaillées : {chemin_notes}")
+            rapport.ajouter("🆕", "llama.cpp", f"new release {derniere['tag']} ({derniere['date']}) — "
+                            f"update via C:\\llama.cpp if in use — detailed changes: {chemin_notes}")
         else:
-            rapport.ajouter("✅", "llama.cpp", f"dernière release : {derniere['tag']}")
+            rapport.ajouter("✅", "llama.cpp", f"latest release: {derniere['tag']}")
         etat["llama.cpp"] = {"derniere_vue": derniere["tag"]}
     except Exception as e:
-        rapport.ajouter("⚠️", "llama.cpp", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "llama.cpp", f"check impossible: {e}")
 
-    # -------------------- Outils système versionnés (SDK, builds, moteur jeu)
-    # Composants locaux hors « moteurs média » : SDK Vulkan LunarG (prérequis de
-    # tous les builds natifs : sd-cli CMake, qwentts.cpp, builds audio.cpp),
-    # Blender (pipeline skins MPFB §1.15), Godot (moteur du jeu, consommateur
-    # des assets), uv (gestionnaire d'env Python du dépôt) et CMake. Sources
-    # info : aucune maj automatique — on ne monte une version que si un
-    # moteur/workflow l'exige (process « mise à jour » + accord utilisateur).
+    # -------------------- Versioned system tools (SDKs, builds, game engine)
+    # Local components outside the "media engines": LunarG Vulkan SDK (prerequisite
+    # of all native builds: sd-cli CMake, qwentts.cpp, audio.cpp builds),
+    # Blender (MPFB skins pipeline §1.15), Godot (game engine, consumer
+    # of the assets), uv (repo's Python env manager) and CMake. Info
+    # sources: no automatic update — a version is only bumped when an
+    # engine/workflow requires it ("update" process + user approval).
     try:
         _veille_version_outil(etat, rapport, "vulkan-sdk", _derniere_version_lunarg_sdk(),
                               _dernier_sous_dossier(r"C:\VulkanSDK", r"\d+\.\d+\.\d+\.\d+"),
-                              "SDK requis pour les builds natifs Vulkan (installateur "
-                              "LunarG depuis vulkan.lunarg.com, pas de maj auto)")
+                              "SDK required for the Vulkan native builds (LunarG "
+                              "installer from vulkan.lunarg.com, no auto update)")
     except Exception as e:
-        rapport.ajouter("⚠️", "vulkan-sdk", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "vulkan-sdk", f"check impossible: {e}")
 
     try:
         blender_dossier = _dernier_sous_dossier(r"C:\Program Files\Blender Foundation",
@@ -647,59 +647,59 @@ def veille() -> tuple:
         _veille_version_outil(etat, rapport, "blender", _github_dernier_tag("Blender/Blender"),
                               _version_exe([blender_exe, "--version"],
                                            r"Blender (\d+\.\d+[\d.]*)"),
-                              "pipeline skins MPFB (§1.15) — maj via installateur blender.org")
+                              "MPFB skins pipeline (§1.15) — update via blender.org installer")
     except Exception as e:
-        rapport.ajouter("⚠️", "blender", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "blender", f"check impossible: {e}")
 
     try:
         _veille_version_outil(etat, rapport, "godot",
                               _github_derniere_release("godotengine/godot")["tag"],
                               _version_exe([r"C:\Godot\godot_console.exe", "--version"],
                                            r"(\d+\.\d+(?:\.\d+)?)"),
-                              "moteur du jeu, consommateur des assets — maj via godotengine.org")
+                              "game engine, consumer of the assets — update via godotengine.org")
     except Exception as e:
-        rapport.ajouter("⚠️", "godot", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "godot", f"check impossible: {e}")
 
     try:
         _veille_version_outil(etat, rapport, "uv",
                               _github_derniere_release("astral-sh/uv")["tag"],
                               _version_exe(["uv", "--version"], r"uv (\d+\.\d+\.\d+)"),
-                              "gestionnaire d'environnement Python du dépôt (maj : uv self update)")
+                              "repo's Python environment manager (update: uv self update)")
     except Exception as e:
-        rapport.ajouter("⚠️", "uv", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "uv", f"check impossible: {e}")
 
     try:
         _veille_version_outil(etat, rapport, "cmake",
                               _github_derniere_release("Kitware/CMake")["tag"],
                               _version_exe(["cmake", "--version"],
                                            r"cmake version (\d+\.\d+\.\d+)"),
-                              "builds natifs (qwentts.cpp, audio.cpp, sd-cli) — maj via "
-                              "installateur Kitware")
+                              "native builds (qwentts.cpp, audio.cpp, sd-cli) — update via "
+                              "Kitware installer")
     except Exception as e:
-        rapport.ajouter("⚠️", "cmake", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "cmake", f"check impossible: {e}")
 
-    # ---------------------------------- Écosystème ComfyUI (idées de workflows)
-    # ComfyUI est la source d'inspiration structurante des workflows vidéo
-    # (h3_ref2va reproduit le « HR Endless Sampler » en CLI). Trois volets :
-    # releases du cœur (nouvelles familles/nœuds — TRELLIS2, Wan 3.0, masques
-    # H3… — bon prédicteur des évolutions sd-cli), derniers commits d'une
-    # liste curatée de repos clés, et apparition de nouveaux repos
-    # topic:comfyui à forte croissance (diff du top créé sur les 45 derniers
-    # jours ; premier run = baseline, même mécanique que hf-modeles-gguf).
+    # ---------------------------------- ComfyUI ecosystem (workflow ideas)
+    # ComfyUI is the structuring source of inspiration for the video workflows
+    # (h3_ref2va reproduces the "HR Endless Sampler" in CLI). Three parts:
+    # core releases (new families/nodes — TRELLIS2, Wan 3.0, H3 masks
+    # … — good predictor of sd-cli evolutions), latest commits of a
+    # curated list of key repos, and the appearance of fast-growing new
+    # topic:comfyui repos (diff of the top created over the last 45
+    # days; first run = baseline, same mechanism as hf-modeles-gguf).
     try:
         derniere = _github_derniere_release("comfyanonymous/ComfyUI")
         deja_vue = etat.get("comfyui_core", {}).get("derniere_vue", derniere["tag"])
         if derniere["tag"] != deja_vue:
             chemin_notes = _archiver_notes("comfyui-core", derniere)
             rapport.ajouter("🆕", "comfyui-core",
-                            f"release ComfyUI {derniere['tag']} « {derniere['nom']} » ({derniere['date']}) — "
-                            f"info idées : nouvelles familles/nœuds souvent un signe de ce que sd-cli "
-                            f"ajoutera — notes : {chemin_notes}", notes=chemin_notes)
+                            f"ComfyUI release {derniere['tag']} '{derniere['nom']}' ({derniere['date']}) — "
+                            f"idea info: new families/nodes often a sign of what sd-cli "
+                            f"will add — notes: {chemin_notes}", notes=chemin_notes)
         else:
-            rapport.ajouter("✅", "comfyui-core", f"dernière release ComfyUI : {derniere['tag']}")
+            rapport.ajouter("✅", "comfyui-core", f"latest ComfyUI release: {derniere['tag']}")
         etat["comfyui_core"] = {"derniere_vue": derniere["tag"]}
     except Exception as e:
-        rapport.ajouter("⚠️", "comfyui-core", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "comfyui-core", f"check impossible: {e}")
 
     for nom_court, repo_comfy in COMFYUI_REPOS_SURVEILLES:
         try:
@@ -710,16 +710,16 @@ def veille() -> tuple:
             deja_vu = etat.get("comfyui_repos", {}).get(repo_comfy)
             if deja_vu and sha != deja_vu:
                 rapport.ajouter("🆕", f"comfyui-{nom_court}",
-                                f"nouveaux commits sur {repo_comfy} : {sujet} — info : technique "
-                                f"potentiellement adaptable aux workflows CLI "
-                                f"(cf. docs/recherche_comfyui_2026-09-09.md)")
+                                f"new commits on {repo_comfy}: {sujet} — info: technique "
+                                f"potentially adaptable to the CLI workflows "
+                                f"(see docs/recherche_comfyui_2026-09-09.md)")
             elif deja_vu:
-                rapport.ajouter("✅", f"comfyui-{nom_court}", f"{repo_comfy} : aucun nouveau commit")
+                rapport.ajouter("✅", f"comfyui-{nom_court}", f"{repo_comfy}: no new commit")
             else:
-                rapport.ajouter("✅", f"comfyui-{nom_court}", f"baseline enregistrée : {repo_comfy}")
+                rapport.ajouter("✅", f"comfyui-{nom_court}", f"baseline recorded: {repo_comfy}")
             etat.setdefault("comfyui_repos", {})[repo_comfy] = sha
         except Exception as e:
-            rapport.ajouter("⚠️", f"comfyui-{nom_court}", f"vérification impossible : {e}")
+            rapport.ajouter("⚠️", f"comfyui-{nom_court}", f"check impossible: {e}")
 
     try:
         fenetre = (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d")
@@ -736,20 +736,20 @@ def veille() -> tuple:
             if nouveaux:
                 details = ", ".join(f"{x['full_name']} ({x['stargazers_count']}★)" for x in nouveaux[:5])
                 rapport.ajouter("🆕", "comfyui-nouveaux-repos",
-                                f"{len(nouveaux)} nouveau(x) repo(s) comfyui en croissance : {details}"
-                                f"{'…' if len(nouveaux) > 5 else ''} — info : idée(s) de workflow à "
-                                f"évaluer (cf. docs/recherche_comfyui_2026-09-09.md)")
+                                f"{len(nouveaux)} new comfyui repo(s) growing: {details}"
+                                f"{'…' if len(nouveaux) > 5 else ''} — info: workflow idea(s) to "
+                                f"evaluate (see docs/recherche_comfyui_2026-09-09.md)")
             else:
                 rapport.ajouter("✅", "comfyui-nouveaux-repos",
-                                f"top {len(top)} repos comfyui récents stable (fenêtre 45 j)")
+                                f"stable recent comfyui repos top {len(top)} (45 d window)")
         else:
             rapport.ajouter("✅", "comfyui-nouveaux-repos",
-                            f"baseline enregistrée : top {len(top)} repos comfyui créés après {fenetre}")
+                            f"baseline recorded: top {len(top)} comfyui repos created after {fenetre}")
         etat["comfyui_nouveaux_repos"] = {"repos": [x["full_name"] for x in top]}
     except Exception as e:
-        rapport.ajouter("⚠️", "comfyui-nouveaux-repos", f"vérification impossible : {e}")
+        rapport.ajouter("⚠️", "comfyui-nouveaux-repos", f"check impossible: {e}")
 
-    # ------------------------------------------------------------- journalisation
+    # ------------------------------------------------------------------- logging
     os.makedirs(DOSSIER_ETAT, exist_ok=True)
     if json.dumps(etat, sort_keys=True) != etat_avant:
         _sauver_etat(etat)

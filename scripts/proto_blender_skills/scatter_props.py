@@ -1,8 +1,8 @@
-# Scatter d'instances par Geometry Nodes — pattern blender-skills "geometry-nodes" +
-# "environment-artist/set-dressing" : distribution aléatoire d'un prop GLB sur un sol,
-# rotation/scale aléatoires pilotés par graine (reproductible).
-# Usage : blender --background --python scatter_props.py -- <glb_in> <out_png> [count=40] [seed=42] [densite=3.0]
-# Sortie : PNG EEVEE + SCATTER_OK (chemin GN si réussi, sinon repli duplis manuels).
+# Instance scatter via Geometry Nodes — blender-skills patterns "geometry-nodes" +
+# "environment-artist/set-dressing": random distribution of a GLB prop on a ground,
+# random rotation/scale driven by seed (reproducible).
+# Usage: blender --background --python scatter_props.py -- <glb_in> <out_png> [count=40] [seed=42] [densite=3.0]
+# Output: EEVEE PNG + SCATTER_OK (GN path if successful, otherwise manual dupes fallback).
 
 import math
 import random
@@ -20,8 +20,8 @@ densite = float(argv[4]) if len(argv) > 4 else 3.0
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=glb_in)
 meshes_import = [o for o in bpy.context.scene.objects if o.type == "MESH"]
-assert meshes_import, "aucun maillage dans le GLB"
-# Le prop = TOUT le GLB fusionné (un GLB peut contenir plusieurs meshes, ex. baril + support).
+assert meshes_import, "no mesh in the GLB"
+# The prop = the WHOLE merged GLB (a GLB may contain several meshes, e.g. barrel + stand).
 bpy.ops.object.select_all(action="DESELECT")
 for o in meshes_import:
     o.select_set(True)
@@ -29,7 +29,7 @@ bpy.context.view_layer.objects.active = meshes_import[0]
 bpy.ops.object.join()
 prop = bpy.context.view_layer.objects.active
 
-# Normalisation du prop à ~0.8 m, base posée sur z=0.
+# Normalize the prop to ~0.8 m, base resting on z=0.
 bpy.context.view_layer.objects.active = prop
 bpy.ops.object.origin_set(type="ORIGIN_CENTER_OF_MASS", center="BOUNDS")
 dim = max(prop.dimensions)
@@ -39,7 +39,7 @@ prop.location.z -= min((prop.matrix_world @ Vector(c)).z for c in prop.bound_box
 prop.hide_render = True
 prop.hide_viewport = True
 
-# Sol
+# Ground
 sol_data = bpy.data.meshes.new("Sol")
 bpy.ops.mesh.primitive_plane_add(size=14, location=(0, 0, 0))
 sol = bpy.context.active_object
@@ -68,7 +68,7 @@ try:
     n_in.location = n_out.location = (0, 0)
     dist = nt.nodes.new("GeometryNodeDistributePointsOnFaces")
     dist.distribute_method = "POISSON"
-    # En mode POISSON, seul "Density Max" existe (le socket "Density" est propre au mode RANDOM).
+    # In POISSON mode only "Density Max" exists (the "Density" socket is specific to RANDOM mode).
     dist.inputs["Density Max"].default_value = densite * 20
     dist.inputs["Distance Min"].default_value = 0.9
     dist.inputs["Seed"].default_value = seed
@@ -98,8 +98,8 @@ try:
     lier(ech, "Instances", join, "Geometry")
     lier(n_in, "Géométrie", join, "Geometry")
     lier(join, "Geometry", n_out, "Géométrie")
-except Exception as e:  # noqa: BLE001 — repli : placement manuel équivalent
-    chemin = f"repli_manuel ({e})"
+except Exception as e:  # noqa: BLE001 — fallback: equivalent manual placement
+    chemin = f"manual_fallback ({e})"
     if mod is not None:
         sol.modifiers.remove(mod)
     rng = random.Random(seed)
@@ -114,7 +114,7 @@ except Exception as e:  # noqa: BLE001 — repli : placement manuel équivalent
         s = rng.uniform(0.7, 1.4)
         c.scale = (s, s, s)
 
-# Soleil + monde + caméra
+# Sun + world + camera
 ld = bpy.data.lights.new("Soleil", type="SUN")
 ld.energy = 5.0
 lo = bpy.data.objects.new("Soleil", ld)

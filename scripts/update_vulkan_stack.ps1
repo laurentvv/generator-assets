@@ -1,27 +1,27 @@
 <#
 .SYNOPSIS
-    Script PowerShell de gestion globale de la Suite IA Vulkan (stable-diffusion.cpp + llama.cpp).
+    PowerShell script managing the whole Vulkan AI Suite (stable-diffusion.cpp + llama.cpp).
 
 .DESCRIPTION
-    Supervise et met à jour en un seul clic l'intégralité de la suite IA accélérée sous Vulkan :
-    - Détection matérielle GPU Vulkan (AMD Radeon / NVIDIA / Intel)
-    - stable-diffusion.cpp (Diffusion, PBR, Vidéo)
-    - llama.cpp (LLM Direction Artistique)
+    Supervises and updates in one click the whole Vulkan-accelerated AI suite:
+    - Vulkan GPU hardware detection (AMD Radeon / NVIDIA / Intel)
+    - stable-diffusion.cpp (Diffusion, PBR, Video)
+    - llama.cpp (Art Direction LLM)
 
 .PARAMETER Check
-    Vérifie l'état de l'ensemble de la suite.
+    Checks the state of the whole suite.
 
 .PARAMETER Download
-    Met à jour les deux moteurs via les dernières releases officielles GitHub.
+    Updates both engines via the latest official GitHub releases.
 
 .PARAMETER Build
-    Recompile nativement les deux moteurs avec Vulkan (CMake + MSVC).
+    Compiles both engines natively with Vulkan (CMake + MSVC).
 
 .PARAMETER Rollback
-    Restaure les sauvegardes précédentes des deux moteurs.
+    Restores the previous backups of both engines.
 
 .PARAMETER Clean
-    Nettoie les dossiers build avant compilation.
+    Cleans the build folders before compiling.
 
 .EXAMPLE
     .\scripts\update_vulkan_stack.ps1 -Check
@@ -41,7 +41,7 @@ param (
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Détection de Python / uv
+# Python / uv detection
 $PythonCmd = @()
 if (Get-Command uv -ErrorAction SilentlyContinue) {
     $PythonCmd = @("uv", "run", "python")
@@ -50,7 +50,7 @@ if (Get-Command uv -ErrorAction SilentlyContinue) {
 } elseif (Get-Command python -ErrorAction SilentlyContinue) {
     $PythonCmd = @("python")
 } else {
-    Write-Error "Python ou uv est introuvable."
+    Write-Error "Python or uv not found."
     exit 1
 }
 

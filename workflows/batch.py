@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow Batch : Génération de lots d'assets par recette / fichier de configuration (JSON/Text).
-Permet de générer des packs complets (10 armes, 5 créatures, etc.) en une seule exécution.
+Batch Workflow: generation of asset batches from a recipe / configuration file (JSON/Text).
+Allows generating complete packs (10 weapons, 5 creatures, etc.) in a single run.
 """
 
 import json
@@ -16,30 +16,30 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 @WorkflowRegistry.register
 class BatchWorkflow(BaseWorkflow):
     name = "batch"
-    description = "Génération par lots depuis un fichier JSON ou liste textuelle de concepts"
+    description = "Batch generation from a JSON file or a textual list of concepts"
 
     emoji = "📦"
 
-    # Déclarations CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée).
+    # CLI declarations (audit §2.2, migration from cli/parser.py's flat table:
+    # help/defaults kept as-is, unchanged surface).
     PARAMETRES = [
         dict(flags=("--file", "--recipe"), dest="file",
-             help="Fichier JSON ou liste texte pour le workflow batch."),
+             help="JSON file or text list for the batch workflow."),
         dict(flags=("--continue-on-error",), dest="continue_on_error", action="store_true",
-             help="batch : continue le lot après l'échec d'un asset et sort en code ≠ 0 à la fin avec la liste des échecs (défaut : arrêt à la première erreur, code ≠ 0)."),
+             help="batch: keep going through the batch after an asset failure and exit with code != 0 at the end with the list of failures (default: stop at the first error, code != 0)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         fichier_recette = params.get("file") or params.get("recipe")
         if not fichier_recette or not os.path.exists(fichier_recette):
-            raise FileNotFoundError(f"Fichier de recette introuvable : {fichier_recette}")
+            raise FileNotFoundError(f"Recipe file not found: {fichier_recette}")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         os.makedirs(output_dir, exist_ok=True)
 
-        self.log(f"Lecture de la recette batch : {fichier_recette}...")
+        self.log(f"Reading the batch recipe: {fichier_recette}...")
 
-        # Charger la liste des tâches
+        # Load the task list
         tasks: List[Dict[str, Any]] = []
         if fichier_recette.endswith(".json"):
             with open(fichier_recette, "r", encoding="utf-8") as f:
@@ -49,9 +49,9 @@ class BatchWorkflow(BaseWorkflow):
                 elif isinstance(data, dict) and "assets" in data:
                     tasks = data["assets"]
                 else:
-                    raise ValueError("Format JSON invalide : doit être une liste ou un objet avec la clé 'assets'.")
+                    raise ValueError("Invalid JSON format: must be a list or an object with the 'assets' key.")
         else:
-            # Fichier texte ligne par ligne
+            # Line-by-line text file
             with open(fichier_recette, "r", encoding="utf-8") as f:
                 for line in f:
                     concept = line.strip()
@@ -59,19 +59,19 @@ class BatchWorkflow(BaseWorkflow):
                         tasks.append({"prompt": concept})
 
         total = len(tasks)
-        self.log(f"Lancement de la génération de {total} asset(s)...")
+        self.log(f"Starting the generation of {total} asset(s)...")
 
-        # Défaut : arrêt à la première erreur (code retour ≠ 0 côté CLI).
-        # --continue-on-error : parcourt tout le lot puis signale les échecs (code ≠ 0 si échecs).
+        # Default: stop at the first error (return code != 0 on the CLI side).
+        # --continue-on-error: go through the whole batch then report the failures (code != 0 if failures).
         continue_sur_erreur = bool(params.get("continue_on_error"))
         echecs = []
         resultats = []
         for index, task in enumerate(tasks, start=1):
             prompt = task.get("prompt")
             wf_nom = task.get("workflow", "generate")
-            self.log(f"--- Progression [{index}/{total}] : '{prompt}' (Workflow: {wf_nom}) ---")
+            self.log(f"--- Progress [{index}/{total}]: '{prompt}' (Workflow: {wf_nom}) ---")
 
-            # Fusionner les paramètres globaux et spécifiques à la tâche
+            # Merge the global and task-specific parameters
             merged_params = dict(params)
             merged_params.update(task)
             merged_params["output_dir"] = output_dir
@@ -86,12 +86,12 @@ class BatchWorkflow(BaseWorkflow):
                 echecs.append({"prompt": prompt, "workflow": wf_nom, "erreur": str(e)})
                 if not continue_sur_erreur:
                     raise RuntimeError(
-                        f"Asset {index}/{total} en échec ('{prompt}' via {wf_nom}) : {e} — "
-                        f"lot interrompu (relancer avec --continue-on-error pour terminer le lot malgré tout)."
+                        f"Asset {index}/{total} failed ('{prompt}' via {wf_nom}): {e} — "
+                        f"batch interrupted (rerun with --continue-on-error to finish the batch anyway)."
                     ) from e
-                self.log(f"❌ Erreur sur l'asset '{prompt}' : {e}")
+                self.log(f"❌ Error on asset '{prompt}': {e}")
 
-        self.log(f"Batch terminé : {len(resultats)}/{total} assets générés, {len(echecs)} échec(s).", emoji="🎉")
+        self.log(f"Batch finished: {len(resultats)}/{total} assets generated, {len(echecs)} failure(s).", emoji="🎉")
 
         return {
             "total_tasks": total,

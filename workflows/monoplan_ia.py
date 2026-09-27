@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow monoplan_ia : plan-séquence cinématique IA sans coupe depuis une image
-(RECETTE VALIDÉE utilisateur le 2026-09-10 sur l'intro du Château du Vent-Gris).
+monoplan_ia workflow: cut-free AI cinematic single take built from an image
+(RECIPE USER-VALIDATED on 2026-09-10 on the Château du Vent-Gris intro).
 
-Une seule génération LTX-2.5 I2V (65 trames par défaut = plafond GPU stable),
-ralentie vers la durée cible avec interpolation motion-compensée, puis zoom pur
-conçu par-dessus — aucune coupe, aucune vibration de caméra. Lit sonore IA
-optionnel (SA3 Small SFX). Cf. MEMORY_BANK §1.17 pour le pourquoi de chaque étape.
+A single LTX-2.5 I2V generation (65 frames by default = stable GPU ceiling),
+slowed down to the target duration with motion-compensated interpolation, then a designed
+pure zoom layered on top — no cut, no camera shake. Optional AI sound bed
+(SA3 Small SFX). See MEMORY_BANK §1.17 for the rationale of each step.
 
-Chemin 4K (`--4k`, spéc Hero Hooks ai-doc2video 2026-09-12) : le master brut 480p
-passe d'abord dans la super-résolution IA 4x-UltraSharp (scripts/upscale_video_ai.py,
-sd-cli Vulkan, ~7 min pour 65 trames) → ralenti + zoom travaillent en 3328×1920 @ 30 fps
-→ conform finale 3840×2160 en h264_amf 45 Mbps + FidelityFX CAS 0.75. Le piqué est
-reconstruit AVANT interpolation/zoom, là où le Lanczos 480p→4K écrasait tout.
+4K path (`--4k`, ai-doc2video Hero Hooks spec 2026-09-12): the raw 480p master
+first goes through the 4x-UltraSharp AI super-resolution (scripts/upscale_video_ai.py,
+sd-cli Vulkan, ~7 min for 65 frames) → slow-down + zoom work at 3328×1920 @ 30 fps
+→ final 3840×2160 conform in h264_amf 45 Mbps + FidelityFX CAS 0.75. Sharpness is
+rebuilt BEFORE interpolation/zoom, where 480p→4K Lanczos crushed everything.
 """
 
 import os
@@ -41,48 +41,48 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class MonoplanIaWorkflow(BaseWorkflow):
-    """Plan-séquence IA (monoplan ralenti + zoom pur) : image → master 1080p ou 4K UHD, muet ou sonorisé."""
+    """AI single-take shot (slowed monoplan + pure zoom): image → 1080p or 4K UHD master, silent or with sound."""
 
     name = "monoplan_ia"
-    description = ("Plan-séquence cinématique SANS coupe : LTX-2.5 I2V depuis une image, "
-                   "ralenti motion-compensé + zoom pur conçu (validé 2026-09-10, §1.17) ; "
-                   "--4k = upscale IA UltraSharp + master 3840×2160 AMF (Hero Hooks)")
+    description = ("Cinematic single take WITHOUT cut: LTX-2.5 I2V from an image, "
+                   "motion-compensated slow-down + designed pure zoom (validated 2026-09-10, §1.17); "
+                   "--4k = UltraSharp AI upscale + 3840×2160 AMF master (Hero Hooks)")
 
     emoji = "🎞️"
 
-    # Déclaration des paramètres CLI propres au workflow (audit §2.2 keystone,
-    # 1re famille migrée de la table plate de cli/parser.py — help/défauts repris
-    # tels quels, surface CLI inchangée).
+    # Declaration of the workflow-specific CLI parameters (audit §2.2 keystone,
+    # first family migrated from cli/parser.py's flat table — help/defaults kept
+    # as-is, unchanged CLI surface).
     PARAMETRES = [
         dict(flags=("--monoplan-frames",), type=int, default=65,
-             help="monoplan_ia : trames de la génération unique LTX-2.5 (défaut: 65 = plafond GPU stable, max ~81 au-delà device lost — MEMORY_BANK §1.17)."),
+             help="monoplan_ia: frames of the single LTX-2.5 generation (default: 65 = stable GPU ceiling, max ~81 beyond that device lost — MEMORY_BANK §1.17)."),
         dict(flags=("--monoplan-duration",), type=float, default=10.0,
-             help="monoplan_ia : durée cible du plan en secondes via ralenti motion-compensé (défaut: 10.0)."),
+             help="monoplan_ia: target duration of the shot in seconds via motion-compensated slow-down (default: 10.0)."),
         dict(flags=("--zoom-debut",), type=float, default=1.10,
-             help="monoplan_ia : zoom initial de la rampe conçue (défaut: 1.10)."),
+             help="monoplan_ia: initial zoom of the designed ramp (default: 1.10)."),
         dict(flags=("--zoom-fin",), type=float, default=1.32,
-             help="monoplan_ia : zoom final de la rampe conçue (défaut: 1.32)."),
+             help="monoplan_ia: final zoom of the designed ramp (default: 1.32)."),
         dict(flags=("--ambiance",),
-             help="monoplan_ia : prompt EN du lit sonore IA optionnel (SA3 Small SFX, normalisation incluse) muxé au master."),
+             help="monoplan_ia: EN prompt of the optional AI sound bed (SA3 Small SFX, normalization included) muxed onto the master."),
         dict(flags=("--monoplan-source",),
-             help="monoplan_ia : webm monoplan déjà généré à réutiliser (reprise, saute la génération GPU)."),
+             help="monoplan_ia: already-generated monoplan webm to reuse (resume, skips the GPU generation)."),
         dict(flags=("--carton-titre",),
-             help="monoplan_ia : titre du carton de fin (image figée + titre haute couture animé). « | » sépare les lignes, ex. \"L'HÉRITIER|DU VIDE\"."),
+             help="monoplan_ia: title of the end card (frozen frame + high-couture animated title). \"|\" separates the lines, e.g. \"L'HÉRITIER|DU VIDE\"."),
         dict(flags=("--carton-duree",), type=float, default=6.0,
-             help="monoplan_ia : durée du carton de titre en secondes (défaut: 6.0)."),
+             help="monoplan_ia: duration of the title card in seconds (default: 6.0)."),
         dict(flags=("--carton-zoom-fin",), type=float, default=1.36,
-             help="monoplan_ia : zoom final du carton, poursuit la rampe du plan (défaut: 1.36)."),
+             help="monoplan_ia: final zoom of the card, continues the shot's ramp (default: 1.36)."),
         dict(flags=("--4k", "--upscale-ia"), dest="upscale_4k", action="store_true",
-             help="monoplan_ia : chemin 4K UHD natif — super-résolution IA 4x-UltraSharp des trames brutes 480p (sd-cli Vulkan, ~7 min/65 trames) AVANT ralenti + zoom (3328×1920 @ 30 fps), conform 3840×2160 h264_amf 45M + FidelityFX CAS 0.75 (spéc Hero Hooks ai-doc2video)."),
+             help="monoplan_ia: native 4K UHD path — 4x-UltraSharp AI super-resolution of the raw 480p frames (sd-cli Vulkan, ~7 min/65 frames) BEFORE slow-down + zoom (3328×1920 @ 30 fps), conform 3840×2160 h264_amf 45M + FidelityFX CAS 0.75 (ai-doc2video Hero Hooks spec)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
         if not prompt and not params.get("monoplan_source"):
-            raise ValueError("Le paramètre 'prompt' est requis (description du mouvement de caméra et de la scène).")
+            raise ValueError("The 'prompt' parameter is required (description of the camera movement and of the scene).")
         image = params.get("input")
         if not image and not params.get("monoplan_source"):
-            raise ValueError("Une image d'amorce est requise (-i image.png), ou un monoplan existant (--monoplan-source plan.webm).")
+            raise ValueError("A seed image is required (-i image.png), or an existing monoplan (--monoplan-source plan.webm).")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         os.makedirs(output_dir, exist_ok=True)
@@ -91,13 +91,13 @@ class MonoplanIaWorkflow(BaseWorkflow):
 
         duree = float(params.get("monoplan_duration") or 10.0)
         frames = int(params.get("monoplan_frames") or 65)
-        fps = 24  # cadence native LTX-2.5, non exposée (recette validée)
+        fps = 24  # native LTX-2.5 cadence, not exposed (validated recipe)
         seed = int(params.get("seed", 42))
         zoom_debut = float(params.get("zoom_debut") or 1.10)
         zoom_fin = float(params.get("zoom_fin") or 1.32)
-        ambiance = params.get("ambiance")  # prompt EN du lit sonore optionnel
+        ambiance = params.get("ambiance")  # EN prompt of the optional sound bed
 
-        # Chemin 4K UHD (--4k) : upscale IA en tête de chaîne + master AMF 30 fps
+        # 4K UHD path (--4k): AI upscale at the head of the chain + AMF master 30 fps
         mode_4k = bool(params.get("upscale_4k"))
         fps_sortie = FPS_SORTIE_4K if mode_4k else fps
         suffixe = "4k" if mode_4k else "1080p"
@@ -105,50 +105,50 @@ class MonoplanIaWorkflow(BaseWorkflow):
         amorce = os.path.join(output_dir, f"{nom_base}_amorce_832x480.png")
         webm = params.get("monoplan_source") or os.path.join(output_dir, f"{nom_base}_brut.webm")
         if params.get("monoplan_source") and not os.path.exists(webm):
-            raise FileNotFoundError(f"Monoplan source introuvable : {webm}")
+            raise FileNotFoundError(f"Monoplan source not found: {webm}")
         brut_4k = os.path.join(output_dir, f"{nom_base}_brut_4k_ai.mp4")
         ralenti = os.path.join(output_dir, f"{nom_base}_{duree:.1f}s_{suffixe}_ralenti.mp4")
         master = os.path.join(output_dir, f"{nom_base}_{duree:.1f}s_{suffixe}.mp4")
 
-        self.log(f"Plan-séquence IA « monoplan » ({duree:.1f} s @ {fps_sortie} fps"
-                 f"{', chemin 4K UHD' if mode_4k else ''}, zoom {zoom_debut:.2f}→{zoom_fin:.2f}, seed {seed})…")
+        self.log(f"AI single take \"monoplan\" ({duree:.1f} s @ {fps_sortie} fps"
+                 f"{', 4K UHD path' if mode_4k else ''}, zoom {zoom_debut:.2f}→{zoom_fin:.2f}, seed {seed})…")
 
-        # 1. Amorce 16:9 (ou réutilisation d'un monoplan déjà généré — reprise)
+        # 1. 16:9 seed frame (or reuse of an already-generated monoplan — resume)
         if not os.path.exists(webm):
             if not image or not os.path.exists(image):
-                raise FileNotFoundError(f"Image d'amorce introuvable : {image}")
+                raise FileNotFoundError(f"Seed image not found: {image}")
             conformer_amorce_16_9(image, amorce)
-            self.log("Amorce 16:9 prête (recadrage Lanczos 832×480).")
+            self.log("16:9 seed frame ready (Lanczos recrop 832×480).")
             generer_monoplan_ltx(amorce, prompt, webm, frames=frames, fps=fps,
                                  seed=seed, log_fn=lambda m: self.log(m.strip()))
-            self.log("Monoplan généré (LTX-2.5 Distilled, 8 steps euler_a, cfg 1.0).")
+            self.log("Monoplan generated (LTX-2.5 Distilled, 8 steps euler_a, cfg 1.0).")
         else:
-            self.log(f"Monoplan déjà présent, réutilisé : {webm}")
+            self.log(f"Monoplan already present, reused: {webm}")
 
-        # 1bis. Chemin 4K : super-résolution IA des trames brutes (§1.17 —
-        # TOUJOURS depuis le 480p, jamais depuis un master interpolé)
+        # 1bis. 4K path: AI super-resolution of the raw frames (§1.17 —
+        # ALWAYS from the 480p, never from an interpolated master)
         source_ralenti = webm
         if mode_4k:
             if not os.path.exists(brut_4k):
-                self.log(f"Super-résolution IA 4x-UltraSharp des trames brutes "
-                         f"(sd-cli Vulkan, ~7 min pour {frames} trames)…")
+                self.log(f"4x-UltraSharp AI super-resolution of the raw frames "
+                         f"(sd-cli Vulkan, ~7 min for {frames} frames)…")
                 master_brut_4k(webm, brut_4k, log_fn=lambda m: self.log(m.strip()))
-                self.log("Master brut 3328×1920 prêt (pixellisation 480p reconstruite à la source).")
+                self.log("Raw 3328×1920 master ready (480p pixelation rebuilt at the source).")
             else:
-                self.log(f"Master brut 4K déjà présent : {brut_4k}")
+                self.log(f"Raw 4K master already present: {brut_4k}")
             source_ralenti = brut_4k
 
-        # 2. Ralenti + interpolation motion-compensée vers la durée cible
+        # 2. Slow-down + motion-compensated interpolation to the target duration
         if not os.path.exists(ralenti):
             _, facteur = ralentir_interp(
                 source_ralenti, ralenti, duree, fps=fps_sortie,
                 taille=None if mode_4k else (1920, 1080))
-            self.log(f"Ralenti ×{facteur:.2f} appliqué (interpolation mci/aobmc/vsbmc, "
+            self.log(f"Slow-down ×{facteur:.2f} applied (mci/aobmc/vsbmc interpolation, "
                      + ("3328×1920 @ 30 fps" if mode_4k else "1080p") + ").")
         else:
-            self.log(f"Ralenti déjà présent : {ralenti}")
+            self.log(f"Slow-down already present: {ralenti}")
 
-        # 3. Zoom pur conçu (aucune mesure dans le warp → aucune vibration possible)
+        # 3. Designed pure zoom (no measurement in the warp → no shake possible)
         zoom_4k = None
         if not os.path.exists(master):
             if mode_4k:
@@ -156,16 +156,16 @@ class MonoplanIaWorkflow(BaseWorkflow):
                 if not os.path.exists(zoom_4k):
                     zoom_pur(ralenti, zoom_4k, zoom_debut=zoom_debut, zoom_fin=zoom_fin,
                              taille=TAILLE_UPSCALE_4X, fps=fps_sortie, cas=0.0)
-                    self.log("Zoom pur appliqué en 3328×1920 (rampe smootherstep, CAS reporté à la conform).")
+                    self.log("Pure zoom applied at 3328×1920 (smootherstep ramp, CAS deferred to the conform).")
                 conformer_master_4k(zoom_4k, master, fps=fps_sortie)
-                self.log(f"Conform master 4K UHD (3840×2160 lanczos + CAS, h264_amf {fps_sortie} fps).")
+                self.log(f"4K UHD master conform (3840×2160 lanczos + CAS, h264_amf {fps_sortie} fps).")
             else:
                 zoom_pur(ralenti, master, zoom_debut=zoom_debut, zoom_fin=zoom_fin)
-                self.log("Zoom pur appliqué (rampe smootherstep, CAS 0.75).")
+                self.log("Pure zoom applied (smootherstep ramp, CAS 0.75).")
         else:
-            self.log(f"Master déjà présent : {master}")
+            self.log(f"Master already present: {master}")
 
-        # 4. Lit sonore IA optionnel + version d'écoute
+        # 4. Optional AI sound bed + listening version
         livrables = {"master": master, "monoplan_brut": webm, "ralenti": ralenti}
         if mode_4k:
             livrables["master_brut_4k"] = brut_4k
@@ -175,7 +175,7 @@ class MonoplanIaWorkflow(BaseWorkflow):
         if ambiance:
             wav = os.path.join(output_dir, f"{nom_base}_ambiance.wav")
             if not os.path.exists(wav):
-                self.log(f"Synthèse du lit sonore IA (SA3 Small SFX) : « {ambiance[:60]}… »")
+                self.log(f"AI sound bed synthesis (SA3 Small SFX): \"{ambiance[:60]}…\"")
                 generer_lit_ambiance(ambiance, duree=duree, seed=seed, chemin_wav=wav)
             avec_son = os.path.splitext(master)[0] + "_avec_ambiance.mp4"
             if not os.path.exists(avec_son):
@@ -183,10 +183,10 @@ class MonoplanIaWorkflow(BaseWorkflow):
             livrables["ambiance_wav"] = wav
             livrables["master_avec_ambiance"] = avec_son
 
-        # 5. Carton de titre optionnel (image figée + titre haute couture animé)
+        # 5. Optional title card (frozen frame + high-couture animated title)
         carton_titre = params.get("carton_titre")
         if carton_titre:
-            lignes = carton_titre.split("|")  # « L'HÉRITIER|DU VIDE » = 2 lignes
+            lignes = carton_titre.split("|")  # "L'HÉRITIER|DU VIDE" = 2 lines
             carton_duree = float(params.get("carton_duree") or 6.0)
             carton_zoom_fin = float(params.get("carton_zoom_fin") or 1.36)
             trame = os.path.join(output_dir, f"{nom_base}_derniere_trame.png")
@@ -195,16 +195,16 @@ class MonoplanIaWorkflow(BaseWorkflow):
 
             if not os.path.exists(trame):
                 extraire_derniere_trame(master, trame)
-                self.log("Dernière trame extraite (amorce du carton).")
+                self.log("Last frame extracted (card opener).")
             if not os.path.exists(carton):
-                self.log(f"Composition du carton « {carton_titre} » "
+                self.log(f"Composing the card \"{carton_titre}\" "
                          f"({carton_duree:.1f} s, zoom {zoom_fin:.2f}→{carton_zoom_fin:.2f})…")
                 construire_carton_titre(
                     trame, lignes, carton,
                     duree=carton_duree, fps=fps_sortie,
                     zoom_abs_debut=zoom_fin, zoom_abs_fin=carton_zoom_fin,
                     log_fn=lambda m: self.log(m.strip()))
-            self.log("Carton de titre composé (révélation cinéma, ornement or).")
+            self.log("Title card composed (cinema reveal, gold ornament).")
 
             if not os.path.exists(finale):
                 if wav:
@@ -214,11 +214,11 @@ class MonoplanIaWorkflow(BaseWorkflow):
                     assembler_finale(master, carton, wav_etendu, finale, fps=fps_sortie)
                 else:
                     assembler_finale(master, carton, None, finale, fps=fps_sortie)
-            self.log("Finale assemblée (monoplan + carton, ambiance jusqu'au bout).")
+            self.log("Final assembled (monoplan + card, ambience all the way through).")
             livrables["carton"] = carton
             livrables["final_titre"] = finale
 
-        self.log("Livrables dans " + output_dir + " :", emoji="🎉")
+        self.log("Deliverables in " + output_dir + " :", emoji="🎉")
         for cle, chemin in livrables.items():
             self.log(f"  • {cle} : {os.path.basename(chemin)}")
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Workflow IP-Adapter : Cohérence d'Assets & Charte Graphique pour Jeux Vidéo (Godot 4).
-Produit :
-- Série d'assets dérivés partageant strictement la palette, les matériaux et le style de l'image de référence
-- Planche de cohérence visuelle comparative (Consistency Board)
-- Ressources de palette de couleurs Godot 4 (.tres), Aseprite (.gpl) et JSON
+IP-Adapter workflow: asset consistency & graphic charter for video games (Godot 4).
+Produces:
+- Series of derived assets strictly sharing the reference image's palette, materials and style
+- Comparative visual consistency board (Consistency Board)
+- Godot 4 (.tres), Aseprite (.gpl) and JSON color palette resources
 """
 
 import os
@@ -28,19 +28,19 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class IPAdapterWorkflow(BaseWorkflow):
-    """Génération cohérente d'assets avec verrouillage de style (IP-Adapter) et palettes Godot 4."""
+    """Consistent asset generation with style locking (IP-Adapter) and Godot 4 palettes."""
 
     name = "ip_adapter"
-    description = "Cohérence de style & charte graphique (IP-Adapter) depuis une image de référence + Palettes Godot"
+    description = "Style consistency & graphic charter (IP-Adapter) from a reference image + Godot palettes"
 
     emoji = "🎨"
 
-    # Déclaration CLI (audit §2.2, migration de la table plate de cli/parser.py :
-    # help/défauts repris tels quels, surface inchangée). --themes (partagé avec
-    # variations) vit dans variations.
+    # CLI declaration (audit §2.2, migration from the flat table of cli/parser.py:
+    # help/defaults taken as-is, unchanged surface). --themes (shared with
+    # variations) lives in variations.
     PARAMETRES = [
         dict(flags=("--items",),
-             help="Liste d'assets cohérents pour le workflow ip_adapter (ex: 'sword,shield,potion,helmet')."),
+             help="List of consistent assets for the ip_adapter workflow (e.g.: 'sword,shield,potion,helmet')."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -48,7 +48,7 @@ class IPAdapterWorkflow(BaseWorkflow):
         concept = params.get("prompt")
 
         if not input_image_path and not concept:
-            raise ValueError("Le workflow ip_adapter requiert une image de référence '-i / --input' ou un concept 'prompt'.")
+            raise ValueError("The ip_adapter workflow requires a reference image '-i / --input' or a 'prompt' concept.")
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         taille = params.get("size", 512) or 512
@@ -65,12 +65,12 @@ class IPAdapterWorkflow(BaseWorkflow):
         dossier_set = os.path.join(output_dir, f"{nom_base}_consistent_set")
         os.makedirs(dossier_set, exist_ok=True)
 
-        # 1. Charger ou générer l'image de référence
+        # 1. Load or generate the reference image
         if input_image_path and os.path.exists(input_image_path):
-            self.log(f"Chargement de l'image de référence stylistique : {input_image_path}")
+            self.log(f"Loading the stylistic reference image: {input_image_path}")
             img_ref = Image.open(input_image_path).convert("RGBA")
         else:
-            self.log(f"Génération de l'asset de référence pour '{concept}'...")
+            self.log(f"Generating the reference asset for '{concept}'...")
             prompt_ref = construire_prompt_coherant(
                 concept=concept,
                 type_asset="item",
@@ -97,24 +97,24 @@ class IPAdapterWorkflow(BaseWorkflow):
             chemin_ref_save = os.path.join(dossier_set, f"{nom_base}_reference.png")
             img_ref.save(chemin_ref_save, "PNG")
 
-        # 2. Analyse stylistique et extraction de palette
-        self.log("Extraction de la signature de style et de la palette de couleurs...")
+        # 2. Stylistic analysis and palette extraction
+        self.log("Extracting the style signature and the color palette...")
         palette = extraire_palette_image(img_ref, n_couleurs=6)
         style_verrouille = analyser_signature_stylistique(img_ref, palette)
 
-        # Exportation des formats de palettes Godot
+        # Exporting the Godot palette formats
         p_tres, p_gpl, p_json, p_png = exporter_palette_godot(nom_base, dossier_set, palette)
-        self.log(f"Palette de couleurs exportée dans '{dossier_set}/' :")
-        self.log(f"  • Ressource Godot 4 : {p_tres}")
-        self.log(f"  • Format Aseprite   : {p_gpl}")
+        self.log(f"Color palette exported to '{dossier_set}/':")
+        self.log(f"  • Godot 4 resource: {p_tres}")
+        self.log(f"  • Aseprite format : {p_gpl}")
 
-        # 3. Génération des assets cohérents dérivés
-        self.log(f"Génération de la série cohérente ({len(items_list)} items)...")
+        # 3. Derived consistent asset generation
+        self.log(f"Generating the consistent series ({len(items_list)} items)...")
         variantes_produites = []
         fichiers_items = []
 
         for item_name in items_list:
-            self.log(f"  • Déclinaison de l'item : [{item_name}]...")
+            self.log(f"  • Item declination: [{item_name}]...")
             prompt_item = f"{item_name}, {style_verrouille}"
 
             prompt_complet = construire_prompt_coherant(
@@ -138,7 +138,7 @@ class IPAdapterWorkflow(BaseWorkflow):
                 threads=self.config.get("threads"),
                 steps=params.get("steps", 25),
                 guidance=params.get("guidance", 3.5),
-                seed=seed,  # Même seed pour la cohérence
+                seed=seed,  # Same seed for consistency
                 loras=params.get("loras")
             )
 
@@ -150,14 +150,14 @@ class IPAdapterWorkflow(BaseWorkflow):
             variantes_produites.append((item_name, img_item))
             fichiers_items.append(chemin_item)
 
-        # 4. Assemblage de la planche de cohérence
+        # 4. Consistency board assembly
         planche = assembler_planche_coherence(img_ref, variantes_produites, taille_cellule=256)
         chemin_planche = os.path.join(output_dir, f"{nom_base}_consistency_board.png")
         planche.save(chemin_planche, "PNG")
 
-        self.log(f"Set d'assets cohérents généré avec succès dans '{dossier_set}/' :", emoji="🎉")
-        self.log(f"  • Planche Globale : {chemin_planche}")
-        self.log(f"  • Palette Godot   : {p_tres}", emoji="💎")
+        self.log(f"Consistent asset set generated successfully in '{dossier_set}/':", emoji="🎉")
+        self.log(f"  • Overall board  : {chemin_planche}")
+        self.log(f"  • Godot palette  : {p_tres}", emoji="💎")
 
         return {
             "board": chemin_planche,
