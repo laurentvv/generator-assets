@@ -15,6 +15,7 @@ Integrated pitfalls:
 """
 
 import os
+import shutil
 from typing import Any, Dict
 
 from core.music_ai import convertir_mp3, resoudre_audiocpp, resoudre_ffmpeg
@@ -26,6 +27,72 @@ MODELE_HTDEMUCS = os.getenv(
 )
 SR_HDEMUCS = 44100
 STEMS_INSTRUMENTAL = ("drums", "bass", "other")
+
+# SAM Audio (text-prompted separation) — engine support = upstream PR #711,
+# posterior to the installed v0.8.2-audio8-perf-hotfix: the scratch master build
+# provides it until the next audio.cpp release ships it (then switch the default
+# back to resoudre_audiocpp()).
+BINAIRE_SAM_AUDIO = os.getenv(
+    "SAM_AUDIO_ENGINE",
+    os.path.join("C:\\IA", "audio_cpp_master_test", "build-357", "bin", "Release", "audiocpp_cli.exe"),
+)
+MODELE_SAM_AUDIO = os.getenv(
+    "SAM_AUDIO_MODEL",
+    os.path.join("C:\\Modeles_LLM", "SAM-Audio-GGUF", "sam-audio-small-q8_0.gguf"),
+)
+
+
+def separate_sam_audio(chemin_audio: str, dossier_travail: str, texte: str = "the singing voice") -> Dict[str, Any]:
+    """
+    Separates a text-described sound (default: the singing voice) via SAM Audio.
+    User-validated 2026-09-28 (A/B vs HTDemucs on a sung-voice excerpt).
+    Returns the paths {instrumental_wav, instrumental_mp3, stems_dir, voix_wav}
+    (same contract as retirer_voix: target = voix, residual = instrumental).
+    """
+    if not os.path.exists(BINAIRE_SAM_AUDIO):
+        raise FileNotFoundError(
+            f"SAM-Audio-capable audio.cpp binary not found: {BINAIRE_SAM_AUDIO} — the installed "
+            f"release predates upstream PR #711; rebuild the scratch master "
+            f"(C:\\IA\\audio_cpp_master_test) or point SAM_AUDIO_ENGINE at a newer binary."
+        )
+    if not os.path.exists(MODELE_SAM_AUDIO):
+        raise FileNotFoundError(
+            f"SAM Audio GGUF not found: {MODELE_SAM_AUDIO} — download it from "
+            f"audio-cpp/SAM-Audio-GGUF (small or base q8_0)."
+        )
+    os.makedirs(dossier_travail, exist_ok=True)
+
+    # The source is fed AS-IS (no resample — unlike HTDemucs, SAM Audio has no
+    # input-rate requirement and resamples itself to 48 kHz mono; the validated
+    # recipe fed the raw file, and double resampling measurably alters samples).
+    sortie_sam = os.path.join(dossier_travail, "sam")
+    os.makedirs(sortie_sam, exist_ok=True)
+    run_engine(
+        [BINAIRE_SAM_AUDIO, "--task", "s2s", "--family", "sam_audio",
+         "--model", MODELE_SAM_AUDIO, "--backend", "cpu", "--threads", "16",
+         "--audio", chemin_audio, "--text", texte, "--seed", "42",
+         "--out-dir", sortie_sam],
+        capture=False, check=True, timeout=3600, etiquette="audio.cpp sam_audio",
+    )
+    cible = os.path.join(sortie_sam, "target.wav")
+    residu = os.path.join(sortie_sam, "residual.wav")
+    manquants = [n for n, p in (("target.wav", cible), ("residual.wav", residu))
+                 if not os.path.exists(p)]
+    if manquants:
+        raise RuntimeError(f"Missing SAM Audio outputs: {', '.join(manquants)}")
+
+    # 3) Contract identical to retirer_voix: voix.wav + instrumental.wav + mp3
+    voix = os.path.join(dossier_travail, "voix.wav")
+    instrumental = os.path.join(dossier_travail, "instrumental.wav")
+    shutil.copyfile(cible, voix)
+    shutil.copyfile(residu, instrumental)
+    mp3 = convertir_mp3(instrumental, instrumental.replace(".wav", ".mp3"), 192)
+    return {
+        "instrumental_wav": instrumental,
+        "instrumental_mp3": mp3,
+        "stems_dir": sortie_sam,
+        "voix_wav": voix,
+    }
 
 
 def retirer_voix(chemin_audio: str, dossier_travail: str, backend: str = "vulkan") -> Dict[str, Any]:

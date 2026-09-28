@@ -1447,6 +1447,15 @@ uv run python main.py -w monoplan_ia --monoplan-source output/hero_brut.webm --m
   ```
 * **Status (2026-09-06)**: ✅ **User-validated** (*« retrait de la voix : OK validé »*) on a full 4:07 track. Known pitfalls baked in: HTDemucs requires 44.1 kHz (auto-handled) and stem writing requires `--out-dir` (multi-output). Note: the related "cover" route (AI reinterpretation of a track) was **tested and definitively rejected** by the user — see `docs/MEMORY_BANK.md` §1.11.
 
+#### 4.12b. `retrait_voix --music-backend sam` — Text-Prompted Separation (SAM Audio, CPU)
+* **Process** (alternative engine, same workflow): SAM Audio (Meta) separates **any sound described in English text** (default `"the singing voice"`) from the track → `target.wav` (the described sound) + `residual.wav` (the rest). The source is fed **as-is** (SAM Audio has no input-rate requirement — it resamples itself to 48 kHz mono, unlike HTDemucs) and the output contract mirrors HTDemucs (`instrumental.wav/.mp3` = residual, `voix.wav` = target), engine outputs kept in `sam/`.
+* **Engine**: audio.cpp family `sam_audio` — **CPU only** (the SAM encoder requests a fixed single 3.73 GB buffer above the AMD RDNA2 Vulkan driver limit). The installed release predates support (upstream PR #711): the binary defaults to the scratch master build (`SAM_AUDIO_ENGINE` env override), model = `sam-audio-small-q8_0.gguf` (`SAM_AUDIO_MODEL` env override, base available) in `C:\Modeles_LLM\SAM-Audio-GGUF`. Perf: ~87 s CPU for 30 s of audio (RTF ≈ 2.9; base ≈ 4.7).
+* **Example**:
+  ```bash
+  uv run python main.py -w retrait_voix -i "C:\musique\morceau.mp3" --music-backend sam -o mon_instrumental
+  ```
+* **Status (2026-09-28)**: ✅ **User-validated** ("tout est bien") in A/B vs HTDemucs on a sung-voice excerpt (`output/test_sam_audio/ecoute/`). Any text target ("the guitar", "the drums") is technically isolable but **not yet user-validated** — the flag has no text option yet (fixed to vocals, the validated use).
+
 ---
 
 #### 4.13. `musique_essence` — New Music Carrying a Reference's Essence (SA3 Medium `init_audio` + vocal removal)
