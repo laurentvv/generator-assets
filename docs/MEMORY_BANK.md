@@ -435,7 +435,7 @@
 * **Status: tested FUNCTIONAL, not validated** (repo rule: no workflow before user verdict). GGUFs downloaded and in place; re-downloadable from `audio-cpp/audio.cpp-gguf`.
 * **✅ USER VERDICTS (2026-09-18, listening to the extracts `output/test_audio_cpp_v081/`):**
   * **UniverSR VALIDATED** — 16k→48k voices: "the voices are ok copy without bug, perfect even" (A/B/C); 24k→48k music: "very good, nice drums, it sounds good" (D/E/F). → **`audio_upscale` workflow created** (`core/audio_upscale.py` + `workflows/audio_upscale.py`, tested end-to-end 16k voice: RTF 13.03; band auto via ffprobe, FFmpeg pre-resampling if needed, refusal > 24 kHz; `speech` variant by default; pitfall fixed: the global CLI `--seed` is −1 "random" → forced to the recipe's 42 because universr requires an unsigned integer). **To retest if audio.cpp ships the Vulkan path** (RTF ~1 → would open music bed upscaling).
-  * **Apollo REJECTED** — G (restored) vs H (compressed): "it's worse quality", no audible improvement. GGUF kept in place (66 MB, re-downloadable) — deletion possible on request.
+  * **Apollo REJECTED** — G (restored) vs H (compressed): "it's worse quality", no audible improvement. GGUF deleted 2026-09-28 (disk cleanup, user-confirmed — re-downloadable from the `audio-cpp/audio.cpp-gguf` org).
   * The "null" sweep = technical signal (sine bips), never meant for listening — band measurement only.
   * PulseVAD: no verdict (VAD tool, nothing to listen to) — functional, available for a future voice-over cutting need.
 
