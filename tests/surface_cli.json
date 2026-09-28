@@ -938,6 +938,7 @@
   [
    "auto",
    "cpu",
+   "sam",
    "vulkan"
   ],
   null,

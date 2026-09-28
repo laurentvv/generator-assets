@@ -132,7 +132,7 @@ work.
 | Complete song WITH lyrics | `chanson` | `-w chanson --paroles "..." --style "synthpop"` |
 | New music with the DNA of a reference (imposed BPM/key) | `musique_adn` | `-w musique_adn --reference track.wav` |
 | Music with the essence of a reference (SA3 init_audio) | `musique_essence` | `-w musique_essence --reference track.wav` |
-| Vocal removal / stem separation | `retrait_voix` | `-w retrait_voix -i track.wav` |
+| Vocal removal / stem separation (HTDemucs) or text-prompted SAM Audio | `retrait_voix` | `-w retrait_voix -i track.wav` (`--music-backend sam` = SAM Audio, CPU) |
 | Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish cloning) | `voix_off` | `-w voix_off --texte "..." --voix narrator_fr` |
 | EN character voice (Kokoro preset or Qwen3 VoiceDesign + pitch/whisper/hollow) | `voix_perso` | `-w voix_perso "..." --kokoro-voice am_onyx` |
 | EN robot voice (validated kokoro + ringmod recipe) | `voix_robot` | `-w voix_robot --texte "..."` |
