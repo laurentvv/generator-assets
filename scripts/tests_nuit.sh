@@ -16,7 +16,6 @@
 #
 # Report: output/tests_nuit/RAPPORT.md (rewritten at the end of each run).
 # Called nightly by the "Tests de nuit" automation (02:30).
-
 set -u
 REPO=/c/GIT/generator-assets
 OUT="$REPO/output/tests_nuit"
@@ -182,6 +181,55 @@ leg_lightx2v_vace() {
   fi
 }
 
+# ------------------------------------------------- audio.cpp v0.9.0 legs (added 10/01)
+# The 09/30 update was installed with the GPU busy (user "GPU: OCCUPE que CPU"): binary
+# verified only (--version + --list-devices). These legs are the deferred smoke set.
+
+leg_acestep90_12s() {
+  # audio.cpp v0.9.0 ace_step smoke — 12 s turbo on Vulkan (same protocol as the 09/25
+  # hotfix smoke). PR #737 claims -63% VRAM, +16% Vulkan speed. Reference ace_step RTFs
+  # on 12 s turbo: v0.8.1 3.25-3.85 intra-day, hotfix 3.82/3.53 (same-day A/B averages
+  # 3.68 vs 3.32). Verdict rule (MEMORY_BANK §1.10): same-day A/B only if the number
+  # looks like a regression vs that range; a single clean number in/below range = PASS.
+  run_leg acestep90_12s \
+    C:/audio-cpp/audiocpp_cli.exe --task gen --family ace_step \
+      --model "$MODELES/ACE-Step1.5-GGUF/turbo/ace-step-1.5-turbo-bf16.gguf" \
+      --backend vulkan --task-route text2music \
+      --text "gothic rock, 83 BPM, C sharp minor, distorted guitars, dark atmosphere, high quality" \
+      --duration-seconds 12 --num-inference-steps 8 --seed 42 \
+      --out "$OUT/acestep90_12s/smoke90_12s.wav"
+}
+
+leg_sam_vulkan_retest() {
+  # SAM Audio Vulkan retest on v0.9.0 (native #711). 09/28 on the scratch build: fixed
+  # encoder buffer 2.58/3.73 GB > AMD driver buffer limit -> ErrorOutOfDeviceMemory.
+  # PASS would unlock sam on Vulkan (faster than the CPU recipe RTF 2.9); OOM = the
+  # buffer is still monolithic upstream (informative, reclassified machine-state).
+  run_leg sam_vulkan_retest \
+    C:/audio-cpp/audiocpp_cli.exe --task s2s --family sam_audio \
+      --model "$MODELES/SAM-Audio-GGUF/sam-audio-small-q8_0.gguf" \
+      --backend vulkan --audio output/test_sam_audio/sample_chanson_30s.wav \
+      --text "the singing voice" --seed 42 \
+      --out-dir "$OUT/sam_vulkan_retest/"
+  if [ -f "$OUT/sam_vulkan_retest/FAIL" ] && grep -q "ErrorOutOfDeviceMemory" "$OUT/sam_vulkan_retest/run.log" 2>/dev/null; then
+    mv "$OUT/sam_vulkan_retest/FAIL" "$OUT/sam_vulkan_retest/FAIL_MACHINE_STATE"
+    log "[sam_vulkan_retest] OOM signature still present on v0.9.0 → FAIL_MACHINE_STATE (buffer still monolithic)"
+  fi
+}
+
+leg_sam_cpu_929() {
+  # Validation run for the BINAIRE_SAM_AUDIO switch (scratch fd1733e → production v0.9.0):
+  # CPU recipe, exact 09/28 protocol (30 s excerpt, small-q8_0, 16 threads, seed 42,
+  # RTF reference 2.9). PASS = the switch is authorized in the next day session, followed
+  # by a full-path `retrait_voix --music-backend sam` revalidation (§6 rule).
+  run_leg sam_cpu_929 \
+    C:/audio-cpp/audiocpp_cli.exe --task s2s --family sam_audio \
+      --model "$MODELES/SAM-Audio-GGUF/sam-audio-small-q8_0.gguf" \
+      --backend cpu --threads 16 --audio output/test_sam_audio/sample_chanson_30s.wav \
+      --text "the singing voice" --seed 42 \
+      --out-dir "$OUT/sam_cpu_929/"
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -204,6 +252,9 @@ rapport() {
       [ "$id" = "monoplan65_929" ]   && ev="output/monoplan_ia/"
       [ "$id" = "h3_turbo_929" ]     && ev="output/h3_ref2va/ (expect #1976 signature)"
       [ "$id" = "lightx2v_vace" ]    && [ -f "$OUT/lightx2v_vace/lightx2v_i2v_knight.webm" ] && ev="planche.png + webm"
+      [ "$id" = "acestep90_12s" ]    && [ -f "$OUT/acestep90_12s/smoke90_12s.wav" ] && ev="smoke90_12s.wav + RTF in run.log (ref range 3.25-3.85)"
+      [ "$id" = "sam_vulkan_retest" ] && [ -f "$OUT/sam_vulkan_retest/target.wav" ] && ev="target.wav + residual.wav — SAM works on VULKAN"
+      [ "$id" = "sam_cpu_929" ]      && [ -f "$OUT/sam_cpu_929/target.wav" ] && ev="target.wav + residual.wav + RTF in run.log (ref 2.9)"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -215,19 +266,22 @@ rapport() {
 # ---------------------------------------------------------------- main
 
 if [ ! -f "$QUEUE" ]; then
-  printf '# Overnight test queue (one id per line)\n# wan_i2v_929 | vace_knight | ltx33_929 | h3_turbo_929 | monoplan65_929 | lightx2v_vace\n' > "$QUEUE"
+  printf '# Overnight test queue (one id per line)\n# acestep90_12s | sam_vulkan_retest | sam_cpu_929 | wan_i2v_929 | vace_knight | ltx33_929 | h3_turbo_929 | monoplan65_929 | lightx2v_vace\n' > "$QUEUE"
 fi
 
 log "=== Night test queue run — queue: $QUEUE ==="
 while read -r id; do
   case "$id" in ""|\#*) continue;; esac
   case "$id" in
-    wan_i2v_929)    leg_wan_i2v_929 ;;
-    vace_knight)    leg_vace_knight ;;
-    ltx33_929)      leg_ltx33_929 ;;
-    h3_turbo_929)   leg_h3_turbo_929 ;;
-    monoplan65_929) leg_monoplan65_929 ;;
-    lightx2v_vace)  leg_lightx2v_vace ;;
+    wan_i2v_929)        leg_wan_i2v_929 ;;
+    vace_knight)        leg_vace_knight ;;
+    ltx33_929)          leg_ltx33_929 ;;
+    h3_turbo_929)       leg_h3_turbo_929 ;;
+    monoplan65_929)     leg_monoplan65_929 ;;
+    lightx2v_vace)      leg_lightx2v_vace ;;
+    acestep90_12s)      leg_acestep90_12s ;;
+    sam_vulkan_retest)  leg_sam_vulkan_retest ;;
+    sam_cpu_929)        leg_sam_cpu_929 ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
