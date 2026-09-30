@@ -61,12 +61,12 @@
       "repo": "0xShug0/audio.cpp",
       "plateformes": {
         "windows": {
-          "release": "v0.8.2-audio8-perf-hotfix",
+          "release": "v0.9.0",
           "asset_pattern": "audio-*-bin-windows-x64-vulkan.zip",
-          "sha256": "3426ed753f7c720221ce20d27a4c134b6e7595f20955d6a2b9d10e7f47cfec2b",
+          "sha256": "f884538138e44528a0bf17bb75dbe7ff7350cb91a14cb72c3e9cc1d4a31d6f1f",
           "sous_dossier": "audio-cpp",
           "exe": "audiocpp_cli.exe",
-          "raison_epinglage": "v0.8.2-audio8-perf-hotfix installed on 2026-09-25 (agreement 'go'): the pure v0.8.2 ace_step crash (STATUS_ILLEGAL_INSTRUCTION at load) is FIXED in the hotfix - 12 s turbo smoke OK (RTF 3.82/3.53), same-day A/B vs v0.8.1: average 3.68 vs 3.32 (+11%, within the machine's ace_step noise margin, v0.8.1 measured 3.25-3.85 intra-day on 09/24) -> no clear regression, sfx stable_audio OK. Retest the next release (v0.8.3+) and remove the pin if the A/B stays clean."
+          "raison_epinglage": "v0.9.0 installed on 2026-09-30 (user agreement 'go' restricted to non-GPU updates, GPU busy on an sd-cli generation) via update.ps1 -Yes; VERIFIED: --version (audio.cpp 0.9.0, git 795c45fb, backends cpu,vulkan) + --list-devices (Vulkan RX 6950 XT enumerated); generation smoke DEFERRED (GPU/VRAM busy, RAM 87%): ace_step 12 s turbo (expected faster - ACE-Step -63% VRAM +16% Vulkan, PR #737) + retrait_voix --music-backend sam switch to production binary (native SAM Audio, PR #711, replaces the C:\\IA\\audio_cpp_master_test scratch). Previous pin v0.8.2-audio8-perf-hotfix (2026-09-25): pure v0.8.2 ace_step crash (STATUS_ILLEGAL_INSTRUCTION at load) was fixed in the hotfix, 12 s turbo smoke OK (RTF 3.82/3.53), A/B vs v0.8.1 +11% within noise margin - its 'retest the next release' instruction is fulfilled by v0.9.0; keep the pin until the deferred smoke/A-B is clean. Rollback: C:\\audio-cpp\\backups\\backup_v0.8.2-audio8-perf-hotfix_20260930_235826.zip (+ restore version.json of the same tag together)."
         },
         "linux": {
           "release": "latest",
