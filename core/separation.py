@@ -28,13 +28,13 @@ MODELE_HTDEMUCS = os.getenv(
 SR_HDEMUCS = 44100
 STEMS_INSTRUMENTAL = ("drums", "bass", "other")
 
-# SAM Audio (text-prompted separation) — engine support = upstream PR #711,
-# posterior to the installed v0.8.2-audio8-perf-hotfix: the scratch master build
-# provides it until the next audio.cpp release ships it (then switch the default
-# back to resoudre_audiocpp()).
+# SAM Audio (text-prompted separation) — engine support = upstream PR #711, shipped in
+# the production audio.cpp v0.9.0 (installed 2026-09-30). Validated on the scratch build
+# 2026-09-28, validated on the production binary 2026-10-01 (night leg sam_cpu_929:
+# 30 s excerpt, 91 s, RTF ~3.0 vs 2.9 on the scratch). Scratch build retired.
 BINAIRE_SAM_AUDIO = os.getenv(
     "SAM_AUDIO_ENGINE",
-    os.path.join("C:\\IA", "audio_cpp_master_test", "build-357", "bin", "Release", "audiocpp_cli.exe"),
+    os.path.join("C:\\audio-cpp", "audiocpp_cli.exe"),
 )
 MODELE_SAM_AUDIO = os.getenv(
     "SAM_AUDIO_MODEL",
@@ -51,9 +51,9 @@ def separate_sam_audio(chemin_audio: str, dossier_travail: str, texte: str = "th
     """
     if not os.path.exists(BINAIRE_SAM_AUDIO):
         raise FileNotFoundError(
-            f"SAM-Audio-capable audio.cpp binary not found: {BINAIRE_SAM_AUDIO} — the installed "
-            f"release predates upstream PR #711; rebuild the scratch master "
-            f"(C:\\IA\\audio_cpp_master_test) or point SAM_AUDIO_ENGINE at a newer binary."
+            f"SAM-Audio-capable audio.cpp binary not found: {BINAIRE_SAM_AUDIO} — "
+            f"update audio.cpp to >= v0.9.0 (C:\\audio-cpp\\update.ps1) or point "
+            f"SAM_AUDIO_ENGINE at a newer binary."
         )
     if not os.path.exists(MODELE_SAM_AUDIO):
         raise FileNotFoundError(
