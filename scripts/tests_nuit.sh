@@ -282,11 +282,13 @@ leg_ltx_upscale_base() {
 }
 
 leg_ltx_upscale_spatial() {
-  # Official two-stage stage 2 = refine at 2x via the LATENT SPATIAL upscaler (docs.ltx.io).
-  # Probe: does sd-cli vid_gen wire --hires-upscaler (model-backed) into a second LTX pass?
-  # Outcome unknown — this leg settles it. File gate-protected on Lightricks/LTX-2.5 (401 with
-  # our token): the download fails cleanly until the gate is accepted once on the model page
-  # (or an ungated mirror appears) → FAIL marker + message.
+  # LTX spatial latent upscale — DOCUMENTED IMPLEMENTED upstream (sd-cli docs/ltx2.md @ HEAD
+  # 3f8527a): model-backed x2 latent upsampler between the low-res pass and the hi-res refine
+  # pass; -W/-H = pre-upscale size, output is 2x. Wiring: file under --hires-upscalers-dir,
+  # name without path/extension in --hires-upscaler, plus --hires --hires-steps N.
+  # Probe on our 6b3edaa build (master-841): does it already wire the LTX upscaler?
+  # File gate-protected on Lightricks/LTX-2.5 (401 with our token; the public "ungate" mirror
+  # is private): download fails cleanly until the gate is accepted once on the model page.
   local up="$MODELES/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
   if [ ! -f "$up" ]; then
     log "[ltx_upscale_spatial] downloading the latent spatial upscaler (HF gate: Lightricks/LTX-2.5)…"
@@ -309,31 +311,32 @@ leg_ltx_upscale_spatial() {
       -W 832 -H 480 --video-frames 33 --fps 24 \
       --steps 8 --sigmas "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0" \
       --sampling-method euler_a --cfg-scale 1.0 \
-      --hires-upscaler "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0" \
       --hires-upscalers-dir "$MODELES" \
+      --hires-upscaler "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0" \
+      --hires --hires-steps 4 \
       --diffusion-fa --max-vram 10 --seed 42 \
       --backend "diffusion=vulkan0,te=cpu,vae=cpu" -v \
       -o "$OUT/ltx_upscale_spatial/spatial_33f.webm"
 }
 
-leg_ltx_upscale_temporal() {
-  # Latent TEMPORAL upscaler ×2 (2x frames in latent space → smoother slow-mo than minterpolate).
-  # Same probe wiring as the spatial leg. File already downloaded (ungated mirror sbalani/…,
-  # 261,944,000 B verified).
-  run_leg ltx_upscale_temporal \
-    "$SD6B" -M vid_gen \
+leg_ltx33_929_paramsdisk() {
+  # #1976 fit probe (added after the sd-cli docs crawl): the 929 memory manager stages the
+  # 14.4 GB LTX DiT params onto Vulkan0 device memory then refuses the workspace (need 908 MB
+  # / 776 free). docs/performance.md advertises `--params-backend disk` = "reduce both VRAM
+  # and RAM usage". If LTX 33f PASSES on the 929 binary with disk params, LTX could return to
+  # the main build (6b3edaa retirement path). Same quick 2-step matrix command as ltx33_929.
+  run_leg ltx33_929_paramsdisk \
+    "$SD" -M vid_gen \
       --diffusion-model "$MODELES/LTX-2.5-Distilled-Q4_K_M.gguf" \
       --vae "$MODELES/ltx-2.5-video-vae-conv-bf16.safetensors" \
       --llm "$MODELES/gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf" \
       -p "A colossal golden dragon with shimmering scales soaring through sunset clouds, volumetric rays, cinematic wide shot, high quality" \
-      -W 832 -H 480 --video-frames 33 --fps 24 \
-      --steps 8 --sigmas "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0" \
-      --sampling-method euler_a --cfg-scale 1.0 \
-      --hires-upscaler "ltx-2.5-latent-temporal-upscaler-x2-bf16-1.0" \
-      --hires-upscalers-dir "$MODELES" \
-      --diffusion-fa --max-vram 10 --seed 42 \
-      --backend "diffusion=vulkan0,te=cpu,vae=cpu" -v \
-      -o "$OUT/ltx_upscale_temporal/temporal_33f.webm"
+      -W 768 -H 512 --video-frames 33 --fps 24 \
+      --steps 2 --sampling-method euler_a --cfg-scale 1.0 \
+      --diffusion-fa --seed 42 -t 12 \
+      --params-backend disk \
+      --backend "diffusion=vulkan0,te=cpu" -v \
+      -o "$OUT/ltx33_929_paramsdisk/ltx33_paramsdisk.webm"
 }
 
 # ---------------------------------------------------------------- report
@@ -364,7 +367,7 @@ rapport() {
       [ "$id" = "ltx_multishot" ]        && [ -f "$OUT/ltx_multishot/multishot_65f.webm" ] && ev="planche.png + webm — cut visible? audio continuous?"
       [ "$id" = "ltx_upscale_base" ]     && [ -f "$OUT/ltx_upscale_base/base_33f.webm" ] && ev="base_33f.webm (A/B reference for the 2 upscaler probes)"
       [ "$id" = "ltx_upscale_spatial" ]  && [ -f "$OUT/ltx_upscale_spatial/spatial_33f.webm" ] && ev="spatial_33f.webm — vs base (2x latent detail?)"
-      [ "$id" = "ltx_upscale_temporal" ] && [ -f "$OUT/ltx_upscale_temporal/temporal_33f.webm" ] && ev="temporal_33f.webm — vs base (frame doubling?)"
+      [ "$id" = "ltx33_929_paramsdisk" ] && [ -f "$OUT/ltx33_929_paramsdisk/ltx33_paramsdisk.webm" ] && ev="ltx33_paramsdisk.webm — LTX fit on 929 with --params-backend disk (#1976)"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -395,7 +398,7 @@ while read -r id; do
     ltx_multishot)        leg_ltx_multishot ;;
     ltx_upscale_base)     leg_ltx_upscale_base ;;
     ltx_upscale_spatial)  leg_ltx_upscale_spatial ;;
-    ltx_upscale_temporal) leg_ltx_upscale_temporal ;;
+    ltx33_929_paramsdisk) leg_ltx33_929_paramsdisk ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
