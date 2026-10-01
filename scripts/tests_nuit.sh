@@ -164,6 +164,7 @@ leg_lightx2v_vace() {
       return 0
     fi
     log "[lightx2v_vace] downloading $url…"
+    mkdir -p "$OUT/lightx2v_vace"
     uv run python scripts/telecharger_gros_fichier_parallele.py \
       "https://huggingface.co/QuantStack/Wan2.1_T2V_14B_LightX2V_StepCfgDistill_VACE-GGUF/resolve/main/$url" "$gguf" \
       > "$OUT/lightx2v_vace/download.log" 2>&1 || { log "[lightx2v_vace] download failed (transient?) — no marker, retry next night"; return 0; }
