@@ -22,6 +22,7 @@ OUT="$REPO/output/tests_nuit"
 QUEUE="$OUT/queue.txt"
 MODELES="C:/Modeles_LLM"
 SD="C:/SD/sd-cli.exe"
+SD6B="C:/SD-6b3edaa/sd-cli.exe"   # LTX/H3 production build (master-841) — MEMORY_BANK §1.17
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
 
@@ -36,9 +37,10 @@ gate() {
   return 0
 }
 
-planche() { # contact sheet for the morning verdict: ALL frames (clips are <2 s) tiled 5x4
-  local webm="$1" png="$2"
-  ffmpeg -y -loglevel error -i "$webm" -vf "fps=30,scale=320:-1,tile=5x4" -frames:v 1 "$png" 2>/dev/null
+planche() { # contact sheet for the morning verdict; 3rd arg = sampling fps (default 30 =
+  # first 20 frames, right for <2 s clips; pass ~7 to span a full 65-frame clip)
+  local webm="$1" png="$2" fps="${3:-30}"
+  ffmpeg -y -loglevel error -i "$webm" -vf "fps=$fps,scale=320:-1,tile=5x4" -frames:v 1 "$png" 2>/dev/null
 }
 
 # run_leg <id> <command...>: gate + execute + time + markers.
@@ -235,6 +237,105 @@ leg_sam_cpu_929() {
       --out-dir "$OUT/sam_cpu_929/"
 }
 
+# ------------------------------------------------- LTX-2.5 docs-comparison legs (added 10-01)
+# From the docs.ltx.io crawl (MEMORY_BANK §1.33). Queued ONLY on an explicit user "go GPU"
+# (the 02:30 automation was REMOVED 10-01 on user request): append the ids to queue.txt.
+# Binary = 6b3edaa (LTX production build); recipe = the validated monoplan §1.17 constants
+# (8 steps, euler_a, LTX distilled sigmas, cfg 1.0, --max-vram 10, te/vae on CPU), T2V (no -i).
+
+leg_ltx_multishot() {
+  # Official "native multishot": several cuts in ONE generation with audio continuity —
+  # targets our chained-2-shot sound seams (§1.17). Verdict: does the named hard cut appear
+  # (planche), is the soundtrack continuous (ffprobe + listen)? 65 f = 1+64 (official rule).
+  run_leg ltx_multishot \
+    "$SD6B" -M vid_gen \
+      --diffusion-model "$MODELES/LTX-2.5-Distilled-Q4_K_M.gguf" \
+      --vae "$MODELES/ltx-2.5-video-vae-conv-bf16.safetensors" \
+      --audio-vae "$MODELES/ltx-2.5-audio-vae-bf16.safetensors" \
+      --llm "$MODELES/gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf" \
+      -p "A weathered lighthouse keeper in a navy wool coat stands on a storm-battered stone pier at dusk, waves exploding against the rocks below as he lifts a battered brass lantern. A hard cut transitions to a close-up of the lantern: the flame trembles in the wind, sea spray drifting past his grey beard as he stares out at the dark water. The storm ambience continues across the cut, with crashing waves, distant thunder and a low mournful cello." \
+      -W 832 -H 480 --video-frames 65 --fps 24 \
+      --steps 8 --sigmas "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0" \
+      --sampling-method euler_a --cfg-scale 1.0 \
+      --diffusion-fa --max-vram 10 --seed 42 \
+      --backend "diffusion=vulkan0,te=cpu,vae=cpu" -v \
+      -o "$OUT/ltx_multishot/multishot_65f.webm"
+  if [ -f "$OUT/ltx_multishot/DONE" ]; then
+    planche "$OUT/ltx_multishot/multishot_65f.webm" "$OUT/ltx_multishot/planche.png" 7 || true
+  fi
+}
+
+leg_ltx_upscale_base() {
+  # 33 f baseline (identical prompt/seed to both upscaler probes) for the detail A/B.
+  run_leg ltx_upscale_base \
+    "$SD6B" -M vid_gen \
+      --diffusion-model "$MODELES/LTX-2.5-Distilled-Q4_K_M.gguf" \
+      --vae "$MODELES/ltx-2.5-video-vae-conv-bf16.safetensors" \
+      --llm "$MODELES/gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf" \
+      -p "A colossal golden dragon with shimmering scales soaring through sunset clouds, volumetric rays, cinematic wide shot, high quality" \
+      -W 832 -H 480 --video-frames 33 --fps 24 \
+      --steps 8 --sigmas "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0" \
+      --sampling-method euler_a --cfg-scale 1.0 \
+      --diffusion-fa --max-vram 10 --seed 42 \
+      --backend "diffusion=vulkan0,te=cpu,vae=cpu" -v \
+      -o "$OUT/ltx_upscale_base/base_33f.webm"
+}
+
+leg_ltx_upscale_spatial() {
+  # Official two-stage stage 2 = refine at 2x via the LATENT SPATIAL upscaler (docs.ltx.io).
+  # Probe: does sd-cli vid_gen wire --hires-upscaler (model-backed) into a second LTX pass?
+  # Outcome unknown — this leg settles it. File gate-protected on Lightricks/LTX-2.5 (401 with
+  # our token): the download fails cleanly until the gate is accepted once on the model page
+  # (or an ungated mirror appears) → FAIL marker + message.
+  local up="$MODELES/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
+  if [ ! -f "$up" ]; then
+    log "[ltx_upscale_spatial] downloading the latent spatial upscaler (HF gate: Lightricks/LTX-2.5)…"
+    mkdir -p "$OUT/ltx_upscale_spatial"
+    curl -sL --fail -C - \
+      -H "Authorization: Bearer $(cat "$HOME/.cache/huggingface/token" 2>/dev/null)" \
+      "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors" \
+      -o "$up" || {
+        log "[ltx_upscale_spatial] download 401/failed — accept the HF gate once on the model page, then delete the FAIL marker"
+        touch "$OUT/ltx_upscale_spatial/FAIL"
+        return 0
+      }
+  fi
+  run_leg ltx_upscale_spatial \
+    "$SD6B" -M vid_gen \
+      --diffusion-model "$MODELES/LTX-2.5-Distilled-Q4_K_M.gguf" \
+      --vae "$MODELES/ltx-2.5-video-vae-conv-bf16.safetensors" \
+      --llm "$MODELES/gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf" \
+      -p "A colossal golden dragon with shimmering scales soaring through sunset clouds, volumetric rays, cinematic wide shot, high quality" \
+      -W 832 -H 480 --video-frames 33 --fps 24 \
+      --steps 8 --sigmas "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0" \
+      --sampling-method euler_a --cfg-scale 1.0 \
+      --hires-upscaler "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0" \
+      --hires-upscalers-dir "$MODELES" \
+      --diffusion-fa --max-vram 10 --seed 42 \
+      --backend "diffusion=vulkan0,te=cpu,vae=cpu" -v \
+      -o "$OUT/ltx_upscale_spatial/spatial_33f.webm"
+}
+
+leg_ltx_upscale_temporal() {
+  # Latent TEMPORAL upscaler ×2 (2x frames in latent space → smoother slow-mo than minterpolate).
+  # Same probe wiring as the spatial leg. File already downloaded (ungated mirror sbalani/…,
+  # 261,944,000 B verified).
+  run_leg ltx_upscale_temporal \
+    "$SD6B" -M vid_gen \
+      --diffusion-model "$MODELES/LTX-2.5-Distilled-Q4_K_M.gguf" \
+      --vae "$MODELES/ltx-2.5-video-vae-conv-bf16.safetensors" \
+      --llm "$MODELES/gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf" \
+      -p "A colossal golden dragon with shimmering scales soaring through sunset clouds, volumetric rays, cinematic wide shot, high quality" \
+      -W 832 -H 480 --video-frames 33 --fps 24 \
+      --steps 8 --sigmas "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0" \
+      --sampling-method euler_a --cfg-scale 1.0 \
+      --hires-upscaler "ltx-2.5-latent-temporal-upscaler-x2-bf16-1.0" \
+      --hires-upscalers-dir "$MODELES" \
+      --diffusion-fa --max-vram 10 --seed 42 \
+      --backend "diffusion=vulkan0,te=cpu,vae=cpu" -v \
+      -o "$OUT/ltx_upscale_temporal/temporal_33f.webm"
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -260,6 +361,10 @@ rapport() {
       [ "$id" = "acestep90_12s" ]    && [ -f "$OUT/acestep90_12s/smoke90_12s.wav" ] && ev="smoke90_12s.wav + RTF in run.log (ref range 3.25-3.85)"
       [ "$id" = "sam_vulkan_retest" ] && [ -f "$OUT/sam_vulkan_retest/target.wav" ] && ev="target.wav + residual.wav — SAM works on VULKAN"
       [ "$id" = "sam_cpu_929" ]      && [ -f "$OUT/sam_cpu_929/target.wav" ] && ev="target.wav + residual.wav + RTF in run.log (ref 2.9)"
+      [ "$id" = "ltx_multishot" ]        && [ -f "$OUT/ltx_multishot/multishot_65f.webm" ] && ev="planche.png + webm — cut visible? audio continuous?"
+      [ "$id" = "ltx_upscale_base" ]     && [ -f "$OUT/ltx_upscale_base/base_33f.webm" ] && ev="base_33f.webm (A/B reference for the 2 upscaler probes)"
+      [ "$id" = "ltx_upscale_spatial" ]  && [ -f "$OUT/ltx_upscale_spatial/spatial_33f.webm" ] && ev="spatial_33f.webm — vs base (2x latent detail?)"
+      [ "$id" = "ltx_upscale_temporal" ] && [ -f "$OUT/ltx_upscale_temporal/temporal_33f.webm" ] && ev="temporal_33f.webm — vs base (frame doubling?)"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -287,6 +392,10 @@ while read -r id; do
     acestep90_12s)      leg_acestep90_12s ;;
     sam_vulkan_retest)  leg_sam_vulkan_retest ;;
     sam_cpu_929)        leg_sam_cpu_929 ;;
+    ltx_multishot)        leg_ltx_multishot ;;
+    ltx_upscale_base)     leg_ltx_upscale_base ;;
+    ltx_upscale_spatial)  leg_ltx_upscale_spatial ;;
+    ltx_upscale_temporal) leg_ltx_upscale_temporal ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then

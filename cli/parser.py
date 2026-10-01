@@ -137,7 +137,7 @@ def construire_parseur() -> argparse.ArgumentParser:
     groupe_wf.add_argument("--factor", type=float, default=None, help="Upscaling factor for upscale or interpolation (e.g. 2.0, 4.0; default: workflow-specific — 2.0, or 4.0 when AI upscale is active for generate).")
     groupe_wf.add_argument("--mode", choices=["prop", "plate"], default="prop", help="asset_blendkit: prop = Godot .glb + Workbench preview | plate = Cycles/EEVEE scenery render for the chain (default: prop).")
     groupe_wf.add_argument("--columns", type=int, default=4, help="Number of columns for the sprite sheet.")
-    groupe_wf.add_argument("--frames", type=int, default=None, help="Number of animation frames (video, vfx_flipbook, rife_interp, anim_loop, h3_ref2va; default: workflow-specific — e.g. 33 for video, 22 for h3_ref2va, 16 for anim_loop).")
+    groupe_wf.add_argument("--frames", type=int, default=None, help="Number of animation frames (video, vfx_flipbook, rife_interp, anim_loop, h3_ref2va; default: workflow-specific — e.g. 33 for video, 22 for h3_ref2va, 16 for anim_loop). LTX-2.5 rule: frame count must be 1 + a multiple of 8 (docs.ltx.io).")
     groupe_wf.add_argument("--emotions", default="neutral,happy,angry,sad,hurt", help="Comma-separated list of emotions for rpg_portrait and tts_dialogue.")
     groupe_wf.add_argument("--fps", type=float, default=None, help="FPS rate for anim_loop (workflow default: 12.0) and video (workflow default: 24).")
     groupe_wf.add_argument("--samples", type=int, default=48, help="Number of Cycles render samples for Blender (default: 48).")

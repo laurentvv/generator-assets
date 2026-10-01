@@ -55,7 +55,7 @@ class MonoplanIaWorkflow(BaseWorkflow):
     # as-is, unchanged CLI surface).
     PARAMETRES = [
         dict(flags=("--monoplan-frames",), type=int, default=65,
-             help="monoplan_ia: frames of the single LTX-2.5 generation (default: 65 = stable GPU ceiling, max ~81 beyond that device lost — MEMORY_BANK §1.17)."),
+             help="monoplan_ia: frames of the single LTX-2.5 generation (default: 65 = stable GPU ceiling, max ~81 beyond that device lost — MEMORY_BANK §1.17). Official LTX-2.5 rule: frame count must be 1 + a multiple of 8 (docs.ltx.io) — 65 = 1+64."),
         dict(flags=("--monoplan-duration",), type=float, default=10.0,
              help="monoplan_ia: target duration of the shot in seconds via motion-compensated slow-down (default: 10.0)."),
         dict(flags=("--zoom-debut",), type=float, default=1.10,
