@@ -339,6 +339,25 @@ leg_ltx33_929_paramsdisk() {
       -o "$OUT/ltx33_929_paramsdisk/ltx33_paramsdisk.webm"
 }
 
+leg_heartmula_gothic() {
+  # STANDING INSTRUCTION 2026-09-07 UNBLOCKED (10-02): HeartMuLa-oss-3B was rejected 09/28
+  # (torch-only path) with the note "if a GGUF/engine path appears, the gothic test triggers".
+  # audio.cpp v0.9.0 ships a native `heartmula` family + audio-cpp GGUF; q8_0 (7.13 GiB)
+  # downloaded to C:\Modeles_LLM\HeartMuLa-GGUF\. Recipe = the standing gothic rock test
+  # (30 s, 83 BPM, C# minor, seed 42) — lyrics rebuilt (the 09/28 txt files did not survive
+  # the scratch cleanup); tags follow the audio.cpp free-form comma format.
+  run_leg heartmula_gothic \
+    C:/audio-cpp/audiocpp_cli.exe --task gen --family heartmula \
+      --model "$MODELES/HeartMuLa-GGUF/heartmula-q8_0.gguf" \
+      --backend vulkan \
+      --text "gothic rock song, dark and haunting, heavy reverb" \
+      --lyrics "[verse] Cold winds arise where light has died, an heir awakes in silent tide [chorus] Rise, heir of the void, the night is thine, the empty crown will be thy sign" \
+      --request-option "tags=gothic rock, 83 bpm, c sharp minor, distorted guitars, dark atmosphere" \
+      --duration-seconds 30 \
+      --seed 42 \
+      --out "$OUT/heartmula_gothic/heartmula_gothic_30s.wav"
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -368,6 +387,7 @@ rapport() {
       [ "$id" = "ltx_upscale_base" ]     && [ -f "$OUT/ltx_upscale_base/base_33f.webm" ] && ev="base_33f.webm (A/B reference for the 2 upscaler probes)"
       [ "$id" = "ltx_upscale_spatial" ]  && [ -f "$OUT/ltx_upscale_spatial/spatial_33f.webm" ] && ev="spatial_33f.webm — vs base (2x latent detail?)"
       [ "$id" = "ltx33_929_paramsdisk" ] && [ -f "$OUT/ltx33_929_paramsdisk/ltx33_paramsdisk.webm" ] && ev="ltx33_paramsdisk.webm — LTX fit on 929 with --params-backend disk (#1976)"
+      [ "$id" = "heartmula_gothic" ]     && [ -f "$OUT/heartmula_gothic/heartmula_gothic_30s.wav" ] && ev="heartmula_gothic_30s.wav — USER LISTENING VERDICT (standing gothic recipe)"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -399,6 +419,7 @@ while read -r id; do
     ltx_upscale_base)     leg_ltx_upscale_base ;;
     ltx_upscale_spatial)  leg_ltx_upscale_spatial ;;
     ltx33_929_paramsdisk) leg_ltx33_929_paramsdisk ;;
+    heartmula_gothic)     leg_heartmula_gothic ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
