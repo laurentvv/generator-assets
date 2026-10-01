@@ -128,9 +128,13 @@ leg_ltx33_929() {
 leg_h3_turbo_929() {
   # H3 turbo on the 929 production binary — #1976 datapoint refresh (expected broken:
   # 54 segments). Factory full path (§6 rule). ~38 min.
+  # 10-01 fix: the leg launched WITHOUT -p (workflow requirement: sequel description
+  # with <Video 1>) — 1 s FAIL, no datapoint. Prompt = the validated P1 recipe
+  # (output/test_p1_final/h3_run.log, Sep 25) WITHOUT the manual LoRA tag (--turbo appends it).
   run_leg h3_turbo_929 \
     uv run python main.py -w h3_ref2va \
       -i output/test_p1_final/h3_source_avec_audio.mp4 \
+      -p "the camera continues its slow push-in on the helmet, dust motes drifting, <Video 1>" \
       --turbo
 }
 
