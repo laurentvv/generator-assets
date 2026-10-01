@@ -103,6 +103,18 @@ DEFAULT_H3_REF2VA_TURBO_LORA = os.getenv(
     "H3_REF2VA_TURBO_LORA", "minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16"
 )
 
+# Wan 2.1 VACE (control-video guidance: pose/depth/skeleton frames lock the motion).
+# VALIDATED 2026-10-01 by the user ("très bien") on the distilled LightX2V route:
+# 8 steps, 4x faster than the plain 14B VACE Q3_K_S 20-step recipe (REJECTED "nul").
+# Recipe: MEMORY_BANK §1.28 — I2V + --control-video, offload + vae-on-cpu mandatory (16 GB).
+DEFAULT_VACE_MODEL = os.getenv(
+    "VACE_MODEL_PATH",
+    os.path.join(DEFAULT_MODEL_DIR, "Wan2.1_14B_LightX2V_StepCfgDistill_VACE-Q3_K_S.gguf"),
+)
+DEFAULT_VACE_T5XXL = os.getenv(
+    "VACE_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q4_K_M.gguf")
+)  # VACE validated recipe uses the Q4_K_M umt5 (the plain-Wan default is Q8_0)
+
 # Music models (MiniMax-Music3 GGUF via audio.cpp + Music Flamingo via llama.cpp)
 DEFAULT_MUSIC3_DIR = os.getenv("MUSIC3_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "MiniMax-Music3-GGUF"))
 DEFAULT_MUSIC3_LM = os.getenv("MUSIC3_LM_PATH", os.path.join(DEFAULT_MUSIC3_DIR, "language_model_q4_0.gguf"))
