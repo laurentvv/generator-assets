@@ -1,6 +1,13 @@
 {
   "version": 1,
   "skills": {
+    "docs-fishing": {
+      "source": "(authored)",
+      "ref": "2026-10-02",
+      "files": {
+        "SKILL.md": "0509cb91550025ff59d36efdf500fe8d3bac90f6a74a583e029f947e089e7c0c"
+      }
+    },
     "using-superpowers": {
       "source": "obra/superpowers",
       "ref": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",

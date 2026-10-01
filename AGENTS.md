@@ -3,7 +3,7 @@
 > Instructions for any AI coding agent working in this repository.
 > Structure: **common block** (delimited, resyncable) + **project-specific section** (free).
 
-<!-- BEGIN:agents-common v2.1 — block shared across repositories (agents-kit). Do not edit by hand: resync with scripts/sync_agents.py -->
+<!-- BEGIN:agents-common v2.2 — block shared across repositories (agents-kit). Do not edit by hand: resync with scripts/sync_agents.py -->
 <!-- The script only replaces what lies between the BEGIN/END markers; all repository-specific content is preserved -->
 
 > **Priority on conflict**: explicit user instruction > this repo's §7 > this common block. The §5 prohibitions are lifted only on a formal explicit request. This block is overwritten on every sync: add nothing here (lessons → §7, see §6).
@@ -76,6 +76,7 @@ Never rely on the context window alone: it degrades, gets compressed, gets erase
 
 ## §6 Truth & validation
 
+- **Read the upstream docs BEFORE acting** — before testing, debugging, upgrading or adopting any engine, model or third-party tool, fetch its official documentation into a scratch area and read the relevant pages: the upstream repo's `docs/` (many engines document one page per model/feature that the root README omits), model/dataset cards, `/llms.txt` endpoints (append `.md` to page URLs where supported). Never rely on memorized flags or assumed capabilities: wrong wirings, "not implemented" limits and hidden features (extra routes, options, quant formats) are routinely found there. Pin the doc version/commit at fetch time and cite it in the test verdict or decision.
 - "Verified" = **actually executed** (exit 0) or **visually inspected** (screenshot/render looked at) — never inferred from code, intentions or logs.
 - Every factual claim (number, color, presence of an asset) is backed by a measurement or a screenshot kept as evidence.
 - After a fix: re-validate through the **real full path**, not through a harness that bypasses it.
