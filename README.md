@@ -1224,7 +1224,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 | LTX-2.5 Distilled Master Render (Native Audio) | Wan 2.2 MoE I2V Animation (Nexus Scene) | CAS 0.75 Sharpness Comparison |
 | :---: | :---: | :---: |
 | <img src="docs/exemples/videos/video_ltx25_dragon_audio.gif" width="230" /> | <img src="docs/exemples/videos/video_wan22_i2v_scene01_1080p.gif" width="230" /> | <img src="docs/exemples/videos/video_ltx25_comparatif_cas.png" width="230" /> |
-| *8 steps, 15B DiT + stereo audio* | *Dual-DiT MoE, fluid micro-dynamics* | *AMF hardware CAS filter, Lanczos* |
+| *8 steps, 22B DiT + stereo audio* | *Dual-DiT MoE, fluid micro-dynamics* | *AMF hardware CAS filter, Lanczos* |
 
 * **Example**:
   ```bash
@@ -1241,7 +1241,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 
   | Model & Role | Required Files (`C:\Modeles_LLM`) | Size | Automated Download Command |
   | :--- | :--- | :--- | :--- |
-  | **LTX-2.5 Distilled** 👑<br>*(15B Audio + Video)* | `LTX-2.5-Distilled-Q4_K_M.gguf`<br>`gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf`<br>`ltx-2.5-video-vae-conv-bf16.safetensors`<br>`ltx-2.5-audio-vae-bf16.safetensors` | ~25.7 GB | `python scripts/download_ltx25.py`<br>`python scripts/download_gemma4_gguf.py`<br>`python scripts/download_ltx25_vaes.py` |
+  | **LTX-2.5 Distilled** 👑<br>*(22B Audio + Video)* | `LTX-2.5-Distilled-Q4_K_M.gguf`<br>`gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf`<br>`ltx-2.5-video-vae-conv-bf16.safetensors`<br>`ltx-2.5-audio-vae-bf16.safetensors` | ~25.7 GB | `python scripts/download_ltx25.py`<br>`python scripts/download_gemma4_gguf.py`<br>`python scripts/download_ltx25_vaes.py` |
   | **Wan 2.1 14B & 1.3B**<br>*(3D Geometry & Isometry)* | `wan2.1-t2v-14b-Q4_K_M.gguf`<br>`umt5-xxl-encoder-Q4_K_M.gguf`<br>`wan_2.1_vae.safetensors` | ~13.8 GB | `.\scripts\download_video_models.ps1 -Model 14b` |
   | **Wan 2.2 MoE (T2V)**<br>*(Absolute Photorealism Dual-DiT)* | `Wan2.2-T2V-A14B-LowNoise-Q4_K_M.gguf`<br>`Wan2.2-T2V-A14B-HighNoise-Q4_K_M.gguf`<br>`umt5-xxl-encoder-Q4_K_M.gguf` | ~23.1 GB | `python scripts/download_wan22_official.py` |
   | **Wan 2.2 MoE (I2V)** 👑<br>*(Image-to-Video Animation)* | `Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf`<br>`Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf`<br>`clip_vision_h.safetensors` | ~19.3 GB | `python scripts/download_wan22_i2v_models.py` |
@@ -1367,7 +1367,7 @@ uv run python main.py -w monoplan_ia --monoplan-source output/hero_brut.webm --m
 
   | SOTA Model | Architecture & Size | Optimal Steps | DiT Speed | Stereo Audio | Dragon Visual Quality | Conformant 4K / 1080p Master |
   | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-  | **LTX-2.5 Distilled** 👑 | Spatio-Temporal DiT (15B) + Gemma 4 12B | **8 steps** (distilled) | ⚡ **9.98s / step** (3.8 min total) | 🔊 **YES (AAC 48 kHz)** | 🟢 Perfect heroic 3D (gold scales, horns, wings) | `01_ltx25_dragon_4k_ultrasharp.mp4` |
+  | **LTX-2.5 Distilled** 👑 | Spatio-Temporal DiT (22B) + Gemma 4 12B | **8 steps** (distilled) | ⚡ **9.98s / step** (3.8 min total) | 🔊 **YES (AAC 48 kHz)** | 🟢 Perfect heroic 3D (gold scales, horns, wings) | `01_ltx25_dragon_4k_ultrasharp.mp4` |
   | **Wan 2.1 14B** | Monolithic DiT (14B) + UMT5-XXL | **8-10 steps** (CFG 6.0) | 🐢 **312s / step** (~6 min total) | ❌ (silent) | 🟢 Ultra-precise isometric geometry, 3D structure | `02_wan21_14steps_dragon_1080p.mp4` |
   | **Wan 2.2 MoE** | Dual-DiT MoE (2x 14B = 28B) + UMT5-XXL | **8 MoE steps** (4 High + 4 Low) | ⏳ **~350s / step** (~11 min total) | ❌ (silent) | 👑 **Absolute photoreal sharpness** (micro-details, gaze) | `wan22_moe_dragon_4k_ultrasharp.mp4` |
   | **MiniMax-H3** | FL2VA DiT (15B) + Qwen3-VL 32B | **12 steps** (CFG 1.0) | 🚀 **16.96s / step** (6.6 min total) | 🔊 **YES (AAC 32 kHz)** | 🟢 Titanic wyvern (flaming crest, massive wings) | `04_minimax_h3_20steps_dragon_1080p.mp4` |
@@ -2001,9 +2001,9 @@ Each generation produces:
 
 For uncompromising cinematic visual quality, the suite integrates the SOTA flagship models and a hardware-accelerated video rendering pipeline:
 
-#### 👑 5.1. LTX-2.5 Distilled (15B Audio + Video SOTA Validated)
+#### 👑 5.1. LTX-2.5 Distilled (22B Audio + Video SOTA Validated)
 * **Hybrid Vulkan / CPU Architecture (`diffusion=vulkan0,te=cpu,vae=cpu`)** :
-  * **DiT Diffusion (15B)**: 14.05 GB VRAM on the AMD Radeon RX 6950 XT (100% stable).
+  * **DiT Diffusion (22B)**: 14.05 GB VRAM on the AMD Radeon RX 6950 XT (100% stable).
   * **Gemma 4 Text Encoder (12B)**: runs in CPU RAM via AVX2 instructions (Q5_K_M precision).
   * **Stereo Audio VAE**: simultaneous decoding of the native 48 kHz PCM stereo soundtrack.
 * **Record Performance** :

@@ -5,7 +5,8 @@
 
 ## 📌 1. Architecture Decisions Validated in Production
 
-### 👑 1.1. SOTA Video Model Number 1: **LTX-2.5 Distilled (15B Audio + Video)**
+### 👑 1.1. SOTA Video Model Number 1: **LTX-2.5 Distilled (22B Audio + Video)**
+* **Parameter count corrected 2026-10-01**: official weights = `ltx-2.5-22b-distilled-transformer-bf16.safetensors` (docs.ltx.io / HF `Lightricks/LTX-2.5`); our 14.05 GiB Q4_K_M matches ~22B at ~4.85 bpw (a 15B would be ~9 GB) — the earlier "15B" label was wrong.
 * **User Validation**: *"it is better than the previous model!!"*
 * **Components Validated in `C:\Modeles_LLM\`**:
   1. `LTX-2.5-Distilled-Q4_K_M.gguf` (15.08 GB) — Diffusion DiT
@@ -37,7 +38,7 @@
 ---
 
 ### ⚙️ 1.3. Empirical Validation of the 4 SOTA Models (Grand Overnight Render)
-* **LTX-2.5 Distilled (15B Audio + Video)**:
+* **LTX-2.5 Distilled (22B Audio + Video)**:
   * 8 steps in 7.30 min (DiT sampling ~10 s/step). Native synchronized stereo 48 kHz audio.
   * Heroic 3D modeling with perfect sharpness (scales, fangs, tongue, horns, translucent wings).
 * **Wan 2.1 (14B Flagship T2V)**:
@@ -506,3 +507,11 @@
 * **T2I smoke (1024², 20 steps, seed 42, knight prompt)**: ✅ works — **15.7 s/it on RDNA2** (transformer 314 s / 20 steps, text encoder 2.0 s, VAE decoder 2.5 s; total 7.7 min + ~2.5 min cold mmap model load). Image quality good (BF16 sharpness, coherent armor). Benchmark coherence: their table = 4.17 s/it (ncnn) vs 5.31 (sd-cli Vulkan) on **RX9060XT RDNA3 with matrix cores** — our RDNA2 has none, hence ~3.8× slower; **the ncnn-vs-sd-cli +27% ratio is untested here** (would need the same model on both).
 * **Edit mode (1 reference, the differentiator)**: ⚠️ **instruction NOT followed twice** — "add a flowing deep red cape, keep the same armor" produced NO cape at `-w 1.0` (default) AND `-w 4` (CFG), seed 42, 20 steps; identity was preserved (same armor/pose/face) but the background/style drifted (regeneration, grungier). Edit run ~15 min. 2 samples = consistent negative on this build; maybe better with stronger edits/refs/Fun-LoRA — untested.
 * **Positioning**: our image path stays sd-cli (novel2video's Edit-2511 Q3_K_M + Lightning 4-step is a different model generation). Hooks if ever adopted: RGBA sprites for Godot, 10-ref identity sheets, ControlNet, batch, tiny VRAM. Open levers: Fun-Acc 4-step LoRA (speed ×5 claim), RGBA test, sd-cli A/B on the same 2.1 model. **Status: tested, not validated** (rule: no workflow) — files: `output/test_qwenimage_ncnn/` (3 PNG: t2i + 2 edits).
+
+### 📚 1.33. LTX-2.5 official docs comparison (docs.ltx.io crawl 2026-10-01) — rules adopted + GPU test queue behind explicit user "go" — ZERO GPU time spent
+
+* **Source**: full site crawl — 68 pages markdown kept in `scratch/ltx_docs/` (via the site's `/llms.txt` index + `.md` suffix per page; pitfall: the server sends CRLF, `curl` rejects them inside a loop → `tr -d '\r'`). Official requirements: NVIDIA 32 GB+/CUDA 12.7 — our Q4_K_M (14.05 GB GPU) + Gemma/VAE on CPU is lighter than their official INT8 ConvRot "lower-VRAM" config (~22 GB, ComfyUI-only files).
+* **Corrections applied**: the model is **22B, not 15B** (official `ltx-2.5-22b-distilled-transformer-bf16.safetensors`; our 14.05 GiB Q4_K_M ≈ 22B @ ~4.85 bpw, a 15B would be ~9 GB) — README §5.1/models tables + this file §1.1/§1.3 relabeled. **Frame count = 1 + a multiple of 8** (official two-stage rule; our 65/33 already comply) documented in `monoplan_ia` help, `cli/parser.py --frames`, SKILL.md.
+* **Prompting rules adopted** (docs.ltx.io Prompting Guide): 4-8 flowing sentences, present-tense action verbs, one coherent light logic; **always describe the audio** (ambience/music; dialogue in quotation marks + language) — the model generates the soundtrack FROM the prompt (our prompts historically silent on sound); multi-shot = name the cut in prose ("A hard cut transitions to…"), re-identify subjects, state audio continuity (targets the §1.17 chained-shot sound seams). CFG 1.0-1.5 max confirmed on the distilled (our 1.0 optimal; negative prompt inert at 1.0).
+* **Feasibility map (doc capability → our factory)**: Union Control (depth/canny/pose) → **already covered** by Wan VACE (`video_vace`); Foley V2A / T2A → audio.cpp SA3 (`sfx`) + H3 Ref2VA; FLF2V → H3 FL2VA; Dub-It → TTS + H3 S2V (awaits a fixed sd-cli build); LTX IC-LoRA suite (in/outpaint, relight, motion/union) → **NOT portable** (vid_gen has no LTX control-input path, unlike `--control-video` for Wan VACE); auto-duration head, Gemma4-E2B prompt enhancer, native EXR/HDR → ComfyUI/CUDA-only, not portable. A 22b-dev (non-distilled) checkpoint exists — rejected for us (CFG > 1 = 2 passes/step ≈ 8× slower).
+* **GPU test queue — implemented in `scripts/tests_nuit.sh`, NOT queued, NOT run** (the 02:30 automation was REMOVED 2026-10-01 on user request; launch = explicit user "go GPU" → append the ids to `output/tests_nuit/queue.txt` + `bash scripts/tests_nuit.sh`): `ltx_multishot` (65 f T2V validated recipe + `--audio-vae`, official multishot prompt — does the named cut appear, is the soundtrack continuous?) · `ltx_upscale_base` (33 f 8-step A/B reference) · `ltx_upscale_spatial` (probe: `--hires-upscaler` model-backed with the official latent spatial upscaler ×2 — file NOT downloaded, HF gate 401 even with the local token: the leg attempts it at runtime and FAILs cleanly until the gate is accepted once on the model page or a mirror appears) · `ltx_upscale_temporal` (same probe, latent temporal upscaler ×2 — downloaded from the ungated mirror `sbalani/…`, 261,944,000 B verified). Total ≈ 12 min on `C:\SD-6b3edaa`. D: (external drive) available for backups/space per user.

@@ -183,6 +183,13 @@ For `h3_ref2va`, production also goes through the 6b3edaa build (the workflow ma
 workflow, validated 23-24/09). Rule: **any sd-cli matrix/validation runs on a freshly rebooted
 machine** (an LTX/H3 verdict can depend on the VRAM held by the desktop).
 
+**LTX-2.5 prompting (official docs.ltx.io rules, 2026-10-01)**: single flowing paragraph,
+present-tense action verbs, 4-8 sentences; ALWAYS add an audio sentence (ambience / music /
+speech — dialogue in quotation marks with the language) since the model generates the soundtrack
+from it. Frame count = 1 + a multiple of 8. CFG stays 1.0-1.5 max (distilled; negative prompt
+inert at 1.0). Multi-shot prompts: name the cut in prose ("A hard cut transitions to..."),
+re-identify recurring subjects, and state audio continuity across the cut.
+
 ## 4. Durations and expectations (RX 6950 XT, order of magnitude)
 
 | Generation | Typical duration |
