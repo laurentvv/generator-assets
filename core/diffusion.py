@@ -236,7 +236,7 @@ def generer_video_vulkan(
     height: int = 480,
     steps: int = 20,
     cfg_scale: float = 6.0,
-    flow_shift: float = 3.0,
+    flow_shift: Optional[float] = 3.0,
     sampling_method: str = "euler",
     seed: int = -1,
     negative_prompt: Optional[str] = None,
@@ -246,6 +246,7 @@ def generer_video_vulkan(
     offload_to_cpu: bool = True,
     diffusion_fa: bool = True,
     temporal_tiling: bool = True,
+    vae_on_cpu: bool = False,
     backend: str = DEFAULT_BACKEND,
     threads: int = DEFAULT_THREADS,
     output_path: str = "godot_assets/output_video.webm"
@@ -282,7 +283,6 @@ def generer_video_vulkan(
         "--fps", str(fps),
         "--steps", str(steps),
         "--cfg-scale", str(cfg_scale),
-        "--flow-shift", str(flow_shift),
         "--sampling-method", sampling_method,
         "-o", output_path,
         "-t", str(threads),
@@ -296,6 +296,8 @@ def generer_video_vulkan(
         commande.extend(["--t5xxl", t5xxl_effectif])
     if high_noise_model_path and os.path.exists(high_noise_model_path):
         commande.extend(["--high-noise-diffusion-model", high_noise_model_path])
+    if flow_shift is not None:
+        commande.extend(["--flow-shift", str(flow_shift)])
 
     if negative_prompt:
         commande.extend(["-n", negative_prompt])
@@ -316,6 +318,10 @@ def generer_video_vulkan(
         commande.append("--diffusion-fa")
     if temporal_tiling:
         commande.append("--temporal-tiling")
+    if vae_on_cpu:
+        # Mandatory for the 14B video models on 16 GB: the GPU VAE decode alone
+        # requests ~19.4 GB (MEMORY_BANK §1.16) — the decode runs on CPU instead.
+        commande.append("--vae-on-cpu")
 
     if seed >= 0:
         commande.extend(["-s", str(seed)])

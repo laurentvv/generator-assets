@@ -1254,6 +1254,14 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   > python scripts/download_all_sota_models.py
   > ```
 
+#### 4.9b. `video_vace` — Motion-Locked Video: reference image + control frames (Wan 2.1 VACE LightX2V distilled)
+
+> 🏆 **Validated 2026-10-01** ("très bien"): the distilled LightX2V route (8 steps) renders a 13-frame 832×480 I2V+VACE clip in **~28 min — 4× faster than the plain 14B VACE 20-step recipe, and better judged** (the 20-step render was rejected "nul" the same day).
+
+* **Principle**: VACE variants of Wan follow control frames (skeletons/pose/depth) while the reference image (`-i`) locks the appearance — motion-locked shots without frame-by-frame flicker (upstream PR #819).
+* **Usage**: `uv run python main.py -w video_vace -i <ref.png> --control-video <frames_dir> -p "<motion description>" [-o <name>]`
+  — defaults = validated recipe (13 frames @ 16 fps, 832×480, 8 steps, cfg 1.0, euler, seed 42); `--frames/--fps/--width/--height/--steps/--cfg-scale/--seed` overridable. Models: `Wan2.1_14B_LightX2V_StepCfgDistill_VACE-Q3_K_S` + umt5 Q4_K_M + wan 2.1 VAE (constants `DEFAULT_VACE_*`, env-overridable). Memory placement on 16 GB is baked in: `--offload-to-cpu --vae-on-cpu` (the GPU VAE decode alone requests ~19.4 GB), no temporal tiling, no flow-shift, plain `vulkan` backend. Control frames: preprocessed PNG folder (see MEMORY_BANK §1.28 for the COCO-skeleton recipe).
+
 #### 4.9. `h3_ref2va` — Video+Audio Continuation via MiniMax-H3 Ref2VA (webm with sound)
 
 > 🏆 **Jackpot speed (validated 2026-09-09)**: the turbo distilled LoRA (`--turbo`) renders a 22-frame chunk in **~38 min instead of ~70 min** (sampling −64 %), with reference continuity and audio quality **≥ the validated baseline** — judged "très bonne qualité, son très bien" by the user. Same seed + same recipe otherwise, so A/B is trivial.
