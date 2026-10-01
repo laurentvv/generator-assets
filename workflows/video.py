@@ -109,7 +109,9 @@ grow_vertical = 2
 autoplay = true
 loop = true
 expand = true
-# Load your WebM / Theora video resource:
+# Godot 4 only plays Ogg Theora (.ogv) — a raw .webm CANNOT be loaded by VideoStreamPlayer.
+# Convert first with the validated chain (scripts/faire_boucle_menu_vent_gris.py::encoder_ogv):
+#   ffmpeg -i clip.webm -an -c:v libtheora -q:v 10 -pix_fmt yuv420p clip.ogv
 # stream = ExtResource("res://assets/{rel_video_name}")
 """
             with open(godot_scene_path, "w", encoding="utf-8") as f:
