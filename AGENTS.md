@@ -98,6 +98,7 @@ Never rely on the context window alone: it degrades, gets compressed, gets erase
 
 - **Ledger not instantiated**: operational memory = `docs/MEMORY_BANK.md` (validated stacks + pitfalls, one section per domain) + `docs/veille_journal.md` — declared deviation.
 - Shell: Git Bash · `uv run python main.py -w <workflow>`.
+- **Git (user rule 2026-10-02, overrides common §4 for docs)**: docs-only changes (no code) commit STRAIGHT on `main` — no branch, no PR. Branch + PR (CI + Kilo review, merge, delete branch) only when code changes.
 
 ### Ecosystem — consumers (implicit contract to preserve)
 
