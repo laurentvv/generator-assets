@@ -17,6 +17,7 @@ import json
 import os
 import re
 import shutil
+import tempfile
 import time
 from math import gcd
 from typing import Callable, Dict, List, Optional, Tuple
@@ -292,6 +293,102 @@ def generer_musique_acestep(
         derniere_erreur = f"code {resultat.returncode} :: {extrait}"
 
     raise RuntimeError(f"ACE-Step 1.5 generation failed. Last error: {derniere_erreur}")
+
+
+def generer_cover_acestep(
+    chemin_source: str,
+    description: str,
+    chemin_sortie: str,
+    graine: int = 42,
+    variante: str = "turbo",
+    backend: str = "cpu",
+    threads: int = 20,
+    log: Callable[[str], None] = print,
+    timeout_s: int = 2400,
+) -> Tuple[str, str]:
+    """
+    ACE-Step 1.5 `cover` route: re-styles an existing track from a text prompt,
+    output duration locked to the source (verified 2026-10-02 on the validated
+    reference llb_xl_adn.mp3 — user verdict "correct", MEMORY_BANK §1.34).
+
+    ⚠️ Audio-conditioned routes load the VAE ENCODER whose single buffer
+    exceeds the AMD Vulkan 4 GiB maxBufferSize on this machine → the CPU
+    backend is the validated path (RTF ~2.6, §1.34); Vulkan is never attempted.
+
+    Pitfalls baked in (2026-10-02 mining campaign):
+    - the CLI refuses non-WAV input ("input is MP3, not WAV") → the source is
+      first converted to a temporary 48 kHz stereo PCM16 WAV via ffmpeg, which
+      also matches the engine's native output layout (poisoning a naive
+      sample-diff otherwise: a 44.1 kHz mono source vs 48 kHz stereo outputs);
+    - `audio_cover_strength` / `repaint_strength` are INERT on turbo 1.5
+      (3-way A/B, same seed: pairwise diffs ≈ seed noise) → no strength knob
+      is exposed here on purpose.
+
+    Returns (wav_path, backend_used) — "cpu" by construction.
+    """
+    if not os.path.exists(chemin_source):
+        raise FileNotFoundError(f"Source track not found: {chemin_source}")
+
+    exe = resoudre_audiocpp()
+    gguf = resoudre_gguf_acestep15(variante)
+    if not os.path.exists(gguf):
+        raise FileNotFoundError(
+            f"ACE-Step 1.5 GGUF ({variante}) not found: {gguf}\n"
+            "→ Run: uv run python scripts/download_acestep15_gguf.py"
+        )
+    os.makedirs(os.path.dirname(os.path.abspath(chemin_sortie)), exist_ok=True)
+
+    # Source → 48 kHz stereo PCM16 WAV (CLI input contract + diff-safe layout).
+    fd, wav_source = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    try:
+        conv = run_engine(
+            [resoudre_ffmpeg(), "-y", "-v", "error", "-i", chemin_source,
+             "-ar", str(SR_CIBLE), "-ac", "2", "-c:a", "pcm_s16le", wav_source],
+            check=True, capture=True, timeout=300, etiquette="ffmpeg cover source",
+        )
+        del conv  # run_engine raises on failure; nothing to inspect on success
+    except Exception:
+        if os.path.exists(wav_source):
+            os.remove(wav_source)
+        raise
+
+    cmd = [
+        exe, "--task", "gen", "--family", "ace_step",
+        "--model", gguf, "--backend", backend,
+        "--task-route", "cover",
+        "--threads", str(int(threads)), "--log", "--metrics",
+        "--audio", wav_source,
+        "--text", description,
+        "--session-option", "ace_step.mem_saver=true",
+        "--out", chemin_sortie,
+    ]
+    if graine >= 0:
+        cmd += ["--seed", str(int(graine))]
+
+    try:
+        resultat = run_engine(
+            cmd, check=False, capture=True, timeout=timeout_s,
+            etiquette="audio.cpp acestep cover",
+        )
+    finally:
+        if os.path.exists(wav_source):
+            os.remove(wav_source)
+
+    erreurs = (resultat.stderr or "") + (resultat.stdout or "")
+    if resultat.returncode != 0 or not os.path.exists(chemin_sortie) or os.path.getsize(chemin_sortie) <= 4096:
+        raise RuntimeError(
+            f"ACE-Step 1.5 cover failed (code {resultat.returncode}): {erreurs.strip()[-600:]}"
+        )
+    audio, _sr = soundfile.read(chemin_sortie, always_2d=True)
+    if float(np.sqrt((audio ** 2).mean())) < SEUIL_SILENCE_RMS:
+        os.remove(chemin_sortie)
+        raise RuntimeError("ACE-Step 1.5 cover produced a near-silent output (model collapse)")
+
+    for ligne in (resultat.stdout or "").splitlines():
+        if "RTF" in ligne or "wall" in ligne.lower():
+            log(f"⏱️  {ligne.strip()}")
+    return chemin_sortie, backend
 
 
 # ==============================================================================

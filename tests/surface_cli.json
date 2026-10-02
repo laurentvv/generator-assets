@@ -100,6 +100,17 @@
  ],
  [
   [
+   "--audio"
+  ],
+  "audio",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--auto-margin"
   ],
   "auto_margin",
@@ -295,6 +306,17 @@
   null,
   null,
   null
+ ],
+ [
+  [
+   "--cover-threads"
+  ],
+  "cover_threads",
+  "_StoreAction",
+  "20",
+  null,
+  null,
+  "int"
  ],
  [
   [
@@ -1765,6 +1787,17 @@
    "portal",
    "slash"
   ],
+  null,
+  null
+ ],
+ [
+  [
+   "--voice-ref"
+  ],
+  "voice_ref",
+  "_StoreAction",
+  "None",
+  null,
   null,
   null
  ],
