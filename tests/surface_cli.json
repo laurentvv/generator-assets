@@ -472,6 +472,17 @@
  ],
  [
   [
+   "--fov"
+  ],
+  "fov",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
    "--fps"
   ],
   "fps",
@@ -852,6 +863,20 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--mesh-moteur"
+  ],
+  "mesh_moteur",
+  "_StoreAction",
+  "'trellis'",
+  [
+   "pixal3d",
+   "trellis"
+  ],
+  null,
+  null
  ],
  [
   [

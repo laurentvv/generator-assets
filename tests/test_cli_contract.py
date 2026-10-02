@@ -333,7 +333,7 @@ def test_famille_video_3d_migree_en_declarations():
     --frames/--fps/--width/--height stay in the flat table (shared with the
     2D / character families). Surface frozen by test_surface_cli_gelee."""
     from workflows import h3_ref2va, mesh_ia, video
-    assert len(mesh_ia.MeshIaWorkflow.PARAMETRES) == 2        # --res --faces-cible
+    assert len(mesh_ia.MeshIaWorkflow.PARAMETRES) == 4        # --res --faces-cible --mesh-moteur --fov
     assert len(video.VideoWorkflow.PARAMETRES) == 3           # --end-img --control-video --flow-shift
     assert len(h3_ref2va.H3Ref2VAWorkflow.PARAMETRES) == 5    # --ref-frames --ref-audio --max-vram --turbo --dry-run
     from workflows import animal_godot

@@ -31,18 +31,33 @@ TRELLIS_GGUF_REQUIS = [
     "dinov3.gguf", "birefnet.gguf",
 ]
 
+# Pixal3D backend (TRELLIS.2 fine-tune, same engine + shared decoders):
+# 5 dedicated GGUFs in the SAME models dir — vegax87/Pixal3D (11.0 GB total).
+PIXAL3D_GGUF_REQUIS = [
+    "pixal3d_ss_flow.gguf", "pixal3d_shape_flow_512.gguf",
+    "pixal3d_shape_flow_1024.gguf", "pixal3d_tex_flow_1024.gguf",
+    "pixal3d_naf.gguf",
+]
+
 # Realistic RX 6950 XT budget (RDNA2, no Vulkan matrix cores) for user help.
 DUREES_ESTIMEES = {512: "~11 min", 1024: "~55 min", 1536: "~2 h (not measured)"}
 
 
-def verifier_trellis() -> Tuple[bool, List[str]]:
-    """Checks trellis-cli.exe and the 10 required GGUFs. Returns (ok, missing)."""
+def verifier_trellis(moteur: str = "trellis") -> Tuple[bool, List[str]]:
+    """Checks trellis-cli.exe and the required GGUFs. Returns (ok, missing).
+
+    `moteur="pixal3d"` additionally requires the 5 Pixal3D flow GGUFs.
+    """
     manquants: List[str] = []
     if not os.path.exists(TRELLIS_CLI):
         manquants.append(f"trellis-cli not found: {TRELLIS_CLI}")
     for f in TRELLIS_GGUF_REQUIS:
         if not os.path.exists(os.path.join(TRELLIS_MODELES_DIR, f)):
             manquants.append(os.path.join(TRELLIS_MODELES_DIR, f))
+    if moteur == "pixal3d":
+        for f in PIXAL3D_GGUF_REQUIS:
+            if not os.path.exists(os.path.join(TRELLIS_MODELES_DIR, f)):
+                manquants.append(os.path.join(TRELLIS_MODELES_DIR, f))
     return (not manquants), manquants
 
 
@@ -54,6 +69,8 @@ def generer_mesh_trellis(
     seed: Optional[int] = None,
     texture: bool = True,
     gpu: int = 0,
+    moteur: str = "trellis",
+    fov: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Runs trellis-cli (Vulkan): image → PBR GLB + .ply + _base.png atlas preview.
@@ -61,8 +78,16 @@ def generer_mesh_trellis(
     `res`: 512 (iteration, ~11 min) or 1024 (master, ~55 min) or 1536 (not measured).
     `seed`: None/-
     → automatic trellis seed. Progress is displayed live (steps 1/6 → 6/7).
+    `moteur`: "trellis" (TRELLIS.2, default) | "pixal3d" — TRELLIS.2 fine-tune
+    with pixel-aligned projection conditioning: flat/saturated colors and crisp
+    lettering in ONE pass (no separate repaint stage). USER VALIDATED 2026-10-02
+    ("super") on the repo helmet, 512 = ~14 min (+32 % vs TRELLIS.2 — the NAF
+    upsampler runs 20 forwards per flow step instead of 12). MEMORY_BANK §1.14.
+    `fov`: horizontal field of view in degrees — Pixal3D only (MoGe-2 camera
+    estimation is not ported; default None → the engine's 49.13° upstream
+    default). A wrong FOV shows as silhouette drift/thickness, not a crash.
     """
-    ok, manquants = verifier_trellis()
+    ok, manquants = verifier_trellis(moteur=moteur)
     if not ok:
         raise EnvironmentError(
             "Missing TRELLIS.2 components: " + " ; ".join(manquants)
@@ -77,6 +102,10 @@ def generer_mesh_trellis(
         "--models", TRELLIS_MODELES_DIR,
         "--res", str(res),
     ]
+    if moteur == "pixal3d":
+        commande += ["--model", "pixal3d"]
+    if fov is not None:
+        commande += ["--fov", str(float(fov))]
     if seed is not None and seed >= 0:
         commande += ["-s", str(seed)]
     if not texture:
