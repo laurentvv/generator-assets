@@ -604,7 +604,7 @@ The engine features **38 modular workflows** organized into 5 functional categor
   3. **Optional game-ready decimation** (`--faces-cible N`, default: off — the full-quality master is kept): headless Blender Decimate (collapse, UV/SHARP-delimited, PBR textures preserved) exports an additional `<nom>_<res>_jeu.glb` at ~N faces for Godot runtime (measured: 144k → 30k faces, 5.3 → 1.5 MB). **How to pick N — it depends on camera distance and instance count, not visual quality** (textures are untouched): `30000` = close-up hero item (held weapon, equipped helmet) • `10000` = standard scene prop seen at 2-10 m • `2000-3000` = repeated clutter (×50 instances) • keep `≥8000` for highly curved silhouettes (horns, drapes). Ballpark: trellis masters (144k-293k faces) are sculpt-level sources; a whole desktop scene budget is ~1-3M triangles, so 5-30k per prop leaves headroom.
   4. Renders **4 orbital studio views** of the deliverable GLB via headless Blender (EEVEE) and assembles a **2×3 control sheet** (source, 4 views, PBR atlas).
   5. Unlike `mesh3d` (parametric extrusions), produces a **true closed volume inferred by AI** — helmets, statues, creatures, complex props — with PBR textures (basecolor/metallic/roughness) ready for Godot 4 `MeshInstance3D`.
-* **Inputs**: `prompt` or `-i, --input`, `--res` (`512` = iteration ~11 min • `1024` = master ~55 min • `1536` = untested, default 512), `--faces-cible` (optional decimation target, e.g. 30000; default 0 = no reduction), `--seed`.
+* **Inputs**: `prompt` or `-i, --input`, `--res` (`512` = iteration ~11 min • `1024` = master ~55 min • `1536` = untested, default 512), `--faces-cible` (optional decimation target, e.g. 30000; default 0 = no reduction), `--mesh-moteur` (`trellis` default | `pixal3d` — TRELLIS.2 fine-tune, pixel-aligned projection: flat colors + crisp lettering in ONE pass, no repaint stage; VALIDATED 2026-10-02 « super » on the helmet; 512 ≈ 14 min = +32 % vs trellis, the NAF-upsampler price; weights `vegax87/Pixal3D`, 5 GGUF 11.0 GB in the same models dir), `--fov` (pixal3d only, degrees — default: engine 49.13°; a wrong FOV shows as silhouette drift/thickness, not a crash), `--seed`.
 * **Engines**: trellis.cpp v0.6.0 (Vulkan) + TRELLIS.2-4B GGUF f16 (10 files, ~16.4 GB, `C:\Modeles_LLM\trellis2-gguf`), Blender 5.x headless (decimation + control renders).
 * **Outputs** (`output/mesh_ia/<nom>/`): `<nom>_<res>.glb` (master, PBR atlas embedded), `<nom>_<res>_jeu.glb` (only with `--faces-cible`), `<nom>_<res>_base.png` (atlas preview), `<nom>_<res>_planche.png` (control sheet), `_vue0-3.png` (orbital renders), `.ply`, `<nom>_<res>_infos.json` (durations, face counts, paths, seed).
 
@@ -633,6 +633,8 @@ The engine features **38 modular workflows** organized into 5 functional categor
   uv run python main.py -w mesh_ia -i godot_assets/corne_guerre.png --res 512
   # From an existing image (fast iteration) :
   uv run python main.py -w mesh_ia -i godot_assets/casque.png --res 512 -o casque
+  # Pixal3D engine — one-pass flat colors (stylised assets, crisp lettering) :
+  uv run python main.py -w mesh_ia -i godot_assets/casque.png --res 512 --mesh-moteur pixal3d -o casque
   ```
 * **Status (2026-09-06)**: ✅ **Validated by user** on the repo's helmet (the README's "impossible via 2.5D extrusion" case study): res 512 = 10 min 44 s (144k faces, atlas 1024²), res 1024 = 55 min 10 s (293k faces, atlas 2048²) on RX 6950 XT. Licence 100 % MIT/Apache. Docs: `C:\trellis\README.md`, MEMORY_BANK §1.14.
 
