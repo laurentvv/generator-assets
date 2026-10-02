@@ -346,6 +346,11 @@ leg_heartmula_gothic() {
   # downloaded to C:\Modeles_LLM\HeartMuLa-GGUF\. Recipe = the standing gothic rock test
   # (30 s, 83 BPM, C# minor, seed 42) — lyrics rebuilt (the 09/28 txt files did not survive
   # the scratch cleanup); tags follow the audio.cpp free-form comma format.
+  # 10-02 retry: first attempt failed at codec graph creation — the decoder graph for the
+  # default 29.76 s chunk wants ONE 5.55 GB Vulkan buffer, above the AMD driver allocation
+  # limit (even a 2.56 GB block refused). Fix (documented, music_generation.md): shrink the
+  # codec detokenization chunk to 8 s (buffer ~1.5 GB, ~4 chunks for 30 s — seams possible,
+  # note in the listening verdict) + mem_saver to drop staged state between AR/codec phases.
   run_leg heartmula_gothic \
     C:/audio-cpp/audiocpp_cli.exe --task gen --family heartmula \
       --model "$MODELES/HeartMuLa-GGUF/heartmula-q8_0.gguf" \
@@ -353,6 +358,8 @@ leg_heartmula_gothic() {
       --text "gothic rock song, dark and haunting, heavy reverb" \
       --lyrics "[verse] Cold winds arise where light has died, an heir awakes in silent tide [chorus] Rise, heir of the void, the night is thine, the empty crown will be thy sign" \
       --request-option "tags=gothic rock, 83 bpm, c sharp minor, distorted guitars, dark atmosphere" \
+      --request-option codec_duration_sec=8 \
+      --session-option heartmula.mem_saver=true \
       --duration-seconds 30 \
       --seed 42 \
       --out "$OUT/heartmula_gothic/heartmula_gothic_30s.wav"
