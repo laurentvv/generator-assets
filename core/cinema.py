@@ -24,12 +24,13 @@ from typing import Callable, Optional, Tuple
 
 from PIL import Image
 
-from core.config import DEFAULT_MODEL_DIR, DEFAULT_SD_CLI, DEFAULT_FFMPEG as FFMPEG_PATH
+from core.config import DEFAULT_MODEL_DIR, DEFAULT_SD_CLI_LTX, DEFAULT_FFMPEG as FFMPEG_PATH
 from core.process import run_engine
 
 # Validated LTX-2.5 Distilled models (§1.1 / §1.17)
 LTX_DIT = os.path.join(DEFAULT_MODEL_DIR, "LTX-2.5-Distilled-Q4_K_M.gguf")
 LTX_VAE = os.path.join(DEFAULT_MODEL_DIR, "ltx-2.5-video-vae-conv-bf16.safetensors")
+LTX_AUDIO_VAE = os.path.join(DEFAULT_MODEL_DIR, "ltx-2.5-audio-vae-bf16.safetensors")
 LTX_LLM = os.path.join(DEFAULT_MODEL_DIR, "gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf")
 
 # Official Lightricks distilled sigmas (8 steps, cfg 1.0 = 1 pass/step)
@@ -82,13 +83,17 @@ def generer_monoplan_ltx(
     max_vram: int = 10,
     log_fn: Callable[[str], None] = print,
 ) -> str:
-    """Single-take LTX-2.5 Distilled I2V shot (recipe §1.17, 8 steps euler_a, cfg 1.0)."""
-    manquants = [p for p in (DEFAULT_SD_CLI, LTX_DIT, LTX_VAE, LTX_LLM) if not os.path.exists(p)]
+    """Single-take LTX-2.5 Distilled I2V shot (recipe §1.17, 8 steps euler_a, cfg 1.0).
+
+    Pinned to the LTX binary (DEFAULT_SD_CLI_LTX): the main build cannot fit LTX
+    on 16 GB (#1976) — before the pin this route silently targeted a binary that
+    could no longer run it."""
+    manquants = [p for p in (DEFAULT_SD_CLI_LTX, LTX_DIT, LTX_VAE, LTX_LLM) if not os.path.exists(p)]
     if manquants:
         raise FileNotFoundError("Missing LTX-2.5 models or sd-cli: " + "; ".join(manquants))
     os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
     commande = [
-        DEFAULT_SD_CLI, "-M", "vid_gen",
+        DEFAULT_SD_CLI_LTX, "-M", "vid_gen",
         "--diffusion-model", LTX_DIT,
         "--vae", LTX_VAE,
         "--llm", LTX_LLM,
@@ -119,6 +124,69 @@ def generer_monoplan_ltx(
             os.rename(candidat, sortie)
     if not os.path.exists(sortie):
         raise RuntimeError(f"Single-take shot not produced: {sortie}")
+    return sortie
+
+
+def generate_ltx_multishot(
+    prompt: str,
+    sortie: str,
+    frames: int = 65,
+    fps: int = 24,
+    seed: int = 42,
+    max_vram: int = 10,
+    log_fn: Callable[[str], None] = print,
+) -> str:
+    """Native LTX-2.5 multishot: several named cuts + a continuous soundtrack in
+    ONE T2V generation (user-VALIDATED 2026-10-02, "super" — MEMORY_BANK §1.34).
+
+    Same distilled constants as the single-take shot (§1.17) plus the audio VAE
+    (the soundtrack is generated from the prompt's audio block) and WITHOUT a
+    negative prompt (the validated leg ran without one). The prompt must describe
+    each shot in order, name the cut explicitly ("A hard cut transitions to…")
+    and include the audio bed (official LTX prompting rules, adopted 2026-10-01).
+    Resolution is NOT exposed: 832×480 is the validated envelope with --max-vram 10.
+    """
+    if frames < 9 or (frames - 1) % 8 != 0 or frames > 81:
+        raise ValueError(
+            f"frames must be 1 + a multiple of 8 (official LTX-2.5 rule), 9..81 "
+            f"(GPU ceiling §1.17) — got {frames}"
+        )
+    manquants = [
+        p for p in (DEFAULT_SD_CLI_LTX, LTX_DIT, LTX_VAE, LTX_AUDIO_VAE, LTX_LLM)
+        if not os.path.exists(p)
+    ]
+    if manquants:
+        raise FileNotFoundError("Missing LTX-2.5 models or sd-cli: " + "; ".join(manquants))
+    os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
+    commande = [
+        DEFAULT_SD_CLI_LTX, "-M", "vid_gen",
+        "--diffusion-model", LTX_DIT,
+        "--vae", LTX_VAE,
+        "--audio-vae", LTX_AUDIO_VAE,
+        "--llm", LTX_LLM,
+        "-p", prompt,
+        "-W", "832", "-H", "480",
+        "--video-frames", str(frames),
+        "--fps", str(fps),
+        "--steps", "8",
+        "--sigmas", SIGMAS_LTX,
+        "--sampling-method", "euler_a",
+        "--cfg-scale", "1.0",
+        "--diffusion-fa",
+        "--max-vram", str(max_vram),
+        "--backend", "diffusion=vulkan0,te=cpu,vae=cpu",
+        "-s", str(seed),
+        "-o", sortie,
+        "-v",
+    ]
+    log_fn("[cinema] LTX-2.5 multishot generation ({} frames @ {} fps, seed {})…".format(frames, fps, seed))
+    run_engine(commande, capture=False, check=True, timeout=7200, etiquette="sd-cli LTX multishot")
+    if not os.path.exists(sortie):
+        candidat = sortie.replace(".webm", "_0.webm")
+        if os.path.exists(candidat):
+            os.rename(candidat, sortie)
+    if not os.path.exists(sortie):
+        raise RuntimeError(f"Multishot video not produced: {sortie}")
     return sortie
 
 

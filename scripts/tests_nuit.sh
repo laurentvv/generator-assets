@@ -351,6 +351,8 @@ leg_heartmula_gothic() {
   # limit (even a 2.56 GB block refused). Fix (documented, music_generation.md): shrink the
   # codec detokenization chunk to 8 s (buffer ~1.5 GB, ~4 chunks for 30 s — seams possible,
   # note in the listening verdict) + mem_saver to drop staged state between AR/codec phases.
+  # 10-02 verdict: REJECTED by the user ("pop moderne donc pas top" — the gothic tags are
+  # not followed); leg DONE, no retry planned (MEMORY_BANK §1.34).
   run_leg heartmula_gothic \
     C:/audio-cpp/audiocpp_cli.exe --task gen --family heartmula \
       --model "$MODELES/HeartMuLa-GGUF/heartmula-q8_0.gguf" \
