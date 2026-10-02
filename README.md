@@ -454,7 +454,7 @@ The engine features **38 modular workflows** organized into 5 functional categor
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -1551,6 +1551,26 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   uv run python main.py -w voix_perso "$LINE" --kokoro-voice am_onyx --pitch-ratio 0.85 --hollow -o void  # The Void
   ```
 * **Status (2026-09-27)**: ✅ **User-validated** end-to-end — 5/5 roles of the novel2video-ai E01 pilot cast by ear in 2 rounds (Alaric `am_onyx`, Elder `am_michael`, Marc VoiceDesign ×0.90, Elian VoiceDesign natural, Void `am_onyx` + hollow). Children voices by instruction work (Marc/Elian); extreme-age adult instructs still lose to Kokoro presets. Batch dialogue rendering (line list + casting file) = future workflow when the pilot script is final.
+
+#### 4.18. `acestep_cover` — Re-Style an Existing Track (ACE-Step 1.5 cover, duration locked)
+* **Process** (validated 2026-10-02, MEMORY_BANK §1.34): runs the ACE-Step `cover` route on any source track (wav/mp3/ogg — auto-converted to the engine's 48 kHz stereo input layout): the model re-renders the whole timeline in the requested style while keeping the source's exact duration (loop-safe). The strength knobs (`audio_cover_strength`/`repaint_strength`) are proven inert on turbo (3-way A/B, same seed) — not exposed. ⚠️ CPU backend by construction (the VAE-encoder single buffer exceeds the AMD Vulkan 4 GiB limit — RTF ~2.6, a 45 s track ≈ 2 min).
+* **Inputs**: `-p` (EN style description, required), `--audio` (source track, required — shared CLI flag with `voix_conversion`), `--seed` (default 42), `--cover-threads` (default 20 = validated recipe), `-o` (output base name, default `<source-stem>_cover`).
+* **Outputs** (`output/music_cover/`): `<name>.wav` (48 kHz stereo, duration = source) + `<name>.mp3` 224k.
+* **Example**:
+  ```bash
+  uv run python main.py -w acestep_cover --audio loop_gothique.wav -p "German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass, chiming chorus guitars, 83 BPM, C# minor" --seed 42
+  ```
+* **Status (2026-10-02)**: ✅ **User-validated** (*« correct »* on 3 covers of the validated gothic reference `llb_xl_adn.mp3`) — first validated ACE-Step edit route (lego/extract rejected, repaint unjudged but same hard-preservation contract re-confirmed: 0.01 %FS outside the window, deterministic).
+
+#### 4.19. `voix_conversion` — Re-Voice a Recording (Chatterbox voice conversion)
+* **Process** (validated 2026-10-02): chatterbox `vc` task (audio.cpp, Vulkan, fast) renders an existing recording (speech/singing) in the voice of a reference sample — prosody and timing preserved. Successor of the rejected VeVo2 singing path for character voices. ⚠️ Output = **24 kHz mono** (dialogue-grade, not musical beds). ⚠️ The Turbo variant is TTS-only — the workflow pins the standard package.
+* **Inputs**: `--audio` (source recording, required — shared CLI flag), `--voice-ref` (clean take of the target voice, required), `-o` (output base name, default `<source-stem>_vc_<ref-stem>`).
+* **Outputs** (`output/voix_conversion/`): `<name>.wav` (24 kHz mono).
+* **Example** (the validated E01 A/B pair):
+  ```bash
+  uv run python main.py -w voix_conversion --audio output/voix_off/ab_e01_l001_qwen_expr/voix_off_brut.wav --voice-ref output/voix_off/ab_e01_l001_voxcpm/ref_E01_L001.wav
+  ```
+* **Status (2026-10-02)**: ✅ **User-validated** (*« voix anglaise bien »*) — Chatterbox q8_0 (1.94 GiB, `C:\Modeles_LLM\Chatterbox-GGUF`).
 
 ---
 

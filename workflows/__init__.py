@@ -22,7 +22,7 @@ _MODULES_ORDONNES = [
     "audio_ambience", "music_bg", "voix_off", "voix_robot", "voix_perso", "chanson", "musique_adn",
     "musique_essence", "retrait_voix", "outfit", "video", "video_vace", "video_multishot", "h3_ref2va", "monoplan_ia",
     "makehuman_clothes", "character_makeup", "asset_blendkit", "audio_upscale",
-    "animal_godot",
+    "animal_godot", "acestep_cover", "voix_conversion",
 ]
 
 _decouverts = sorted(
