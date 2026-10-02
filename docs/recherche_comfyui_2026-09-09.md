@@ -333,3 +333,37 @@ encode check), self-hosted. Vertical format = not our case (YouTube 4K landscape
   ai-doc2video chain (we already have the loudnorm recipes on the C:\ffmpeg side);
 - ② the architecture of « each step produces a reviewable artifact before the next » —
   a pattern our endless proto comes close to, to keep in mind for long chains.
+## 11. 2026-10-02 — The OFFICIAL template gallery as a mining source (`Comfy-Org/workflow_templates`)
+
+User-shared link, triaged as the **canonical upstream feed** the §9 watch was missing: the
+repo hosting every workflow shown in ComfyUI's template picker (1231★, pushed daily,
+1 231 templates + subgraph blueprints + browsable site <https://comfy.org/workflows>).
+
+**Method**: sparse clone (JSONs only) at `C:\IA\workflow_templates` —
+`git clone --depth 1 --filter=blob:none --sparse` + `sparse-checkout set templates`.
+Inventory: 690 workflow JSONs = **390 local** (the minable ones) + 300 `api_*` cloud nodes
+(ByteDance/ElevenLabs/Bria… — out of scope, zero-cloud rule). Categories: image 80+,
+video 130+, utility 48, **audio 40**, 3D 10, llm 4. Templates are ALSO the reference for
+widget values (official-recommended params: e.g. the ACE-Step 1.5 turbo graph ships the
+full `TextEncodeAceStepAudio1.5` payload: tags format, lyrics blocks, BPM, key, guidance
+0.85/0.9, seed policy).
+
+**Map of the families that touch OUR validated engines** (mining priorities):
+
+| Family | Templates | Link to our stack |
+|---|---|---|
+| ACE-Step 1.5 | `audio_ace_step1_5_xl_{base,sft,turbo}`, `checkpoint`, **`split`, `split_4b, split_llm`** (subgraphs), `m2m_editing` (v1) | our `acestep` workflow = text2music only; the rejected edit/extract routes might be revived with the official graphs' exact params |
+| Yue2 | `audio_yue2_text2music`, **`audio_yue2_music_cover`** | Yue2-3B installed; cover route = candidate for style transfer (gothic) |
+| MiniMax-H3 | `h3_t2v` ×2, `h3_i2v` ×2 | our `h3_ref2va`/monoplan engine — compare conditioning params |
+| Wan VACE | `wan_vace_14B_{t2v,v2v,ref2v,inpainting,outpainting,flf2v}` | our `video_vace` workflow; **flf2v** (first-last-frame) = the missing control we don't have |
+| LTX-2 | `video_ltx_2_audio_to_video` | audio→video = inverse of our monoplan chain |
+| Stable Audio 3 | `audio_stable_audio_3_medium{,_base}` | same models as our audio.cpp `stable_audio` (params comparison) |
+| Chatterbox | `tts` + `dialog` + `multilingual` + **`vc`** (voice conversion) | character-voice pipeline candidate (vs rejected VeVo2) |
+| 3D | `moge_{panorama,perspective}_to_mesh` (mono-geometry→mesh!), `pixal3d_trellis2_image_to_model` | TRELLIS.2 = our `mesh_ia` engine; moge = new capability class |
+| Music video | `wan2_1_infinitetalk_music` | talking/singing head driven by an audio track — ai-doc2video hook |
+
+**Next mining steps (on request)**: ① extract the ACE-Step 1.5 `split*`/`m2m_editing`
+subgraph payloads → compare against audio.cpp's ace_step request-options; ② Wan VACE
+`flf2v` graph → feasibility on sd-cli (first-last-frame conditioning flags?);
+③ `moge` → check GGUF-ability. Repo updates daily — re-sync = `git pull` in the sparse
+clone; no veille_versions.py source added (research source, not an update feed).
