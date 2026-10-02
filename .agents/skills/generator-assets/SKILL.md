@@ -155,6 +155,7 @@ band).
 | Cinematic shot from a still image (slow-mo, designed zoom) | `monoplan_ia` | `-w monoplan_ia -i frame.png --prompt "camera slowly pans..."` |
 | Video from prompt or image (Wan/LTX, .webm) | `video` | `-w video "cyberpunk street, neon rain"` |
 | **Motion-locked video** (ref image + skeleton/pose control frames, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
+| **Multi-cut video + soundtrack** (several named cuts in ONE LTX-2.5 T2V generation, audio continuity across cuts — VALIDATED 2026-10-02) | `video_multishot` | `-w video_multishot -p "wide shot of a keeper on a pier. A hard cut transitions to a lantern close-up. The storm ambience continues across the cut, with waves and distant thunder"` |
 | **Continue an existing video, image + SOUND** (MiniMax-H3 Ref2VA) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
 | 60 fps interpolation (RIFE) | `rife_interp` | `-w rife_interp -i clip.webm` |
 | 4×4 VFX particle sheet | `vfx_flipbook` | `-w vfx_flipbook "fire explosion"` |

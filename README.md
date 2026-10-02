@@ -454,7 +454,7 @@ The engine features **38 modular workflows** organized into 5 functional categor
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, monoplan_ia
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, chanson, musique_adn, musique_essence, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
 ```
 
@@ -1261,6 +1261,22 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 * **Principle**: VACE variants of Wan follow control frames (skeletons/pose/depth) while the reference image (`-i`) locks the appearance — motion-locked shots without frame-by-frame flicker (upstream PR #819).
 * **Usage**: `uv run python main.py -w video_vace -i <ref.png> --control-video <frames_dir> -p "<motion description>" [-o <name>]`
   — defaults = validated recipe (13 frames @ 16 fps, 832×480, 8 steps, cfg 1.0, euler, seed 42); `--frames/--fps/--width/--height/--steps/--cfg-scale/--seed` overridable. Models: `Wan2.1_14B_LightX2V_StepCfgDistill_VACE-Q3_K_S` + umt5 Q4_K_M + wan 2.1 VAE (constants `DEFAULT_VACE_*`, env-overridable). Memory placement on 16 GB is baked in: `--offload-to-cpu --vae-on-cpu` (the GPU VAE decode alone requests ~19.4 GB), no temporal tiling, no flow-shift, plain `vulkan` backend. Control frames: preprocessed PNG folder (see MEMORY_BANK §1.28 for the COCO-skeleton recipe).
+
+#### 4.9c. `video_multishot` — Multi-Cut Video + Continuous Soundtrack in ONE Generation (LTX-2.5 native multishot)
+
+> 🏆 **Validated 2026-10-02** ("super"): the 65-frame lighthouse two-shot — the named hard cut lands where the prompt asks for it, the keeper's appearance holds across the cut, and the model generates the soundtrack (crashing waves, thunder, cello) as a continuous bed over the cut. This reopens multi-shot sequences, previously rejected in the §1.17 chaining tests (content seams at every I2V cut): the cut is now NATIVE, in one pass.
+
+* **Principle**: LTX-2.5 native multishot — one T2V generation renders several named shots with audio continuity across the cuts. Frame rule: 1 + a multiple of 8 (default 65 @ 24 fps, 832×480 — the validated envelope, resolution not exposed; GPU ceiling ~81 frames, §1.17).
+* **Prompting rules** (docs.ltx.io, adopted 2026-10-01): describe each shot in order, name the cut explicitly ("A hard cut transitions to…"), and include the audio bed — the model generates the soundtrack from that block (4-8 sentences total work well).
+* **Usage**: `uv run python main.py -w video_multishot -p "<shot 1>. A hard cut transitions to <shot 2>. The ambience continues across the cut, with <sound description>" [-o <name>]` — `--frames/--fps/--seed` overridable (defaults 65/24/42).
+* **Engines**: sd-cli vid_gen on the pinned LTX binary (`DEFAULT_SD_CLI_LTX`, master-841 `6b3edaa` — the main build cannot fit LTX-2.5 on 16 GB, #1976): DiT Q4_K_M + video VAE + **audio VAE** + Gemma4 (te/vae on CPU), 8 steps official distilled sigmas, euler_a, cfg 1.0, `--max-vram 10`, **no negative prompt** (as validated). ~10 min for 65 frames.
+* **Outputs**: `.webm` (VP8 + PCM — generated soundtrack included).
+
+  ```bash
+  uv run python main.py -w video_multishot \
+    -p "A weathered lighthouse keeper in a navy wool coat stands on a storm-battered stone pier at dusk, waves exploding against the rocks below as he lifts a battered brass lantern. A hard cut transitions to a close-up of the lantern: the flame trembles in the wind, sea spray drifting past his grey beard as he stares out at the dark water. The storm ambience continues across the cut, with crashing waves, distant thunder and a low mournful cello." \
+    -o phare_multishot
+  ```
 
 #### 4.9. `h3_ref2va` — Video+Audio Continuation via MiniMax-H3 Ref2VA (webm with sound)
 
