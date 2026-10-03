@@ -1715,6 +1715,21 @@
  ],
  [
   [
+   "--upscale-mode"
+  ],
+  "upscale_mode",
+  "_StoreAction",
+  "'auto'",
+  [
+   "auto",
+   "esrgan",
+   "lanczos"
+  ],
+  null,
+  null
+ ],
+ [
+  [
    "--upscale-model"
   ],
   "upscale_model",

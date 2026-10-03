@@ -142,6 +142,7 @@ uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # big
 
 - **[2026-09-08] model deletion** — ambiguous instruction misread: mandatory restatement before execution.
 - **[2026-09-08] GPU contention** — RTF degraded 3.3× on a loaded machine: system-load gate before any generation.
+- **[2026-09-27] Chroma1-HD validated (Flux-free image path)** — silveroxides GGUF Q8_0 @1280×720, 40-50 steps, guidance 4.5-5.5, no `--clip_l`, no `--vae-tiling`, peak 12/16 GB: author-validated keyframe quality (consumer novel2video-ai). img2img collapses white at strength 0.35 — quirk to investigate. Frees published content from FLUX.1-dev's non-commercial license (recipe: MEMORY_BANK §1.37). Same branch: upscale `--mode` collision fixed via dedicated `--upscale-mode`.
 
 ### References
 
