@@ -123,6 +123,12 @@ def construire_parseur() -> argparse.ArgumentParser:
         help="Name or path of the ESRGAN upscaling model (e.g. 'anime', 'ultrasharp', '4x-UltraSharp.pth')."
     )
     groupe_ia_ext.add_argument(
+        "--upscale-mode",
+        choices=["auto", "esrgan", "lanczos"],
+        default="auto",
+        help="Upscale engine selection for the upscale workflow (default: auto = ESRGAN if available, else Lanczos). Independent from the asset_blendkit --mode."
+    )
+    groupe_ia_ext.add_argument(
         "--upscale",
         action="store_true",
         help="Enables automatic AI upscaling (ESRGAN 4x or Lanczos) after generation."
