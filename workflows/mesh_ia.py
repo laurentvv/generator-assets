@@ -55,7 +55,7 @@ class MeshIaWorkflow(BaseWorkflow):
         dict(flags=("--faces-cible",), type=int, default=0,
              help="Face-count target of the \"game\" GLB for mesh_ia: OPTIONAL Blender decimation (master kept; default: 0 = no reduction). Guidelines: 30000 = hero item seen up close • 10000 = scenery prop • 3000 = repeated clutter • >=8000 for very curved silhouettes."),
         dict(flags=("--mesh-moteur",), dest="mesh_moteur", choices=["trellis", "pixal3d"], default="trellis",
-             help="mesh_ia engine: trellis = TRELLIS.2 (default, validated 2026-09-06) | pixal3d = TRELLIS.2 fine-tune with pixel-aligned projection (flat colors + crisp lettering in ONE pass, no repaint; VALIDATED 2026-10-02 'super'; 512 ≈ 14 min, +32 % vs trellis; weights vegax87/Pixal3D). (--moteur itself is taken by voix_off.)"),
+             help="mesh_ia engine: trellis = TRELLIS.2 (default, validated 2026-09-06) | pixal3d = TRELLIS.2 fine-tune with pixel-aligned projection (flat colors + crisp lettering in ONE pass, no repaint; VALIDATED 2026-10-02 'super'; 512 ≈ 14 min, +32 %% vs trellis; weights vegax87/Pixal3D). (--moteur itself is taken by voix_off.)"),
         dict(flags=("--fov",), type=float, default=None,
              help="Horizontal FOV in degrees — pixal3d only (default: engine 49.13°; a wrong FOV shows as silhouette drift/thickness, not a crash)."),
     ]
