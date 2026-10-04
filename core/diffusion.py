@@ -17,6 +17,9 @@ from core.config import (
     DEFAULT_H3_REF2VA_MODEL,
     DEFAULT_H3_VIDEO_VAE,
     DEFAULT_LORA_DIRS,
+    DEFAULT_QWEN_IMAGE21_LLM,
+    DEFAULT_QWEN_IMAGE21_MODEL,
+    DEFAULT_QWEN_IMAGE21_VAE,
     DEFAULT_SD_CLI,
     DEFAULT_SD_MODEL,
     DEFAULT_T5XXL,
@@ -214,6 +217,80 @@ def generer_image_vulkan(
         return Image.open(output_path).copy()
     except Exception as e:
         print(f"❌ Error during the render ({moteur_nom}) via sd-cli: {e}")
+        raise
+    finally:
+        if chemin_temporaire and os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except OSError:
+                pass
+
+
+def generer_image_qwen21(
+    prompt: str,
+    negative_prompt: Optional[str] = None,
+    sd_cli: str = DEFAULT_SD_CLI,
+    model: str = DEFAULT_QWEN_IMAGE21_MODEL,
+    llm: str = DEFAULT_QWEN_IMAGE21_LLM,
+    vae: str = DEFAULT_QWEN_IMAGE21_VAE,
+    width: int = 1152,
+    height: int = 640,
+    steps: int = 40,
+    cfg_scale: float = 6.0,
+    seed: int = -1,
+    output_path: Optional[str] = None
+) -> Image.Image:
+    """
+    Renders an image with Qwen-Image-2.1 (7B DiT GGUF, Vulkan).
+
+    Recipe user-VALIDATED 2026-10-04 on the RX 6950 XT (MEMORY_BANK §1.39):
+    Q8_0 diffusion + Qwen3-VL-8B Q4_K_M text encoder (offloaded to CPU, encoded
+    once per prompt) + dedicated VAE. Dimensions MUST be multiples of 32
+    (sd-cli requirement for this architecture). Measured ~23.6 s/step at
+    1152x640 (40 steps ≈ 16 min/image) — --fa shows no speedup on RDNA2 but
+    stays in the validated command. Text encoder/VAE run from RAM, diffusion
+    from VRAM. ⚠️ Model under Qwen RESEARCH license: personal /
+    non-commercial use ONLY. Without output_path, goes through a unique
+    temporary file like generer_image_vulkan.
+    """
+    if width % 32 != 0 or height % 32 != 0:
+        raise ValueError(
+            f"Qwen-Image-2.1 requires dimensions divisible by 32 (got {width}x{height})."
+        )
+
+    chemin_temporaire = output_path is None
+    if chemin_temporaire:
+        descripteur, output_path = tempfile.mkstemp(suffix=".png", prefix="ga_rendu_qwen21_")
+        os.close(descripteur)
+        os.remove(output_path)
+
+    print(f"[Qwen-Image-2.1] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
+    commande = [
+        sd_cli,
+        "--diffusion-model", model,
+        "--vae", vae,
+        "--llm", llm,
+        "-p", prompt,
+        "--cfg-scale", str(cfg_scale),
+        "--sampling-method", "euler",
+        "--steps", str(steps),
+        "-W", str(width),
+        "-H", str(height),
+        "-s", str(seed),
+        "--fa",
+        "--offload-to-cpu",
+        "-o", output_path,
+    ]
+    if negative_prompt:
+        commande.extend(["-n", negative_prompt])
+
+    try:
+        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli Qwen-Image-2.1")
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"The output file {output_path} was not produced.")
+        return Image.open(output_path).copy()
+    except Exception as e:
+        print(f"❌ Error during the render (Qwen-Image-2.1) via sd-cli: {e}")
         raise
     finally:
         if chemin_temporaire and os.path.exists(output_path):
