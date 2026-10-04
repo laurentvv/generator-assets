@@ -79,6 +79,20 @@ DEFAULT_VAE = os.getenv("SD_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "ae.safet
 DEFAULT_CONTROLNET_POSE = os.getenv("SD_CONTROLNET_POSE_PATH", os.path.join(DEFAULT_MODEL_DIR, "controlnet_openpose_sdxl_xinsir.safetensors"))
 DEFAULT_SDXL_MODEL = os.getenv("SD_XL_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "juggernautXL_ragnarok.safetensors"))
 
+# Qwen-Image-2.1 (7B DiT GGUF, Vulkan — support sd-cli #2032/#2035, master-908+).
+# ⚠️ Qwen RESEARCH license: personal / non-commercial use ONLY. The VAE is
+# dedicated (NOT interchangeable with Qwen-Image 1.0 nor Wan 2.2 — pinned doc
+# scratch/upstream_docs/sd-cli_qwen-image-21/). Validated recipe: MEMORY_BANK §1.39.
+DEFAULT_QWEN_IMAGE21_MODEL = os.getenv(
+    "QWEN_IMAGE21_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "qwen-image-2.1-UC-Q8_0.gguf")
+)
+DEFAULT_QWEN_IMAGE21_LLM = os.getenv(
+    "QWEN_IMAGE21_LLM_PATH", os.path.join(DEFAULT_MODEL_DIR, "Qwen3VL-8B-Instruct-Q4_K_M.gguf")
+)
+DEFAULT_QWEN_IMAGE21_VAE = os.getenv(
+    "QWEN_IMAGE21_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "qwen_image_2.1_vae_bf16.safetensors")
+)
+
 # Video models (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))
 DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))

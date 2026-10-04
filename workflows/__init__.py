@@ -15,7 +15,7 @@ import pkgutil
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 _MODULES_ORDONNES = [
-    "generate", "upscale", "spritesheet", "variations", "tileable", "pixelart",
+    "generate", "qwen_image", "upscale", "spritesheet", "variations", "tileable", "pixelart",
     "batch", "material3d", "skybox", "turnaround3d", "mesh3d", "mesh_ia", "rembg",
     "flowmap", "ui_9slice", "voxel3d", "autotile_pack", "rife_interp", "vfx_flipbook",
     "rpg_portrait", "sfx", "ip_adapter", "anim_loop", "pose_control", "tts_dialogue",
