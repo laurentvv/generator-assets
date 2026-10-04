@@ -55,6 +55,7 @@ standards, validation checklist and detailed pitfalls: [`pipeline_3d_blender.md`
 | Workflow | Use | Key inputs | Outputs |
 | :--- | :--- | :--- | :--- |
 | `generate` | Isolated 2D cutout asset, centered, Godot-ready | `prompt`, `-t` (item/character/prop/tile), `-i` (img2img), `--upscale`, `-l "lora:weight"` | transparent `.png` |
+| `qwen_image` | **Qwen-Image-2.1 photorealistic T2I** — in-image text rendering, RGBA via prompt (RESEARCH license: personal/non-commercial ONLY, no production consumers; no model-level NSFW filter, adults only) | `prompt`, `--negative-prompt[-file]`, `--width/--height` (%32, default 1152×640), `--steps` (40), `--cfg-scale` (6.0), `--seed` | `<name>_qwen21.png` (~16 min @40 steps, ~8× slower than `generate`) |
 | `spritesheet` | Aligned multi-angle sheet + JSON atlas | `prompt`, `-s`, `--columns` | `_spritesheet.png`, `_atlas.json` |
 | `variations` | Elemental variants (fire/ice/poison…) | `prompt` or `-i`, `--themes` | `<base>_<theme>.png` |
 | `tileable` | Seamless tileable texture + 3×3 check | `prompt`, `-s` | `_tile.png`, `_preview3x3.png` |

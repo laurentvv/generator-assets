@@ -1004,6 +1004,28 @@
  ],
  [
   [
+   "--negative-prompt"
+  ],
+  "negative_prompt",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--negative-prompt-file"
+  ],
+  "negative_prompt_file",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--no-cache"
   ],
   "no_cache",
