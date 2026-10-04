@@ -1033,6 +1033,21 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   uv run python main.py -w rembg -i godot_assets/casque.png -o casque_transparent
   ```
 
+#### 3.9. `qwen_image` — Qwen-Image-2.1 Photorealistic Text-to-Image (Research License)
+* **Process**:
+  1. Renders free-form natural-language prompts with Qwen-Image-2.1 (7B DiT GGUF, Vulkan) — strengths: reliable **in-image text rendering**, **RGBA transparency driven by the prompt** (start with `This is an RGBA image with transparency.`), high-fidelity photorealism up to 2048².
+  2. System-load pre-check runs automatically before the launch (busy machine = aborted).
+  3. Text encoder (Qwen3-VL-8B Q4_K_M) runs from system RAM, diffusion from VRAM (`--offload-to-cpu`).
+* **Inputs**: `prompt`, `-n/--negative-prompt` or `--negative-prompt-file`, `--width/--height` (**multiples of 32**, default 1152×640 = exact 16:9), `--steps` (default 40), `--cfg-scale` (default 6.0 — lower silently disables the negative prompt), `--seed`.
+* **Engine**: sd-cli master-908+ (`qwen_image21` architecture, PRs #2032/#2035) + dedicated VAE (`qwen_image_2.1_vae_bf16` — NOT interchangeable with Qwen-Image 1.0 / Wan 2.2).
+* **⚠️ License**: Qwen **RESEARCH** — renders are for **personal / non-commercial use ONLY** (no monetized channel, no game shipping). Production paths stay on Chroma1-HD / `generate` (Apache-2.0). No model-level NSFW filter; the user is responsible for the content (adults only).
+* **Performance** (measured, RX 6950 XT): ~23.6 s/step at 1152×640 → **~16 min/image at 40 steps** (~8× slower than Chroma1-HD). Use `--steps 30` for ~12 min.
+* **Outputs**: `output/<name>_qwen21.png`.
+* **Example**:
+  ```bash
+  uv run python main.py -w qwen_image "a vintage tavern sign that reads 'The Sleeping Dragon', night, lantern light" --seed 42
+  ```
+
 ---
 
 ### 🔊 4. Audio, Voice & VFX
