@@ -136,13 +136,14 @@ uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # big
 - **Automatic watch at session open** (ZCode SessionStart hook, rerun if > 20 h): audio.cpp, sd-cli, trellis.cpp + GGUF HF, FFmpeg, Python, packages, trending LLM/VLM GGUF, llama.cpp, sa3.cpp, versioned system tools, ComfyUI ecosystem. Report only — **never automatic updates**.
 - **Standing instruction (2026-09-07)**: as soon as the watch flags a NEW compatible music/audio model, **run the test without waiting** (gothic rock recipe 30 s, 83 BPM C# minor, seed 42) then submit for listening; verdict in MEMORY_BANK.
 - **`output/veille/maj_en_attente.json`**: an update applied/obsolete → remove its entry IMMEDIATELY + record in `docs/veille_journal.md` (before→after, commit, verification). Otherwise the hook re-flags it at every session.
-- **Update process**: one at a time · no running binary (`audiocpp_cli.exe`/`ffmpeg.exe`) · smoke test after · update tool READMEs + skill + `scripts/engines_manifest.json` (installer pinning) · commit/push docs. Detailed procedures and per-component rollbacks: table in this file's git history (e.g. `C:\audio-cpp\update.ps1`, `C:\SD\backups\`, `manage_qwentts.py --rollback`).
+- **Update process**: one at a time · no running binary (`audiocpp_cli.exe`/`ffmpeg.exe`) · **detailed changelog presented to the user at EVERY update** (old→new compare via GitHub compare API / release notes / the watch's `output/veille/notes/` file — never just "installed version X"; flag per-change project relevance: CUDA-only vs Vulkan, license, breaking CLI/API) · smoke test after · update tool READMEs + skill + `scripts/engines_manifest.json` (installer pinning) · commit/push docs. Detailed procedures and per-component rollbacks: table in this file's git history (e.g. `C:\audio-cpp\update.ps1`, `C:\SD\backups\`, `manage_qwentts.py --rollback`).
 
 ### Pitfalls & lessons (dated format)
 
 - **[2026-09-08] model deletion** — ambiguous instruction misread: mandatory restatement before execution.
 - **[2026-09-08] GPU contention** — RTF degraded 3.3× on a loaded machine: system-load gate before any generation.
 - **[2026-09-27] Chroma1-HD validated (Flux-free image path)** — silveroxides GGUF Q8_0 @1280×720, 40-50 steps, guidance 4.5-5.5, no `--clip_l`, no `--vae-tiling`, peak 12/16 GB: author-validated keyframe quality (consumer novel2video-ai). img2img collapses white at strength 0.35 — quirk to investigate. Frees published content from FLUX.1-dev's non-commercial license (recipe: MEMORY_BANK §1.37). Same branch: upscale `--mode` collision fixed via dedicated `--upscale-mode`.
+- **[2026-10-05] update reporting** — user feedback after the llama.cpp v0.6.0 install ("ça manque d'info de mise à jour"): an update reported as "installed version X" is a blind update. EVERY update (engine, tool, SDK, package) must come with the old→new change summary (GitHub compare API, release notes or the watch's `output/veille/notes/` file), with per-change project relevance flagged (CUDA-only vs Vulkan, license, CLI/API breakage) — rule now part of the Update process above.
 
 ### References
 
