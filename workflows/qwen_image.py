@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Qwen-Image-2.1 text-to-image workflow (7B DiT, Vulkan GGUF).
+Qwen-Image-2.1 text-to-image AND compositing workflow (7B DiT, Vulkan GGUF).
 
 Capabilities: free-form natural language prompts, reliable in-image text
-rendering, RGBA transparency driven by the prompt itself. Engine recipe in
-core.diffusion.generer_image_qwen21; upstream pinned doc in
-scratch/upstream_docs/sd-cli_qwen-image-21/.
+rendering, RGBA transparency driven by the prompt itself. Compositing mode
+(-i <cutout paste> + -l <lora:name:weight>): product pasted on a background
+gets consistent lighting, specular highlights and a natural contact shadow.
+Validated compositing recipe (2026-10-05 night A/B): CUTOUT paste of the
+product (white-keyed — a pasted WHITE BOX survives img2img), prompt starting
+with the LoRA trigger word "pengyu", strength 0.65, 24 steps, LoRA
+Qwenimag21_c2-st2000. Engine recipe in core.diffusion.generer_image_qwen21;
+upstream pinned doc in scratch/upstream_docs/sd-cli_qwen-image-21/.
 
 ⚠️ Qwen RESEARCH license: the renders are for PERSONAL / NON-COMMERCIAL use
 ONLY — do not feed monetized channels or games with them (Chroma1-HD /
@@ -30,8 +35,9 @@ SCRIPT_CHECK_CHARGE = Path(__file__).resolve().parent.parent / "scripts" / "chec
 class QwenImageWorkflow(BaseWorkflow):
     name = "qwen_image"
     description = (
-        "Qwen-Image-2.1 text-to-image (7B Vulkan, in-image text rendering, RGBA via prompt; "
-        "RESEARCH license = personal/non-commercial use only)"
+        "Qwen-Image-2.1 text-to-image AND compositing (7B Vulkan, in-image text rendering, "
+        "RGBA via prompt; -i cutout paste + -l lora = product blend with contact shadow, "
+        "trigger 'pengyu' first; RESEARCH license = personal/non-commercial use only)"
     )
 
     emoji = "🖼️"
@@ -57,16 +63,27 @@ class QwenImageWorkflow(BaseWorkflow):
         width -= width % 32
         height -= height % 32
 
-        # Flat CLI defaults (--steps 25, --cfg-scale 1.0) are NOT the validated
-        # Qwen recipe (cfg 1.0 silently disables the negative prompt). Omitted
-        # flags arrive as those sentinel values — snap them to the recipe;
-        # explicit non-default values pass through.
+        # Flat CLI defaults (--steps 25, --cfg-scale 1.0, --strength 0.55) are NOT
+        # the validated Qwen recipes (cfg 1.0 silently disables the negative
+        # prompt). Omitted flags arrive as those sentinel values — snap them to
+        # the recipe; explicit non-default values pass through.
         steps = params.get("steps")
         steps = 40 if steps in (None, 25) else int(steps)
         cfg_scale = params.get("cfg_scale")
         cfg_scale = 6.0 if cfg_scale in (None, 1.0) else float(cfg_scale)
         seed = params.get("seed")
         seed = int(seed) if seed is not None else -1
+
+        # Compositing mode (flat flags -i/-l/--lora-dir/--strength, shared with
+        # the other families). Sentinel snapping to the validated recipe:
+        # strength 0.65; 24 steps in img2img (40 stays the t2i recipe).
+        init_image = params.get("input")
+        loras = params.get("loras")
+        lora_dir = params.get("lora_dir")
+        strength = params.get("strength")
+        strength = 0.65 if strength in (None, 0.55) else float(strength)
+        if init_image and steps == 40:
+            steps = 24
 
         negative_prompt = params.get("negative_prompt")
         fichier_negatif = params.get("negative_prompt_file")
@@ -88,7 +105,10 @@ class QwenImageWorkflow(BaseWorkflow):
             if retour.returncode == 1:
                 raise RuntimeError("Busy machine (check_charge_systeme exit 1) — wait for a free slot before relaunching.")
 
-        self.log(f"Qwen-Image-2.1 rendering ({width}x{height}, steps={steps}, cfg={cfg_scale}) — RESEARCH license: personal/non-commercial use only.")
+        mode_str = "img2img" if init_image else "t2i"
+        if loras:
+            mode_str += f" + {len(loras)} LoRA(s)"
+        self.log(f"Qwen-Image-2.1 rendering ({mode_str}, {width}x{height}, steps={steps}, cfg={cfg_scale}, strength={strength}) — RESEARCH license: personal/non-commercial use only.")
         generer_image_qwen21(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -98,6 +118,10 @@ class QwenImageWorkflow(BaseWorkflow):
             cfg_scale=cfg_scale,
             seed=seed,
             output_path=output_path,
+            init_image=init_image,
+            strength=strength,
+            loras=loras,
+            lora_dir=lora_dir,
         )
         self.log(f"Image saved: {output_path}", emoji="✅")
         return {"image": output_path}

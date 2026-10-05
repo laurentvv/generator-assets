@@ -319,3 +319,58 @@ def test_run_engine_journalise_la_commande(caplog):
     assert any("▶️" and "testlog" in r.message for r in caplog.records) or any(
         "▶️" in r.getMessage() for r in caplog.records
     )
+
+
+def test_generer_image_qwen21_img2img_et_lora_cablage(tmp_path, monkeypatch):
+    # qwen21 compositing mode: -i/--strength flags + LoRA tag in prompt +
+    # --lora-model-dir/--lora-apply-mode wiring (validated 2026-10-05)
+    from core import diffusion
+
+    init_img = tmp_path / "composite.png"
+    Image.new("RGB", (32, 32), (200, 100, 0)).save(init_img)
+    sortie = tmp_path / "out.png"
+    lora_dir = tmp_path / "loras"
+    lora_dir.mkdir()
+
+    capture = {}
+
+    def faux_run_engine(commande, **kwargs):
+        capture["commande"] = [str(c) for c in commande]
+        Image.new("RGB", (4, 4)).save(sortie)
+
+    monkeypatch.setattr(diffusion, "run_engine", faux_run_engine)
+    diffusion.generer_image_qwen21(
+        prompt="pengyu blend the product",
+        width=1152,
+        height=640,
+        steps=24,
+        cfg_scale=6.0,
+        seed=42,
+        output_path=str(sortie),
+        init_image=str(init_img),
+        strength=0.65,
+        loras=["Qwenimag21_c2-st2000:1.0"],
+        lora_dir=str(lora_dir),
+    )
+
+    cmd = capture["commande"]
+    assert cmd[cmd.index("-i") + 1] == str(init_img)
+    assert cmd[cmd.index("--strength") + 1] == "0.65"
+    assert cmd[cmd.index("--lora-model-dir") + 1] == str(lora_dir)
+    assert cmd[cmd.index("--lora-apply-mode") + 1] == "auto"
+    assert cmd[cmd.index("-p") + 1].endswith("<lora:Qwenimag21_c2-st2000:1.0>")
+    assert cmd[cmd.index("-s") + 1] == "42"
+    assert sortie.exists()
+
+
+def test_generer_image_qwen21_init_image_absente_leve_erreur(tmp_path):
+    from core import diffusion
+
+    with pytest.raises(FileNotFoundError):
+        diffusion.generer_image_qwen21(
+            prompt="x",
+            width=1152,
+            height=640,
+            output_path=str(tmp_path / "out.png"),
+            init_image=str(tmp_path / "absente.png"),
+        )

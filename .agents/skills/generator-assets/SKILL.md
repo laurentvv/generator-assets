@@ -59,6 +59,7 @@ Any CLI evolution must preserve this contract.
 | :--- | :--- | :--- |
 | Isolated 2D asset (item, monster, scenery, background) | `generate` | `-w generate "healing potion, dark fantasy game icon" -t prop -o potion` |
 | Photorealistic image, in-image text, RGBA via prompt (PERSONAL use — Qwen RESEARCH license, ~16 min) | `qwen_image` | `-w qwen_image "tavern sign that reads 'The Sleeping Dragon'" --seed 42` |
+| Product compositing blend into a backdrop — contact shadow + consistent lighting (PERSONAL use — Qwen RESEARCH license, ~7 min; input = WHITE-KEYED cutout paste, trigger `pengyu` first) | `qwen_image` + `-i` + `-l` | `-w qwen_image "pengyu Apply consistent lighting to the product, ..." -i composite_cutout.png -l "Qwenimag21_c2-st2000:1.0" --seed 42` |
 | Multi-angle sprite sheet of a character | `spritesheet` | `-w spritesheet "goblin scout" -o goblin` |
 | Thematic variants (fire/ice/poison…) | `variations` | `-w variations "elemental sword" --themes fire,ice` |
 | Tileable texture (TileMap tile) | `tileable` | `-w tileable "mossy cobblestone floor"` |
