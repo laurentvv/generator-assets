@@ -129,6 +129,7 @@ uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # big
 - **Models `C:\Modeles_LLM`**: check re-downloadability BEFORE any deletion (list the WHOLE org: `curl -s "https://huggingface.co/api/models?author=audio-cpp"`); ambiguous instruction → **restate the list** before executing (incident 2026-09-08: 4 models deleted instead of 0).
 - **Every test VALIDATED by the user becomes a workflow** (`main.py -w`, code `core/`+`workflows/`, README, MEMORY_BANK, skill); conversely: never a workflow for an unvalidated test (status "tested, not validated" in MEMORY_BANK).
 - **Test campaigns: max 1 hour of tests per day window, except overnight runs** (user rule 2026-09-28: "c trop long pas plus d'1 heure de test sauf la nuit !"). Size benchmark matrices in advance (sd-cli A/B legs, multi-leg suites): cut to the minimum decisive set or defer the full matrix to a night window.
+- **Sound notification at task end** (user rule 2026-10-05: "Notifie moi avec un son quand tu auras fini"): at the end of every test window, long generation/night run — or any turn leaving artifacts for the user to verify — play a system sound (`powershell` `Media.SoundPlayer` e.g. `C:\Windows\Media\Windows Notify System Generic.wav` + console beep fallback) so the user knows to come check the result.
 - **`h3_ref2va`: always `--turbo`** (VALIDATED 2026-09-09, ~38 min vs ~70 min for 22 frames); 20-step base only in A/B or explicit request.
 
 ### Watch & updates
