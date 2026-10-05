@@ -238,7 +238,11 @@ def generer_image_qwen21(
     steps: int = 40,
     cfg_scale: float = 6.0,
     seed: int = -1,
-    output_path: Optional[str] = None
+    output_path: Optional[str] = None,
+    init_image: Optional[str] = None,
+    strength: float = 0.65,
+    loras: Optional[List[Union[str, Tuple[str, float]]]] = None,
+    lora_dir: Optional[str] = None
 ) -> Image.Image:
     """
     Renders an image with Qwen-Image-2.1 (7B DiT GGUF, Vulkan).
@@ -249,14 +253,27 @@ def generer_image_qwen21(
     (sd-cli requirement for this architecture). Measured ~23.6 s/step at
     1152x640 (40 steps ≈ 16 min/image) — --fa shows no speedup on RDNA2 but
     stays in the validated command. Text encoder/VAE run from RAM, diffusion
-    from VRAM. ⚠️ Model under Qwen RESEARCH license: personal /
-    non-commercial use ONLY. Without output_path, goes through a unique
-    temporary file like generer_image_vulkan.
+    from VRAM.
+
+    Compositing mode (img2img + LoRA), user-VALIDATED 2026-10-05 night A/B
+    (journal 2026-10-05): init_image = CUTOUT paste of the product onto the
+    background (white-key the product first — a pasted WHITE BOX survives
+    img2img even at strength 0.90), prompt starts with the LoRA trigger word
+    "pengyu", strength 0.65 + 24 steps = natural contact shadow + consistent
+    lighting (RunningHubAI rh-qwen-image-2.1-lora: sd-cli applies 448/448
+    tensors, zero unmapped keys; file in DEFAULT_LORA_DIRS[0]). ⚠️ Model under
+    Qwen RESEARCH license: personal / non-commercial use ONLY. Without
+    output_path, goes through a unique temporary file like
+    generer_image_vulkan.
     """
     if width % 32 != 0 or height % 32 != 0:
         raise ValueError(
             f"Qwen-Image-2.1 requires dimensions divisible by 32 (got {width}x{height})."
         )
+    if init_image and not os.path.exists(init_image):
+        raise FileNotFoundError(f"Init image not found: {init_image}")
+
+    prompt_final = formater_prompt_avec_loras(prompt, loras)
 
     chemin_temporaire = output_path is None
     if chemin_temporaire:
@@ -264,13 +281,16 @@ def generer_image_qwen21(
         os.close(descripteur)
         os.remove(output_path)
 
-    print(f"[Qwen-Image-2.1] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
+    mode_str = "img2img" if init_image else "t2i"
+    if loras:
+        mode_str += f" + {len(loras)} LoRA(s)"
+    print(f"[Qwen-Image-2.1 - {mode_str}] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
     commande = [
         sd_cli,
         "--diffusion-model", model,
         "--vae", vae,
         "--llm", llm,
-        "-p", prompt,
+        "-p", prompt_final,
         "--cfg-scale", str(cfg_scale),
         "--sampling-method", "euler",
         "--steps", str(steps),
@@ -283,6 +303,11 @@ def generer_image_qwen21(
     ]
     if negative_prompt:
         commande.extend(["-n", negative_prompt])
+    if init_image:
+        commande.extend(["-i", init_image, "--strength", str(strength)])
+    dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
+    if loras and os.path.exists(dossier_lora_effectif):
+        commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
 
     try:
         run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli Qwen-Image-2.1")
