@@ -367,3 +367,18 @@ subgraph payloads → compare against audio.cpp's ace_step request-options; ② 
 `flf2v` graph → feasibility on sd-cli (first-last-frame conditioning flags?);
 ③ `moge` → check GGUF-ability. Repo updates daily — re-sync = `git pull` in the sparse
 clone; no veille_versions.py source added (research source, not an update feed).
+
+## 12. 2026-10-05 — Evaluation of the new repos flagged by the watch (lots 2026-10-04 + 2026-10-05)
+
+Four `comfyui-nouveaux-repos` flags triaged together: the 2026-10-04 pair (reshot, Picxel) had
+slipped through without evaluation and the 2026-10-05 pair (LoRAlab, Omnichar) replaced it in
+`maj_en_attente.json`. Verdict for all four: **ideas only, no action now** — none is runnable on
+the local stack (PyTorch/ComfyUI, NVIDIA CUDA), per the zero-PyTorch philosophy; concepts kept
+for when a CLI/Vulkan equivalent exists.
+
+| Repo | ★ | What it is | Verdict for our stack |
+|---|---|---|---|
+| [maosika-ai/reshot](https://github.com/maosika-ai/reshot) (10-04) | 47 | "Copy the shot, not the actors": video → depth map / OpenPose skeleton / canny lines, as control references for Seedance 2.0, H3 Fun ControlNet, Wan VACE — Apache-2.0 | Same family as TL;DR ideas #2/#6 (shot-derived conditioning). Depth/pose extraction feeding `vid_gen` control paths is an adaptable concept — revisit only if shot-driven motion control becomes a need. |
+| [See-Sol-Lab/Picxel](https://github.com/See-Sol-Lab/Picxel) (10-04) | 38 | Reference images → pixel-art game assets, for indie devs | In scope for L'Héritier du Vide sprites, but ComfyUI/PyTorch. CLI equivalent = sd-cli img2img at low res + palette/upscale post-processing (ffmpeg). Idea noted. |
+| [AcademiaSD/AcademiaSD_LoRAlab-TrainerStudio](https://github.com/AcademiaSD/AcademiaSD_LoRAlab-TrainerStudio) (10-05) | 51 | One-install LoRA trainer: **Qwen-Image 2.1**, FLUX.2 Klein 9B, Krea 2, Z-Image, Ideogram 4, Anima, SDXL (Pony/Illustrious/NoobAI), LTX 2.3, **MiniMax-H3** — NVIDIA 4-8 GB VRAM | Targets our exact ecosystems (freshly-merged qwen compositing, `h3_ref2va`) but PyTorch/CUDA-NVIDIA → unusable as-is on the RX 6950 XT. Concept kept: a self-trained compositing LoRA on our own cutouts; the philosophy-compliant path would be C++/Vulkan frozen-base training (cf. sa3.cpp v0.1.1's Vulkan BF16 OUT_PROD training support, same day). |
+| [omnichar/ComfyUI-Omnichar](https://github.com/omnichar/ComfyUI-Omnichar) (10-05) | 40 | `.char` file format: exports refmode, LoRA adapters, guided prompts for a consistent character | A portable character-consistency bundle fits both the game (recurring characters) and the channel; sd-cli equivalent = a documented convention reusing the existing LoRA/prompt flags. Idea noted. |
