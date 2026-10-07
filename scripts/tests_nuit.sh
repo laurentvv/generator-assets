@@ -140,6 +140,24 @@ leg_h3_turbo_929() {
       --turbo
 }
 
+leg_h3_turbo_945() {
+  # #2103 candidate-fix probe (10-07): SAME factory full path as h3_turbo_929 but with
+  # SD_CLI_LTX_PATH overridden to the NEW master-945 binary (C:\SD) — 945 carries the
+  # first H3-path commit since 908 (keep MiniMax-H3 VAE weights resident across temporal
+  # chunks). The 929 datapoint is already covered upstream (issue #1976 comment 10-02).
+  # PASS  = #2103 kills the 54-segment OOM → revalidate output vs 6b3edaa, then repoint
+  #         DEFAULT_SD_CLI_LTX (6b3edaa retirement path).
+  # FAIL with the ErrorOutOfDeviceMemory signature = #1976 stays open, 6b3edaa stays
+  #         production (note: the nebkmb 24 GB 3090 datapoint predicts this outcome).
+  # ~38 min (--turbo, §7 invariant).
+  export SD_CLI_LTX_PATH="C:/SD/sd-cli.exe"
+  run_leg h3_turbo_945 \
+    uv run python main.py -w h3_ref2va \
+      -i output/test_p1_final/h3_source_avec_audio.mp4 \
+      -p "the camera continues its slow push-in on the helmet, dust motes drifting, <Video 1>" \
+      --turbo
+}
+
 leg_monoplan65_929() {
   # Conditional: the monoplan 65-frame LTX leg OOM'd on 908 (09/25) — only meaningful
   # if the night LTX 33f attempt PASSED on this machine state.
@@ -388,6 +406,7 @@ rapport() {
       [ "$id" = "ltx33_929" ]        && [ -f "$OUT/ltx33_929/ltx33_nuit.webm" ] && ev="ltx33_nuit.webm"
       [ "$id" = "monoplan65_929" ]   && ev="output/monoplan_ia/"
       [ "$id" = "h3_turbo_929" ]     && ev="output/h3_ref2va/ (expect #1976 signature)"
+      [ "$id" = "h3_turbo_945" ]     && ev="output/h3_ref2va/ — PASS = #2103 kills the #1976 OOM on 945 (revalidate vs 6b3edaa); OOM signature = 6b3edaa stays"
       [ "$id" = "lightx2v_vace" ]    && [ -f "$OUT/lightx2v_vace/lightx2v_i2v_knight.webm" ] && ev="planche.png + webm"
       [ "$id" = "acestep90_12s" ]    && [ -f "$OUT/acestep90_12s/smoke90_12s.wav" ] && ev="smoke90_12s.wav + RTF in run.log (ref range 3.25-3.85)"
       [ "$id" = "sam_vulkan_retest" ] && [ -f "$OUT/sam_vulkan_retest/target.wav" ] && ev="target.wav + residual.wav — SAM works on VULKAN"
@@ -419,6 +438,7 @@ while read -r id; do
     vace_knight)        leg_vace_knight ;;
     ltx33_929)          leg_ltx33_929 ;;
     h3_turbo_929)       leg_h3_turbo_929 ;;
+    h3_turbo_945)       leg_h3_turbo_945 ;;
     monoplan65_929)     leg_monoplan65_929 ;;
     lightx2v_vace)      leg_lightx2v_vace ;;
     acestep90_12s)      leg_acestep90_12s ;;
