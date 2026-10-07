@@ -3,26 +3,26 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "master-931-9db0db6 installed on Windows 2026-10-06 (user GO). Delta 929->931 = 2 commits only: perf - avoid redundant permute+contiguous in non-interleaved RoPE (#2102, hot path of every diffusion run) + CI - bundle HIP runtime libs with the Windows ROCm release (#2090, no impact on Vulkan installs). Verified at install: sd-cli --version reports commit 9db0db6, ggml-vulkan.dll + webm.dll present, backup taken. REAL-PATH SMOKE TEST PENDING (system-load gate GPU-busy at the time, user deferred it): the 929 capability verdicts (Flux/SDXL OK, Wan 2.2 T2V 17f OK, LTX workspace refusal, H3 #1976) are NOT re-verified on 931 until that smoke runs - full matrix on a freshly rebooted machine stays mandatory before any LTX/H3 verdict change (production LTX/H3 unchanged on C:\\SD-6b3edaa). 929 validation record kept for reference: matrix 09-28 (Flux 64 s vs 62 s on 908, Wan 2398 s vs 2212 s ref 908, LTX identical failure both builds, H3 skipped by construction - 929 gains: Wan2.2 VACE GGUF parsing fixes #2062 closing #1953, INT8 convrot Vulkan #2069/#2070, Ming-Image #2063, lora/upscaler cache scan fix #2064). Rollback: C:\\SD\\backups\\backup_20261006_204532 (= 929), older backup_20260928_master929 (908).",
+      "raison_epinglage": "master-945-a1ded76 installed on Windows 2026-10-07 (user GO 'installe les dernier maj'). Delta 931->945 = 14 commits, key items: H3 fix keep MiniMax-H3 VAE weights resident across temporal chunks (#2103, CANDIDATE fix for the master H3 OOM #1976 - NOT re-tested yet), fix custom sigmas step count adjustment (#2084 - touches the LTX-2.5 distilled sigmas recipe, NOT re-verified), fix non-circular tile placement and blending (#2088) + unify circular and non-circular tiling (#2105 - upscale path), Z-Image f16 overflow fix in quantized matmuls (#2074, CUDA-flagged) + Z-Image L2P support (#2075), LoRA weight merging on model conversion (#2079), sdcpp API latent2RGB previews (#2093/#2096), log refactors (#2104/#2106), video reference image docs. Verified at install: sd-cli --version reports commit a1ded76, ggml-vulkan.dll + webm.dll present, backup C:\\SD\\backups\\backup_20261007_190520 (= 931). REAL-PATH SMOKE PASS 2026-10-07 same day (also closes the smoke pending since 931): generate workflow Flux 1024x1024 25 steps seed 42 -> cutout -> PNG 512, exit 0 in 160 s, visual inspection OK (output/sd945_smoke.png). Capability verdicts inherited from the 929 matrix: Flux/SDXL OK (re-OK'd by the smoke), Wan 2.2 T2V 17f OK, LTX workspace refusal, H3 #1976; production LTX/H3 unchanged on C:\\SD-6b3edaa pending dedicated re-tests (H3 + #2103 = the leg to try). Rollback: C:\\SD\\backups\\backup_20261007_190520 (= 931), backup_20261006_204532 (= 929), backup_20260928_master929 (908).",
       "plateformes": {
         "windows": {
-          "epingle": "master-931-9db0db6",
-          "asset": "sd-master-9db0db6-bin-win-vulkan-x64.zip",
-          "sha256": "a252abb46cfec422538e7965de159c7c7cc5b8311d276b2ce135e9151228c2e5",
+          "epingle": "master-945-a1ded76",
+          "asset": "sd-master-a1ded76-bin-win-vulkan-x64.zip",
+          "sha256": "e3ee0aefa925cdf270148b03d67dc40eab025a44080601afe990bf123e308bcd",
           "sous_dossier": "SD",
           "exe": "sd-cli.exe"
         },
         "linux": {
-          "epingle": "master-931-9db0db6",
-          "asset": "sd-master-9db0db6-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
-          "sha256": "a97bd5c5a7741c6d181f798401f6648d08a4129a0ed168680b4b7775425043f0",
+          "epingle": "master-945-a1ded76",
+          "asset": "sd-master-a1ded76-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+          "sha256": "e65f3c4cf3a0c4c5aed5120ab449be7c883db6c70648bcc56ca55b246b9d8161",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
         "macos-arm64": {
-          "epingle": "master-931-9db0db6",
-          "asset": "sd-master-9db0db6-bin-Darwin-macOS-26.6.2-arm64.zip",
-          "sha256": "43824ebab4256239359d1370a751e7629defc2b693c53b93b1b24c7943c6e875",
+          "epingle": "master-945-a1ded76",
+          "asset": "sd-master-a1ded76-bin-Darwin-macOS-26.6.2-arm64.zip",
+          "sha256": "b530f858657a0b2a0b11313bea89a0b48398f6db783279c096a8307456cc8b1b",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         }
