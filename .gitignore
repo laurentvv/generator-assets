@@ -51,6 +51,10 @@ Thumbs.db
 # Exceptions: showcase examples (videos and audio committed explicitly)
 !docs/exemples/videos/*.mp4
 
+# Exception: audition/production build scripts live under projects/<name>/build/
+# (build/ is ignored above; the generators must be versioned)
+!projects/*/build/
+
 # Local AI agent config (symlink .qwen -> .agents, not representable in Windows git)
 .zcode/
 .qwen/
