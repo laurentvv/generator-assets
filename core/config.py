@@ -68,6 +68,11 @@ def _detecter_ffmpeg() -> str:
 
 DEFAULT_FFMPEG = os.getenv("FFMPEG_PATH", _detecter_ffmpeg())
 
+
+def ffmpeg() -> str:
+    """Absolute path of the machine ffmpeg (FFMPEG_PATH override, else auto-detected)."""
+    return DEFAULT_FFMPEG
+
 # Base folders and models
 DEFAULT_MODEL_DIR = os.getenv("MODEL_DIR", r"C:\Modeles_LLM")
 DEFAULT_LLM_MODEL = os.getenv("LLM_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "LFM2.5-8B-A1B-Q6_K.gguf"))
