@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Example audio audition</title>
+<style>
+:root{--bg:#0b0f19;--fg:#e6edf7;--mut:#8b97ad;--card:#131a2a;--ok:#2dd4bf;--ko:#ff5c7a}
+@media (prefers-color-scheme: light){:root{--bg:#f5f7fb;--fg:#10182b;--mut:#55627a;--card:#fff}}
+body{background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;margin:0;padding:16px;max-width:980px;margin:auto}
+h1{font-size:22px}h2{font-size:17px;margin:28px 0 8px;color:var(--ok)}
+.item{background:var(--card);border-radius:10px;padding:10px 12px;margin:8px 0;display:grid;grid-template-columns:1fr;gap:6px}
+.item.keep{outline:2px solid var(--ok)}.item.reject{outline:2px solid var(--ko)}
+audio{width:100%}small{color:var(--mut)}
+button{margin-right:6px;padding:6px 14px;border-radius:8px;border:1px solid var(--mut);background:transparent;color:var(--fg);cursor:pointer}
+input{background:transparent;border:1px solid var(--mut);border-radius:8px;color:var(--fg);padding:6px 8px;width:50%}
+#out{width:100%;height:140px;background:var(--card);color:var(--fg);border:1px solid var(--mut);border-radius:8px;padding:8px}
+</style></head><body>
+<h1>Example project - audio and music audition</h1>
+<p>Listen, press keep or reject, add a note, then press <b>Copy verdicts</b> and paste the text back in the chat. Nothing leaves this machine.</p>
+
+<h2>A. Theme candidates - pick ONE</h2>
+<div class="item" data-id="theme_1"><div class="t"><b>Theme candidate 1</b><br><small>Warm, instrumental.</small></div>
+  <audio controls preload="none" src="theme_1.mp3"></audio>
+  <div class="b"><button data-v="keep">keep</button><button data-v="reject">reject</button><input placeholder="note" aria-label="note for theme 1"></div></div>
+<div class="item" data-id="theme_2"><div class="t"><b>Theme candidate 2</b><br><small>Calmer, slower.</small></div>
+  <audio controls preload="none" src="theme_2.mp3"></audio>
+  <div class="b"><button data-v="keep">keep</button><button data-v="reject">reject</button><input placeholder="note" aria-label="note for theme 2"></div></div>
+
+<h2>B. Real mix excerpts (master level)</h2>
+<div class="item" data-id="mix_3"><div class="t"><b>Scene 3: voice + bed + SFX</b><br><small>Check: voice always in front, no click at cuts.</small></div>
+  <audio controls preload="none" src="mix_s03.mp3"></audio>
+  <div class="b"><button data-v="keep">keep</button><button data-v="reject">reject</button><input placeholder="note" aria-label="note for scene 3"></div></div>
+
+<h2>Your verdicts</h2><textarea id="out" readonly placeholder="verdicts appear here"></textarea><p><button id="copy">Copy verdicts</button></p>
+<script>
+const KEY='example_audition';            // one key per project
+const st={};try{Object.assign(st,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+function render(){
+  const lines=[];
+  document.querySelectorAll('.item').forEach(el=>{
+    const id=el.dataset.id,v=st[id]||{};
+    el.classList.toggle('keep',v.v==='keep');el.classList.toggle('reject',v.v==='reject');
+    el.querySelector('input').value=v.n||'';
+    if(v.v||v.n)lines.push(id+': '+(v.v||'-')+(v.n?' | '+v.n:''));
+  });
+  document.getElementById('out').value=lines.join(String.fromCharCode(10));   // never '\n' written through a Python f-string
+  try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}
+}
+document.querySelectorAll('.item').forEach(el=>{
+  const id=el.dataset.id;
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{st[id]=Object.assign(st[id]||{},{v:b.dataset.v});render()});
+  el.querySelector('input').oninput=e=>{st[id]=Object.assign(st[id]||{},{n:e.target.value});render()};
+});
+document.getElementById('copy').onclick=()=>navigator.clipboard.writeText(document.getElementById('out').value);
+render();
+</script></body></html>
