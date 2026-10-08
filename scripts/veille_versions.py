@@ -64,6 +64,19 @@ def _github_derniere_release(repo: str) -> dict:
             "date": donnees.get("published_at", "")[:10], "notes": donnees.get("body", "") or ""}
 
 
+def _llama_build_local() -> str:
+    """Build number of the local llama.cpp install ("" if undetectable)."""
+    exe = os.path.join(r"C:\llama.cpp", "llama-cli.exe")
+    if not os.path.exists(exe):
+        return ""
+    try:
+        r = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=60)
+        m = re.search(r"build (\d+)", (r.stdout or "") + (r.stderr or ""))
+        return m.group(1) if m else ""
+    except Exception:
+        return ""
+
+
 def _commits_entre(repo: str, ref_avant: str, ref_apres: str, limite: int = 40) -> str:
     """List the commits between two refs (GitHub compare API) — fallback notes
     section when an upstream release has no body (sd-cli master snapshots)."""
@@ -611,6 +624,11 @@ def veille() -> tuple:
         rapport.ajouter("⚠️", "qwentts.cpp", f"check impossible: {e}")
 
     # ------------------------------------------------------------- llama.cpp
+    # Two channels: the semver STABLE releases (update trigger, /releases/latest)
+    # and the continuous bNNNN prerelease builds (several per day, invisible to
+    # that endpoint — blind spot measured 2026-10-07: b11476 missed). The
+    # prerelease tip is INFO only: the updater (scripts/update_llama_cpp.py)
+    # stays the decision tool.
     try:
         derniere = _github_derniere_release("ggml-org/llama.cpp")
         deja_vue = etat.get("llama.cpp", {}).get("derniere_vue", derniere["tag"])
@@ -620,7 +638,32 @@ def veille() -> tuple:
                             f"update via C:\\llama.cpp if in use — detailed changes: {chemin_notes}")
         else:
             rapport.ajouter("✅", "llama.cpp", f"latest release: {derniere['tag']}")
-        etat["llama.cpp"] = {"derniere_vue": derniere["tag"]}
+        pre_tag = None
+        try:
+            r = requests.get("https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=1",
+                             timeout=30)
+            r.raise_for_status()
+            pre = (r.json() or [{}])[0]
+            pre_tag = pre.get("tag_name")
+            if pre.get("prerelease") and pre_tag:
+                local = _llama_build_local()
+                ecart = (f", {int(pre_tag[1:]) - int(local)} builds behind local b{local}"
+                         if local and re.fullmatch(r"b\d+", pre_tag) else "")
+                deja_vue_pre = etat.get("llama.cpp", {}).get("derniere_prerelease_vue")
+                if pre_tag == deja_vue_pre:
+                    rapport.ajouter("✅", "llama.cpp", f"prerelease tip unchanged ({pre_tag}{ecart})")
+                else:
+                    rapport.ajouter("ℹ️", "llama.cpp",
+                                    f"new prerelease {pre_tag} ({pre.get('published_at', '')[:10]}) — "
+                                    f"local build {local or '?'}{ecart} — stable {derniere['tag']} "
+                                    f"unchanged; updater-driven: scripts/update_llama_cpp.py --check")
+        except Exception as e:
+            rapport.ajouter("⚠️", "llama.cpp", f"prerelease check impossible: {e}")
+        nouvel_etat = dict(etat.get("llama.cpp", {}))
+        nouvel_etat["derniere_vue"] = derniere["tag"]
+        if pre_tag:
+            nouvel_etat["derniere_prerelease_vue"] = pre_tag
+        etat["llama.cpp"] = nouvel_etat
     except Exception as e:
         rapport.ajouter("⚠️", "llama.cpp", f"check impossible: {e}")
 
