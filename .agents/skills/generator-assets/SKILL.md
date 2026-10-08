@@ -170,14 +170,14 @@ band).
 ~70 min for 22 frames, quality ≥ baseline). The 20-step mode is only for explicit quality A/B
 requests. 4K YouTube masters go through `scripts/conform_youtube_hd.py`.
 
-**⚠️ Common video pitfall (state as of 2026-09-24 — check `docs/MEMORY_BANK.md` §1.16-1.19 before
-any video render, this evolves with sd-cli updates)**: the installed sd-cli (`C:\SD\`, master-908)
-**breaks MiniMax-H3** (upstream memory regression: 54 segments instead of 2, OOM at submit ~4 min —
-upstream fix #1900 of master-908 changed the splitting (51→54) without fixing it, unchanged from
-master-864 to 908, issue #1976 open); **LTX-2.5 passes the 33-frame T2V benchmark on 908 only with
-a low desktop VRAM footprint (rebooted machine, fragile ~120 MB margin)** and its 65-frame I2V has
-not been retested there. The parallel production build remains `C:\SD-6b3edaa\` (master-841, last
-validated for LTX/H3):
+**⚠️ Common video pitfall (state as of 2026-10-08 — check `docs/MEMORY_BANK.md` §1.16-1.19 before
+any video render, this evolves with sd-cli updates)**: the installed sd-cli (`C:\SD\`, master-945)
+**breaks MiniMax-H3** (upstream regression #1976: 54 segments + OOM at submit; **the #2103 VAE-residency
+candidate fix shipped in 945 was tested 10-08 night — signature UNCHANGED, issue still open**); LTX-2.5
+fails there on the same workspace refusal. The parallel production build remains `C:\SD-6b3edaa\`
+(master-841, last validated for LTX/H3). **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
+("scarecrow with a glowing carved pumpkin head…") collapses the model to its talking-person prior —
+prompt ignored, photoreal man rendered; use objects/scenes/standard humans as subjects**:
 ```bash
 # monoplan_ia: prefix SD_CLI_PATH (resolved via core/config.py):
 SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe" uv run python main.py -w monoplan_ia ... 
