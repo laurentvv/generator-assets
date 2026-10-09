@@ -227,5 +227,6 @@ exists.
 | Reference doc, showcases, installation procedures | [`README.md`](../../../README.md) § 📦 Complete Workflow Catalog |
 | MakeHuman clothing/texturing | [`GUIDE_AGENT_IA_HABILLAGE.md`](../../../GUIDE_AGENT_IA_HABILLAGE.md) |
 | Validated stacks & pitfalls per domain | [`docs/MEMORY_BANK.md`](../../../docs/MEMORY_BANK.md) |
+| Post-generation video/audio editing (cut/join, 9:16 reframe, captions, loudness, platform export+compliance) | skill [`ffmpeg-skill`](../ffmpeg-skill/SKILL.md) — vendored kajisho5/ffmpeg-skill v2.7.0, smoke-tested 2026-10-09 (MEMORY_BANK §1.41; run its scripts with `python`, not `python3`) |
 | Repository conventions, watch, engine update process | [`AGENTS.md`](../../../AGENTS.md) |
 | Local engines (versions, validated commands) | `C:\SD\README.md`, `C:\audio-cpp\README.md`, `C:\ffmpeg\README.md`, `C:\trellis\README.md` |
