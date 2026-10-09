@@ -410,6 +410,7 @@
 - **Machine gaps measured by `doctor` (not bugs)**: `filter:vidstabdetect/transform` ABSENT from our C:\ffmpeg build → `stabilize.py` UNUSABLE until a rebuild adds libvidstab (noted in `C:\ffmpeg\README.md`) · fonts: hi/bn/ta uncovered, emoji none (ja/zh/ko/ar/he/th/ru/el OK via C:\Windows\Fonts) · no local parakeet → `caption --transcribe` off (whisper path untested) · 10 GPU encoders present in the build (h264_amf/hevc_amf) but no tool uses them — CPU x264/x265 is the supported path.
 - **Rules attached**: status stays "tested, not validated" until the user validates a real deliverable; heavy encodes still pass `scripts/check_charge_systeme.py` first; ai-doc2video music beds (−30 LUFS) are never "normalized" by the skill without explicit instruction.
 - **Ecosystem note**: same author ships color-grading-skill / transcription-skill / qc-skill (one-way deps) — candidate follow-ups, not installed.
+- **Fleet distribution (2026-10-09)**: promoted to the agents-kit fleet as the canonical copy (registered authored/fork, provenance in the kit's NOTICE.md; SKILL.md adaptation block generalized — repo-specific rules now live in this repo's AGENTS.md §7): installed in ai-doc2video + video-analys-ia, fleet smoke PASS (doctor/probe/cut/look on a testsrc2 clip in ai-doc2video, ffmpeg 9.0.2).
 
 ## 🎬 2. Validated Masters and Production Files
 
