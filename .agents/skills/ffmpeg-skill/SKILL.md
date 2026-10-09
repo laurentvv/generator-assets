@@ -5,18 +5,15 @@ description: 'Edit video and audio with local FFmpeg from natural-language reque
 
 # ffmpeg-skill
 
-## generator-assets local adaptation (read first)
+## Fleet adaptation (agents-kit distribution) — read first
 
-Vendored from [kajisho5/ffmpeg-skill](https://github.com/kajisho5/ffmpeg-skill) v2.7.0 (commit `cb10cfbc`, 2026-10-09), MIT license (`LICENSE`). Local changes vs upstream are listed in `NOTICE.md`. Everything below this block is upstream text, unchanged, and stays authoritative for how to run a job; this block only pins it to this machine and this repo.
+Vendored from [kajisho5/ffmpeg-skill](https://github.com/kajisho5/ffmpeg-skill) v2.7.0 (commit `cb10cfbc`, 2026-10-09), MIT license (`LICENSE`). This copy is a maintained fork distributed fleet-wide by agents-kit; local changes vs upstream are listed in `NOTICE.md`. Everything below this block is upstream text, unchanged, and stays authoritative for how to run a job; this block only pins it to the machine — the repo-specific rules live in the host repo's AGENTS.md §7, not here.
 
-- **Machine**: Windows 11, Git Bash. Invoke scripts with `python` (3.13, on PATH) — there is no `python3` here. From the generator-assets root: `python .agents/skills/ffmpeg-skill/scripts/<name>.py`.
-- **FFmpeg**: local build at `C:\ffmpeg` (on PATH). Engine-level knowledge (build flags, encoders, quirks) lives in `C:\ffmpeg\README.md` — record anything new learned about the engine there, per house rule.
-- **GPU gate (house rule)**: BEFORE any heavy or long encode (4K, long inputs, batch), run `uv run python scripts/check_charge_systeme.py` from the generator-assets root — exit 1 means do not launch (measured RTF 3.3× degradation on a contended GPU, 2026-09-08). Short ops (probe, keyframe cuts, contact sheets, seconds-long 1080p renders) are exempt.
-- **Encoders on this box**: `--hw` targets Apple Silicon (VideoToolbox) — dead here. The supported path is CPU x264/x265 on the AMD RX 6950 XT machine (no CUDA, no NVENC; AMF untested — do not assume it).
-- **Loudness caution**: platform exports normalize to platform spec (-14 LUFS social, -16 podcast, -23 broadcast). Do NOT "normalize" ai-doc2video music beds — those ship at -30 LUFS by project spec; touch them with `loudness.py` only on explicit instruction.
-- **Outputs**: write deliverables where the consuming project expects them (default: a folder under the caller's `output/`), never inside this skill directory. Never overwrite originals (upstream step 7 already enforces).
-- **Knowledge sync (house rule)**: validated recipes and verdicts → generator-assets `docs/MEMORY_BANK.md`; new pitfalls → its dated lessons block; script fixes stay minimal and are recorded in `NOTICE.md`.
-- **Not vendored from upstream**: `mcp/` (MCP server), `bin/` (npx installer), `tests/`, `evals/`, `demos/`, `examples/`, `docs/`, `.github/`. MCP mentions below are upstream text kept for provenance — there is no MCP server in this copy.
+- **Machine**: Windows 11, Git Bash — invoke with `python` (no `python3` on this box). FFmpeg: local build at `C:\ffmpeg` (on PATH); engine knowledge lives in `C:\ffmpeg\README.md`.
+- **Measured machine gaps (doctor 2026-10-09)**: vidstab filters absent from the build → `stabilize.py` unusable; fonts: ja/zh/ko/ar/he/th/ru/el OK, hi/bn/ta + emoji missing; no local parakeet → `--transcribe` off; 10 AMF GPU encoders present in the build but unused by this skill — CPU x264/x265 is the supported path (`--hw` is Apple-only).
+- **Repo-specific rules OVERRIDE this block and live in the HOST repo's AGENTS.md §7** — read them before any job: heavy-generation gates (e.g. generator-assets: `scripts/check_charge_systeme.py` before long/heavy encodes), per-project loudness specs (e.g. ai-doc2video music beds ship at -30 LUFS — never "normalize" them), output-location conventions.
+- **Knowledge sync**: validated recipes → host repo's `docs/MEMORY_BANK.md`; script fixes stay minimal and are recorded in `NOTICE.md`.
+- **Not vendored**: `mcp/`, `bin/`, `tests/`, `evals/`, `demos/`, `docs/` (see `NOTICE.md`). MCP mentions below are upstream text kept for provenance.
 
 Scripts live in `scripts/` next to this file; run them with `python <skill-dir>/scripts/<name>.py`, and delivery templates in `templates/`. This file is enough to do a job: the table below routes the request, and `--help` on the script about to run is the cheapest full flag list. A reference file costs as much as this one; open one only for a question you have: `references/scripts.md` (every flag of all 42 scripts), `references/devices.md` (iPhone HDR, GoPro, DJI, screen recordings, Zoom), `references/gotchas.md` (the long form of the one-line rules at the end). MCP: not vendored here (see the adaptation block above).
 
