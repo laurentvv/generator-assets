@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}generator-assets console{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/sse.js" defer></script>
+  <script src="/static/vendor/alpine.min.js" defer></script>
+</head>
+
+<body hx-ext="sse" sse-connect="/api/events" class="min-h-screen">
+
+{% set active_wf = catalog['workflows'].get(active) %}
+{% set active_family = active_wf['family'] if active_wf else '' %}
+
+<div class="app-grid min-h-screen">
+
+  {# ------------------------------------------------------------ sidebar #}
+  <aside class="border-r border-line-soft bg-surface/40 backdrop-blur-md flex flex-col">
+    <div class="flex items-center gap-2.5 px-4 pt-4 pb-3">
+      <span class="text-2xl leading-none">⚔️</span>
+      <div class="leading-tight">
+        <div class="text-sm font-bold tracking-tight">generator-assets</div>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent/90">factory console</div>
+      </div>
+    </div>
+
+    <div class="px-3 pb-3">
+      <button type="button" class="btn w-full justify-between text-ink-dim"
+              @click="$dispatch('open-palette')">
+        <span>Search workflows…</span><span class="font-mono text-[10px] border border-line rounded px-1.5 py-0.5">Ctrl K</span>
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
+      <div class="flex gap-1">
+        <a href="/" class="nav-link flex-1 {% if active == 'home' %}is-active{% endif %}">🏠 Dashboard</a>
+        <a href="/library" class="nav-link flex-1 justify-center {% if active == 'library' %}is-active{% endif %}">🗂️ Library</a>
+      </div>
+
+      {% for family in catalog['families'] %}
+        {% if family['workflows'] %}
+        <details class="group" {% if family['key'] == active_family %}open{% endif %}>
+          <summary class="select-none px-1.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint hover:text-ink-dim">
+            {{ family['icon'] }} {{ family['label'] }}
+            <span class="ml-1 font-mono text-[10px] normal-case tracking-normal text-ink-faint/60">{{ family['workflows'] | length }}</span>
+          </summary>
+          <div class="mt-1 space-y-0.5">
+            {% for wf in family['workflows'] %}
+              <a href="/w/{{ wf['name'] }}" class="nav-link {% if active == wf['name'] %}is-active{% endif %}" title="{{ wf['description'] }}">
+                <span>{{ wf['emoji'] }}</span>
+                <span class="truncate font-mono text-[12.5px]">{{ wf['name'] }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      {% endfor %}
+    </nav>
+
+    <div class="border-t border-line-soft px-4 py-3 text-[10px] text-ink-faint">
+      local-only · 127.0.0.1 · zero-cloud
+    </div>
+  </aside>
+
+  {# -------------------------------------------------------------- main #}
+  <main class="min-w-0 overflow-x-hidden">
+    {% block content %}{% endblock %}
+  </main>
+
+  {# ------------------------------------------------------- run dock #}
+  <aside id="dock" class="border-l border-line-soft bg-surface/40 backdrop-blur-md flex flex-col gap-3 p-3 overflow-y-auto"
+         x-data="{ collapsed: false }">
+    <div class="flex items-center justify-between">
+      <h2 class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Run</h2>
+      <button type="button" class="btn px-2 py-1 text-[11px]" @click="collapsed = !collapsed"
+              x-text="collapsed ? '▸' : '▾'"></button>
+    </div>
+
+    <div x-show="!collapsed" class="flex flex-col gap-3">
+      <div id="queue-bar" sse-swap="queue_status" hx-swap="innerHTML">
+        {% include "partials/queue_bar.html" %}
+      </div>
+      <div id="job-panel" sse-swap="job_state" hx-swap="innerHTML">
+        {% with job = snapshot['current'], form_error = None %}
+          {% include "partials/job_panel.html" %}
+        {% endwith %}
+      </div>
+      <div id="job-progress" sse-swap="job_progress" hx-swap="innerHTML">
+        {% include "partials/progress.html" %}
+      </div>
+      <div id="job-log" class="term h-56" sse-swap="job_log" hx-swap="innerHTML">
+        {% include "partials/log_tail.html" with context %}
+      </div>
+    </div>
+  </aside>
+</div>
+
+{# --------------------------------------------------------- dialogs #}
+<div x-data="{ palette: false, picker: { open: false, field: '', kind: 'image' } }"
+     @open-palette.window="palette = true"
+     @open-picker.window="picker.open = true; picker.field = $event.detail.field; picker.kind = $event.detail.kind;
+                          htmx.ajax('GET', '/partials/file-picker?field=' + picker.field + '&kind=' + picker.kind, '#picker-body')"
+     @ga-pick.window="picker.open = false"
+     @keydown.escape.window="palette = false; picker.open = false"
+     @keydown.ctrl.k.window.prevent="$dispatch('open-palette')">
+
+  {# command palette #}
+  <div x-show="palette" x-cloak class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-[12vh] backdrop-blur-sm"
+       @click.self="palette = false">
+    <div class="panel w-full max-w-xl overflow-hidden shadow-pop">
+      <input type="text" placeholder="Type a workflow name…" autofocus
+             class="w-full border-0 border-b border-line-soft bg-transparent px-4 py-3.5 text-[15px] text-ink outline-none placeholder:text-ink-faint"
+             name="q" hx-get="/search" hx-trigger="input changed delay:150ms, revealed" hx-target="#palette-results">
+      <div id="palette-results" class="max-h-[50vh] overflow-y-auto p-2"></div>
+    </div>
+  </div>
+
+  {# file picker #}
+  <div x-show="picker.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
+       @click.self="picker.open = false">
+    <div class="panel flex max-h-[82vh] w-full max-w-2xl flex-col overflow-hidden shadow-pop">
+      <div class="flex items-center justify-between border-b border-line-soft px-4 py-3">
+        <h3 class="text-sm font-bold">Pick a file <span class="font-mono text-[11px] text-ink-faint" x-text="'→ ' + picker.field"></span></h3>
+        <button type="button" class="btn px-2 py-1" @click="picker.open = false">✕</button>
+      </div>
+      <div id="picker-body" class="flex-1 overflow-y-auto p-3"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Library · generator-assets{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl px-6 py-7" x-data="{ drawer: false }">
+
+  <header class="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Library</h1>
+      <p class="mt-1 text-[13px] text-ink-dim">{{ total }} assets indexed from <code class="font-mono text-[11.5px]">output/</code> + <code class="font-mono text-[11.5px]">godot_assets/</code></p>
+    </div>
+
+    {# filters #}
+    <form class="flex flex-wrap items-center gap-2" method="get" action="/library">
+      <div class="flex gap-1">
+        {% for k, icon in [("image", "🖼️"), ("video", "🎬"), ("audio", "🔊"), ("model", "🧊"), ("doc", "📄")] %}
+          {% set params = {"kind": "" if kind == k else k, "q": q, "workflow": workflow} %}
+          <a href="/library?{{ params | urlencode }}"
+             class="rounded-lg border px-2.5 py-1.5 text-[12px] transition {% if kind == k %}border-accent/50 bg-accent/10 text-accent{% else %}border-line bg-surface-2/60 text-ink-dim hover:text-ink{% endif %}">
+            {{ icon }} {{ k }}
+          </a>
+        {% endfor %}
+      </div>
+      {% if workflow_names %}
+      <select name="workflow" class="field !w-auto !py-1.5 text-[12px]">
+        <option value="">— any workflow —</option>
+        {% for name in workflow_names %}
+          <option value="{{ name }}" {% if name == workflow %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+      <input type="text" name="q" value="{{ q }}" placeholder="search path…" class="field !w-44 !py-1.5 text-[12px]">
+      <button type="submit" class="btn text-[12px]">Filter</button>
+    </form>
+  </header>
+
+  {% if items %}
+  <div class="masonry">
+    {% for item in items %}
+      {% set thumb = thumb_of(item['path']) %}
+      <button type="button"
+              hx-get="/partials/asset-detail?path={{ item['path'] | urlencode }}" hx-target="#asset-drawer-body" hx-swap="innerHTML"
+              @click="drawer = true"
+              class="panel group block w-full overflow-hidden text-left transition hover:-translate-y-0.5 hover:border-accent/35">
+        {% if item['kind'] == 'image' and thumb %}
+          <img src="{{ thumb }}" alt="" loading="lazy" class="w-full object-cover">
+        {% elif item['kind'] == 'audio' %}
+          {% set wave = wave_of(item['path']) %}
+          {% if wave %}
+            <img src="{{ wave }}" alt="waveform" loading="lazy" class="w-full bg-canvas/70">
+          {% else %}
+            <div class="grid aspect-square place-items-center text-4xl">🔊</div>
+          {% endif %}
+        {% elif item['kind'] == 'video' %}
+          <video preload="metadata" src="{{ file_url(item['path']) }}" class="aspect-video w-full bg-black object-cover"></video>
+        {% else %}
+          <div class="grid aspect-square place-items-center text-4xl">{{ kind_icon(item['kind']) }}</div>
+        {% endif %}
+        <div class="px-2.5 py-2">
+          <div class="truncate text-[12px] font-medium">{{ basename(item['path']) }}</div>
+          <div class="mt-0.5 flex items-center gap-1.5 font-mono text-[9.5px] text-ink-faint">
+            <span>{{ kind_icon(item['kind']) }} {{ fmt_size(item['size']) }}</span>
+            <span>·</span><span>{{ fmt_ts(item['mtime']) }}</span>
+          </div>
+        </div>
+      </button>
+    {% endfor %}
+  </div>
+
+  {# pagination #}
+  {% set pages = ((total + per_page - 1) // per_page) if per_page else 1 %}
+  {% if pages > 1 %}
+    <div class="mt-6 flex items-center justify-center gap-2 text-[12px]">
+      {% if page_n > 1 %}
+        <a class="btn" href="/library?kind={{ kind }}&workflow={{ workflow }}&q={{ q | urlencode }}&page_n={{ page_n - 1 }}">← Newer</a>
+      {% endif %}
+      <span class="font-mono text-ink-faint">page {{ page_n }} / {{ pages }}</span>
+      {% if page_n < pages %}
+        <a class="btn" href="/library?kind={{ kind }}&workflow={{ workflow }}&q={{ q | urlencode }}&page_n={{ page_n + 1 }}">Older →</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% else %}
+    <div class="panel grid place-items-center py-16 text-center">
+      <span class="text-4xl">🗂️</span>
+      <p class="mt-3 text-[13px] text-ink-dim">No asset matches these filters.</p>
+    </div>
+  {% endif %}
+
+  {# detail drawer #}
+  <div x-show="drawer" x-cloak class="fixed inset-0 z-40 flex justify-end bg-black/55 backdrop-blur-sm"
+       @click.self="drawer = false" @keydown.escape.window="drawer = false">
+    <div class="h-full w-full max-w-lg overflow-y-auto border-l border-line-soft bg-surface p-4 shadow-pop">
+      <div class="mb-3 flex justify-end">
+        <button type="button" class="btn px-2 py-1" @click="drawer = false">✕ Close</button>
+      </div>
+      <div id="asset-drawer-body"></div>
+    </div>
+  </div>
+
+  {% if detail %}
+    <div x-init="drawer = true;
+         htmx.ajax('GET', '/partials/asset-detail?path={{ detail | urlencode }}', '#asset-drawer-body')"></div>
+  {% endif %}
+</div>
+{% endblock %}

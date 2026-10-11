@@ -1,0 +1,7 @@
+<div class="rounded-xl border {% if allowed %}border-ok/30 bg-ok/10{% else %}border-err/30 bg-err/10{% endif %} p-3">
+  <div class="mb-2 flex items-center gap-2 text-[12px] font-semibold {% if allowed %}text-ok{% else %}text-err{% endif %}">
+    {% if allowed %}<span>✅ Machine available — heavy jobs allowed</span>
+    {% else %}<span>⛔ Load too high (exit 1) — do NOT launch a heavy job</span>{% endif %}
+  </div>
+  <pre class="term max-h-64 !bg-canvas/80 text-[10.5px]">{{ output }}</pre>
+</div>
