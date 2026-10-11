@@ -242,7 +242,8 @@ def generer_image_qwen21(
     init_image: Optional[str] = None,
     strength: float = 0.65,
     loras: Optional[List[Union[str, Tuple[str, float]]]] = None,
-    lora_dir: Optional[str] = None
+    lora_dir: Optional[str] = None,
+    sigmas: Optional[str] = None
 ) -> Image.Image:
     """
     Renders an image with Qwen-Image-2.1 (7B DiT GGUF, Vulkan).
@@ -301,6 +302,8 @@ def generer_image_qwen21(
         "--offload-to-cpu",
         "-o", output_path,
     ]
+    if sigmas:
+        commande.extend(["--sigmas", sigmas])
     if negative_prompt:
         commande.extend(["-n", negative_prompt])
     if init_image:
