@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Jobs · generator-assets{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl px-6 py-7">
+
+  <header class="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Jobs <span class="text-ink-faint text-base font-normal">— run history</span></h1>
+      <p class="mt-1 text-[13px] text-ink-dim">Every launch through the console (SQLite, survives restarts — orphaned runs are marked <code class="font-mono text-[11.5px]">interrupted</code>).</p>
+    </div>
+    <div class="flex flex-wrap gap-1">
+      <a href="/jobs" class="btn text-[11px] {% if not status_filter %}!border-accent/50 !text-accent{% endif %}">all</a>
+      {% for s in ['running', 'pending', 'complete', 'error', 'blocked_load', 'canceled'] %}
+        <a href="/jobs?status={{ s }}" class="btn text-[11px] {% if status_filter == s %}!border-accent/50 !text-accent{% endif %}">{{ s }}</a>
+      {% endfor %}
+    </div>
+  </header>
+
+  {% if jobs %}
+    <div class="space-y-1.5">
+      {% for job in jobs %}
+        <div class="panel flex flex-wrap items-center gap-x-3 gap-y-1 px-3.5 py-2.5">
+          <span class="dot {% if job['status'] == 'running' %}bg-accent animate-pulse-soft{% elif job['status'] == 'complete' %}bg-ok{% elif job['status'] in ('error', 'blocked_load') %}bg-err{% elif job['status'] == 'pending' %}bg-info{% else %}bg-ink-faint{% endif %}"></span>
+          <span class="w-32 shrink-0 truncate font-mono text-[12px] font-semibold">{{ job['workflow'] }}</span>
+          <span class="min-w-0 flex-1 truncate text-[11.5px] text-ink-faint">{{ job['prompt'] or '—' }}</span>
+          <span class="shrink-0 text-[10px] font-bold uppercase tracking-wider {{ status_color(job['status']) }}">{{ job['status'] }}</span>
+          {% set dur = ((job['ended_at'] or now()) - job['started_at']) | round(0) if job['started_at'] and job['status'] == 'running'
+                        else ((job['ended_at'] - job['started_at']) | round(0) if job['started_at'] and job['ended_at'] else none) %}
+          <span class="w-14 shrink-0 text-right font-mono text-[10.5px] text-ink-faint">{{ fmt_dur(dur) if dur is not none else '—' }}</span>
+          <span class="w-20 shrink-0 text-right font-mono text-[10.5px] text-ink-faint">{{ fmt_ts(job['created_at']) }}</span>
+          <span class="flex shrink-0 gap-1.5">
+            {% if job['status'] in ('running', 'pending') %}
+              <button type="button" class="btn btn-danger px-2 py-0.5 text-[10.5px]" hx-post="/api/jobs/{{ job['id'] }}/cancel" hx-swap="none">stop</button>
+            {% elif job['status'] in ('error', 'blocked_load', 'canceled', 'interrupted') %}
+              <button type="button" class="btn px-2 py-0.5 text-[10.5px]" hx-post="/api/jobs/{{ job['id'] }}/retry" hx-swap="none">retry</button>
+            {% endif %}
+            {% if job['log_path'] %}
+              <a class="btn px-2 py-0.5 text-[10.5px]" href="/files?p={{ job['log_path'] | urlencode }}" target="_blank">log</a>
+            {% endif %}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="panel grid place-items-center py-16 text-center">
+      <span class="text-4xl">📜</span>
+      <p class="mt-3 text-[13px] text-ink-dim">No job with this filter yet.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

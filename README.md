@@ -267,7 +267,10 @@ streaming (SSE), source-image uploads with a file picker over `output/` +
 waveforms, video preview, send-to-workflow actions), and a read-only **Models** page
 (expected models from `core/config.py` with present/missing + sizes, workflow→model
 dependency strip, active env overrides, LoRA/upscaler listings, optional disk
-inventory — no add/remove: the AGENTS.md restatement rule applies). Runtime state lives
+inventory — no add/remove: the AGENTS.md restatement rule applies), a read-only
+**Veille** page (pending updates, installed-vs-upstream component versions, journal
+feed, update notes — report only, never auto-update) and a **Jobs** history page
+(status filters, stop/retry, raw logs). Runtime state lives
 in `output/_webui/` (SQLite + logs + uploads, git-ignored). The engines are still
 invoked exactly through the frozen CLI subprocess contract — the UI adds zero PyTorch,
 zero cloud.

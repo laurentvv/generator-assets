@@ -14,6 +14,22 @@
     </div>
   </header>
 
+  {# veille banner #}
+  {% set vp = veille_pending if veille_pending else {'count': 0, 'detecte_le': none} %}
+  {% if vp['count'] %}
+    <a href="/veille" class="mb-4 flex items-center gap-2.5 rounded-xl border border-warn/30 bg-warn/[0.08] px-4 py-3 text-[13px] text-warn transition hover:bg-warn/[0.14]">
+      <span>🔭</span>
+      <span class="font-semibold">{{ vp['count'] }} pending update{{ 's' if vp['count'] > 1 }} — review before launching anything else</span>
+      <span class="ml-auto text-[11px] text-warn/70">detected {{ vp['detecte_le'] or '—' }} → open Veille</span>
+    </a>
+  {% else %}
+    <a href="/veille" class="mb-4 flex items-center gap-2.5 rounded-xl border border-line-soft bg-surface/50 px-4 py-2.5 text-[12px] text-ink-faint transition hover:text-ink-dim">
+      <span class="dot bg-ok"></span>
+      <span>No pending update</span>
+      <span class="ml-auto font-mono text-[10.5px]">last detection {{ vp['detecte_le'] or '—' }} → Veille</span>
+    </a>
+  {% endif %}
+
   <div class="grid gap-4 lg:grid-cols-2">
 
     {# system #}

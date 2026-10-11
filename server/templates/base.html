@@ -36,10 +36,14 @@
     </div>
 
     <nav class="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
-      <div class="flex gap-1">
+      <div class="flex flex-wrap gap-1">
         <a href="/" class="nav-link flex-1 {% if active == 'home' %}is-active{% endif %}">🏠 Dashboard</a>
         <a href="/library" class="nav-link flex-1 justify-center {% if active == 'library' %}is-active{% endif %}">🗂️ Library</a>
+      </div>
+      <div class="flex flex-wrap gap-1">
         <a href="/models" class="nav-link flex-1 justify-center {% if active == 'models' %}is-active{% endif %}">🧠 Models</a>
+        <a href="/veille" class="nav-link flex-1 justify-center {% if active == 'veille' %}is-active{% endif %}">🔭 Veille</a>
+        <a href="/jobs" class="nav-link flex-1 justify-center {% if active == 'jobs' %}is-active{% endif %}">📜 Jobs</a>
       </div>
 
       {% for family in catalog['families'] %}

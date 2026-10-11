@@ -8,6 +8,7 @@ against a fake main.py, and page rendering through the FastAPI TestClient.
 import asyncio
 import hashlib
 import importlib.util
+import json
 import logging
 import sys
 from pathlib import Path
@@ -329,6 +330,80 @@ def test_models_page_renders(client, tmp_state, monkeypatch):
     assert "Workflow dependencies" in response.text and "LoRAs" in response.text
     full = client.get("/models", params={"inventory": "1"})
     assert full.status_code == 200 and "files ·" in full.text
+
+
+# ------------------------------------------------------------------- veille --
+
+@pytest.fixture
+def veille_files(tmp_state, monkeypatch):
+    """Fake veille artifacts (module paths are module-level → patchable)."""
+    from server import veille as veille_mod
+
+    monkeypatch.setattr(veille_mod, "PENDING_PATH", tmp_state / "maj.json")
+    monkeypatch.setattr(veille_mod, "STATE_PATH", tmp_state / "etat.json")
+    monkeypatch.setattr(veille_mod, "JOURNAL_PATH", tmp_state / "journal.md")
+    notes_dir = tmp_state / "notes"
+    notes_dir.mkdir()
+    monkeypatch.setattr(veille_mod, "NOTES_DIR", notes_dir)
+    return veille_mod
+
+
+def test_veille_pending_and_state(veille_files, tmp_state):
+    mod = veille_files
+    tmp_state.joinpath("maj.json").write_text(json.dumps({
+        "detecte_le": "2026-10-11 12:42",
+        "items": [{"composant": "sd-cli", "installee": "945", "nouvelle": "956"}],
+    }), encoding="utf-8")
+    tmp_state.joinpath("etat.json").write_text(json.dumps({
+        "audio.cpp": {"installee": "v0.9.1", "derniere_vue": "v0.9.1"},
+        "sd_cli": {"installe": "a1ded76", "derniere_vue": "1b0ba10"},
+        "paquets_python": {"obsolete": ["numpy"]},
+        "org_audio_cpp": {"repos": {"x": 1}},  # inventory-only → skipped
+    }), encoding="utf-8")
+
+    pend = mod.pending()
+    assert pend["count"] == 1 and pend["items"][0]["composant"] == "sd-cli"
+    rows = {row["name"]: row for row in mod.state()["rows"]}
+    assert rows["audio.cpp"]["upstream_newer"] is False
+    assert rows["sd_cli"]["upstream_newer"] is True
+    assert rows["paquets_python"]["obsolete"] == ["numpy"]
+    assert "org_audio_cpp" not in rows
+
+
+def test_veille_journal_parsing(veille_files, tmp_state):
+    mod = veille_files
+    tmp_state.joinpath("journal.md").write_text(
+        "# Watch Journal\n\n"
+        "- **2026-10-11 (~12:4x, user \"merge\") • PR #11 MERGED** — body one with [link](https://x).\n"
+        "  continuation line ignored (bullets are single-line by format).\n"
+        "- **2026-10-10 • EARLIER ENTRY** — body two.\n",
+        encoding="utf-8")
+    entries = mod.journal_entries()
+    assert len(entries) == 2
+    assert entries[0]["date"] == "2026-10-11"
+    assert entries[0]["title"].startswith("2026-10-11")
+    assert entries[0]["body"].startswith("body one")
+
+
+def test_veille_page_and_dashboard_badge(client, veille_files, tmp_state):
+    tmp_state.joinpath("maj.json").write_text(json.dumps({
+        "detecte_le": "2026-10-11 12:42",
+        "items": [{"composant": "sd-cli"}],
+    }), encoding="utf-8")
+    page = client.get("/veille")
+    assert page.status_code == 200
+    assert "Pending updates" in page.text and "sd-cli" in page.text
+    assert "never automatic update" in page.text
+    dashboard = client.get("/")
+    assert "pending update" in dashboard.text  # amber banner when items exist
+
+
+def test_jobs_page_renders_with_actions(client):
+    client.post("/api/jobs", data={"workflow": "pixelart", "prompt": "hist", "seed": "7"})
+    page = client.get("/jobs")
+    assert page.status_code == 200 and "pixelart" in page.text
+    filtered = client.get("/jobs", params={"status": "pending"})
+    assert filtered.status_code == 200
 
 
 def test_workflow_form_covers_every_catalog_entry(client):
