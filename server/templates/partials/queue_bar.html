@@ -1,0 +1,30 @@
+{# Queue state chip — swapped live by the SSE queue_status event. #}
+{% set current = snapshot['current'] if snapshot else None %}
+{% set pending = snapshot['pending_count'] if snapshot else 0 %}
+
+<div class="rounded-xl border border-line-soft bg-surface-2/60 px-3 py-2.5">
+  {% if current %}
+    <div class="flex items-center gap-2">
+      <span class="dot bg-accent animate-pulse-soft"></span>
+      <span class="min-w-0 flex-1 truncate text-[13px] font-semibold">
+        {{ current['workflow'] }} <span class="text-ink-faint font-normal">· running</span>
+      </span>
+      <button type="button" class="btn btn-danger px-2 py-0.5 text-[11px]"
+              hx-post="/api/jobs/{{ current['id'] }}/cancel" hx-swap="none">Stop</button>
+    </div>
+  {% else %}
+    <div class="flex items-center gap-2">
+      <span class="dot bg-ok"></span>
+      <span class="text-[13px] text-ink-dim">Idle — GPU free</span>
+    </div>
+  {% endif %}
+
+  {% if pending %}
+    <div class="mt-1.5 flex items-center gap-1.5 text-[11px] text-info">
+      <span class="dot bg-info/70"></span> {{ pending }} queued
+      {% for p in snapshot['pending'][:4] %}
+        <span class="truncate font-mono text-[10px] text-ink-faint">{{ p['workflow'] }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

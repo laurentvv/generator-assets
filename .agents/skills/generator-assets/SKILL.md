@@ -21,7 +21,12 @@ uv run python main.py -w <workflow> "<prompt or args>" [options]
 - `-o <name>`: base name of the outputs (otherwise derived from the prompt);
 - `--seed <N>`: fixed seed for A/B reproducibility;
 - `uv run python main.py --check`: checks that engines and models are detected;
-- `uv run python main.py --interactive`: interactive console (40-workflow menu) for human exploration;
+- `uv run python main.py --interactive`: interactive console (49-workflow menu) for human exploration;
+- **web console (2026-10-11)**: `uv run python -m server` → http://127.0.0.1:8765 —
+  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 49 workflows: auto-generated forms
+  from the live registry, serialized queue (one heavy job at a time), automatic load
+  gate, live log/progress (SSE), output library with thumbnails/waveforms, uploads.
+  For the HUMAN user; agents keep using the CLI (same subprocess contract);
 - outputs land in `output/` (or its `<workflow>/` subfolder — since 2026-09-25 the default is `output/` everywhere; `godot_assets/` = validated reference assets only).
 
 The full detail of each workflow (inputs, outputs, options, examples) is in

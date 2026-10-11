@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · generator-assets{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl px-6 py-7">
+
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Factory console</h1>
+      <p class="mt-1 text-[13px] text-ink-dim">Pilot every workflow of the local AI media factory — one GPU job at a time.</p>
+    </div>
+    <div class="flex items-center gap-2 text-[11px] text-ink-faint">
+      <span class="dot bg-ok"></span> local-only · Vulkan engines · zero cloud
+    </div>
+  </header>
+
+  {# veille banner #}
+  {% set vp = veille_pending if veille_pending else {'count': 0, 'detecte_le': none} %}
+  {% if vp['count'] %}
+    <a href="/veille" class="mb-4 flex items-center gap-2.5 rounded-xl border border-warn/30 bg-warn/[0.08] px-4 py-3 text-[13px] text-warn transition hover:bg-warn/[0.14]">
+      <span>🔭</span>
+      <span class="font-semibold">{{ vp['count'] }} pending update{{ 's' if vp['count'] > 1 }} — review before launching anything else</span>
+      <span class="ml-auto text-[11px] text-warn/70">detected {{ vp['detecte_le'] or '—' }} → open Veille</span>
+    </a>
+  {% else %}
+    <a href="/veille" class="mb-4 flex items-center gap-2.5 rounded-xl border border-line-soft bg-surface/50 px-4 py-2.5 text-[12px] text-ink-faint transition hover:text-ink-dim">
+      <span class="dot bg-ok"></span>
+      <span>No pending update</span>
+      <span class="ml-auto font-mono text-[10.5px]">last detection {{ vp['detecte_le'] or '—' }} → Veille</span>
+    </a>
+  {% endif %}
+
+  <div class="grid gap-4 lg:grid-cols-2">
+
+    {# system #}
+    <section class="panel p-4">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">System & engines</h2>
+        <button type="button" class="btn text-[11px]" hx-get="/partials/system-check" hx-target="#system-check-out" hx-swap="innerHTML">
+          ⟳ Run load check
+        </button>
+      </div>
+      <div id="system-check-out"></div>
+      <div class="mt-3 grid grid-cols-2 gap-1.5">
+        {% for name, present in engines.items() %}
+          <div class="flex items-center gap-2 rounded-lg border border-line-soft bg-surface-2/50 px-2.5 py-1.5 text-[12px]">
+            <span class="dot {% if present %}bg-ok{% else %}bg-err{% endif %}"></span>
+            <span class="truncate text-ink-dim">{{ name }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <p class="mt-2.5 text-[11px] leading-snug text-ink-faint">
+        The load check gates every heavy job automatically (exit 1 = launch refused).
+      </p>
+    </section>
+
+    {# queue #}
+    <section class="panel p-4">
+      <h2 class="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Queue & recent jobs</h2>
+      {% if recent_jobs %}
+        <div class="space-y-1">
+          {% for job in recent_jobs[:7] %}
+            <div class="flex items-center gap-2.5 rounded-lg border border-line-soft bg-surface-2/40 px-2.5 py-1.5">
+              <span class="dot {% if job['status'] == 'running' %}bg-accent animate-pulse-soft{% elif job['status'] == 'complete' %}bg-ok{% elif job['status'] in ('error','blocked_load') %}bg-err{% elif job['status'] == 'pending' %}bg-info{% else %}bg-ink-faint{% endif %}"></span>
+              <span class="w-28 shrink-0 truncate font-mono text-[11.5px] font-semibold">{{ job['workflow'] }}</span>
+              <span class="min-w-0 flex-1 truncate text-[11px] text-ink-faint">{{ job['prompt'] or '—' }}</span>
+              <span class="shrink-0 font-mono text-[10px] text-ink-faint">{{ fmt_ts(job['created_at']) }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="py-6 text-center text-[12.5px] text-ink-faint">No job yet — pick a workflow in the sidebar.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {# quick launch #}
+  <section class="panel mt-4 p-4">
+    <h2 class="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Quick launch</h2>
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      {% for name, icon, hint in [
+        ("generate", "✨", "2D asset"),
+        ("qwen_image", "🏷️", "Qwen turbo"),
+        ("music_bg", "🎵", "music bed"),
+        ("voix_off", "🗣️", "FR voice-over"),
+        ("video", "🎬", "t2v / i2v"),
+        ("mesh_ia", "🧊", "AI 3D"),
+      ] %}
+        {% set quick = catalog['workflows'].get(name) %}
+        {% if quick %}
+        <a href="/w/{{ name }}" class="group flex flex-col items-center gap-1.5 rounded-xl border border-line-soft bg-surface-2/50 px-3 py-3.5 transition hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface-3/60">
+          <span class="text-2xl transition group-hover:scale-110">{{ icon }}</span>
+          <span class="font-mono text-[11.5px] font-semibold">{{ name }}</span>
+          <span class="text-[10px] text-ink-faint">{{ hint }}</span>
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  {# recent generations #}
+  <section class="panel mt-4 p-4">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Recent generations</h2>
+      <a href="/library" class="text-[11px] text-info hover:underline">Open Library →</a>
+    </div>
+    {% if recent_outputs %}
+      <div class="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+        {% for out in recent_outputs %}
+          <a href="/library?detail={{ out['path'] | urlencode }}" class="group relative overflow-hidden rounded-lg border border-line-soft bg-canvas/60" title="{{ out['path'] }}">
+            {% set thumb = thumb_of(out['path']) %}
+            {% if thumb and out['kind'] == 'image' %}
+              <img src="{{ thumb }}" class="aspect-square w-full object-cover transition group-hover:scale-[1.05]" loading="lazy" alt="">
+            {% else %}
+              <span class="grid aspect-square w-full place-items-center text-xl">{{ kind_icon(out['kind']) }}</span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="py-6 text-center text-[12.5px] text-ink-faint">Nothing indexed yet — the library fills as you generate.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}
