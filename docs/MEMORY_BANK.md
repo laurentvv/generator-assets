@@ -424,6 +424,7 @@
 - **Smoke 2026-10-11 (all real path, seed 42)**: `flowmap` via UI form → COMPLETE 1 s (gate skipped, light/CPU) · `generate` via UI → load gate PASS → COMPLETE 2 m 50 s (Flux 25 steps), SSE panel/log/queue live in browser, output png linked to job + library. Tests: 82 passed (argv golden, serialized lifecycle via fake factory, traversal guard, template render via TestClient, vendor sha256 pins) + ruff clean. Note: `tests/surface_cli.json` regenerated on this branch — it was stale on main (missing `--qwen-turbo` from merged PR #11).
 - **Pitfall fixed live**: engine progress bars use `\r` (no `\n`) → `readline()` never yielded; the runner now splits stdout on both and parses `step i/N`, `i/N it`, `NN%` (progress stayed 0.0 during the first GPU run before the fix).
 - **Status**: tested-not-validated — awaiting user session on real productions; agents keep the CLI (the web UI is the human path).
+- **Fluidity fix (PR #13, merged 2026-10-11)**: page renders NEVER generate media — `thumbnail()/waveform()` are cache-hit only (`create=False` default); the indexer pre-generates in a worker thread (bounded 24/pass) + a fire-and-forget background task drains the backlog; walk = os.walk pruned of `output/_webui` + single-transaction `upsert_many`. Cause of the "ça mouline": 365 pngs vs 108 cached thumbs × 50-150 ms PIL each, in-request. Measured: pages 3-160 ms, 1 172 cached media files. Vendor JS + chimes are `-text` in .gitattributes (sha256 pins vs autocrlf checkouts).
 
 ## 🎬 2. Validated Masters and Production Files
 
