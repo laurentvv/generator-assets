@@ -321,6 +321,17 @@ def test_active_env_overrides_detects_set_var(tmp_state, monkeypatch):
     assert overrides["SD_MODEL_PATH"]["constant"] == "DEFAULT_SD_MODEL"
 
 
+def test_active_env_overrides_match_multiline_getenv(monkeypatch):
+    """Regression pin (Kilo review false CRITICAL): the override regex must
+    match the multi-line parenthesized os.getenv( form used by config.py —
+    e.g. DEFAULT_QWEN_IMAGE21_TURBO_MODEL spans three lines."""
+    from server import models as models_mod
+
+    monkeypatch.setenv("QWEN_IMAGE21_TURBO_MODEL_PATH", r"C:\Modeles_LLM\Qwen-Image-2.1-Turbo-Q8_0.gguf")
+    overrides = {item["env"]: item for item in models_mod.active_env_overrides()}
+    assert overrides["QWEN_IMAGE21_TURBO_MODEL_PATH"]["constant"] == "DEFAULT_QWEN_IMAGE21_TURBO_MODEL"
+
+
 def test_models_page_renders(client, tmp_state, monkeypatch):
     from core import config as engine_config
 

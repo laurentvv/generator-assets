@@ -85,9 +85,20 @@ def _path_of(constant: str) -> Optional[Path]:
     return Path(str(value)) if value else None
 
 
+def _under(child: Path, parent: Optional[Path]) -> bool:
+    if not parent:
+        return False
+    try:
+        child.resolve().relative_to(parent.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
 def expected_models() -> List[Dict[str, Any]]:
     """Curated constants -> sections with present/missing + size."""
     sections: List[Dict[str, Any]] = []
+    model_dir = _path_of("DEFAULT_MODEL_DIR")
     for section, constant, label in MODEL_CONSTANTS:
         path = _path_of(constant)
         present = bool(path and path.exists())
@@ -105,7 +116,7 @@ def expected_models() -> List[Dict[str, Any]]:
                     size = path.stat().st_size
                 except OSError:
                     size = 0
-        custom = bool(path and not str(path).lower().startswith(str(_path_of("DEFAULT_MODEL_DIR") or "").lower()))
+        custom = bool(path and not _under(path, model_dir))
         item = {"label": label, "constant": constant, "path": str(path) if path else "—",
                 "present": present, "size": size, "custom": custom, "is_dir": bool(path and path.is_dir())}
         if section:
@@ -118,8 +129,10 @@ def expected_models() -> List[Dict[str, Any]]:
 def workflow_dependencies() -> List[Dict[str, Any]]:
     """Workflow -> model constants presence, for the dependency strip."""
     catalog_names = _catalog_names()
-    presence = {constant: bool(_path_of(constant) and _path_of(constant).exists())
-                for _, constant, _ in MODEL_CONSTANTS}
+    presence: Dict[str, bool] = {}
+    for _, constant, _ in MODEL_CONSTANTS:
+        path = _path_of(constant)
+        presence[constant] = bool(path and path.exists())
     rows = []
     for workflow, constants in WORKFLOW_MODEL_MAP.items():
         rows.append({
@@ -175,10 +188,9 @@ def scan_roots() -> List[Path]:
         if not path:
             continue
         base = path if path.is_dir() else path.parent
-        drive_root = Path(base.anchor)
         candidate = base
-        # Keep the closest existing ancestor below the drive root.
-        while not candidate.exists() and candidate != drive_root:
+        # Keep the closest existing ancestor (bounded walk-up, Windows-safe).
+        while not candidate.exists() and candidate != candidate.parent:
             candidate = candidate.parent
         if candidate.exists() and model_dir and not candidate.is_relative_to(model_dir) and candidate not in roots:
             roots.append(candidate)
