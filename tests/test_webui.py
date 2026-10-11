@@ -276,6 +276,61 @@ def test_pages_render(client):
     assert client.get("/w/does_not_exist").status_code == 404
 
 
+# ------------------------------------------------------------------- models --
+
+def test_expected_models_reports_missing_and_custom(tmp_state, monkeypatch):
+    from core import config as engine_config
+    from server import models as models_mod
+
+    monkeypatch.setattr(engine_config, "DEFAULT_MODEL_DIR", str(tmp_state / "models"))
+    monkeypatch.setattr(engine_config, "DEFAULT_SD_MODEL", str(tmp_state / "models" / "flux.gguf"))
+    (tmp_state / "models").mkdir(parents=True, exist_ok=True)
+    (tmp_state / "models" / "flux.gguf").write_bytes(b"x")
+    # A constant outside MODEL_DIR must be flagged "custom".
+    monkeypatch.setattr(engine_config, "DEFAULT_QWEN_IMAGE21_TURBO_MODEL",
+                        str(tmp_state / "elsewhere" / "turbo.gguf"))
+
+    sections = models_mod.expected_models()
+    flat = {item["constant"]: item for section in sections for item in section["items"]}
+    assert flat["DEFAULT_SD_MODEL"]["present"] and flat["DEFAULT_SD_MODEL"]["size"] == 1
+    assert not flat["DEFAULT_SD_MODEL"]["custom"]
+    assert not flat["DEFAULT_QWEN_IMAGE21_TURBO_MODEL"]["present"]
+    assert flat["DEFAULT_QWEN_IMAGE21_TURBO_MODEL"]["custom"]
+
+
+def test_workflow_dependencies_cover_core_workflows():
+    from server import models as models_mod
+
+    rows = {row["workflow"]: row for row in models_mod.workflow_dependencies()}
+    assert {"generate", "qwen_image", "video", "music_bg"} <= set(rows)
+    assert rows["qwen_image"]["in_ui"] is True
+    assert any(m["constant"] == "DEFAULT_QWEN_IMAGE21_TURBO_MODEL" for m in rows["qwen_image"]["models"])
+
+
+def test_active_env_overrides_detects_set_var(tmp_state, monkeypatch):
+    from core import config as engine_config
+    from server import models as models_mod
+
+    source_names = {match for match in
+                    __import__("re").findall(r"os\.getenv\(\s*\"([A-Z0-9_]+)\"",
+                                             Path(engine_config.__file__).read_text(encoding="utf-8"))}
+    assert "SD_MODEL_PATH" in source_names  # sanity: the parse target exists
+    monkeypatch.setenv("SD_MODEL_PATH", str(tmp_state / "custom_flux.gguf"))
+    overrides = {item["env"]: item for item in models_mod.active_env_overrides()}
+    assert overrides["SD_MODEL_PATH"]["constant"] == "DEFAULT_SD_MODEL"
+
+
+def test_models_page_renders(client, tmp_state, monkeypatch):
+    from core import config as engine_config
+
+    monkeypatch.setattr(engine_config, "DEFAULT_MODEL_DIR", str(tmp_state / "models"))
+    response = client.get("/models")
+    assert response.status_code == 200
+    assert "Workflow dependencies" in response.text and "LoRAs" in response.text
+    full = client.get("/models", params={"inventory": "1"})
+    assert full.status_code == 200 and "files ·" in full.text
+
+
 def test_workflow_form_covers_every_catalog_entry(client):
     for name in introspection.workflow_names():
         response = client.get(f"/w/{name}")

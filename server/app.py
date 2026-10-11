@@ -93,6 +93,25 @@ def create_app() -> FastAPI:
         return page("workflow.html", request, active=workflow, wf=entry,
                     presets_json=presets_json, snapshot=snapshot, prefill=prefill)
 
+    @app.get("/models", response_class=HTMLResponse)
+    async def models_page(request: Request, inventory: str = "") -> HTMLResponse:
+        from server import models as models_mod
+
+        expected = await asyncio.to_thread(models_mod.expected_models)
+        deps = models_mod.workflow_dependencies()
+        overrides = models_mod.active_env_overrides()
+        loras = await asyncio.to_thread(models_mod.loras)
+        upscalers = await asyncio.to_thread(models_mod.upscalers)
+        disk = await asyncio.to_thread(models_mod.inventory) if inventory else None
+        present = sum(1 for section in expected for item in section["items"] if item["present"])
+        total = sum(1 for section in expected for item in section["items"])
+        return page("models.html", request, active="models",
+                    snapshot=manager().snapshot(),
+                    sections=expected, deps=deps, overrides=overrides,
+                    loras=loras, upscalers=upscalers, disk=disk,
+                    present_count=present, total_count=total,
+                    show_inventory=bool(inventory))
+
     @app.get("/library", response_class=HTMLResponse)
     async def library(request: Request, kind: str = "", workflow: str = "",
                       q: str = "", page_n: int = 1, detail: str = "") -> HTMLResponse:

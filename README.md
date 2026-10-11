@@ -264,10 +264,13 @@ presets (turbo, LUFS beds, LTX frame rules…), a **serialized run queue** (one 
 GPU job at a time, automatic `check_charge_systeme` load gate), live log/progress
 streaming (SSE), source-image uploads with a file picker over `output/` +
 `godot_assets/`, and a multi-media **library** (masonry gallery, thumbnails, audio
-waveforms, video preview, send-to-workflow actions). Runtime state lives in
-`output/_webui/` (SQLite + logs + uploads, git-ignored). The engines are still invoked
-exactly through the frozen CLI subprocess contract — the UI adds zero PyTorch, zero
-cloud.
+waveforms, video preview, send-to-workflow actions), and a read-only **Models** page
+(expected models from `core/config.py` with present/missing + sizes, workflow→model
+dependency strip, active env overrides, LoRA/upscaler listings, optional disk
+inventory — no add/remove: the AGENTS.md restatement rule applies). Runtime state lives
+in `output/_webui/` (SQLite + logs + uploads, git-ignored). The engines are still
+invoked exactly through the frozen CLI subprocess contract — the UI adds zero PyTorch,
+zero cloud.
 
 ---
 

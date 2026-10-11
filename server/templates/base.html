@@ -39,6 +39,7 @@
       <div class="flex gap-1">
         <a href="/" class="nav-link flex-1 {% if active == 'home' %}is-active{% endif %}">🏠 Dashboard</a>
         <a href="/library" class="nav-link flex-1 justify-center {% if active == 'library' %}is-active{% endif %}">🗂️ Library</a>
+        <a href="/models" class="nav-link flex-1 justify-center {% if active == 'models' %}is-active{% endif %}">🧠 Models</a>
       </div>
 
       {% for family in catalog['families'] %}
