@@ -202,7 +202,11 @@ def upsert_many(rows: List[tuple]) -> None:
 
 
 def outputs_missing_media(limit: int) -> List[str]:
-    """Indexed image/wav paths whose thumbnail/waveform is not cached yet."""
+    """Indexed paths whose thumbnail/waveform cache entry is absent.
+
+    Waveforms are generated for PCM .wav only (stdlib `wave` limitation) —
+    mp3/ogg/flac intentionally keep the player+icon fallback.
+    """
     from server import assets as media_assets
 
     rows = _query(

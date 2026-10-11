@@ -69,6 +69,7 @@ async def refresh(force: bool = False) -> None:
     The walk itself is fast (batched transaction + pruned traversal). The
     thumbnail/waveform backlog is drained by a fire-and-forget task so page
     renders never wait on media generation — templates read cache-only.
+    The task spawn happens under the same lock (no duplicate drainers).
     """
     global _last_refresh, _pregen_task
     if not force and time.time() - _last_refresh < 30:
@@ -78,8 +79,8 @@ async def refresh(force: bool = False) -> None:
             return
         await asyncio.to_thread(_walk_and_upsert)
         _last_refresh = time.time()
-    if _pregen_task is None or _pregen_task.done():
-        _pregen_task = asyncio.create_task(asyncio.to_thread(pregen_background))
+        if _pregen_task is None or _pregen_task.done():
+            _pregen_task = asyncio.create_task(asyncio.to_thread(pregen_background))
 
 
 def _walk_and_upsert() -> None:
@@ -92,11 +93,10 @@ def _walk_and_upsert() -> None:
         if not root.exists():
             continue
         skip = root / "_webui"  # runtime tree: thumbs/logs/uploads/db
+        skip_name = skip.name
         for dirpath, dirnames, filenames in os.walk(root):
-            if Path(dirpath) == skip:
-                dirnames[:] = []
-                continue
-            dirnames[:] = [d for d in dirnames if (Path(dirpath) / d) != skip]
+            if skip_name in dirnames and Path(dirpath) == skip.parent:
+                dirnames.remove(skip_name)  # never descend into the runtime tree
             for filename in filenames:
                 file = Path(dirpath) / filename
                 kind = classify(file)
