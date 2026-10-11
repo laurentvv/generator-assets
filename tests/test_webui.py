@@ -472,3 +472,34 @@ def test_vendored_assets_match_pins():
         assert path.exists(), f"vendored asset missing: {path}"
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         assert digest == spec["sha256"], f"{name} sha256 drifted"
+
+
+# -------------------------------------------------- fluidity (no render gen) --
+
+def test_thumbnail_read_does_not_generate(tmp_state, monkeypatch):
+    """Page renders use create=False: no PIL work, no cache file created.
+    The indexer walk pre-generates (bounded batch) off the request path."""
+    from PIL import Image
+
+    from server import assets
+
+    monkeypatch.setattr(paths, "REPO_ROOT", tmp_state)  # db rels resolve via REPO_ROOT
+    img_path = tmp_state / "output" / "pic.png"
+    Image.new("RGB", (64, 64), (10, 10, 10)).save(img_path)
+    before = sorted(p.name for p in paths.THUMB_DIR.glob("*")) if paths.THUMB_DIR.exists() else []
+    assert assets.thumbnail(img_path, create=False) is None
+    after = sorted(p.name for p in paths.THUMB_DIR.glob("*")) if paths.THUMB_DIR.exists() else []
+    assert before == after
+    assets._walk_and_upsert()
+    assert assets.thumbnail(img_path, create=False) is not None
+
+
+def test_upsert_many_single_roundtrip(tmp_state):
+    db.upsert_many([
+        ("output/a.png", "image", 1.0, 10),
+        ("output/b.wav", "audio", 2.0, 20),
+    ])
+    db.upsert_many([("output/a.png", "image", 3.0, 30)])
+    rows = {row["path"]: row for row in db.search_outputs(limit=10)}
+    assert rows["output/a.png"]["size"] == 30
+    assert rows["output/b.wav"]["kind"] == "audio"
