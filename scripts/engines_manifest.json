@@ -3,26 +3,26 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "master-956-1b0ba10 installed on Windows 2026-10-11 (user GO). Delta 945->956 = 5 commits: batched CFG cond+uncond single UNet forward (#2085), VAE decode OOM tile-halving retry (#2120), demote resident params to disk residency when memory reclamation fails (#2119), ROCm CI fix (#1890), docs. VERDICTS 2026-10-11: SDXL 512x512 20 steps cfg 7 PASS 12.5 s (batched CFG path clean, image inspected). MiniMax-H3 Ref2VA 22f turbo: STILL BROKEN identical signature (54 segments -> sampling failed after 325 s -> exit 3221226505 0xC0000409) - #2103 and #2119 do NOT fix #1976. NEW REGRESSION: qwen_image turbo path 123.4 s (945) -> 1414.9 s (956) = 11.5x slowdown; mechanism captured: after graph cut, 265 tensors re-read at 3-5 MB/s (disk residency demotion, #2119 prime suspect); happens WITH and WITHOUT --offload-to-cpu (probe reproduced); SDXL 6.4 GB staging unaffected. Production qwen path broken on 956. Rollback to 945 recommended (user GO pending): backups/backup_20261011_131624 (= 945). Logs output/test_m956/.",
+      "raison_epinglage": "master-945-a1ded76 REINSTALLED on Windows 2026-10-11 (user GO 'ok rollback') after a same-day master-956-1b0ba10 trial. 956 verdicts: SDXL smoke PASS (batched CFG #2085 clean, 12.5 s) but (a) H3 #1976 still broken (54 segments + submit OOM, exit 3221226505) and (b) an 11.5x qwen_image turbo slowdown (123.4 s -> 1414.9 s) initially attributed to 956 (upstream #2127 filed) then RETRACTED within the hour: the post-graph-cut 265-tensor re-read is bound by the external USB 3.0 spinning HDD (D:) + page-cache eviction, reproduced on restored 945; #2127 closed with correction, #1976 addendum posted. Rollback kept (956 brought no measured gain) -> rollback from backups/backup_20261011_131624 (= 945), --version = a1ded76 verified. Production qwen turbo 123 s path restored. Upstream: #1976 follow-up 2 posted (issuecomment-6109223314). Logs output/test_m956/. Backups: backup_20261011_131624 (= 945), backup_20261007_190520 (= 931), backup_20261006_204532 (= 929).",
       "plateformes": {
         "windows": {
-          "epingle": "master-956-1b0ba10",
-          "asset": "sd-master-1b0ba10-bin-win-vulkan-x64.zip",
-          "sha256": "9e8b9baff514fe5dfb77e51bf08d85f11e6f10128eac14d4474c87f563309725",
+          "epingle": "master-945-a1ded76",
+          "asset": "sd-master-a1ded76-bin-win-vulkan-x64.zip",
+          "sha256": "e3ee0aefa925cdf270148b03d67dc40eab025a44080601afe990bf123e308bcd",
           "sous_dossier": "SD",
           "exe": "sd-cli.exe"
         },
         "linux": {
-          "epingle": "master-956-1b0ba10",
-          "asset": "sd-master-1b0ba10-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
-          "sha256": "cecacb8054b4fab56912ee7e109a5f48311cf7a8660c6b311ac3a6eb1156ef73",
+          "epingle": "master-945-a1ded76",
+          "asset": "sd-master-a1ded76-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+          "sha256": "e65f3c4cf3a0c4c5aed5120ab449be7c883db6c70648bcc56ca55b246b9d8161",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
         "macos-arm64": {
-          "epingle": "master-956-1b0ba10",
-          "asset": "sd-master-1b0ba10-bin-Darwin-macOS-26.6.2-arm64.zip",
-          "sha256": "72c18ca1ba4177ca77cd288a9cb1e0f78d63ad3bde4b91fd7c84f3f4187b5761",
+          "epingle": "master-945-a1ded76",
+          "asset": "sd-master-a1ded76-bin-Darwin-macOS-26.6.2-arm64.zip",
+          "sha256": "b530f858657a0b2a0b11313bea89a0b48398f6db783279c096a8307456cc8b1b",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         }
