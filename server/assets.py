@@ -9,6 +9,7 @@ Walks run in a threadpool and are throttled (30 s).
 import asyncio
 import hashlib
 import logging
+import os
 import time
 import wave
 from pathlib import Path
@@ -59,11 +60,17 @@ def mime_for(path: Path) -> str:
 
 _last_refresh = 0.0
 _refresh_lock = asyncio.Lock()
+_pregen_task: Optional[asyncio.Task] = None
 
 
 async def refresh(force: bool = False) -> None:
-    """(Re)index the allowed roots; throttled to one walk per 30 s."""
-    global _last_refresh
+    """(Re)index the allowed roots; throttled to one walk per 30 s.
+
+    The walk itself is fast (batched transaction + pruned traversal). The
+    thumbnail/waveform backlog is drained by a fire-and-forget task so page
+    renders never wait on media generation — templates read cache-only.
+    """
+    global _last_refresh, _pregen_task
     if not force and time.time() - _last_refresh < 30:
         return
     async with _refresh_lock:
@@ -71,46 +78,89 @@ async def refresh(force: bool = False) -> None:
             return
         await asyncio.to_thread(_walk_and_upsert)
         _last_refresh = time.time()
+    if _pregen_task is None or _pregen_task.done():
+        _pregen_task = asyncio.create_task(asyncio.to_thread(pregen_background))
 
 
 def _walk_and_upsert() -> None:
+    """Index the allowed roots (worker thread): pruned walk, ONE transaction,
+    then a bounded batch of thumbnail/waveform pre-generation so page renders
+    never generate media themselves."""
     seen: set = set()
+    rows = []
     for root in paths.ALLOWED_ROOTS:
         if not root.exists():
             continue
-        for file in root.rglob("*"):
-            if not file.is_file():
+        skip = root / "_webui"  # runtime tree: thumbs/logs/uploads/db
+        for dirpath, dirnames, filenames in os.walk(root):
+            if Path(dirpath) == skip:
+                dirnames[:] = []
                 continue
-            rel = file.relative_to(paths.REPO_ROOT).as_posix()
-            if rel.startswith("output/_webui/"):
-                continue
-            kind = classify(file)
-            if kind is None:
-                continue
-            try:
-                stat = file.stat()
-            except OSError:
-                continue
-            seen.add(rel)
-            db.upsert_output(rel, kind, stat.st_mtime, stat.st_size)
+            dirnames[:] = [d for d in dirnames if (Path(dirpath) / d) != skip]
+            for filename in filenames:
+                file = Path(dirpath) / filename
+                kind = classify(file)
+                if kind is None:
+                    continue
+                try:
+                    stat = file.stat()
+                except OSError:
+                    continue
+                try:
+                    rel = file.relative_to(paths.REPO_ROOT).as_posix()
+                except ValueError:
+                    # Test layouts may place a root outside REPO_ROOT.
+                    rel = (Path(root.name) / file.relative_to(root)).as_posix()
+                seen.add(rel)
+                rows.append((rel, kind, stat.st_mtime, stat.st_size))
+    db.upsert_many(rows)
     db.prune_outputs(seen)
+    _pregen_missing(limit=24)
+
+
+def _pregen_missing(limit: int) -> None:
+    """Pre-generate thumbnails/waveforms for indexed assets lacking them.
+
+    Called from the walk (worker thread) with a small per-pass budget; larger
+    backlogs are drained by the background task refresh() schedules.
+    """
+    paths.THUMB_DIR.mkdir(parents=True, exist_ok=True)
+    for rel in db.outputs_missing_media(limit):
+        path = paths.REPO_ROOT / rel
+        if classify(path) == "image":
+            thumbnail(path, create=True)
+        elif path.suffix.lower() == ".wav":
+            waveform(path, create=True)
+
+
+def pregen_background() -> None:
+    """Drain the whole missing-media backlog without a per-pass cap."""
+    _pregen_missing(limit=0)
 
 
 # ------------------------------------------------------------- thumbnails --
 
 def _cache_name(path: Path) -> str:
     digest = hashlib.sha1(str(path).encode("utf-8")).hexdigest()[:16]
-    return f"{digest}_{int(path.stat().st_size >> 10)}.webp" if path.exists() else f"{digest}.webp"
+    if path.exists():
+        return f"{digest}_{int(path.stat().st_size >> 10)}.webp"
+    return f"{digest}.webp"
 
 
-def thumbnail(path: Path) -> Optional[str]:
-    """WebP thumbnail URL for images, or None. Generated once, cached on disk."""
+def thumbnail(path: Path, create: bool = False) -> Optional[str]:
+    """WebP thumbnail URL for images; cache-hit only unless create=True.
+
+    Page renders MUST use create=False (generation happens in the indexer's
+    background pre-generation, never in a request).
+    """
     kind = classify(path)
     if kind != "image":
         return None
     name = _cache_name(path)
     target = paths.THUMB_DIR / name
     if not target.exists():
+        if not create:
+            return None
         try:
             with Image.open(path) as img:
                 img.thumbnail((480, 480))
@@ -122,7 +172,8 @@ def thumbnail(path: Path) -> Optional[str]:
     return f"/thumbs/{name}"
 
 
-def waveform(path: Path, bars: int = 180, width: int = 640, height: int = 120) -> Optional[str]:
+def waveform(path: Path, bars: int = 180, width: int = 640, height: int = 120,
+             create: bool = False) -> Optional[str]:
     """Waveform PNG URL for PCM .wav files (stdlib wave + PIL), cached."""
     if path.suffix.lower() != ".wav":
         return None
@@ -130,6 +181,8 @@ def waveform(path: Path, bars: int = 180, width: int = 640, height: int = 120) -
     target = paths.THUMB_DIR / name
     if target.exists():
         return f"/thumbs/{target.name}"
+    if not create:
+        return None
     try:
         with wave.open(str(path), "rb") as handle:
             frames = handle.getnframes()

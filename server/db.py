@@ -180,6 +180,48 @@ def upsert_output(path: str, kind: str, mtime: float, size: int,
     )
 
 
+def upsert_many(rows: List[tuple]) -> None:
+    """Batch upsert [(path, kind, mtime, size), ...] in ONE transaction."""
+    if not rows:
+        return
+    with _lock:
+        conn = _connection()
+        try:
+            conn.executemany(
+                """INSERT INTO outputs (path, kind, mtime, size)
+                   VALUES (?, ?, ?, ?)
+                   ON CONFLICT(path) DO UPDATE SET kind = excluded.kind,
+                                                   mtime = excluded.mtime,
+                                                   size = excluded.size""",
+                rows,
+            )
+            conn.commit()
+        except sqlite3.Error:
+            conn.rollback()
+            raise
+
+
+def outputs_missing_media(limit: int) -> List[str]:
+    """Indexed image/wav paths whose thumbnail/waveform is not cached yet."""
+    from server import assets as media_assets
+
+    rows = _query(
+        "SELECT path, kind FROM outputs WHERE kind IN ('image', 'audio') ORDER BY mtime DESC",
+    )
+    missing: List[str] = []
+    for row in rows:
+        if limit and len(missing) >= limit:
+            break
+        path = paths.REPO_ROOT / row["path"]
+        if row["kind"] == "image":
+            if media_assets.thumbnail(path, create=False) is None:
+                missing.append(row["path"])
+        elif path.suffix.lower() == ".wav":
+            if media_assets.waveform(path, create=False) is None:
+                missing.append(row["path"])
+    return missing
+
+
 def prune_outputs(existing: set) -> None:
     """Remove rows whose file disappeared (existing = set of live paths)."""
     rows = _query("SELECT path FROM outputs")
