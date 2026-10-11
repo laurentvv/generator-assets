@@ -97,6 +97,16 @@ DEFAULT_QWEN_IMAGE21_LLM = os.getenv(
 DEFAULT_QWEN_IMAGE21_VAE = os.getenv(
     "QWEN_IMAGE21_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "qwen_image_2.1_vae_bf16.safetensors")
 )
+# Turbo variant (official 8-step distilled checkpoint, CFG 1) — USER VALIDATED
+# 2026-10-11 ("Atomic très bien"): AtomicChat sd.cpp-native Q8_0 quant, clean
+# layout (no f32 boot penalty, 123 s/image measured vs 962 s base). Same TE +
+# VAE as the base model. The distilled checkpoint has ONE validated sampling
+# schedule — the 8-step custom sigmas below (from the checkpoint's
+# model_index.json schedule); other schedules are not evaluated upstream.
+DEFAULT_QWEN_IMAGE21_TURBO_MODEL = os.getenv(
+    "QWEN_IMAGE21_TURBO_MODEL_PATH", r"D:\Modeles_LLM\Qwen-Image-2.1-Turbo-Q8_0.gguf"
+)
+QWEN_IMAGE21_TURBO_SIGMAS = "1.0,0.978453,0.95418,0.926626,0.89508,0.845148,0.704534,0.414568,0.0"
 
 # Video models (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))

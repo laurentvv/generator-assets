@@ -13,6 +13,12 @@ with the LoRA trigger word "pengyu", strength 0.65, 24 steps, LoRA
 Qwenimag21_c2-st2000. Engine recipe in core.diffusion.generer_image_qwen21;
 upstream pinned doc in scratch/upstream_docs/sd-cli_qwen-image-21/.
 
+Turbo mode (--turbo, USER VALIDATED 2026-10-11 "Atomic très bien"): the
+official 8-step distilled checkpoint (AtomicChat sd.cpp-native Q8_0 quant,
+same TE/VAE) — 123 s/image measured vs 962 s base, typography quality kept.
+Forces the checkpoint's single validated schedule (8 steps, CFG 1, custom
+sigmas).
+
 ⚠️ Qwen RESEARCH license: the renders are for PERSONAL / NON-COMMERCIAL use
 ONLY — do not feed monetized channels or games with them (Chroma1-HD /
 `generate` remain the production paths).
@@ -23,7 +29,13 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.config import (
+    DEFAULT_OUTPUT_DIR,
+    DEFAULT_QWEN_IMAGE21_MODEL,
+    DEFAULT_QWEN_IMAGE21_TURBO_MODEL,
+    QWEN_IMAGE21_TURBO_SIGMAS,
+    slugifier_texte,
+)
 from core.diffusion import generer_image_qwen21
 from core.process import run_engine
 from workflows.base import BaseWorkflow, WorkflowRegistry
@@ -49,6 +61,12 @@ class QwenImageWorkflow(BaseWorkflow):
              help="qwen_image: negative prompt (only acts because cfg-scale > 1)."),
         dict(flags=("--negative-prompt-file",),
              help="qwen_image: UTF-8 text file holding the negative prompt (wins over --negative-prompt)."),
+        dict(flags=("--qwen-turbo",), action="store_true",
+             help="qwen_image: 8-step distilled turbo checkpoint (USER VALIDATED 2026-10-11) — "
+                  "~2 min/image vs ~16 base, same typography quality. Forces steps=8 / cfg-scale=1.0 "
+                  "and the checkpoint's custom sigma schedule (the only schedule evaluated upstream); "
+                  "do not pass --steps/--cfg-scale with it. Compositing (-i/-l) is mechanically "
+                  "compatible but its 8-step quality is untested. (--turbo is taken by h3_ref2va.)"),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -67,12 +85,28 @@ class QwenImageWorkflow(BaseWorkflow):
         # the validated Qwen recipes (cfg 1.0 silently disables the negative
         # prompt). Omitted flags arrive as those sentinel values — snap them to
         # the recipe; explicit non-default values pass through.
-        steps = params.get("steps")
-        steps = 40 if steps in (None, 25) else int(steps)
-        cfg_scale = params.get("cfg_scale")
-        cfg_scale = 6.0 if cfg_scale in (None, 1.0) else float(cfg_scale)
+        raw_steps = params.get("steps")
+        raw_cfg = params.get("cfg_scale")
+        steps = 40 if raw_steps in (None, 25) else int(raw_steps)
+        cfg_scale = 6.0 if raw_cfg in (None, 1.0) else float(raw_cfg)
         seed = params.get("seed")
         seed = int(seed) if seed is not None else -1
+
+        # Turbo mode: the distilled checkpoint ships ONE validated schedule
+        # (8 steps, CFG 1). Explicit steps/cfg alongside it would silently
+        # desync the sigma schedule — refuse instead of guessing.
+        turbo = bool(params.get("qwen_turbo"))
+        sigmas = None
+        qwen_model = DEFAULT_QWEN_IMAGE21_MODEL
+        if turbo:
+            if raw_steps not in (None, 25, 8) or raw_cfg not in (None, 1.0):
+                raise ValueError(
+                    "--turbo locks the distilled schedule (8 steps, CFG 1.0); "
+                    "drop --steps/--cfg-scale."
+                )
+            steps, cfg_scale = 8, 1.0
+            sigmas = QWEN_IMAGE21_TURBO_SIGMAS
+            qwen_model = DEFAULT_QWEN_IMAGE21_TURBO_MODEL
 
         # Compositing mode (flat flags -i/-l/--lora-dir/--strength, shared with
         # the other families). Sentinel snapping to the validated recipe:
@@ -108,10 +142,13 @@ class QwenImageWorkflow(BaseWorkflow):
         mode_str = "img2img" if init_image else "t2i"
         if loras:
             mode_str += f" + {len(loras)} LoRA(s)"
+        if turbo:
+            mode_str += " [turbo 8-step]"
         self.log(f"Qwen-Image-2.1 rendering ({mode_str}, {width}x{height}, steps={steps}, cfg={cfg_scale}, strength={strength}) — RESEARCH license: personal/non-commercial use only.")
         generer_image_qwen21(
             prompt=prompt,
             negative_prompt=negative_prompt,
+            model=qwen_model,
             width=width,
             height=height,
             steps=steps,
@@ -122,6 +159,7 @@ class QwenImageWorkflow(BaseWorkflow):
             strength=strength,
             loras=loras,
             lora_dir=lora_dir,
+            sigmas=sigmas,
         )
         self.log(f"Image saved: {output_path}", emoji="✅")
         return {"image": output_path}
