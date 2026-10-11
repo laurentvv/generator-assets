@@ -76,11 +76,34 @@ def create_app() -> FastAPI:
     @app.get("/", response_class=HTMLResponse)
     async def dashboard(request: Request) -> HTMLResponse:
         await assets.refresh()
+        from server import veille as veille_mod
+
         return page("index.html", request, active="home",
                     snapshot=manager().snapshot(),
                     recent_jobs=db.list_jobs(limit=8),
                     recent_outputs=db.search_outputs(limit=12),
-                    engines=engines_presence())
+                    engines=engines_presence(),
+                    veille_pending=veille_mod.pending())
+
+    @app.get("/veille", response_class=HTMLResponse)
+    async def veille_page(request: Request) -> HTMLResponse:
+        from server import veille as veille_mod
+
+        return page("veille.html", request, active="veille",
+                    snapshot=manager().snapshot(),
+                    pending=veille_mod.pending(),
+                    components=veille_mod.state()["rows"],
+                    journal=veille_mod.journal_entries(),
+                    notes=veille_mod.notes())
+
+    @app.get("/jobs", response_class=HTMLResponse)
+    async def jobs_page(request: Request, status: str = "") -> HTMLResponse:
+        statuses = (status,) if status in ("pending", "running", "complete", "error",
+                                           "canceled", "interrupted", "blocked_load") else None
+        return page("jobs.html", request, active="jobs",
+                    snapshot=manager().snapshot(),
+                    jobs=db.list_jobs(statuses=statuses, limit=100),
+                    status_filter=status)
 
     @app.get("/w/{workflow}", response_class=HTMLResponse)
     async def workflow_page(request: Request, workflow: str) -> HTMLResponse:
