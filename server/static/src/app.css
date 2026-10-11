@@ -1,0 +1,344 @@
+/* ============================================================================
+   generator-assets web UI — design system (Tailwind v4, standalone CLI)
+   ----------------------------------------------------------------------------
+   Build (only needed when the theme changes; compiled CSS is committed):
+     tools/bin/tailwindcss.exe -i server/static/src/app.css -o server/static/app.css --minify
+   Dark studio: deep charcoal canvas, translucent glass panels, warm amber accent.
+   ========================================================================== */
+
+@import "tailwindcss";
+
+/* Binary tooling and vendored skill examples must not leak classes into the build. */
+@source not "../../tools";
+@source not "../../.agents";
+@source not "../../server/static/app.css";
+
+@theme {
+  /* Canvas & surfaces */
+  --color-canvas: #0b0c10;
+  --color-surface: #13151c;
+  --color-surface-2: #1a1d26;
+  --color-surface-3: #22262f;
+  --color-line: #262b36;
+  --color-line-soft: #1e222b;
+
+  /* Ink */
+  --color-ink: #e9ebf1;
+  --color-ink-dim: #a3aab8;
+  --color-ink-faint: #6d7482;
+
+  /* Accent (forge amber) & states */
+  --color-accent: #f5a524;
+  --color-accent-hi: #ffc75e;
+  --color-accent-deep: #b97c0f;
+  --color-ok: #3ddc97;
+  --color-warn: #fbbf24;
+  --color-err: #f87b6a;
+  --color-info: #74c5f5;
+
+  /* Typography */
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+  /* Radii & shadows */
+  --radius-panel: 14px;
+  --shadow-glow: 0 0 0 1px rgb(245 165 36 / 0.22), 0 4px 24px -6px rgb(245 165 36 / 0.18);
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px -12px rgb(0 0 0 / 0.55);
+  --shadow-pop: 0 12px 40px -8px rgb(0 0 0 / 0.6);
+
+  /* Motion */
+  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+}
+
+/* ---------------------------------------------------------------- base ---- */
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    background-image:
+      radial-gradient(1100px 520px at 82% -10%, rgb(245 165 36 / 0.07), transparent 60%),
+      radial-gradient(900px 480px at -10% 110%, rgb(116 197 245 / 0.05), transparent 55%);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: rgb(245 165 36 / 0.3);
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Slim studio scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2c313d transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #2c313d;
+    border-radius: 8px;
+    border: 2px solid var(--color-canvas);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: #3a4150;
+  }
+
+  summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 0.45rem;
+    transition: transform 0.15s ease;
+    color: var(--color-ink-faint);
+  }
+  details[open] > summary::before {
+    transform: rotate(90deg);
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--color-accent);
+  }
+  input[type="range"] {
+    accent-color: var(--color-accent);
+  }
+}
+
+/* ----------------------------------------------------------- components ---- */
+
+@layer components {
+  /* Application shell: sidebar / main / run dock */
+  .app-grid {
+    display: grid;
+    grid-template-columns: 256px minmax(0, 1fr) clamp(300px, 24vw, 390px);
+  }
+  .app-grid > aside {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  @media (max-width: 1180px) {
+    .app-grid {
+      grid-template-columns: 208px minmax(0, 1fr);
+    }
+    .app-grid > #dock {
+      grid-column: 1 / -1;
+      position: static;
+      height: auto;
+      border-left: 0;
+      border-top: 1px solid var(--color-line-soft);
+    }
+  }
+  @media (max-width: 720px) {
+    .app-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .app-grid > aside:first-child {
+      position: static;
+      height: auto;
+      max-height: 44vh;
+    }
+  }
+
+  /* Glass panel */
+  .panel {
+    background: color-mix(in oklab, var(--color-surface) 82%, transparent);
+    border: 1px solid var(--color-line-soft);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Primary action */
+  .btn-run {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #1b1204;
+    background: linear-gradient(180deg, var(--color-accent-hi), var(--color-accent));
+    border: 1px solid rgb(0 0 0 / 0.2);
+    border-radius: 10px;
+    padding: 0.6rem 1.1rem;
+    box-shadow: var(--shadow-glow);
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  .btn-run:hover {
+    filter: brightness(1.06);
+  }
+  .btn-run:active {
+    transform: translateY(1px);
+  }
+
+  /* Quiet controls */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 9px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface-2);
+    color: var(--color-ink-dim);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .btn:hover {
+    color: var(--color-ink);
+    border-color: #3a4150;
+    background: var(--color-surface-3);
+  }
+  .btn-danger:hover {
+    color: var(--color-err);
+    border-color: rgb(248 123 106 / 0.4);
+  }
+
+  /* Form fields */
+  .field {
+    width: 100%;
+    background: #0e1016;
+    border: 1px solid var(--color-line);
+    border-radius: 9px;
+    padding: 0.5rem 0.7rem;
+    color: var(--color-ink);
+    font-size: 0.9rem;
+    transition: border-color 0.15s ease;
+  }
+  .field::placeholder {
+    color: var(--color-ink-faint);
+  }
+  .field:hover {
+    border-color: #333a47;
+  }
+  textarea.field {
+    resize: vertical;
+    min-height: 96px;
+    line-height: 1.55;
+  }
+  select.field {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-ink-faint) 50%),
+      linear-gradient(135deg, var(--color-ink-faint) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 2rem;
+  }
+
+  /* Live log terminal */
+  .term {
+    background: #07080b;
+    border: 1px solid var(--color-line-soft);
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    line-height: 1.6;
+    color: #b7bfcc;
+    overflow: auto;
+  }
+  .term-line {
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 0 0.65rem;
+  }
+  .term-line.err {
+    color: var(--color-err);
+  }
+  .term-line.warn {
+    color: var(--color-warn);
+  }
+  .term-line.ok {
+    color: var(--color-ok);
+  }
+
+  /* Masonry gallery (pure CSS columns) */
+  .masonry {
+    columns: 5 240px;
+    column-gap: 0.9rem;
+  }
+  .masonry > * {
+    break-inside: avoid;
+    margin-bottom: 0.9rem;
+  }
+
+  /* Nav link */
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.42rem 0.65rem;
+    border-radius: 8px;
+    color: var(--color-ink-dim);
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .nav-link:hover {
+    background: rgb(255 255 255 / 0.04);
+    color: var(--color-ink);
+  }
+  .nav-link.is-active {
+    background: rgb(245 165 36 / 0.1);
+    border-color: rgb(245 165 36 / 0.25);
+    color: var(--color-accent-hi);
+  }
+
+  /* Status dot */
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    display: inline-block;
+    flex: none;
+  }
+
+  /* Progress track */
+  .track {
+    height: 6px;
+    border-radius: 999px;
+    background: #22262f;
+    overflow: hidden;
+  }
+  .track > div {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--color-accent-deep), var(--color-accent));
+    transition: width 0.6s ease;
+  }
+
+  /* htmx loading indicator */
+  .htmx-indicator {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator {
+    opacity: 1;
+  }
+
+  [x-cloak] {
+    display: none !important;
+  }
+}

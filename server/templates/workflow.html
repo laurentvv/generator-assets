@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% from "partials/_widgets.html" import render %}
+{% block title %}{{ wf['name'] }} · generator-assets{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl px-6 py-7" x-data="{
+  presets: {{ presets_json }},
+  apply(i) {
+    const values = (this.presets[i] || {}).values || {};
+    for (const [k, v] of Object.entries(values)) {
+      const el = this.$root.querySelector('[name=' + JSON.stringify(k) + ']');
+      if (el) { el.type === 'checkbox' ? el.checked = !!v : el.value = v; }
+    }
+  }
+}">
+
+  <header class="mb-5">
+    <div class="flex flex-wrap items-center gap-2.5">
+      <span class="text-3xl leading-none">{{ wf['emoji'] }}</span>
+      <h1 class="font-mono text-xl font-bold tracking-tight">{{ wf['name'] }}</h1>
+      {% if wf['estimate'] %}
+        <span class="rounded-md border border-line bg-surface-2/70 px-2 py-0.5 text-[11px] text-ink-dim">⏱ {{ wf['estimate'] }}</span>
+      {% endif %}
+      <span class="rounded-md border {% if wf['heavy'] %}border-accent/30 bg-accent/10 text-accent{% else %}border-ok/30 bg-ok/10 text-ok{% endif %} px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide">
+        {% if wf['heavy'] %}GPU lane · load-gated{% else %}light · CPU{% endif %}
+      </span>
+    </div>
+    <p class="mt-2 max-w-2xl text-[13px] leading-relaxed text-ink-dim">{{ wf['description'] }}</p>
+  </header>
+
+  {% if wf['warnings'] %}
+    <div class="mb-4 space-y-1.5">
+      {% for warning in wf['warnings'] %}
+        <div class="flex items-start gap-2 rounded-lg border border-warn/25 bg-warn/[0.07] px-3 py-2 text-[12px] leading-snug text-warn/90">
+          <span>⚠</span><span>{{ warning }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if wf['presets'] %}
+    <div class="mb-5 flex flex-wrap items-center gap-2">
+      <span class="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">Recipes</span>
+      {% for preset in wf['presets'] %}
+        <button type="button" class="btn text-[11.5px]"
+                @click="apply({{ loop.index0 }})" title="{{ preset['values'] | tojson }}">★ {{ preset['name'] }}</button>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form hx-post="/api/jobs" hx-target="#job-panel" hx-swap="innerHTML"
+        class="panel space-y-5 p-5" x-data="{ busy: false }">
+
+    <input type="hidden" name="workflow" value="{{ wf['name'] }}">
+
+    {# prompt #}
+    {{ render(wf['prompt'], prefill) }}
+
+    {# output name #}
+    {{ render(wf['output'], prefill) }}
+
+    {# input media #}
+    {% set path_params = (wf['shared'] + wf['primary'] + wf['advanced']) | selectattr('widget', 'equalto', 'path') | list %}
+    {% if path_params %}
+      <fieldset class="space-y-3.5 border-t border-line-soft pt-4">
+        <legend class="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Input media</legend>
+        {% for p in path_params %}{{ render(p, prefill) }}{% endfor %}
+      </fieldset>
+    {% endif %}
+
+    {# parameters #}
+    {% set param_list = (wf['shared'] + wf['primary']) | rejectattr('widget', 'equalto', 'path') | list %}
+    {% if param_list %}
+      <fieldset class="space-y-3.5 border-t border-line-soft pt-4">
+        <legend class="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Parameters</legend>
+        <div class="grid gap-3.5 sm:grid-cols-2">
+          {% for p in param_list %}{{ render(p, prefill) }}{% endfor %}
+        </div>
+      </fieldset>
+    {% endif %}
+
+    {# advanced #}
+    {% set advanced_list = wf['advanced'] | rejectattr('widget', 'equalto', 'path') | list %}
+    {% if advanced_list %}
+      <details class="border-t border-line-soft pt-3">
+        <summary class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint hover:text-ink-dim">Advanced parameters</summary>
+        <div class="mt-3 grid gap-3.5 sm:grid-cols-2">
+          {% for p in advanced_list %}{{ render(p, prefill) }}{% endfor %}
+        </div>
+      </details>
+    {% endif %}
+
+    <div class="flex items-center gap-3 border-t border-line-soft pt-4">
+      <button type="submit" class="btn-run" @click="setTimeout(() => $root.scrollIntoView(), 50)">
+        ▶ Run {{ wf['name'] }}
+      </button>
+      <span class="text-[11.5px] text-ink-faint">Empty fields keep the workflow's own defaults (CLI contract).</span>
+      <span class="htmx-indicator ml-auto text-[11px] text-accent">queueing…</span>
+    </div>
+  </form>
+
+  <p class="mt-4 text-center text-[11px] text-ink-faint/70">
+    Equivalent CLI: <code class="font-mono text-ink-faint">uv run python main.py -w {{ wf['name'] }} "&lt;prompt&gt;" …</code>
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{# File picker dialog body — loaded via htmx when a Browse… button opens it. #}
+
+<form hx-post="/api/uploads" hx-encoding="multipart/form-data" hx-target="#picker-upload-out"
+      class="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-line px-3 py-2.5">
+  <span class="text-[12px] text-ink-faint">⬆ Upload a source file:</span>
+  <input type="file" name="file" class="text-[12px] text-ink-dim file:mr-2 file:cursor-pointer file:rounded-md file:border-0 file:bg-surface-3 file:px-2.5 file:py-1 file:text-[12px] file:text-ink">
+  <button type="submit" class="btn text-[11px]">Upload</button>
+  <span id="picker-upload-out" class="text-[11px]"></span>
+</form>
+
+{% if not groups %}
+  <p class="px-2 py-6 text-center text-[12.5px] text-ink-faint">No file found for this kind yet.</p>
+{% endif %}
+
+{% for group in groups %}
+  <div class="mb-3">
+    <h4 class="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-ink-faint">{{ group['label'] }}</h4>
+    <div class="grid grid-cols-2 gap-1.5">
+      {% for item in group['items'] %}
+        <button type="button"
+                @click="$dispatch('ga-pick', {field: '{{ field }}', path: '{{ item['path'] }}'})"
+                class="flex items-center gap-2 rounded-lg border border-line-soft bg-surface-2/50 px-2 py-1.5 text-left transition hover:border-accent/40 hover:bg-surface-3/60">
+          {% if item['thumb'] %}
+            <img src="{{ item['thumb'] }}" class="size-9 rounded object-cover" alt="" loading="lazy">
+          {% else %}
+            <span class="grid size-9 place-items-center rounded bg-canvas/70 text-base">📄</span>
+          {% endif %}
+          <span class="min-w-0">
+            <span class="block truncate text-[12px] font-medium">{{ item['name'] }}</span>
+            <span class="block truncate font-mono text-[9.5px] text-ink-faint">{{ item['path'] }}</span>
+          </span>
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}
