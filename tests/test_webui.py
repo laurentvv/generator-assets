@@ -172,8 +172,10 @@ def test_resolve_allowed_guards_traversal(tmp_state):
     assert ok.is_relative_to(tmp_state)
     with pytest.raises(paths.UnsafePath):
         paths.resolve_allowed("../secrets.txt")
+    # Absolute path outside the roots (platform-neutral: not a Windows-only
+    # drive form — backslash paths are merely relative on POSIX).
     with pytest.raises(paths.UnsafePath):
-        paths.resolve_allowed(r"C:\Windows\system32\cmd.exe")
+        paths.resolve_allowed(str(tmp_state.parent / "outside_secrets.txt"))
     with pytest.raises(paths.UnsafePath):
         paths.resolve_allowed("")
 
