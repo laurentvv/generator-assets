@@ -16,3 +16,7 @@ godot_assets/**/*.ogg   filter=lfs diff=lfs merge=lfs -text
 godot_assets/**/*.wav   filter=lfs diff=lfs merge=lfs -text
 godot_assets/**/*.blend filter=lfs diff=lfs merge=lfs -text
 godot_assets/**/*.thumb filter=lfs diff=lfs merge=lfs -text
+
+# Vendored browser libraries: exact bytes required (sha256-pinned) — never eol-convert
+server/static/vendor/** -text
+server/static/*.wav -text

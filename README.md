@@ -252,6 +252,29 @@ uv run python main.py --check
 uv run python main.py --interactive
 ```
 
+### 6. Launch the Web Console (factory console)
+```bash
+uv run python -m server          # → http://127.0.0.1:8765 (localhost only)
+```
+
+Full-Python web UI (**FastAPI + Jinja2 + HTMX**, zero Node/npm) piloting the whole
+factory from a browser: auto-generated forms for **all 49 workflows** (introspected
+live from the workflow registry — new workflows appear automatically), curated recipe
+presets (turbo, LUFS beds, LTX frame rules…), a **serialized run queue** (one heavy
+GPU job at a time, automatic `check_charge_systeme` load gate), live log/progress
+streaming (SSE), source-image uploads with a file picker over `output/` +
+`godot_assets/`, and a multi-media **library** (masonry gallery, thumbnails, audio
+waveforms, video preview, send-to-workflow actions), and a read-only **Models** page
+(expected models from `core/config.py` with present/missing + sizes, workflow→model
+dependency strip, active env overrides, LoRA/upscaler listings, optional disk
+inventory — no add/remove: the AGENTS.md restatement rule applies), a read-only
+**Veille** page (pending updates, installed-vs-upstream component versions, journal
+feed, update notes — report only, never auto-update) and a **Jobs** history page
+(status filters, stop/retry, raw logs). Runtime state lives
+in `output/_webui/` (SQLite + logs + uploads, git-ignored). The engines are still
+invoked exactly through the frozen CLI subprocess contract — the UI adds zero PyTorch,
+zero cloud.
+
 ---
 
 ## ⚡ Core Value Highlights

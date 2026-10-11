@@ -1,0 +1,79 @@
+{# Auto-generated form widgets driven by server/introspection.py. #}
+
+{% macro help_text(p) -%}
+  {%- if p['help'] -%}<p class="mt-1 text-[11px] leading-snug text-ink-faint">{{ p['help'] }}</p>{%- endif -%}
+{%- endmacro %}
+
+{% macro label(p) -%}
+  <label class="mb-1 flex items-baseline gap-2 text-xs font-semibold tracking-wide text-ink-dim uppercase">
+    {{ p['label'] }}
+    {%- if p['flag'] %}<code class="text-[10px] font-mono normal-case text-ink-faint/70">{{ p['flag'] }}</code>{% endif -%}
+  </label>
+{%- endmacro %}
+
+{% macro placeholder_for(p) -%}
+  {%- if p['default'] is not none and p['default'] != '' -%}default: {{ p['default'] }}{%- else -%}optional{%- endif -%}
+{%- endmacro %}
+
+{% macro render(p, prefill=None) %}
+  {%- set value = (prefill or {}).get(p['dest'], '') -%}
+  <div class="min-w-0">
+    {{ label(p) }}
+
+    {% if p['widget'] == 'prompt' %}
+      <textarea name="prompt" class="field" rows="4"
+                placeholder="English prompt — describe the asset to generate (repo rule: English)">{{ value }}</textarea>
+
+    {% elif p['widget'] == 'seed' %}
+      <div class="flex gap-2">
+        <input type="number" name="seed" value="{{ value or 42 }}" x-ref="seed" class="field font-mono">
+        <button type="button" class="btn" title="Random seed"
+                @click="$refs.seed.value = Math.floor(Math.random() * 2147483647)">🎲</button>
+      </div>
+      <p class="mt-1 text-[11px] text-ink-faint">Fixed seed = reproducible A/B (repo rule). −1 = random.</p>
+
+    {% elif p['widget'] == 'path' %}
+      <div class="flex gap-2" x-data>
+        <input type="text" name="{{ p['dest'] }}" value="{{ value }}" class="field font-mono text-[12px]"
+               placeholder="path — or Browse…"
+               @ga-pick.window="if ($event.detail.field === '{{ p['dest'] }}') { $el.value = $event.detail.path }">
+        <button type="button" class="btn whitespace-nowrap"
+                @click="$dispatch('open-picker', {field: '{{ p['dest'] }}', kind: '{{ p['path_kind'] or 'file' }}'})">Browse…</button>
+      </div>
+
+    {% elif p['widget'] == 'toggle' %}
+      <label class="flex cursor-pointer items-center gap-2.5 text-sm text-ink-dim">
+        <input type="checkbox" name="{{ p['dest'] }}" value="1"
+               {% if value %}checked{% endif %} class="size-4 rounded">
+        <span>enabled</span>
+      </label>
+
+    {% elif p['widget'] == 'select' %}
+      <select name="{{ p['dest'] }}" class="field">
+        <option value="">— workflow default{% if p['default'] %} ({{ p['default'] }}){% endif %} —</option>
+        {% for choice in p['choices'] or [] %}
+          <option value="{{ choice }}" {% if value == choice %}selected{% endif %}>{{ choice }}</option>
+        {% endfor %}
+      </select>
+
+    {% elif p['widget'] == 'loras' %}
+      <input type="text" name="{{ p['dest'] }}" value="{{ value }}" class="field font-mono text-[12px]"
+             placeholder="name:weight, name2:weight — comma separated">
+
+    {% elif p['widget'] == 'number' %}
+      <input type="number" name="{{ p['dest'] }}" value="{{ value }}" class="field font-mono"
+             {% if p['type'] == 'float' %}step="any"{% else %}step="1"{% endif %}
+             placeholder="{{ placeholder_for(p) }}">
+
+    {% elif p['widget'] == 'textarea' %}
+      <textarea name="{{ p['dest'] }}" rows="3" class="field font-mono text-[12px]"
+                placeholder="{{ placeholder_for(p) }}">{{ value }}</textarea>
+
+    {% else %}
+      <input type="text" name="{{ p['dest'] }}" value="{{ value }}" class="field"
+             placeholder="{{ placeholder_for(p) }}">
+    {% endif %}
+
+    {{ help_text(p) }}
+  </div>
+{% endmacro %}

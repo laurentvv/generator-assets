@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Models · generator-assets{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl px-6 py-7">
+
+  <header class="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Models</h1>
+      <p class="mt-1 text-[13px] text-ink-dim">
+        {{ present_count }}/{{ total_count }} expected models present · read-only view —
+        add/remove stays in <code class="font-mono text-[11.5px]">core/config.py</code> env overrides &amp; the CLI
+        (restatement rule, AGENTS.md).
+      </p>
+    </div>
+    <a href="/models?inventory=1" class="btn text-[12px]" title="Full disk listing of the model folders">
+      {% if show_inventory %}▾ Inventory loaded{% else %}▸ Load disk inventory{% endif %}
+    </a>
+  </header>
+
+  {# ------------------------------------------------ dependency strip #}
+  <section class="panel mb-4 p-4">
+    <h2 class="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Workflow dependencies</h2>
+    <div class="grid gap-1.5 sm:grid-cols-2">
+      {% for row in deps %}
+        <div class="flex items-center gap-2 rounded-lg border border-line-soft bg-surface-2/40 px-2.5 py-1.5">
+          {% if row['in_ui'] %}<a href="/w/{{ row['workflow'] }}" class="font-mono text-[11.5px] font-semibold hover:text-accent">{{ row['workflow'] }}</a>
+          {% else %}<span class="font-mono text-[11.5px] font-semibold text-ink-faint">{{ row['workflow'] }}</span>{% endif %}
+          <span class="ml-auto flex gap-1" title="{% for m in row['models'] %}{{ m['constant'] }}: {{ 'OK' if m['present'] else 'MISSING' }}{{ '; ' if not loop.last }}{% endfor %}">
+            {% for m in row['models'] %}<span class="dot {% if m['present'] %}bg-ok{% else %}bg-err{% endif %}"></span>{% endfor %}
+            {% if not row['models'] %}<span class="text-[10px] text-ink-faint">engines only</span>{% endif %}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ---------------------------------------------------- env overrides #}
+  {% if overrides %}
+  <section class="panel mb-4 p-4">
+    <h2 class="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Active env overrides</h2>
+    <div class="space-y-1">
+      {% for o in overrides %}
+        <div class="flex flex-wrap items-baseline gap-x-2 rounded-lg border border-info/20 bg-info/[0.05] px-2.5 py-1.5 text-[11.5px]">
+          <code class="font-mono font-semibold text-info">{{ o['env'] }}</code>
+          <span class="font-mono break-all text-ink-dim">{{ o['value'] }}</span>
+          <span class="ml-auto font-mono text-[10px] text-ink-faint">→ {{ o['constant'] }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# -------------------------------------------------- expected models #}
+  {% for section in sections %}
+  <section class="panel mb-4 overflow-hidden">
+    <div class="border-b border-line-soft px-4 py-2.5">
+      <h2 class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">{{ section['section'] }}</h2>
+    </div>
+    <div class="divide-y divide-line-soft/60">
+      {% for item in section['items'] %}
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 {% if not item['present'] %}bg-err/[0.04]{% endif %}">
+          <span class="dot {% if item['present'] %}bg-ok{% else %}bg-err animate-pulse-soft{% endif %}"></span>
+          <div class="min-w-0 flex-1">
+            <div class="text-[12.5px] font-medium">{{ item['label'] }}
+              {% if item['custom'] %}<span class="ml-1 rounded border border-warn/30 bg-warn/10 px-1.5 py-px text-[9.5px] font-semibold uppercase text-warn" title="Outside the default MODEL_DIR">custom location</span>{% endif %}
+              {% if item['is_dir'] %}<span class="ml-1 text-[10px] text-ink-faint">folder</span>{% endif %}
+            </div>
+            <div class="truncate font-mono text-[10.5px] text-ink-faint" title="{{ item['path'] }}">{{ item['path'] }}</div>
+          </div>
+          <span class="font-mono text-[11px] {{ 'text-ink-dim' if item['present'] else 'text-err' }}">
+            {% if item['present'] %}{{ fmt_size(item['size']) }}{% else %}MISSING{% endif %}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  {# --------------------------------------------------- loras/upscalers #}
+  <div class="grid gap-4 lg:grid-cols-2">
+    <section class="panel p-4">
+      <h2 class="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">LoRAs <span class="text-ink-faint/60">({{ loras | length }})</span></h2>
+      {% if loras %}
+        <div class="space-y-1">
+          {% for lora in loras %}
+            <div class="flex items-center gap-2 rounded-lg border border-line-soft bg-surface-2/40 px-2.5 py-1.5">
+              <span class="min-w-0 flex-1 truncate font-mono text-[11.5px]">{{ lora['filename'] }}</span>
+              <span class="font-mono text-[10.5px] text-ink-faint">{{ lora['size_mb'] }} MB</span>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="mt-2 text-[10.5px] text-ink-faint">Use in forms: <code class="font-mono">--lora "name:weight"</code> (or the LoRAs field).</p>
+      {% else %}
+        <p class="py-4 text-center text-[12px] text-ink-faint">No LoRA found in the configured folders.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel p-4">
+      <h2 class="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Upscalers <span class="text-ink-faint/60">({{ upscalers | length }})</span></h2>
+      {% if upscalers %}
+        <div class="space-y-1">
+          {% for up in upscalers %}
+            <div class="flex items-center gap-2 rounded-lg border border-line-soft bg-surface-2/40 px-2.5 py-1.5">
+              <span class="min-w-0 flex-1 truncate font-mono text-[11.5px]">{{ up['filename'] }}</span>
+              <span class="font-mono text-[10.5px] text-ink-faint">{{ up['size_mb'] }} MB</span>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="mt-2 text-[10.5px] text-ink-faint">Use: <code class="font-mono">--upscale-model ultrasharp|anime|photo</code>.</p>
+      {% else %}
+        <p class="py-4 text-center text-[12px] text-ink-faint">No upscaler found in the configured folders.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {# -------------------------------------------------------- inventory #}
+  {% if show_inventory and disk %}
+    {% for folder in disk['folders'] %}
+      <section class="panel mt-4 overflow-hidden">
+        <div class="flex flex-wrap items-center gap-x-3 border-b border-line-soft px-4 py-2.5">
+          <h2 class="font-mono text-[12px] font-semibold">{{ folder['root'] }}</h2>
+          <span class="ml-auto font-mono text-[10.5px] text-ink-faint">{{ folder['count'] }} files · {{ fmt_size(folder['total']) }} · {{ folder['free_gb'] }} GB free on drive</span>
+        </div>
+        {% if folder['files'] %}
+          <div class="max-h-72 divide-y divide-line-soft/50 overflow-y-auto">
+            {% for file in folder['files'] %}
+              <div class="flex items-center gap-3 px-4 py-1.5">
+                <span class="min-w-0 flex-1 truncate font-mono text-[11px] text-ink-dim">{{ file['path'] }}</span>
+                <span class="font-mono text-[10.5px] text-ink-faint">{{ fmt_size(file['size']) }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="px-4 py-3 text-[12px] text-ink-faint">No model file (.gguf / .safetensors / .onnx / .pth / .bin) found here.</p>
+        {% endif %}
+      </section>
+    {% endfor %}
+  {% endif %}
+
+</div>
+{% endblock %}

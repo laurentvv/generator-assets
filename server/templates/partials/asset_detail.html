@@ -1,0 +1,64 @@
+{# Asset detail drawer content (library). #}
+{% set rel = item['path'] if item else (path or '') %}
+<div class="space-y-3">
+  {% if resolved and resolved.is_file() %}
+    {% set kind = item['kind'] if item else 'doc' %}
+    {% if kind == 'image' %}
+      <img src="{{ file_url(rel) }}" alt="{{ rel }}" class="max-h-[46vh] w-full rounded-xl border border-line-soft object-contain bg-canvas/60">
+    {% elif kind == 'video' %}
+      <video controls preload="metadata" src="{{ file_url(rel) }}" class="max-h-[46vh] w-full rounded-xl border border-line-soft bg-black"></video>
+    {% elif kind == 'audio' %}
+      {% set wave = wave_of(rel) %}
+      {% if wave %}<img src="{{ wave }}" alt="waveform" class="w-full rounded-xl border border-line-soft">{% endif %}
+      <audio controls preload="metadata" src="{{ file_url(rel) }}" class="w-full"></audio>
+    {% elif kind == 'model' %}
+      <div class="grid h-36 place-items-center rounded-xl border border-line-soft bg-canvas/60 text-5xl">🧊</div>
+    {% else %}
+      <div class="grid h-36 place-items-center rounded-xl border border-line-soft bg-canvas/60 text-5xl">📄</div>
+    {% endif %}
+
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="rounded-md border border-line bg-surface-2/70 px-2 py-0.5 text-[11px]">{{ kind_icon(kind) }} {{ kind }}</span>
+      {% if item %}<span class="rounded-md border border-line bg-surface-2/70 px-2 py-0.5 font-mono text-[11px]">{{ fmt_size(item['size']) }}</span>
+      <span class="rounded-md border border-line bg-surface-2/70 px-2 py-0.5 font-mono text-[11px]">{{ fmt_ts(item['mtime']) }}</span>{% endif %}
+      <a href="{{ file_url(rel) }}" target="_blank" class="btn text-[11px]">Open raw ↗</a>
+      <a href="/library" class="btn text-[11px]">Close</a>
+    </div>
+
+    <div class="rounded-xl border border-line-soft bg-canvas/50 px-3 py-2 font-mono text-[11px] break-all text-ink-dim">{{ rel }}</div>
+
+    {% if kind == 'image' %}
+      <div class="flex flex-wrap gap-2">
+        <a class="btn text-[11px]" href="/w/generate?input={{ rel | urlencode }}">→ img2img (generate)</a>
+        <a class="btn text-[11px]" href="/w/mesh_ia?input={{ rel | urlencode }}">→ mesh_ia</a>
+        <a class="btn text-[11px]" href="/w/upscale?input={{ rel | urlencode }}">→ upscale</a>
+        <a class="btn text-[11px]" href="/w/variations?input={{ rel | urlencode }}">→ variations</a>
+      </div>
+    {% elif kind == 'video' %}
+      <div class="flex flex-wrap gap-2">
+        <a class="btn text-[11px]" href="/w/h3_ref2va?input={{ rel | urlencode }}">→ h3_ref2va continuation</a>
+        <a class="btn text-[11px]" href="/w/monoplan_ia?input={{ rel | urlencode }}">→ monoplan_ia</a>
+      </div>
+    {% elif kind == 'audio' %}
+      <div class="flex flex-wrap gap-2">
+        <a class="btn text-[11px]" href="/w/musique_adn?input={{ rel | urlencode }}">→ musique_adn</a>
+        <a class="btn text-[11px]" href="/w/retrait_voix?input={{ rel | urlencode }}">→ retrait_voix</a>
+        <a class="btn text-[11px]" href="/w/audio_upscale?input={{ rel | urlencode }}">→ audio_upscale</a>
+      </div>
+    {% endif %}
+
+    {% if job %}
+      <div class="rounded-xl border border-line-soft bg-surface-2/50 px-3 py-2.5">
+        <div class="mb-1.5 flex items-center gap-2 text-[11px]">
+          <span class="dot {% if job['status'] == 'complete' %}bg-ok{% elif job['status'] == 'error' %}bg-err{% else %}bg-info{% endif %}"></span>
+          <span class="font-mono font-semibold">{{ job['workflow'] }}</span>
+          <span class="{{ status_color(job['status']) }}">{{ job['status'] }}</span>
+          {% if job['seed'] is defined and job['seed'] is not none %}{% endif %}
+        </div>
+        {% if job['prompt'] %}<p class="text-[11.5px] leading-snug text-ink-dim">{{ job['prompt'] }}</p>{% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <p class="text-[12.5px] text-ink-faint">File not found on disk (moved or deleted).</p>
+  {% endif %}
+</div>

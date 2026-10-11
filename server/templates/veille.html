@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Veille · generator-assets{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl px-6 py-7">
+
+  <header class="mb-5">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Veille <span class="text-ink-faint text-base font-normal">— stack watch</span></h1>
+        <p class="mt-1 text-[13px] text-ink-dim">Upstream news of the local stack, fed by <code class="font-mono text-[11.5px]">scripts/veille_versions.py</code> (auto-rerun at session open when &gt; 20 h old).</p>
+      </div>
+      <span class="rounded-lg border border-line bg-surface-2/70 px-2.5 py-1 text-[11px] text-ink-faint">
+        report only — never automatic update (AGENTS.md)
+      </span>
+    </div>
+  </header>
+
+  {# ---------------------------------------------------- pending updates #}
+  <section class="panel mb-4 overflow-hidden {% if pending['count'] %}border-warn/40{% endif %}">
+    <div class="flex items-center gap-2 border-b border-line-soft px-4 py-2.5">
+      <h2 class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Pending updates</h2>
+      <span class="ml-auto font-mono text-[10.5px] text-ink-faint">last detection {{ pending['detecte_le'] or '—' }}</span>
+    </div>
+    {% if pending['count'] %}
+      <div class="divide-y divide-line-soft/60">
+        {% for item in pending['items'] %}
+          <div class="px-4 py-3">
+            {% set label = item.get('composant') or item.get('component') or item.get('name') or item.get('id') or ('item ' ~ loop.index) %}
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="dot bg-warn animate-pulse-soft"></span>
+              <span class="font-mono text-[13px] font-semibold">{{ label }}</span>
+              {% if item.get('installee') or item.get('installed') %}
+                <span class="font-mono text-[11px] text-ink-faint">{{ item.get('installee') or item.get('installed') }} → {{ item.get('nouvelle') or item.get('new') or item.get('derniere_vue') or '?' }}</span>
+              {% endif %}
+              {% if item.get('note') or item.get('notes') %}
+                <a class="btn ml-auto text-[10.5px]" href="/files?p=output/veille/{{ item.get('note') or item.get('notes') }}" target="_blank">Detailed note ↗</a>
+              {% endif %}
+            </div>
+            <details class="mt-1.5">
+              <summary class="text-[10.5px] text-ink-faint hover:text-ink-dim">raw item</summary>
+              <pre class="term mt-1 max-h-40 text-[10px]">{{ item | tojson(indent=2) }}</pre>
+            </details>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="border-t border-line-soft bg-warn/[0.05] px-4 py-2 text-[11px] text-warn/90">
+        Apply via the update process only (one at a time, changelog + smoke test) — never from here.
+      </div>
+    {% else %}
+      <div class="flex items-center gap-2 px-4 py-3.5 text-[13px] text-ok">
+        <span class="dot bg-ok"></span> No pending update — everything triaged.
+      </div>
+    {% endif %}
+  </section>
+
+  {# ------------------------------------------------ component versions #}
+  <section class="panel mb-4 overflow-hidden">
+    <div class="border-b border-line-soft px-4 py-2.5">
+      <h2 class="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Component versions — installed vs upstream seen</h2>
+    </div>
+    <div class="divide-y divide-line-soft/60">
+      {% for c in components %}
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2">
+          <span class="dot {% if c['upstream_newer'] %}bg-warn{% elif c['installed'] %}bg-ok{% else %}bg-ink-faint/60{% endif %}"></span>
+          <span class="w-44 truncate font-mono text-[12px] font-semibold">{{ c['name'] }}</span>
+          <span class="font-mono text-[11.5px] text-ink-dim">installed: {{ c['installed'] or '—' }}</span>
+          <span class="font-mono text-[11.5px] text-ink-faint">seen upstream: {{ c['seen'] or '—' }}</span>
+          {% if c['upstream_newer'] %}
+            <span class="ml-auto rounded border border-warn/30 bg-warn/10 px-1.5 py-px text-[9.5px] font-semibold uppercase text-warn">newer upstream</span>
+          {% elif c['installed'] %}
+            <span class="ml-auto rounded border border-ok/25 bg-ok/10 px-1.5 py-px text-[9.5px] font-semibold uppercase text-ok">up to date</span>
+          {% else %}
+            <span class="ml-auto rounded border border-line bg-surface-3/60 px-1.5 py-px text-[9.5px] font-semibold uppercase text-ink-faint">monitor only</span>
+          {% endif %}
+          {% if c['obsolete'] %}
+            <span class="w-full text-[10.5px] text-warn/80">outdated packages: {{ c['obsolete'] | join(', ') }}</span>
+          {% endif %}
+        </div>
+      {% else %}
+        <p class="px-4 py-3.5 text-[12.5px] text-ink-faint">etat.json not readable — run the watch once via the CLI.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ------------------------------------------------------- journal feed #}
+  <section class="mb-4">
+    <h2 class="mb-2.5 px-1 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Journal — latest entries <span class="text-ink-faint/60">(docs/veille_journal.md)</span></h2>
+    <div class="space-y-2">
+      {% for entry in journal %}
+        <details class="panel px-4 py-3" {% if loop.first %}open{% endif %}>
+          <summary class="text-[12.5px] font-semibold leading-snug">{{ entry['title'] }}</summary>
+          <div class="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap text-[11.5px] leading-relaxed text-ink-dim">{{ entry['body'] }}</div>
+        </details>
+      {% else %}
+        <p class="panel px-4 py-3.5 text-[12.5px] text-ink-faint">Journal not found or empty.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ------------------------------------------------------- detail notes #}
+  <section class="panel p-4">
+    <h2 class="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-ink-faint">Update notes <span class="text-ink-faint/60">({{ notes | length }} in output/veille/notes/)</span></h2>
+    <div class="max-h-64 space-y-1 overflow-y-auto">
+      {% for note in notes %}
+        <a href="/files?p={{ note['rel'] | urlencode }}" target="_blank"
+           class="flex items-center gap-2 rounded-lg border border-line-soft bg-surface-2/40 px-2.5 py-1.5 font-mono text-[11.5px] text-ink-dim transition hover:border-accent/40 hover:text-ink">
+          📄 <span class="min-w-0 flex-1 truncate">{{ note['name'] }}</span>
+          <span class="text-[10px] text-ink-faint">{{ fmt_ts(note['mtime']) }}</span>
+        </a>
+      {% else %}
+        <p class="py-3 text-center text-[12px] text-ink-faint">No note yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{# Log tail (last lines) — swapped in bulk by the SSE job_log event. #}
+{% set lines = lines or [] %}
+{% if lines %}
+  {% for line in lines %}
+    <div class="term-line {% if 'Traceback' in line or 'error' in line|lower %}err{% elif '⚠' in line or 'warn' in line|lower %}warn{% elif '✅' in line or '✔' in line or 'Saved' in line %}ok{% endif %}">{{ line }}</div>
+  {% endfor %}
+{% else %}
+  <div class="term-line text-ink-faint/50">— log output appears here during a run —</div>
+{% endif %}

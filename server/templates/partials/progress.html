@@ -1,0 +1,16 @@
+{# Progress track — swapped by the SSE job_progress event. #}
+{% if job and job['status'] == 'running' %}
+  {% set elapsed = ((now() - job['started_at']) | round(0)) if job['started_at'] else 0 %}
+  {% set fraction = ((progress if progress is defined else job['progress']) or 0) * 100 %}
+  <div class="rounded-xl border border-line-soft bg-surface-2/60 px-3 py-2">
+    <div class="mb-1.5 flex justify-between font-mono text-[10px] text-ink-faint">
+      <span>{{ fraction | round(0) | int }}%</span>
+      <span>{{ fmt_dur(elapsed) }} elapsed</span>
+    </div>
+    <div class="track"><div style="width: {{ fraction }}%"></div></div>
+  </div>
+{% else %}
+  <div class="rounded-xl border border-line-soft bg-surface-2/40 px-3 py-2 text-center font-mono text-[10px] text-ink-faint/60">
+    progress
+  </div>
+{% endif %}

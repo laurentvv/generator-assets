@@ -64,3 +64,9 @@ Thumbs.db
 
 # pytest
 .pytest_cache/
+
+# Web UI build tooling (tailwind standalone CLI, 112 MB binary)
+tools/
+
+# Web UI completion chimes are source assets, not generated media
+!server/static/*.wav
