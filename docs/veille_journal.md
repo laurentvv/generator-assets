@@ -11,6 +11,10 @@ Format: `YYYY-MM-DD • source • change • project impact / action`
 
 ---
 
+- **2026-10-11 (~12:4x, user "merge") • PR #11 MERGED (merge commit 8442c6a) + branch feat/qwen-turbo DELETED (local + remote)** — CI green (lint+pytest ubuntu-latest/windows-latest, Kilo Code Review COMPLETED), mergeable clean. `qwen_image --qwen-turbo` is now LIVE on main: usage `uv run python main.py -w qwen_image "<prompt>" --qwen-turbo --seed 42` (forces 8 steps / CFG 1.0 / custom sigmas / AtomicChat Q8_0 on D:, env `QWEN_IMAGE21_TURBO_MODEL_PATH` to relocate). Turbo = the default personal-use photoreal+text path (123 s/image); base 40-step recipe stays via plain invocation; Chroma1-HD `generate` stays the production/commercial path (RESEARCH ceiling unchanged).
+
+---
+
 - **2026-10-11 (~12:1x, user "Atomic très bien") • TURBO WORKFLOW SHIPPED: `qwen_image --qwen-turbo` (branch feat/qwen-turbo, PR #11 opened — merge pending explicit instruction)** — user validation triggers the standing "validated test becomes a workflow" rule. Implementation: `core/config.py` gains `DEFAULT_QWEN_IMAGE21_TURBO_MODEL` (env `QWEN_IMAGE21_TURBO_MODEL_PATH`, default `D:\Modeles_LLM\Qwen-Image-2.1-Turbo-Q8_0.gguf`) + `QWEN_IMAGE21_TURBO_SIGMAS`; `core/diffusion.generer_image_qwen21` gains a generic `sigmas` passthrough (recipe stays in the workflow); `workflows/qwen_image.py` gains `--qwen-turbo` (flag named so because `--turbo` is taken by h3_ref2va — same pattern as the §1.37 `--upscale-mode` collision fix) which FORCES the distilled schedule (8 steps / CFG 1.0 / custom sigmas) and REFUSES explicit `--steps`/`--cfg-scale` alongside it (one evaluated schedule upstream). Docs synced: README §3.9, SKILL.md, catalogue_workflows.md, MEMORY_BANK §1.39 → "WORKFLOW-VALIDATED". **Smoke real path PASS**: `main.py -w qwen_image "…'The Sleeping Dragon'…" --qwen-turbo --seed 42` exit 0, typography perfect at 8 steps (`output/smoke_workflow_turbo.png`); wall 1391 s due to the STILL-ongoing external GPU contention (clean 123.4 s proven by the d_atomic leg). ruff green. Pre-existing unrelated worktree changes left untouched (`.agents-kit.json` M + `good-css/` untracked).
 
 ---
