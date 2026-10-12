@@ -3,26 +3,26 @@
  "moteurs": {
   "sd-cli": {
    "repo": "leejet/stable-diffusion.cpp",
-   "raison_epinglage": "master-956-1b0ba10 INSTALLED on Windows 2026-10-11 (retest, user instruction 'continue les tests en attentes') after the morning trial was invalidated: the 11.5x qwen turbo slowdown was the D: USB HDD + page-cache eviction, NOT the build (issue #2127 retracted/closed); turbo model since migrated to C: NVMe. Sealed A/B same prompt/seed (model on C:, warm cache): 945 = 122.0/121.9 s, 956 = 120.7/121.9 s -> PARITY, 956 KEPT (bonus: batched CFG #2085, VAE OOM tile-halving #2120, ROCm 10.1 CI). Flux generate smoke PASS (512^2 20 steps, exit 0). H3 #1976 remains broken on BOTH 945 and 956 (graph-cut, untouched by #2103/#2119/#2120) - h3_ref2va stays unavailable regardless of pin. Backups: backups/manual_pre_956_retest_20261011_163028.exe (= 945), backup_20261011_131624 (= 945), backup_20261007_190520 (= 931). Logs output/test_m956_retest/.",
+   "raison_epinglage": "master-959-d637cfb INSTALLED on Windows 2026-10-12 (user GO): 3 feature commits, all touching our surfaces - #2130 native 'qwen-image-2.1-turbo' sigma preset for --sigmas/--hires-sigmas (expands to the exact 8-step list hardcoded in core/config.py QWEN_IMAGE21_TURBO_SIGMAS; switching the workflow to the preset is a FUTURE code change, explicit sigmas still work), #2123 TAEQI2.1 tiny autoencoder for Qwen Image 2.1 (encode/decode/preview, 64-ch latents, official safetensors no conversion), #2128 MoSR upscaler support (no MoSR model on this machine). Install verified: --version = commit d637cfb, Vulkan dll OK. Smoke tests (SDXL 512^2 + qwen turbo) PENDING at install time: GPU gate red (external ella-swap job, 98% GPU / 14.5/16 GiB VRAM). Backups: backup_20261012_205740 (= 956). Prior: 956 story in git history.",
    "plateformes": {
     "windows": {
-     "epingle": "master-956-1b0ba10",
-     "asset": "sd-master-1b0ba10-bin-win-vulkan-x64.zip",
-     "sha256": "9e8b9baff514fe5dfb77e51bf08d85f11e6f10128eac14d4474c87f563309725",
+     "epingle": "master-959-d637cfb",
+     "asset": "sd-master-d637cfb-bin-win-vulkan-x64.zip",
+     "sha256": "b28606d62b8b819bf9d91bd7224a04513aa33edac30f9487d5172af5a59785f2",
      "sous_dossier": "SD",
      "exe": "sd-cli.exe"
     },
     "linux": {
-     "epingle": "master-956-1b0ba10",
-     "asset": "sd-master-1b0ba10-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
-     "sha256": "cecacb8054b4fab56912ee7e109a5f48311cf7a8660c6b311ac3a6eb1156ef73",
+     "epingle": "master-959-d637cfb",
+     "asset": "sd-master-d637cfb-bin-Linux-Ubuntu-24.04-x86_64-vulkan.zip",
+     "sha256": "09057ce221787094cd91fe34e044544d5dc20b095099eb30b901a2da727f947a",
      "sous_dossier": "sd-cli",
      "exe": "sd-cli"
     },
     "macos-arm64": {
-     "epingle": "master-956-1b0ba10",
-     "asset": "sd-master-1b0ba10-bin-Darwin-macOS-26.6.2-arm64.zip",
-     "sha256": "72c18ca1ba4177ca77cd288a9cb1e0f78d63ad3bde4b91fd7c84f3f4187b5761",
+     "epingle": "master-959-d637cfb",
+     "asset": "sd-master-d637cfb-bin-Darwin-macOS-26.6.2-arm64.zip",
+     "sha256": "535b5eccae1d7c81a20466b41433f062d64130e5513fd069006cdd6401dc4ce5",
      "sous_dossier": "sd-cli",
      "exe": "sd-cli"
     }
