@@ -426,6 +426,12 @@
 - **Status**: tested-not-validated — awaiting user session on real productions; agents keep the CLI (the web UI is the human path).
 - **Fluidity fix (PR #13, merged 2026-10-11)**: page renders NEVER generate media — `thumbnail()/waveform()` are cache-hit only (`create=False` default); the indexer pre-generates in a worker thread (bounded 24/pass) + a fire-and-forget background task drains the backlog; walk = os.walk pruned of `output/_webui` + single-transaction `upsert_many`. Cause of the "ça mouline": 365 pngs vs 108 cached thumbs × 50-150 ms PIL each, in-request. Measured: pages 3-160 ms, 1 172 cached media files. Vendor JS + chimes are `-text` in .gitattributes (sha256 pins vs autocrlf checkouts).
 
+### 🖼️ 1.43. SANA (NVlabs, Apache-2.0) image family — TRIAGED 2026-10-14, NO RUNTIME TODAY (sd-cli sans SANA ; wide-path ROCm behind named need)
+
+- **Famille** : DiT à attention linéaire — SANA 1.0 0.6B/1.6B (ICLR 2025 Oral), 1.5 1.6B/4.8B, Sprint 0.6B/1.6B few-step ; + Video 2B/5B / World Model / Streaming (tous PyTorch). Code **et** poids **Apache-2.0** (cartes HF vérifiées 10-14 : Sprint 1.6B, SANA1.5_1.6B). Poids = org HF `Efficient-Large-Model` (pas d'org NVlabs sur HF), diffusers/safetensors only, **aucun GGUF officiel** (GeorgyGUF f16 06-2025 = impasse sans moteur). Niche : seule famille Apache-2.0 native 4K + few-step (vs Chroma1-HD §1.37 Apache 720p ; Qwen §1.39 research perso-only).
+- **Fast path (sd-cli) : NOT SUPPORTED à d637cfb** — README sans SANA, GH code search "sana" = 0 hit, issue #569 "Sana support" open depuis 2025-01-14, #523 closed not_planned ; nécessiterait en plus le TE Gemma-2 et le VAE DC-AE. **Wide path (§1.40 ROCm)** : `SanaPipeline` diffusers ≥0.32 (venv de référence 0.35.0 ✓) ; 1.6B bf16 ≈ 3,2 GB + Gemma-2 2B ≈ 5 GB → enveloppe 16 GB OK ; Nunchaku INT4 = CUDA = exclus ; perf gfx1030 non mesurée (claims H100/4090).
+- **Verdict 10-14** : rien installé/testé (§1.40 « nothing until a named need »). Triggers re-screen : (a) sd.cpp livre SANA (#569) → voie rapide ; (b) besoin nommé de keyframes 4K Apache → test voie large derrière GO utilisateur (venv dédié wheels AMD `gfx103X-all`, Sprint 1.6B, pièges §1.40 : VAE decode en process CPU isolé, gate commit <14 GiB, `MIOPEN_FIND_MODE=FAST`). Docs pinnées `scratch/upstream_docs/sana/`.
+
 ## 🎬 2. Validated Masters and Production Files
 
 
