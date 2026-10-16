@@ -1,6 +1,14 @@
 {
   "version": 1,
   "skills": {
+    "agent-state": {
+      "source": "(authored)",
+      "ref": "2026-10-16",
+      "files": {
+        "scripts/state_agents.py": "189441f49af07e303eac77c1bc764e5e67387a193a9f17a880531cdc48c933c9",
+        "SKILL.md": "f909119fd031e7bf9f163bbdd4d842adc7b543fde698b448a0099cddf53adcca"
+      }
+    },
     "agy": {
       "source": "(authored)",
       "ref": "2026-10-04",
@@ -61,11 +69,53 @@
         "SKILL.md": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
       }
     },
+    "brutalist-industrial": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "7e16d97e74a303d62d572ad02c155d65dccd478fcf3372416765585b12ed0702"
+      }
+    },
+    "cinematic-motion": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "b5e4b30e362c14e319f3c14eb725ce6b35d1f733c3314a1b5d0b592d39664fed"
+      }
+    },
+    "corporate-trust": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "4b692ddc70c655486fdafda1271d9d068f24f9d2f137d19e1e4ea953a8f7f13b"
+      }
+    },
+    "dark-tech": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "6b856e651ba2a90a8bfe901ec206aa9ea262904eecf6454bf6f073e06ebee3e4"
+      }
+    },
+    "design-taste": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "c848bbddfdea89962da7b90faf53e033e9b2a8c1944f5dc98dbd78aeb758489f"
+      }
+    },
     "docs-fishing": {
       "source": "(authored)",
       "ref": "2026-10-02",
       "files": {
         "SKILL.md": "0509cb91550025ff59d36efdf500fe8d3bac90f6a74a583e029f947e089e7c0c"
+      }
+    },
+    "editorial-minimal": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "fd6c52053a992de985d5053278994784088f20bf9e76e1224ad9c75cdd8e3676"
       }
     },
     "emil-design-eng": {
@@ -172,6 +222,14 @@
         "SKILL.md": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2"
       }
     },
+    "frontend-design": {
+      "source": "anthropics/claude-plugins-official",
+      "ref": "763beda0edf036f9149948499928dba6baf1af26",
+      "files": {
+        "LICENSE.txt": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+        "SKILL.md": "d91970639e9f5c37682ac7ab60094d35f1c7c1f38d731bd56396563aee10c1d3"
+      }
+    },
     "good-css": {
       "source": "vojtaholik/good-css",
       "ref": "92d436ba1937d1b1407c47e35abb3e199eaace2e",
@@ -194,6 +252,13 @@
         "AUDIT.md": "551c8473e20e5f4774680bc24d45e1c68e50992582720905c6b077756b7b5a55",
         "PLAN-TEMPLATE.md": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad",
         "SKILL.md": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6"
+      }
+    },
+    "japanese-minimal": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "7b96ba5a48afd7d4e69f79f589f95e4fa6874384db0762c6d90b5cad0e1a6465"
       }
     },
     "minimal-change-engineer": {
@@ -220,11 +285,25 @@
         "references/fetch-recipes.md": "1b40d43ea209c7e36cfce9606fd7277910472bfddff44ef206edfd151f63d632"
       }
     },
+    "neo-brutalism": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "bc71fa3bba394f4a314b244003eabfad4a705caaee407a277f721267b14deb2e"
+      }
+    },
     "pick-ui-library": {
       "source": "emilkowalski/skills",
       "ref": "2d228630ba1446365f614a108cb8252f1feda202",
       "files": {
         "SKILL.md": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
+      }
+    },
+    "playful-color": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "4e0b86bd1842d2cd300d6b22d3d069b48070c10a704a027453c88f6d5a21cdab"
       }
     },
     "project-dashboard": {
@@ -242,12 +321,26 @@
         "SKILL.md": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9"
       }
     },
+    "quiet-luxury": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "3f439a21dbb284554449563c05cb2da6fab9b156bd08a2ab5168b4c5cc781468"
+      }
+    },
     "reality-checker": {
       "source": "(authored)",
       "ref": "2026-10-11",
       "files": {
         "NOTICE.md": "fd8fe8e6da21549ebc561f5b5c7b5bbffe79dbcc1decf0073c7af097d904262d",
         "SKILL.md": "0b45f299089997863b62428ce7456f69b77da72c83946fddb98932901bafa92f"
+      }
+    },
+    "retro-print": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "9036bd4daf53dd27a7e2c05d9c1d158a6a8aa0e67a2ea5d49f6f8b7b34ff1731"
       }
     },
     "review-animations": {
@@ -264,6 +357,51 @@
       "files": {
         "NOTICE.md": "e857ce4b50af4e1d20c35424f3c3e307bfa39550013685ab871d5bc699ef18f9",
         "SKILL.md": "8793ba41e7e47f529ffaf5192567e7bc93839a4446c46da43c60400119241521"
+      }
+    },
+    "skill-creator": {
+      "source": "anthropics/claude-plugins-official",
+      "ref": "763beda0edf036f9149948499928dba6baf1af26",
+      "files": {
+        "LICENSE.txt": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+        "SKILL.md": "dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf",
+        "agents/analyzer.md": "bf68f4cac5a56c673a928c2e6d619586c5b93ea364026ab37547772cb45a663a",
+        "agents/comparator.md": "fe1fc9787c495d864c5d6eada47396478572325fde1b33a96d78bf4b849b7a3e",
+        "agents/grader.md": "57134da0c1a4eea33fbd74a1c9c44aa814f07d6bc64de303edb586f941e5d21a",
+        "assets/eval_review.html": "ce477dcc74dc1c0d1d3352646a79167b5a63634e936b1019160025065974e452",
+        "eval-viewer/generate_review.py": "fc9d1b9243fe5ab6012ebd579bd76d0035de1b79fd3b969de114defab26478fb",
+        "eval-viewer/viewer.html": "a53213426ee1100441d701a3a0d49cda7a842f992d2c36463f4d3cc0258575fa",
+        "references/schemas.md": "8e8876180a8989b406a4d3edddf875b04cdfd5805cc8616686d552b11ce4455f",
+        "scripts/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "scripts/aggregate_benchmark.py": "123ef128ea5ccc01a4b1ac212ef5567f21e9c13d3d240609780beeb3200c49aa",
+        "scripts/generate_report.py": "13df7118a3c50c83c4c3250a606d5f2b20b25a3d44cbc392b3d669ec75281453",
+        "scripts/improve_description.py": "87d864570220b699fac52da309d2d6efdb060647bfebc74f768128e646accf80",
+        "scripts/package_skill.py": "1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f",
+        "scripts/quick_validate.py": "67cf5703402013936c8fb75ad6a1afecd8841d45cc5e606b634eb05825fde365",
+        "scripts/run_eval.py": "43e3b8f80dbf69c343967ba77e268fae991d9fa3ed68b32a0ff02532cd48657f",
+        "scripts/run_loop.py": "7bd6f674203168520517eec94c55f493c0d154339b061b4d7c0f0dad187d0f21",
+        "scripts/utils.py": "3af8ae62c40c73ab712207436a0d9a981e845f25c5a7040229eb189cc8e45bb1"
+      }
+    },
+    "taste-accessibility": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "4d293f850d91330f98812ec6a36110ddbd9d2337f58719d32e9731a4ea519558"
+      }
+    },
+    "taste-gsap": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "648b1b14375061b643fa1f45a2f65ac12edd0bd6c9a489f24f60cd21f547ef5f"
+      }
+    },
+    "taste-web-performance": {
+      "source": "madebymustafa/design-taste",
+      "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
+      "files": {
+        "SKILL.md": "1d2a07263d33ce98cc708a2d056eadb1636e9a78d9ad04a93896630bf6ec5213"
       }
     },
     "using-superpowers": {
