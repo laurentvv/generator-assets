@@ -1,6 +1,15 @@
 {
   "version": 1,
   "skills": {
+    "agent-mcp": {
+      "source": "(authored)",
+      "ref": "2026-10-18",
+      "files": {
+        "NOTICE.md": "7127366abc02c090790429139853ad8e615268d0a881f344c718bab8f401c893",
+        "scripts/mcp_agents.py": "5f3bc8980b9c457473918a167589b18122c4e424318ee067e3649b30ab89411a",
+        "SKILL.md": "3fda7a1384a008deb12082dea94506376fe8d6d073880cadc1dd46391ac5a65d"
+      }
+    },
     "agent-state": {
       "source": "(authored)",
       "ref": "2026-10-16",
@@ -59,6 +68,49 @@
       "files": {
         "API.md": "4bb06f482c5757529e3d7a672a30fbeed42d24919a63e2571384a9ce1549aa7f",
         "SKILL.md": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f"
+      }
+    },
+    "blender-core": {
+      "source": "EL4CTEO/blender-skills",
+      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "files": {
+        "SKILL.md": "92ab591e713d8b4cdd3ed591c813ad29df9f7ce3f90f6e84971719a6b1bdc51d",
+        "references/api-changes-5x.md": "ccf0b52a1d9fd836eb689abcec6a878b0ac57fb32ac600476b5070b9c8d22307",
+        "references/bpy-patterns.md": "ba7bbc708bf198bdcdfa59d9d41d830a4ae119c24ae9457830b73d9e818e2af8",
+        "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
+        "scripts/env_report.py": "e628feed806dd265e0c1ce803d92591aac208a9f463d8c47cbb939476d3b347a",
+        "scripts/run_in_blender.py": "e97e078c1b52475d386af2b8f9d27c7578a55c250ccd43ff50bed9c33d380355"
+      }
+    },
+    "blender-export-pipelines": {
+      "source": "EL4CTEO/blender-skills",
+      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "files": {
+        "SKILL.md": "b118b488f99bd5a2c45572bc78d76cb14cb6884d6fc00f8a7112a7b18f35896e",
+        "references/godot-web.md": "a1de232e3abb1622968f7d531dc6d62aa5a5a7b6d4b97e0b18dd16dc52d6ff30",
+        "references/roblox.md": "9079cd534349ce5ea0034abd983cf849a19c0a08676b88486393fe8caab7e263",
+        "references/unity.md": "6ed7fbaa57f6d8d0bdf87438bfc442bb536465b05459ffebf72b75dfa238d080",
+        "references/unreal.md": "377e784aa26bf0f634039f31d33b8d47800708f5d280cc518030db4e0d7005bc",
+        "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
+        "scripts/export_asset.py": "d30989025a2b06ed7f2241fd64b17aa1e554a92bf9178f601285ce78cc9d9760"
+      }
+    },
+    "blender-pipeline-automation": {
+      "source": "EL4CTEO/blender-skills",
+      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "files": {
+        "SKILL.md": "590e1159205c68af5c338425456c3ff86837cdb8202e34f2d40a018e96ec79fa",
+        "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
+        "scripts/batch_process.py": "baedf17711a939981f3796879e1f32be3203c197c41d9dc3fad8a104b82bfe8e"
+      }
+    },
+    "blender-rendering": {
+      "source": "EL4CTEO/blender-skills",
+      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "files": {
+        "SKILL.md": "ea4c7616fc1559cf8f1838e5e1cd6d49ff3c13fe716af3d8bd7aeca5877eeb45",
+        "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
+        "scripts/render_batch.py": "2ee9043b297148b9d76b54fc22390e1e6062e2e27c33ab0386dcfa2fdb59c432"
       }
     },
     "break-ui": {
@@ -245,6 +297,13 @@
         "references/text-and-media.md": "6cf2833208b965b42a5a19be8299f5a0696c4e3ea4d5e9882825c637618ff4e2"
       }
     },
+    "gpui-kit": {
+      "source": "(authored)",
+      "ref": "2026-10-18",
+      "files": {
+        "SKILL.md": "ce800390a6b41219fd8aaa9e3e225c680f1d5033ccd2663e553d191cf5cbf043"
+      }
+    },
     "improve-animations": {
       "source": "emilkowalski/skills",
       "ref": "2d228630ba1446365f614a108cb8252f1feda202",
@@ -259,6 +318,38 @@
       "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
       "files": {
         "SKILL.md": "7b96ba5a48afd7d4e69f79f589f95e4fa6874384db0762c6d90b5cad0e1a6465"
+      }
+    },
+    "kinetic-reel": {
+      "source": "tuzhechen2005/opus-video-skills",
+      "ref": "59744a69c7b916cfbe4c4ec84006b0c2f5e2fde1",
+      "files": {
+        "README.md": "1bbf6555be25b3d9a51d8bcdf978975e966f7e20bc83dfd1853459df3d920971",
+        "README.zh-CN.md": "27be194d3eec45226759b8b99738229b07901835d82524086a80902ed2fad544",
+        "SKILL.md": "35b582ea71893b55e296e50afda78a3d419d20222246b4eede0e87b59f10565f",
+        "docs/work-reel-sheet.jpg": "e21828daaeab949bf548ff4a4f8549f96e592e4ebe651e596d213a429d8d56f2",
+        "docs/work-reel.gif": "f01d4c13c8d83e09589acbea75d94f013a9863179deea892f607d77fcb4eb16a",
+        "examples/site-intro/README.md": "5a4a588281dc6dd8e9b88f8dbf8ca33b6321edc0a24011d8d4db82657862f7aa",
+        "examples/site-intro/css/intro-reel.css": "f06081b045f2eb2b142742b0e343ed9adbeb85f8dbd614dfe2cbf2f58d6fd901",
+        "examples/site-intro/index.html": "90a866b5d40f3e38528b7630694bc984683d3dc446b9983c372a6e7f195a5c1d",
+        "examples/site-intro/js/intro-reel.js": "5b2ed9a7edfe108e9a996fe0ed7958560fae9c4d58cae2ec3503ccc571736fce",
+        "examples/site-intro/worker.js": "a5be3ea59150e7e2da6c624de4bb8ed93b91069555455058e986928a7b47500d",
+        "examples/work-reel-26/README.md": "67fa99122468a3ffc580f884f0f1d87208b95fdf5dc77f1c50df5080a67b6ead",
+        "examples/work-reel-26/STORYBOARD.md": "d9df37b00617484acf302f2af653af85a80f40cb9bae74ca0a654400e7880c02",
+        "examples/work-reel-26/cues.js": "05bc76852435cba6236c01bfe38112cb5a8a2ba0252e4d24675706c0cf1b5f63",
+        "examples/work-reel-26/reel.js": "cc98f26cd590a1a3b38a09152cf04ee9b010de64c0a003186c28bd47257f5fc0",
+        "examples/work-reel-26/score.mjs": "2d4bc7f1ca4a0e25bc055dbafaf7f06f891c66b8112f467aceb22dcca1b94405",
+        "references/sound.md": "089a7a1c0be5840a3da8bf2365d3985a74fc2ba95002b34fe8681eec3cdf48f2",
+        "references/style-guide.md": "c233530f569c67bd39fdc0eb67358b26530ddf1dcf1cb44847788cea3fdb620d",
+        "scripts/new_project.sh": "dd849e06b15a9af73d3d24b5b733f7be5aad8e214a4e21dbff347bf38ffe3ea7",
+        "template/.gitignore": "2ed28c5f08f2d44cdf8313c86aebae205cbcef4beb2ee4cdc982e72a97967c52",
+        "template/STORYBOARD.md": "c6f60b9cb3973873e0fe0a46da814420ea574cd91ba50e135016310dd059750f",
+        "template/music/score.mjs": "56f29978641d69cd275ae91f80fb27b59a004800fb58f668862db82d0607c9ce",
+        "template/package.json": "881f6b07c17d8aed7a59bdca731cc7ffa96f3b83ecb3fb1d40988c12ccd079aa",
+        "template/reel/cues.js": "3a867f1f3c04cf8a6058c4838a4c4b4b7236c0ebbd9de4fdbff202eb7e426e2b",
+        "template/reel/index.html": "1df2971d7105719745f4ec32ab240a2586d8eeb462df19cdeff313c53ba86a69",
+        "template/reel/reel.js": "53c298a2dcbf1ab3877be302601a3e991097c0120c8a0ad6eaf41acb0a7ff5f2",
+        "template/render.mjs": "2112d356740263a5af68f81e18fdb4a2b3901665280cf5807d3e41d2b6e636f5"
       }
     },
     "minimal-change-engineer": {
@@ -290,6 +381,41 @@
       "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
       "files": {
         "SKILL.md": "bc71fa3bba394f4a314b244003eabfad4a705caaee407a277f721267b14deb2e"
+      }
+    },
+    "painted-animation": {
+      "source": "tuzhechen2005/opus-video-skills",
+      "ref": "59744a69c7b916cfbe4c4ec84006b0c2f5e2fde1",
+      "files": {
+        "README.md": "8fbe497fde2435425034833129488bc13c22f8939fd224aa1cdc8f1432c88468",
+        "README.zh-CN.md": "1fea1eb8699930bde40a6a13ac07b5cf215ff739bd8beaf4bf94dfd464998113",
+        "SKILL.md": "c14428f8293bf78cb885b4df5531f1268c7dc4aa137aee608d10e2353405dbc3",
+        "docs/koi-gag.gif": "fe2f693b7c78e5766d099df593da7a3e4e338f60e03e4f98f6c4a6cdb58ec542",
+        "docs/xiaozhen-sheet.jpg": "08bc9ac5c087e9dbbdbb6e04b5921c90550d237d75cd3618b73fb640e4f66063",
+        "examples/xiaozhen/STORYBOARD.md": "59a1f67eb3401040b10eb889b829294e24ba679f4c4365b61e7810630556dd87",
+        "examples/xiaozhen/xz_set.js": "ebe0d82484e3c420f5ec4f4a7ea0a4c6ce593bf1814c5712578d4aef248fbdb0",
+        "examples/xiaozhen/xz_shots.js": "d66fca18ff52998dfe31762741877b79d69bf566ec8e537b18cbfa6ce6b6bc69",
+        "references/music-video.md": "e706b70f8a30f2dea4501cca694549ad13cc60751b512062f33df367808c895b",
+        "scripts/beat_grid.py": "dca08b57db2ba4d49a88cbcc693443c8fb18387474c3dc40f36294d88e7602d0",
+        "scripts/new_project.sh": "eadc25da6fbc22a53cd77a436de3bc7c7c77d838b670d88aedefe00efb92d8d5",
+        "template/.gitignore": "cdb3767f6dfc37d7a5e34ccf184aa258a4a749f31ad6aa9af19538359a5a8ad0",
+        "template/ANIMATION_GUIDE.md": "f638e1fb3876f587e39ec11a20e2df3aac91421c926d82c2743768642caab990",
+        "template/LICENSE": "7d25ae95b305b884c08ce898e53b58d2e180ff0119e5d203d8b4ae30420f3b33",
+        "template/README.md": "c383c6bf64add0bdd38c0244616faa4adf859e1aae93cb93223a8de822924801",
+        "template/docs/emotions.jpg": "66a0337d8a9db6735b5fc2e5495bd1b8c9a3868d11d83d6b24add6cbfe32001d",
+        "template/docs/views.jpg": "c067a20d24aa1f81edbc99f8fb0ee1f57a3cfd81786f99bc4070b90b37559d9e",
+        "template/gpu_probe.mjs": "62b370f9687383870c69ad8edb2646211c32460fe2e779a5b02ff33786b01e42",
+        "template/package-lock.json": "4c79bac79ca749472c0b9f74cef1c6409ef7ab0513417c9ba4b94838731667d1",
+        "template/package.json": "c14fb0dd2641a316e54b90c4658ba10b6ce3b02b1921417e8128368dbcd005cb",
+        "template/render.mjs": "1151ad59ad0c7bbe59e4e273465689d81d41f896d6bafc8981b527d110b77fe6",
+        "template/src/clawd.js": "578fbd46d21cdcc92b14806f3cc8c7b1b9e9f7ea53ddda7b1c150afa9f3c512a",
+        "template/src/config.js": "6d9374c59bd90bede9d4761eea6136b772a5883c414a67b8a5673510b8c1d435",
+        "template/src/core.js": "6367b03a09bb0650ad4161a6e0668ddaf64178ddf33bb57b8fe25536e7234c5b",
+        "template/src/karaoke.js": "fa68bb6ed9169ab945716cf1ad451ce9c36205d277f7921ed85e00735a91b0ae",
+        "template/src/scenes/demo.js": "c783bd05af05875e014afd215d1945b189121910e8cef3218a5a8c7aac1dc361",
+        "template/src/sheets.js": "cdd9320e0cb5e1e5bbfdeac221e21b69714b96e4a9b05e62cda4817b4d80010c",
+        "template/src/timeline.js": "93d455142bf642355cb77cce64ad1a8397996be4f23e121bd18d6fce52bc1503",
+        "template/studio.html": "edd47db6a1c914b10e3709cd2fac6dce502d033ae215fd1b06967d46eaf3809e"
       }
     },
     "pick-ui-library": {
@@ -432,6 +558,14 @@
         "references/hermes-tools.md": "e2185c976a3c87503910e05e2aea58cc89bc8e569bb624b93df9958ac47a9190",
         "references/muse-tools.md": "5a1da5c575fe18456ca71cd47ebfd8a38c745f8d82a67fe64d5b83080000eeb3",
         "references/pi-tools.md": "703dbc83d23ecab9c6f388460c38abc482e9dee2fe6772a8c7a255152ad3a4d5"
+      }
+    },
+    "video-toolchain": {
+      "source": "(authored)",
+      "ref": "2026-10-19",
+      "files": {
+        "scripts/video_toolchain.py": "8f5a69aac1017d63ed036ba75c6bf452339934909b0305dfcd7028d43238a89d",
+        "SKILL.md": "eda432889379a33eacf78396e060546f54148487bb55dd2f80bf8a7899adf138"
       }
     },
     "voice-ai-engineering": {
