@@ -6,7 +6,8 @@ with cloning of a French reference voice if provided.
 
 Engines: qwen3-tts 1.7B (default with a reference, Apache-2.0, --instruct expression),
 VoxCPM2 (default without reference, Apache-2.0, cloning without transcript),
-Fish S2-Pro (inline tags [whisper]/[excited], research licence).
+Fish S2-Pro (inline tags [whisper]/[excited], research licence),
+Fish Audio Drama 3 (MoE native voice or cloning with transcript, Community License).
 
 Pipeline: level control/normalization of the reference (gap ≤ 2026-09-06:
 recording at -39 LUFS → normalization -18 LUFS), automatic ASR transcription if the
@@ -24,12 +25,12 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class VoixOffWorkflow(BaseWorkflow):
-    """Cloned/expressive voice-over (qwen3-tts / VoxCPM2 / Fish S2-Pro GGUF, Vulkan) normalized for YouTube."""
+    """Cloned/expressive voice-over (qwen3-tts / VoxCPM2 / Fish S2-Pro / Drama 3 GGUF, Vulkan) normalized for YouTube."""
 
     name = "voix_off"
     description = ("Expressive reading of a text by local TTS (audio.cpp Vulkan) with "
-                   "optional voice cloning — qwen3-tts/VoxCPM2 (Apache-2.0) or Fish S2-Pro, "
-                   "normalized output -16 LUFS + MP3")
+                   "optional voice cloning — qwen3-tts/VoxCPM2 (Apache-2.0), Fish S2-Pro or "
+                   "Drama 3 (MoE, Community License), normalized output -16 LUFS + MP3")
 
     emoji = "🎙️"
 
