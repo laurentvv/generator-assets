@@ -70,3 +70,6 @@ tools/
 
 # Web UI completion chimes are source assets, not generated media
 !server/static/*.wav
+# Agent local state (ledger, installed skills) - kept on disk, never committed
+.agent/
+.agents/
