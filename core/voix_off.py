@@ -10,6 +10,10 @@ GGUF engines (monolithic q8_0 packages in C:\\Modeles_LLM):
 - fish    : Fish Audio S2 Pro (research license, paid commercial) — zero-shot
             or cloning with transcript, inline expression tags ([whisper]...),
             44.1 kHz output
+- drama3  : Fish Audio Drama 3 (Fish Audio Community License, commercial OK
+            below USD 500k/yr) — native voice or cloning with transcript,
+            speaker/event tags in text, MoE 16 GB profile (24/40 expert banks
+            on CPU), 44.1 kHz output
 
 Built-in pipeline: reference conversion/resampling, level control
 (minimum -26 dB mean, otherwise normalization -18 LUFS / -1.5 dBTP),
@@ -49,6 +53,10 @@ MODELE_FISH = os.getenv(
     "FISH_S2PRO_MODEL",
     os.path.join(DEFAULT_MODEL_DIR, "Fish-Audio-S2-Pro-GGUF", "fish-audio-s2-pro-q8_0.gguf"),
 )
+MODELE_DRAMA3 = os.getenv(
+    "DRAMA3_MODEL",
+    os.path.join(DEFAULT_MODEL_DIR, "Drama-3-GGUF", "drama-3-backbone-8bit-experts-Q4_K_S.gguf"),
+)
 
 MOTEURS: Dict[str, Dict[str, Any]] = {
     "qwen3": {
@@ -74,6 +82,14 @@ MOTEURS: Dict[str, Dict[str, Any]] = {
         "transcript_obligatoire": False,  # ... but transcript required WHEN a ref is provided
         "langue": None,                # auto detection
         "licence": "Fish Audio Research (non-commercial without license)",
+    },
+    "drama3": {
+        "famille": "fish_drama3",
+        "modele": MODELE_DRAMA3,
+        "ref_obligatoire": False,      # native voice possible, cloning if a ref is provided
+        "transcript_obligatoire": False,  # ... but transcript required WHEN a ref is provided
+        "langue": None,                # auto detection
+        "licence": "Fish Audio Community (< USD 500k/yr, attribution required)",
     },
 }
 
@@ -206,7 +222,10 @@ def generer_voix_off(
 
     ref_effective = preparer_reference(wav_ref, dossier_travail) if wav_ref else None
 
-    cmd = [resoudre_audiocpp(), "--task", "tts", "--family", conf["famille"],
+    # fish_drama3 switches to the dedicated cloning task when a reference is
+    # provided (the tts task ignores --voice-ref for this family).
+    tache = "clon" if (ref_effective and conf["famille"] == "fish_drama3") else "tts"
+    cmd = [resoudre_audiocpp(), "--task", tache, "--family", conf["famille"],
            "--model", modele, "--backend", backend, "--text", texte,
            "--metrics", "--out", sortie]
     if conf["langue"]:
@@ -216,6 +235,16 @@ def generer_voix_off(
         if conf["famille"] in ("qwen3_tts", "fish_audio"):
             transcript = transcrire_reference(ref_effective, dossier_travail, backend)
             cmd += ["--reference-text", transcript]
+        elif conf["famille"] == "fish_drama3":
+            transcript = transcrire_reference(ref_effective, dossier_travail, backend)
+            cmd += ["--request-option", f"reference_text={transcript}"]
+    if conf["famille"] == "fish_drama3":
+        # Validated 16 GB VRAM profile (first real-hardware validation 2026-10-19;
+        # upstream settings were measured on a 96 GB GPU only): 24 of the 40
+        # MoE expert banks evaluated on CPU, the rest + backbone + audio tower
+        # on the selected backend.
+        cmd += ["--session-option", "fish_drama3.cpu_expert_layers=24",
+                "--session-option", "fish_drama3.context_length=2048"]
     if instruct and moteur == "qwen3":
         cmd += ["--instruct", instruct]
     if seed is not None and seed >= 0:
