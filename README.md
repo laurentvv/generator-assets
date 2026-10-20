@@ -343,6 +343,11 @@ To ensure maximum productivity and avoid false expectations, here is a transpare
 - **🔍 AI Super-Resolution (`upscale`)** : 2x, 4x, and 4K ESRGAN Vulkan upscaling with 100% Alpha channel transparency preservation.
 - **✂️ Clean Cutouts & Sprites (`generate`, `rembg`)** : Clean edges with RMBG-1.4 / BiRefNet ONNX (no white halo artifacts).
 - **🖼️ YouTube Thumbnails (`miniature`)** : Keyframe → 1280×720 with gradient band and real typography (title/subtitle text layers) through the headless PhotoCraft engine of the Craft suite.
+- **📡 Subscribe End Cards (`carte_fin`)** : Background image or solid color, dark veil, centered CTA typography ("ABONNE-TOI") through the PhotoCraft engine.
+- **🏷️ Batch Watermark (`filigrane_batch`)** : Corner text watermark + format conversion + optional long-side resample over a file or a whole directory.
+- **🎮 Vector Game Icons (`icone_jeu`)** : Flat-design SVG + PNG icons (background + cercle/carre/hexagone/etoile, colors, size) through the headless VectorCraft engine - crisp at any Godot UI scale.
+- **📊 Benchmark Report Decks (`rapport_deck`)** : JSON measures → title + summary slides → PDF via DeckCraft.
+- **📄 PDF Text & OCR (`ocr_pdf`)** : Native text-layer extraction via PdfCraft, OCR fallback for scans (English in 0.9.0).
 - **🎬 I2V Keyframe Prep (`prepa_i2v`)** : Center-crop keyframes to any target ratio (16:9…21:9) with lanczos resample before Wan/LTX image-to-video chains.
 - **🔊 Procedural Sound & Music (`sfx`, `audio_ambience`)** : Combat swings, magic potions, seamless background loops in `.wav` and `.ogg` formats.
 

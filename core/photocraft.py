@@ -37,26 +37,28 @@ class ErreurPhotocraft(RuntimeError):
     """Raised when the photocraft engine rejects a request or answers badly."""
 
 
-def trouver_cli_photocraft() -> Path:
-    """Locates photocraft-cli.exe: env override, then the managed install."""
-    override = os.environ.get("PHOTOCRAFT_CLI")
-    if override:
-        chemin = Path(override)
+def trouver_cli_craftapp(nom_appli: str, variable_env: str = "") -> Path:
+    """Locates `<app>-cli.exe` of any Craft suite app: env override first,
+    then the newest managed install under D:\\CraftApps\\<app>."""
+    if variable_env and os.environ.get(variable_env):
+        chemin = Path(os.environ[variable_env])
         if chemin.is_file():
             return chemin
-        raise ErreurPhotocraft(
-            f"PHOTOCRAFT_CLI={override} does not point to an existing file"
-        )
-    dossier_app = RACINE_CRAFT_APPS / NOM_APPLI
+        raise ErreurPhotocraft(f"{variable_env}={chemin} does not point to an existing file")
+    dossier_app = RACINE_CRAFT_APPS / nom_appli
     if dossier_app.is_dir():
-        candidats = sorted(dossier_app.glob(f"{NOM_APPLI}-*{SUFFIXE_BUILD}/{NOM_APPLI}-cli.exe"))
+        candidats = sorted(dossier_app.glob(f"{nom_appli}-*{SUFFIXE_BUILD}/{nom_appli}-cli.exe"))
         if candidats:
             return candidats[-1]
     raise ErreurPhotocraft(
-        "photocraft-cli.exe not found under "
-        f"{dossier_app}. Install the Craft suite first: "
-        "`python D:\\GIT\\craft-suite\\manage_craft_suite.py install photocraft`"
+        f"{nom_appli}-cli.exe not found under {dossier_app}. Install the Craft suite first: "
+        f"`python D:\\GIT\\craft-suite\\manage_craft_suite.py install {nom_appli}`"
     )
+
+
+def trouver_cli_photocraft() -> Path:
+    """Locates photocraft-cli.exe: env override, then the managed install."""
+    return trouver_cli_craftapp("photocraft", "PHOTOCRAFT_CLI")
 
 
 class SessionPhotocraft:
