@@ -46,8 +46,6 @@ class MiniatureWorkflow(BaseWorkflow):
 
     emoji = "🖼️"
     PARAMETRES = [
-        dict(flags=("--titre",), default=None, help="Title text displayed on the thumbnail"),
-        dict(flags=("--sous-titre",), default=None, help="Optional subtitle under the title"),
         dict(flags=("--couleur-titre",), default="#ffe066", help="Title color (#rrggbb)"),
         dict(flags=("--couleur-sous-titre",), default="#ffffff", help="Subtitle color (#rrggbb)"),
         dict(flags=("--taille-titre",), type=int, default=88, help="Title size in pt"),
