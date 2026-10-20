@@ -133,6 +133,17 @@
  ],
  [
   [
+   "--bandeau"
+  ],
+  "bandeau",
+  "_StoreAction",
+  "0.55",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
    "--biome-a"
   ],
   "biome_a",
@@ -309,6 +320,28 @@
  ],
  [
   [
+   "--couleur-sous-titre"
+  ],
+  "couleur_sous_titre",
+  "_StoreAction",
+  "'#ffffff'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--couleur-titre"
+  ],
+  "couleur_titre",
+  "_StoreAction",
+  "'#ffe066'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--cover-threads"
   ],
   "cover_threads",
@@ -469,6 +502,21 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--format-sortie"
+  ],
+  "format_sortie",
+  "_StoreAction",
+  "'png'",
+  [
+   "jpg",
+   "png",
+   "webp"
+  ],
+  null,
+  null
  ],
  [
   [
@@ -1241,6 +1289,24 @@
  ],
  [
   [
+   "--ratio"
+  ],
+  "ratio",
+  "_StoreAction",
+  "'16:9'",
+  [
+   "16:9",
+   "1:1",
+   "21:9",
+   "3:4",
+   "4:3",
+   "9:16"
+  ],
+  null,
+  null
+ ],
+ [
+  [
    "--ref-audio"
   ],
   "ref_audio",
@@ -1523,6 +1589,17 @@
  ],
  [
   [
+   "--sous-titre"
+  ],
+  "sous_titre",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--steps"
   ],
   "steps",
@@ -1578,6 +1655,28 @@
  ],
  [
   [
+   "--taille-sous-titre"
+  ],
+  "taille_sous_titre",
+  "_StoreAction",
+  "34",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
+   "--taille-titre"
+  ],
+  "taille_titre",
+  "_StoreAction",
+  "88",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
    "--themes"
   ],
   "themes",
@@ -1597,6 +1696,17 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--titre"
+  ],
+  "titre",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
  ],
  [
   [
