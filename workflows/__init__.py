@@ -15,13 +15,14 @@ import pkgutil
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 _MODULES_ORDONNES = [
-    "generate", "qwen_image", "upscale", "miniature", "carte_fin", "icone_jeu", "prepa_i2v", "filigrane_batch", "spritesheet", "variations", "tileable", "pixelart",
+    "generate", "qwen_image", "upscale", "miniature", "carte_fin", "icone_jeu", "titre_anime", "prepa_i2v", "filigrane_batch",
+    "doc_texte", "classeur_donnees", "planche_pdf", "maquette_ui", "photo_develop", "son_convertir", "spritesheet", "variations", "tileable", "pixelart",
     "batch", "material3d", "skybox", "turnaround3d", "mesh3d", "mesh_ia", "rembg",
     "flowmap", "ui_9slice", "voxel3d", "autotile_pack", "rife_interp", "vfx_flipbook",
     "rpg_portrait", "sfx", "ip_adapter", "anim_loop", "pose_control", "tts_dialogue",
     "audio_ambience", "music_bg", "voix_off", "voix_robot", "voix_perso", "chanson", "musique_adn",
     "musique_essence", "retrait_voix", "outfit", "video", "video_vace", "video_multishot", "h3_ref2va", "monoplan_ia",
-    "makehuman_clothes", "character_makeup", "asset_blendkit", "audio_upscale", "ocr_pdf", "rapport_deck",
+    "makehuman_clothes", "character_makeup", "asset_blendkit", "audio_upscale", "ocr_pdf", "rapport_deck", "projet_montage",
     "animal_godot", "acestep_cover", "voix_conversion",
 ]
 
