@@ -282,7 +282,7 @@ uv run python -m server          # → http://127.0.0.1:8765 (localhost only)
 ```
 
 Full-Python web UI (**FastAPI + Jinja2 + HTMX**, zero Node/npm) piloting the whole
-factory from a browser: auto-generated forms for **all 49 workflows** (introspected
+factory from a browser: auto-generated forms for **all 64 workflows** (introspected
 live from the workflow registry — new workflows appear automatically), curated recipe
 presets (turbo, LUFS beds, LTX frame rules…), a **serialized run queue** (one heavy
 GPU job at a time, automatic `check_charge_systeme` load gate), live log/progress
@@ -312,6 +312,7 @@ zero cloud.
 | 🌌 **Equirectangular 360° Skyboxes** | 2:1 panoramic skies with automated Godot 4 `WorldEnvironment` and Image-Based Lighting (IBL) configuration. |
 | 🎬 **Native AI Video (.webm)** | Direct hardware-accelerated video rendering (Wan 2.1, Wan 2.2, LTX-2.3/2.5) with WebM container export and Godot 4 `VideoStreamPlayer` scenes. |
 | 🐉 **Video+Audio Continuation ×2 Turbo** 🏆 | `h3_ref2va` continues any video — character, scene **and sound** — via MiniMax-H3 Ref2VA (webm with generated audio). The validated **turbo distilled LoRA** (`--turbo`, 8 steps) cuts render time nearly in half: **~38 min instead of ~70 min** for 22 frames @ 864×480 (sampling −64 %, zero per-step cost), with reference continuity **≥ baseline** and richer audio. This is the enabler for long multi-chunk sequences (18-chunk loop: **~11.5 h instead of ~21 h**). |
+| 🧩 **Craft Suite Integration (12 Rust apps)** | 15 workflows driving the open-source [Craft App Suite](https://getartcraft.com/apps) headless: thumbnails & end cards with real typography (PhotoCraft), vector icons (VectorCraft), benchmark decks with charts (DeckCraft), PDF text + OCR (PdfCraft), documents & workbooks (WordCraft/GridCraft), title frames (EffectCraft), UI wireframes (FigCraft), photo development (LightCraft), audio conform (SoundCraft), A4 proof sheets (DesignCraft), rough-cut bins (FilmCraft). |
 | 🔄 **Automated sd.cpp Vulkan Compiler** | 1-click update tool: fetches official GitHub Vulkan binaries or compiles native master sources via CMake + MSVC with automatic rollback backups. |
 | ⚡ **Direct by Default & Zero VRAM Spikes** | Direct, verbatim prompt execution by default for instantaneous generation. When optional LLM prompt enrichment is enabled (`--use-llm`), the LLM terminates and frees 100% of VRAM before diffusion launches. |
 
@@ -503,16 +504,17 @@ python main.py --list-upscalers
 <span id="workflows"></span>
 ## 📦 Complete Workflow Catalog
 
-The engine features **38 modular workflows** organized into 5 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
+The engine features **64 workflows** organized into 6 functional categories. Each workflow operates as an autonomous pipeline that produces production-ready assets:
 
 ```text
 📋 Quick Category Map:
   • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap, asset_blendkit
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
-  • 2D Sprites, Tiles & UI         : generate, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
+  • 2D Sprites, Tiles & UI         : generate, qwen_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
   • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
+  • Craft Suite (headless Rust apps): miniature, carte_fin, icone_jeu, titre_anime, prepa_i2v, filigrane_batch, doc_texte, classeur_donnees, rapport_deck, planche_pdf, maquette_ui, photo_develop, son_convertir, ocr_pdf, projet_montage
 ```
 
 ---
@@ -1730,6 +1732,35 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 
 ---
 
+---
+
+<span id="craft-suite-catalog"></span>
+### 🧩 6. Craft Suite Integration — 12 Headless Rust Apps
+
+Beyond diffusion engines, the factory drives the productive apps of the open-source [Craft App Suite](https://getartcraft.com/apps) (pure-Rust desktop apps by the ArtCraft team) through their headless CLIs and MCP servers — real typography, real documents, real spreadsheets, real decks, on top of the generated assets. Installed and version-pinned by the dedicated **craft-suite** manager (see [Optional: the Craft suite](#optional-the-craft-suite-thumbnails-typography-mcp-apps)); automatic watch + changelog-first updates included.
+
+Engine access patterns (why it matters for reliability): **PhotoCraft** = persistent `serve` JSON-lines session; **EffectCraft** = persistent MCP stdio server (compositions die between CLI invocations); all the others = stateless CLI per invocation. Every engine path resolves through `core/photocraft.py` with per-app environment overrides (`PHOTOCRAFT_CLI`, `PDFCRAFT_CLI`, `VECTORCRAFT_CLI`, `DECKCRAFT_CLI`, `WORDCRAFT_CLI`, `GRIDCRAFT_CLI`, `LIGHTCRAFT_CLI`, `SOUNDCRAFT_CLI`, `EFFECTCRAFT_CLI`, `DESIGNCRAFT_CLI`, `FIGCRAFT_CLI`, `FILMCRAFT_CLI`).
+
+| Workflow | Craft app | Use | Key inputs | Output | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `miniature` | PhotoCraft | YouTube thumbnail: 16:9 crop, gradient band, real text layers | `-i`, `--titre`, `--sous-titre`, `--couleur-titre`, `--taille-titre`, `--bandeau` | `<name>_miniature.jpg` | ✅ VALIDATED |
+| `prepa_i2v` | PhotoCraft | I2V keyframe prep: centered ratio crop + lanczos | `-i`, `--ratio` (16:9…21:9), `--width`/`--height` (long side) | `<name>_i2v.png` | ✅ VALIDATED |
+| `carte_fin` | PhotoCraft | Subscribe end card: bg image + veil or solid, CTA typography | `--fond`, `--texte-principal`, `--texte-secondaire`, `--voile` | `<base>_carte_fin.jpg` | ✅ VALIDATED |
+| `filigrane_batch` | PhotoCraft | Batch corner watermark (alpha) + format + resample | `-i`, `--filigrane`, `--position`, `--couleur-filigrane` | `<name>_filigrane.<fmt>` | ✅ VALIDATED |
+| `ocr_pdf` | PdfCraft | PDF to UTF-8 text; OCR fallback for scans (en in 0.9.0) | `-i`, `--language`, `--forcer-ocr` | `<name>.txt` | ✅ VALIDATED |
+| `icone_jeu` | VectorCraft | Flat-design vector icon, SVG + PNG (Godot UI scale-free) | `--forme` (cercle/carre/hexagone/etoile), colors, `--taille` | `icone_<forme>_<taille>.svg/.png` | ✅ VALIDATED |
+| `rapport_deck` | DeckCraft | Benchmark JSON to PDF deck: title + **column-chart slide** + summaries | `--donnees`, `--titre`, `--sous-titre` | `rapport_<base>.pdf` | ✅ VALIDATED |
+| `doc_texte` | WordCraft | Markdown/text/HTML to a styled PDF | `-i` (.md/.txt/.html/.tex/.rtf) | `<name>_wordcraft.pdf` | 🧪 tested — validation pending |
+| `classeur_donnees` | GridCraft | CSV/TSV/JSON to a real XLSX workbook | `-i` (.csv/.tsv/.json) | `<name>.xlsx` | 🧪 tested — validation pending |
+| `titre_anime` | EffectCraft | 1920×1080 title composition frame (bg + text layer) | `--texte`, `--teinte`, `--taille-texte`, `--couleur-fond-ecran` | `titre_<texte>.png` | 🧪 tested — validation pending |
+| `maquette_ui` | FigCraft | Dark UI wireframe 1280×720 (header + zones + labels) | `--libelle` | `maquette_<libelle>.png` + `.fig` | 🧪 tested — validation pending |
+| `photo_develop` | LightCraft | One-command photo develop: import, optional EV, auto, export | `-i`, `--exposition`, `--long-cote` | `<name>_developpe.jpg` | 🧪 tested — validation pending |
+| `son_convertir` | SoundCraft | Audio convert + normalize/resample/bit-depth | `-i`, `--normaliser`, `--frequence`, `--profondeur-bits` | `<name>_conforme.wav` | 🧪 tested — validation pending |
+| `planche_pdf` | DesignCraft | A4 print-ready proof sheet around one image | `-i` | `<name>_planche.pdf` | 🧪 tested — validation pending |
+| `projet_montage` | FilmCraft | Rough-cut project bin with media imported, saved headless | `-i` (media file or directory) | `<name>_montage.fcproj` | 🧪 tested — validation pending |
+
+CADCraft is the only suite app without a workflow: it ships no automation surface at all in 0.8.0 (no `mcp`/`serve`/`run` subcommand). The craft-suite watch re-screens it at every update; a workflow lands the day a surface ships.
+
 <span id="cli"></span>
 ## 💻 CLI Reference & Cheat Sheet
 
@@ -1866,6 +1897,8 @@ flowchart TD
     Step2 --> Step3["3. Export Production .GLB<br>into <code>godot_assets/my_model.glb</code>"]
     Step3 --> Step4["4. Godot MCP Toolkit<br><code>scene_create_node</code> instantiates the asset<br>directly into the active game scene"]
 ```
+
+**Craft apps as MCP servers (12 of 13):** every Craft suite app also ships `<app>-cli mcp` (stdio JSON-RPC, 25 to 388 tools each — LightCraft alone exposes 388). `D:\GIT\craft-suite\mcp_probe.py` inventories them in one command. PhotoCraft is wired as a project MCP server in `.zcode/config.json` (read root = this repo, write root = `output/`; the exe path is version-pinned — refresh it after `manage_craft_suite.py update photocraft`). Mind the session semantics: each `tools/call` starts fresh — run whole workflows in one `command_batch`, or keep a persistent session via `<app>-cli serve`.
 
 ### Typical Agent Actions:
 1. **Humanoid Characters & Outfits** :
