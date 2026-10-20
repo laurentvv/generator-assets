@@ -229,7 +229,7 @@ exists.
 | :--- | :--- |
 | Full workflow detail (inputs/outputs/options/examples) | [`references/catalogue_workflows.md`](references/catalogue_workflows.md) |
 | Game-ready 3D standards (budgets, naming, LOD, checklist), Blender/MPFB/BlendKit prerequisites, pitfalls | [`references/pipeline_3d_blender.md`](references/pipeline_3d_blender.md) |
-| Reference doc, showcases, installation procedures | [`README.md`](../../../README.md) § 📦 Complete Workflow Catalog |
+| Reference doc, showcases, installation procedures | [`README.md`](../../../README.md) & [`docs/workflows_reference.md`](../../../docs/workflows_reference.md) |
 | MakeHuman clothing/texturing | [`GUIDE_AGENT_IA_HABILLAGE.md`](../../../GUIDE_AGENT_IA_HABILLAGE.md) |
 | Validated stacks & pitfalls per domain | [`docs/MEMORY_BANK.md`](../../../docs/MEMORY_BANK.md) |
 | Post-generation video/audio editing (cut/join, 9:16 reframe, captions, loudness, platform export+compliance) | skill [`ffmpeg-skill`](../ffmpeg-skill/SKILL.md) — vendored kajisho5/ffmpeg-skill v2.7.0, smoke-tested 2026-10-09 (MEMORY_BANK §1.41; run its scripts with `python`, not `python3`) |
