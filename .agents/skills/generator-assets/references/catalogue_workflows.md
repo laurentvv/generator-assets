@@ -63,6 +63,8 @@ standards, validation checklist and detailed pitfalls: [`pipeline_3d_blender.md`
 | `ui_9slice` | 9-patch frames/buttons | `prompt` or `-i`, `--margin`/`--auto-margin` | `.png`, `_stylebox.tres`, `_ninepatch.tscn` |
 | `autotile_pack` | 47-tile Wang autotile atlas + TileSet | `--biome-a`, `--biome-b`, `-s` | `_atlas.png`, `_tileset.tres` |
 | `rembg` | Neural cutout (BiRefNet/RMBG-1.4) | `-i` (required) | `_rembg.png` |
+| `miniature` | **YouTube thumbnail via PhotoCraft headless** (Craft suite, `D:\CraftApps\photocraft`) — center-crop to 16:9, bottom gradient band, title/subtitle as REAL text layers (size/color/tracking). Requires `python D:\GIT\craft-suite\manage_craft_suite.py install photocraft`. Env `PHOTOCRAFT_CLI` overrides the exe path | `-i` (required), `--titre` (required at runtime), `--sous-titre`, `--couleur-titre` (#ffe066), `--couleur-sous-titre` (#ffffff), `--taille-titre` (88), `--taille-sous-titre` (34), `--bandeau` (0.55), `--width/--height` (1280×720) | `<name>_miniature.jpg` (q90) |
+| `prepa_i2v` | **I2V keyframe preparation via PhotoCraft headless** — centered crop to target ratio + lanczos resample (no upscale unless `--width/--height` given). Accepts a file or a directory | `-i` (file or dir), `--ratio` (16:9 · 9:16 · 1:1 · 4:3 · 3:4 · 21:9), `--format-sortie` (png), `--width/--height` (long side only, one at a time) | `<name>_i2v.png` |
 | `batch` | Batch generation from a JSON | `--recipe <file.json>` (default: stop at the first error, exit ≠ 0; `--continue-on-error` = full batch + failures listed) | per recipe |
 
 Available LoRAs: `-l "game_icon_diablo_style:0.8"` (auto-switches to SDXL Juggernaut) — full list

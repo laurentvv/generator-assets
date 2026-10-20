@@ -27,6 +27,7 @@ WORKFLOW_FAMILY = {
     "autotile_pack": "images", "tileable": "images", "pixelart": "images",
     "variations": "images", "ui_9slice": "images", "rembg": "images",
     "rpg_portrait": "images", "ip_adapter": "images",
+    "miniature": "images", "prepa_i2v": "video",
     "material3d": "textures3d", "mesh3d": "textures3d", "mesh_ia": "textures3d",
     "voxel3d": "textures3d", "skybox": "textures3d", "turnaround3d": "textures3d",
     "flowmap": "textures3d", "asset_blendkit": "textures3d",
