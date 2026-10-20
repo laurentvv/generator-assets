@@ -1,8 +1,8 @@
 # Reference catalog of the 40 workflows
 
-Source of truth: `README.md` § "📦 Complete Workflow Catalog" (exhaustive inputs/outputs/options,
-showcases). This file is the condensed cheat sheet for choosing and launching — if an option is
-missing here, it is in the README.
+Source of truth: `docs/workflows_reference.md` (exhaustive inputs/outputs/options,
+mathematical specifications) and `README.md` (visual showcase). This file is the condensed cheat sheet for choosing and launching — if an option is
+missing here, it is in `docs/workflows_reference.md`.
 
 All commands: `uv run python main.py -w <workflow> …` from the repository root.
 Guardrail reminder: `scripts/check_charge_systeme.py` before any heavy generation • English
