@@ -171,6 +171,8 @@ def construire_parseur() -> argparse.ArgumentParser:
     groupe_ia.add_argument("--seed", type=int, default=-1, help="Random seed (-1 for random).")
     groupe_ia.add_argument("--tolerance", type=int, default=60, help="Flood-fill cutout tolerance (default: 60).")
     groupe_ia.add_argument("--style", default=DEFAULT_STYLE_ANCHOR, help="Custom visual style guide.")
+    groupe_ia.add_argument("--format-sortie", default="png", choices=["png", "jpg", "webp"],
+                        help="Output image format for the export workflows (prepa_i2v, filigrane_batch).")
 
     # Utility modes
     parser.add_argument("--interactive", action="store_true", help="Starts the interactive session.")

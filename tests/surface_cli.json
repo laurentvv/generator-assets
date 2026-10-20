@@ -320,6 +320,39 @@
  ],
  [
   [
+   "--couleur-filigrane"
+  ],
+  "couleur_filigrane",
+  "_StoreAction",
+  "'#ffffffb0'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--couleur-principal"
+  ],
+  "couleur_principal",
+  "_StoreAction",
+  "'#7fdcff'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--couleur-secondaire"
+  ],
+  "couleur_secondaire",
+  "_StoreAction",
+  "'#ffffff'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--couleur-sous-titre"
   ],
   "couleur_sous_titre",
@@ -467,6 +500,17 @@
  ],
  [
   [
+   "--filigrane"
+  ],
+  "filigrane",
+  "_StoreAction",
+  "'@ ai-doc2video'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--flow-shift"
   ],
   "flow_shift",
@@ -494,6 +538,17 @@
  ],
  [
   [
+   "--fond"
+  ],
+  "fond",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--force-bpm"
   ],
   "force_bpm",
@@ -502,6 +557,17 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--forcer-ocr"
+  ],
+  "forcer_ocr",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
  ],
  [
   [
@@ -692,6 +758,17 @@
   "kokoro_voice",
   "_StoreAction",
   "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--language"
+  ],
+  "language",
+  "_StoreAction",
+  "'en'",
   null,
   null,
   null
@@ -889,6 +966,17 @@
   null,
   0,
   null
+ ],
+ [
+  [
+   "--marge"
+  ],
+  "marge",
+  "_StoreAction",
+  "24",
+  null,
+  null,
+  "int"
  ],
  [
   [
@@ -1240,6 +1328,22 @@
    "shield_block",
    "slash_attack",
    "walk"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--position"
+  ],
+  "position",
+  "_StoreAction",
+  "'bas-droite'",
+  [
+   "bas-droite",
+   "bas-gauche",
+   "haut-droite",
+   "haut-gauche"
   ],
   null,
   null
@@ -1655,6 +1759,39 @@
  ],
  [
   [
+   "--taille-filigrane"
+  ],
+  "taille_filigrane",
+  "_StoreAction",
+  "28",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
+   "--taille-principal"
+  ],
+  "taille_principal",
+  "_StoreAction",
+  "120",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
+   "--taille-secondaire"
+  ],
+  "taille_secondaire",
+  "_StoreAction",
+  "40",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
    "--taille-sous-titre"
   ],
   "taille_sous_titre",
@@ -1677,6 +1814,28 @@
  ],
  [
   [
+   "--texte-principal"
+  ],
+  "texte_principal",
+  "_StoreAction",
+  "'ABONNE-TOI'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--texte-secondaire"
+  ],
+  "texte_secondaire",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--themes"
   ],
   "themes",
@@ -1693,6 +1852,17 @@
   "threads",
   "_StoreAction",
   "16",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
+   "--timeout-ocr"
+  ],
+  "timeout_ocr",
+  "_StoreAction",
+  "900",
   null,
   null,
   "int"
@@ -1984,6 +2154,17 @@
   null,
   null,
   null
+ ],
+ [
+  [
+   "--voile"
+  ],
+  "voile",
+  "_StoreAction",
+  "0.45",
+  null,
+  null,
+  "float"
  ],
  [
   [
