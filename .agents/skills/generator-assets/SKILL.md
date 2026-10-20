@@ -5,7 +5,7 @@ description: Generates any media with the local generator-assets factory (C++ Vu
 
 # generator-assets — generate media with the local factory
 
-This repository is a **universal local AI media factory**: 40 workflows orchestrated by a single CLI,
+This repository is a **universal local AI media factory**: 42 workflows orchestrated by a single CLI,
 executed by C++/GGUF Vulkan engines (sd-cli, llama.cpp, audio.cpp, trellis.cpp, FFmpeg) — no cloud or
 CUDA dependency. Your mission when this skill triggers: translate a media need into **the right
 workflow command**, respecting the guardrails, then deliver the produced files.
@@ -21,9 +21,9 @@ uv run python main.py -w <workflow> "<prompt or args>" [options]
 - `-o <name>`: base name of the outputs (otherwise derived from the prompt);
 - `--seed <N>`: fixed seed for A/B reproducibility;
 - `uv run python main.py --check`: checks that engines and models are detected;
-- `uv run python main.py --interactive`: interactive console (49-workflow menu) for human exploration;
+- `uv run python main.py --interactive`: interactive console (51-workflow menu) for human exploration;
 - **web console (2026-10-11)**: `uv run python -m server` → http://127.0.0.1:8765 —
-  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 49 workflows: auto-generated forms
+  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 51 workflows: auto-generated forms
   from the live registry, serialized queue (one heavy job at a time), automatic load
   gate, live log/progress (SSE), output library with thumbnails/waveforms, uploads.
   For the HUMAN user; agents keep using the CLI (same subprocess contract);
