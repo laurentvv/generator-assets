@@ -151,6 +151,30 @@ Support matrix (every binary is the upstream project's own official release; ver
 
 `sd-cli` is deliberately pinned to `master-841-6b3edaa`: later masters ship an unresolved VRAM-management regression ([#1946](https://github.com/leejet/stable-diffusion.cpp/issues/1946), fix PR still unmerged).
 
+### 🧭 Optional: the Craft suite (thumbnails, typography, MCP apps)
+
+The `miniature` (YouTube thumbnail with real typography) and `prepa_i2v` (I2V keyframe
+preparation) workflows drive the **headless PhotoCraft engine** of the open-source
+[Craft App Suite](https://getartcraft.com/apps) (pure-Rust desktop apps by the ArtCraft
+team). Everything else in this factory is engine-local — this component is optional and
+installed separately:
+
+```bash
+# anywhere you like — a dedicated manager repo (keep it, it also handles updates)
+git clone <your-fork-or-copy-of-the-manager-repo> craft-suite
+python craft-suite/manage_craft_suite.py install photocraft # portable x64 build, SHA256-verified
+#                                              install --all  = the whole 13-app suite
+```
+
+- Default install root: `D:\CraftApps` — change `target_root` in the manager's `apps.json`
+  (or pass `--target`). Override the engine path for the workflows with `PHOTOCRAFT_CLI`.
+- Versions are **pinned** in `apps.json` (the validated ones); `status` shows upstream
+  releases, `update <app>` shows the changelog and installs side-by-side with rollback,
+  `prune` cleans old versions after validation — report-only watch, update on explicit GO.
+- The stack watch (`scripts/veille_versions.py`) picks it up automatically when the manager
+  lives at `D:\GIT\craft-suite` (override with the `CRAFT_SUITE_DIR` environment variable).
+- 12 of the 13 apps also expose **MCP servers** (`<app>-cli mcp`) — the manager repo ships
+  `mcp_probe.py` to inventory them.
 ### 🧰 Provisioning & Maintenance Scripts
 
 | Script | Purpose |
