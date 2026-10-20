@@ -342,6 +342,17 @@
  ],
  [
   [
+   "--couleur-fond-ecran"
+  ],
+  "couleur_fond_ecran",
+  "_StoreAction",
+  "'#10131c'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--couleur-forme"
   ],
   "couleur_forme",
@@ -474,6 +485,17 @@
   ],
   null,
   null
+ ],
+ [
+  [
+   "--exposition"
+  ],
+  "exposition",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
  ],
  [
   [
@@ -668,6 +690,17 @@
  ],
  [
   [
+   "--frequence"
+  ],
+  "frequence",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
    "--gender"
   ],
   "gender",
@@ -835,6 +868,17 @@
  ],
  [
   [
+   "--libelle"
+  ],
+  "libelle",
+  "_StoreAction",
+  "'Maquette'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--licence"
   ],
   "licence",
@@ -934,6 +978,17 @@
   null,
   null,
   null
+ ],
+ [
+  [
+   "--long-cote"
+  ],
+  "long_cote",
+  "_StoreAction",
+  "1600",
+  null,
+  null,
+  "int"
  ],
  [
   [
@@ -1256,6 +1311,17 @@
  ],
  [
   [
+   "--normaliser"
+  ],
+  "normaliser",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
    "--output",
    "-o"
   ],
@@ -1393,6 +1459,21 @@
    "bas-gauche",
    "haut-droite",
    "haut-gauche"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--profondeur-bits"
+  ],
+  "profondeur_bits",
+  "_StoreAction",
+  "None",
+  [
+   "16",
+   "24",
+   "32f"
   ],
   null,
   null
@@ -1863,6 +1944,17 @@
  ],
  [
   [
+   "--taille-texte"
+  ],
+  "taille_texte",
+  "_StoreAction",
+  "120",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
    "--taille-titre"
   ],
   "taille_titre",
@@ -1871,6 +1963,28 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--teinte"
+  ],
+  "teinte",
+  "_StoreAction",
+  "'#7fdcff'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--texte"
+  ],
+  "texte",
+  "_StoreAction",
+  "'GENERATOR-ASSETS'",
+  null,
+  null,
+  null
  ],
  [
   [
