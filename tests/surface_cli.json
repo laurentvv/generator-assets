@@ -331,6 +331,28 @@
  ],
  [
   [
+   "--couleur-fond"
+  ],
+  "couleur_fond",
+  "_StoreAction",
+  "'#1a1f2e'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--couleur-forme"
+  ],
+  "couleur_forme",
+  "_StoreAction",
+  "'#7fdcff'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--couleur-principal"
   ],
   "couleur_principal",
@@ -383,6 +405,17 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--donnees"
+  ],
+  "donnees",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
  ],
  [
   [
@@ -580,6 +613,22 @@
    "jpg",
    "png",
    "webp"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--forme"
+  ],
+  "forme",
+  "_StoreAction",
+  "'hexagone'",
+  [
+   "carre",
+   "cercle",
+   "etoile",
+   "hexagone"
   ],
   null,
   null
@@ -1756,6 +1805,17 @@
   null,
   null,
   null
+ ],
+ [
+  [
+   "--taille"
+  ],
+  "taille",
+  "_StoreAction",
+  "256",
+  null,
+  null,
+  "int"
  ],
  [
   [
