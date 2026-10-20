@@ -12,6 +12,7 @@ points; body lines land as one text block per slide.
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Dict
@@ -38,6 +39,27 @@ def _lignes_des_donnees(donnees: list) -> list:
     return lignes
 
 
+def _mesures_numeriques(donnees: list) -> tuple[list[str], list[float]]:
+    """Extracts (labels, values) pairs for the chart: explicit label/valeur
+    entries, plus 'label : 123 unit' lines inside sections."""
+    etiquettes: list[str] = []
+    valeurs: list[float] = []
+    motif = re.compile(r"^(.{2,60}?)\s*:\s*(-?[0-9]+(?:[.,][0-9]+)?)")
+    for entree in donnees:
+        if not isinstance(entree, dict):
+            continue
+        if "label" in entree and isinstance(entree.get("valeur"), (int, float)):
+            etiquettes.append(str(entree["label"]))
+            valeurs.append(float(entree["valeur"]))
+        elif "section" in entree:
+            for ligne in entree.get("lignes", []):
+                m = motif.match(str(ligne))
+                if m:
+                    etiquettes.append(m.group(1).strip())
+                    valeurs.append(float(m.group(2).replace(",", ".")))
+    return etiquettes, valeurs
+
+
 @WorkflowRegistry.register
 class RapportDeckWorkflow(BaseWorkflow):
     """Benchmark JSON -> presentation -> PDF (DeckCraft headless)."""
@@ -45,7 +67,7 @@ class RapportDeckWorkflow(BaseWorkflow):
     name = "rapport_deck"
     description = (
         "Benchmark report deck via DeckCraft headless: JSON measures -> title "
-        "+ summary slides -> PDF"
+        "+ chart slide + summary slides -> PDF"
     )
 
     emoji = "📊"
@@ -92,6 +114,17 @@ class RapportDeckWorkflow(BaseWorkflow):
         morceaux = [lignes[i:i + 12] for i in range(0, len(lignes), 12)] or [[]]
         commande = [str(cli), "run",
                     "--cmd", "slide.new=" + json.dumps(titre_params, ensure_ascii=False)]
+        # Chart slide first when numeric measures exist (the illustration),
+        # then the text summary slides.
+        etiquettes, valeurs = _mesures_numeriques(donnees)
+        if len(valeurs) >= 2:
+            chart = {"type": "column", "categories": etiquettes,
+                     "series": [{"name": titre, "values": valeurs}],
+                     "rect": [60, 110, 840, 380]}
+            commande += ["--cmd", "slide.new=" + json.dumps(
+                {"layout": "titleOnly", "title": f"{titre} - graphique"}, ensure_ascii=False),
+                "--cmd", "insert.chart=" + json.dumps(chart, ensure_ascii=False)]
+            self.log(f"chart slide: {len(valeurs)} measures")
         for morceau in morceaux:
             body = {"layout": "titleAndContent",
                     "title": titre if len(morceaux) == 1 else f"{titre} ({len(morceaux)} slides)",
