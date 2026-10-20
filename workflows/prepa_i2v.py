@@ -56,8 +56,6 @@ class PrepaI2VWorkflow(BaseWorkflow):
     PARAMETRES = [
         dict(flags=("--ratio",), default="16:9",
              choices=sorted(_RATIOS), help="Target aspect ratio"),
-        dict(flags=("--format-sortie",), default="png", choices=["png", "jpg", "webp"],
-             help="Output format"),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
