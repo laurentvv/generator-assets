@@ -173,6 +173,10 @@ def construire_parseur() -> argparse.ArgumentParser:
     groupe_ia.add_argument("--style", default=DEFAULT_STYLE_ANCHOR, help="Custom visual style guide.")
     groupe_ia.add_argument("--format-sortie", default="png", choices=["png", "jpg", "webp"],
                         help="Output image format for the export workflows (prepa_i2v, filigrane_batch).")
+    groupe_ia.add_argument("--titre", default=None,
+                        help="Main title text (miniature thumbnail, rapport_deck title slide).")
+    groupe_ia.add_argument("--sous-titre", default=None,
+                        help="Secondary line (miniature subtitle, rapport_deck title slide).")
 
     # Utility modes
     parser.add_argument("--interactive", action="store_true", help="Starts the interactive session.")
