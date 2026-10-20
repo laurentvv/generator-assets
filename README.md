@@ -342,6 +342,8 @@ To ensure maximum productivity and avoid false expectations, here is a transpare
 - **🎲 3D Level Props (`mesh3d`)** : Floor tiles (`--shape tile`), crates/chests (`--shape cube`), pillars/columns (`--shape pillar`), orbs (`--shape sphere`), 2.5D standees (`--shape card`).
 - **🔍 AI Super-Resolution (`upscale`)** : 2x, 4x, and 4K ESRGAN Vulkan upscaling with 100% Alpha channel transparency preservation.
 - **✂️ Clean Cutouts & Sprites (`generate`, `rembg`)** : Clean edges with RMBG-1.4 / BiRefNet ONNX (no white halo artifacts).
+- **🖼️ YouTube Thumbnails (`miniature`)** : Keyframe → 1280×720 with gradient band and real typography (title/subtitle text layers) through the headless PhotoCraft engine of the Craft suite.
+- **🎬 I2V Keyframe Prep (`prepa_i2v`)** : Center-crop keyframes to any target ratio (16:9…21:9) with lanczos resample before Wan/LTX image-to-video chains.
 - **🔊 Procedural Sound & Music (`sfx`, `audio_ambience`)** : Combat swings, magic potions, seamless background loops in `.wav` and `.ogg` formats.
 
 ---
