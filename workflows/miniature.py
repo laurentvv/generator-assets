@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR
 from core.photocraft import SessionPhotocraft
