@@ -792,6 +792,49 @@ def veille() -> tuple:
     except Exception as e:
         rapport.ajouter("⚠️", "comfyui-nouveaux-repos", f"check impossible: {e}")
 
+    # -------------------------------------------------- craft-suite (Craft apps)
+    # Optional local component (D:\GIT\craft-suite, override with CRAFT_SUITE_DIR):
+    # watches the Craft App Suite portable installs through the manager's
+    # machine-readable status. Report-only like every source - updates go
+    # through `manage_craft_suite.py update <app>` (changelog shown, old
+    # version kept for rollback) on explicit user GO.
+    try:
+        chemin_craft = os.path.join(os.environ.get("CRAFT_SUITE_DIR", r"D:\GIT\craft-suite"),
+                                    "manage_craft_suite.py")
+        if os.path.exists(chemin_craft):
+            r = subprocess.run([sys.executable, chemin_craft, "status", "--json"],
+                               capture_output=True, text=True, timeout=180)
+            if r.returncode != 0:
+                rapport.ajouter("⚠️", "craft-suite",
+                                f"manager exited {r.returncode}: {(r.stderr or r.stdout)[:120]}")
+            else:
+                apps_craft = json.loads(r.stdout or "[]")
+                perimees = [a for a in apps_craft
+                            if a.get("latest") and a.get("installed") != a["latest"]]
+                for app in perimees:
+                    cle = f"craft/{app['name']}"
+                    deja_vue = etat.get(cle, {}).get("derniere_vue")
+                    if app["latest"] != deja_vue:
+                        rapport.ajouter("🆕", cle,
+                                        f"new release {app['latest']} (installed: {app['installed'] or '?'}) - "
+                                        f"update: python {chemin_craft} update {app['name']} "
+                                        f"(changelog shown by the manager, old folder kept for rollback)")
+                    else:
+                        rapport.ajouter("✅", cle, f"pending {app['latest']} already reported "
+                                        f"(installed {app['installed'] or '?'})")
+                    etat[cle] = {"installee": app["installed"], "derniere_vue": app["latest"]}
+                    resolus[cle] = (app["installed"] == app["latest"])
+                resume = ", ".join(f"{a['name']} {a['installed'] or '?'}→{a['latest']}"
+                                   for a in perimees)
+                rapport.ajouter("✅", "craft-suite",
+                                f"{len(apps_craft) - len(perimees)}/{len(apps_craft)} apps up to date"
+                                + (f" - outdated: {resume}" if perimees else ""))
+        else:
+            rapport.ajouter("✅", "craft-suite",
+                            "not installed (optional component - README 'Craft suite' section)")
+    except Exception as e:
+        rapport.ajouter("⚠️", "craft-suite", f"check impossible: {e}")
+
     # ------------------------------------------------------------------- logging
     os.makedirs(DOSSIER_ETAT, exist_ok=True)
     if json.dumps(etat, sort_keys=True) != etat_avant:
