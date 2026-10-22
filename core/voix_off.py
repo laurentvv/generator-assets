@@ -14,6 +14,8 @@ GGUF engines (monolithic q8_0 packages in C:\\Modeles_LLM):
             below USD 500k/yr) — native voice or cloning with transcript,
             speaker/event tags in text, MoE 16 GB profile (24/40 expert banks
             on CPU), 44.1 kHz output
+- kitten2 : KittenTTS2 (Apache-2.0) — zero-shot ONLY (the loader exposes a
+            clon task but it is untested here), 24 kHz output, model on D:
 
 Built-in pipeline: reference conversion/resampling, level control
 (minimum -26 dB mean, otherwise normalization -18 LUFS / -1.5 dBTP),
@@ -57,6 +59,12 @@ MODELE_DRAMA3 = os.getenv(
     "DRAMA3_MODEL",
     os.path.join(DEFAULT_MODEL_DIR, "Drama-3-GGUF", "drama-3-backbone-8bit-experts-Q4_K_S.gguf"),
 )
+# KittenTTS2 lives on the D: archive drive (C: cleanup policy 2026-10-21: test /
+# cold models off the NVMe). Slow cold load accepted by user decision.
+MODELE_KITTEN2 = os.getenv(
+    "KITTEN2_MODEL",
+    r"D:\Modeles_LLM\KittenTTS2-GGUF\kitten-tts2-20261021-q8_0.gguf",
+)
 
 MOTEURS: Dict[str, Dict[str, Any]] = {
     "qwen3": {
@@ -90,6 +98,14 @@ MOTEURS: Dict[str, Dict[str, Any]] = {
         "transcript_obligatoire": False,  # ... but transcript required WHEN a ref is provided
         "langue": None,                # auto detection
         "licence": "Fish Audio Community (< USD 500k/yr, attribution required)",
+    },
+    "kitten2": {
+        "famille": "kitten_tts2",
+        "modele": MODELE_KITTEN2,
+        "ref_obligatoire": False,
+        "transcript_obligatoire": False,
+        "langue": None,                # no --language flag exercised; FR and EN validated auto
+        "licence": "Apache-2.0",
     },
 }
 
@@ -221,6 +237,14 @@ def generer_voix_off(
         raise ValueError(f"The '{moteur}' engine requires a voice reference (--voix-ref).")
 
     ref_effective = preparer_reference(wav_ref, dossier_travail) if wav_ref else None
+
+    if ref_effective and conf["famille"] == "kitten_tts2":
+        # The kitten_tts2 loader exposes a clon task but it was never exercised
+        # here (user validation 2026-10-22 covers zero-shot FR/EN only).
+        raise ValueError(
+            "kitten2: voice cloning is not validated yet — drop --voix-ref "
+            "(zero-shot) or pick another engine."
+        )
 
     # fish_drama3 switches to the dedicated cloning task when a reference is
     # provided (the tts task ignores --voice-ref for this family).
