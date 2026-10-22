@@ -104,7 +104,7 @@ DEFAULT_QWEN_IMAGE21_VAE = os.getenv(
 # schedule — the 8-step custom sigmas below (from the checkpoint's
 # model_index.json schedule); other schedules are not evaluated upstream.
 DEFAULT_QWEN_IMAGE21_TURBO_MODEL = os.getenv(
-    "QWEN_IMAGE21_TURBO_MODEL_PATH", r"D:\Modeles_LLM\Qwen-Image-2.1-Turbo-Q8_0.gguf"
+    "QWEN_IMAGE21_TURBO_MODEL_PATH", r"C:\Modeles_LLM\Qwen-Image-2.1-Turbo-Q8_0.gguf"
 )
 QWEN_IMAGE21_TURBO_SIGMAS = "1.0,0.978453,0.95418,0.926626,0.89508,0.845148,0.704534,0.414568,0.0"
 
