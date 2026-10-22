@@ -134,6 +134,10 @@ uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # big
 - **[2026-10-11] perf A/B on models stored on D: (external USB 3.0 HDD) = confounded by page-cache state** — a 2-sample A/B minutes apart "sealed" a false sd-cli regression (upstream issue filed then closed with correction the same day): the post-graph-cut tensor re-read is instant while the model file is RAM-cached (fresh boot / low memory pressure) and disk-bound at 2.8-30 MB/s once evicted (after heavy-RAM runs), binary-independent (reproduced on both builds). Rule: before attributing a wall-time regression to a binary change on this machine, re-run the OLD binary in the CURRENT machine state; gate on cache state, or move the hot models to the C: NVMe (env `QWEN_IMAGE21_TURBO_MODEL_PATH` etc.). Related: the 10-11 ~12:1x "external GPU contention" episode was very likely the same phenomenon misread.
 - **[2026-10-11] deletion restatement = itemized file list, never a category label** — the D: cleanup was approved on "doublons + expérimentations LLM (~57 GB)"; one named model inside the category (`Qwen3.8-27B-Uncensored-Q3_K_M.gguf`) was flagged after the fact ("il ne fallait pas !") and had to be restored — and the exact restore was then blocked by the source repo being gated + the local HF token dead, so a requantized mirror had to do. Refinement of the 09-08 lesson: a restatement must enumerate EVERY file with its size; a category label is not consent for its contents. Related: keep the HF token fresh (`~/.cache/huggingface/token`) — gated-model restore paths depend on it.
 
+### CI / GitHub Actions
+
+No GitHub Actions: this repository publishes no GitHub releases, so it carries no workflows — never create `.github/workflows/` files, CI badges or release automation. Validation runs locally.
+
 ### References
 
 - `README.md` (workflow catalogue) · `docs/MEMORY_BANK.md` · `docs/veille_journal.md` (read at startup) · skill `.agents/skills/generator-assets/`.
