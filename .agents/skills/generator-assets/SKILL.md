@@ -141,7 +141,7 @@ work.
 | Music with the essence of a reference (SA3 init_audio) | `musique_essence` | `-w musique_essence --reference track.wav` |
 | Re-style an existing track (ACE-Step cover, duration locked, CPU) | `acestep_cover` | `-w acestep_cover --audio track.wav -p "<style>" --seed 42` |
 | Vocal removal / stem separation (HTDemucs) or text-prompted SAM Audio | `retrait_voix` | `-w retrait_voix -i track.wav` (`--music-backend sam` = SAM Audio, CPU) |
-| Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish/Drama 3 cloning) | `voix_off` | `-w voix_off --texte "..." --voix narrator_fr` |
+| Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish/Drama 3 cloning, kitten2 zero-shot) | `voix_off` | `-w voix_off --texte "..." --voix narrator_fr` |
 | EN character voice (Kokoro preset or Qwen3 VoiceDesign + pitch/whisper/hollow) | `voix_perso` | `-w voix_perso "..." --kokoro-voice am_onyx` |
 | Re-voice a recording in another voice (Chatterbox VC, 24 kHz) | `voix_conversion` | `-w voix_conversion --audio take.wav --voice-ref target_voice.wav` |
 | EN robot voice (validated kokoro + ringmod recipe) | `voix_robot` | `-w voix_robot --texte "..."` |

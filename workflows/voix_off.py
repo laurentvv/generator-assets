@@ -7,7 +7,8 @@ with cloning of a French reference voice if provided.
 Engines: qwen3-tts 1.7B (default with a reference, Apache-2.0, --instruct expression),
 VoxCPM2 (default without reference, Apache-2.0, cloning without transcript),
 Fish S2-Pro (inline tags [whisper]/[excited], research licence),
-Fish Audio Drama 3 (MoE native voice or cloning with transcript, Community License).
+Fish Audio Drama 3 (MoE native voice or cloning with transcript, Community License),
+KittenTTS2 (zero-shot only, 24 kHz, Apache-2.0).
 
 Pipeline: level control/normalization of the reference (gap ≤ 2026-09-06:
 recording at -39 LUFS → normalization -18 LUFS), automatic ASR transcription if the
@@ -29,8 +30,9 @@ class VoixOffWorkflow(BaseWorkflow):
 
     name = "voix_off"
     description = ("Expressive reading of a text by local TTS (audio.cpp Vulkan) with "
-                   "optional voice cloning — qwen3-tts/VoxCPM2 (Apache-2.0), Fish S2-Pro or "
-                   "Drama 3 (MoE, Community License), normalized output -16 LUFS + MP3")
+                   "optional voice cloning — qwen3-tts/VoxCPM2 (Apache-2.0), Fish S2-Pro, "
+                   "Drama 3 (MoE, Community License) or KittenTTS2 (zero-shot, 24 kHz), "
+                   "normalized output -16 LUFS + MP3")
 
     emoji = "🎙️"
 
