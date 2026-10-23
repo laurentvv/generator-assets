@@ -117,7 +117,7 @@ have it listened to before industrializing.** Dark rock music: known instrumenta
 | :--- | :--- | :--- | :--- |
 | `video` | T2V / I2V / FLF2V (`--end-img`) / V2V video — Wan 2.1/2.2, LTX-2.5, .webm + Godot scene | `prompt`, `-i`, `--frames` (33), `--fps` (24) | `_vid.webm`, `_player.tscn` |
 | `video_vace` | **Motion-locked video**: appearance from ref image (`-i`) + motion from control frames (`--control-video`, skeletons/pose/depth PNGs) — Wan 2.1 14B VACE **LightX2V distilled** (VALIDATED 2026-10-01 "très bien"; plain 20-step recipe REJECTED "nul"). 13 frames @ 16 fps 832×480, 8 steps, cfg 1.0, seed 42, `--offload-to-cpu --vae-on-cpu` baked in (~28 min/clip) | `-i` ref image (required), `--control-video` frames dir (required), `prompt` (motion), `--frames/--fps/--steps/--cfg-scale/--seed` overridable | `_vace.webm` |
-| `video_multishot` | **Native multishot video**: several named cuts + continuous soundtrack in ONE LTX-2.5 T2V generation (VALIDATED 2026-10-02 "super": hard cut lands, appearance held, soundtrack generated). 65 frames @ 24 fps 832×480 (1+8k rule, max 81), 8 steps official sigmas, cfg 1.0, `--max-vram 10`, audio VAE, NO negative prompt, pinned LTX binary `DEFAULT_SD_CLI_LTX` 6b3edaa (#1976). ~10 min/clip. Prompt = shots in order + named cut + audio bed (docs.ltx.io rules) | `prompt` (required), `--frames` (65), `--fps` (24), `--seed` (42), `-o` | `_multishot.webm` (VP8 + PCM) |
+| `video_multishot` | **Native multishot video**: several named cuts + continuous soundtrack in ONE LTX-2.5 T2V generation (VALIDATED 2026-10-02 "super": hard cut lands, appearance held, soundtrack generated). 65 frames @ 24 fps 832×480 (1+8k rule, max 81), 8 steps official sigmas, cfg 1.0, `--max-vram 10`, audio VAE, NO negative prompt, LTX-2.5 binary `DEFAULT_SD_CLI_LTX` (= main build `C:\SD` since 2026-10-23). ~10 min/clip. Prompt = shots in order + named cut + audio bed (docs.ltx.io rules) | `prompt` (required), `--frames` (65), `--fps` (24), `--seed` (42), `-o` | `_multishot.webm` (VP8 + PCM) |
 | `monoplan_ia` | **Single-shot cinematic plan** from image (LTX-2.5 + mci slow-mo + pure zoom) — validated, YouTube hooks | `prompt`, `-i` (or `--monoplan-source`), `--monoplan-frames` (65, max ~81; must be 1 + multiple of 8), `--monoplan-duration` (10 s), `--zoom-debut/--zoom-fin`, `--4k` (3840×2160 AMF master), `--ambiance`, `--carton-titre "LINE1\|LINE2"` | `_1080p.mp4` or `_4k.mp4`, `_avec_ambiance.mp4`, `_final_titre.mp4` |
 | `h3_ref2va` | **Video+audio continuation** (MiniMax-H3 Ref2VA, webm with sound) — **always `--turbo`** | `-i` source video (required), `prompt` (mention `<Video 1>`/`<Audio 1>`), `--ref-frames` (12), `--frames` (22/39/56), `--turbo`, `--max-vram` (10) | `.webm` (VP8 + audio), `<name>_ref/` |
 | `rife_interp` | 2×/4× frame interpolation (60 fps) | `-i`, `--columns`, `--factor` | `_rife_<N>x.png` |
@@ -134,11 +134,11 @@ native 4K. `h3_ref2va` 22 frames ~38 min turbo (~70 min without). LTX ceiling �
 **⚠️ sd-cli build pitfall (state 2026-10-23, MEMORY_BANK §1.16-1.19)**: MiniMax-H3 runs on the
 main build again (`C:\SD\`, master-995+) — upstream #1976 (54 segments + OOM at submit, broken
 window 864→990) is fixed by #2181 (ggml small-BAR heap mask), validated on the workflow full
-path 10-23 (36.2 min exit 0; the stock 54-segment plan is expected and survives). **LTX-2.5 production routes
-still require the parallel build** `C:\SD-6b3edaa\` (master-841): the 33 f planner refusal
-cleared on 995 (10-23 probe) but the 65 f routes are not yet re-validated there: for `monoplan_ia` / `video_multishot`, prefix
-`SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe"` (or `--sd-cli`). `h3_ref2va` needs NO override (main
-build default). Reliable video on the main build: Wan T2V/I2V ≤ ~20 frames with
+path 10-23 (36.2 min exit 0; the stock 54-segment plan is expected and survives). **LTX-2.5 runs on the main build too**
+(10-23 evening: BOTH 65 f production routes re-validated — `video_multishot` T2V + `monoplan_ia` I2V full chain;
+the workspace refusal cleared with #2181): `monoplan_ia`, `video_multishot` and `h3_ref2va` all need NO override —
+`DEFAULT_SD_CLI_LTX` resolves to the same `C:\SD\sd-cli.exe` (kept as a per-family re-pin point,
+env `SD_CLI_LTX_PATH`). The `C:\SD-6b3edaa\` parallel build is retired from production. Reliable video on the main build: Wan T2V/I2V ≤ ~20 frames with
 `--vae-on-cpu`. Video ESRGAN upscale (`scripts/upscale_video_ai.py`) remains validated. **Always
 re-check this state in MEMORY_BANK before a video render.**
 
