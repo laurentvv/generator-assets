@@ -179,9 +179,9 @@ requests. 4K YouTube masters go through `scripts/conform_youtube_hd.py`.
 any video render, this evolves with sd-cli updates)**: MiniMax-H3 is BACK on the main build
 (`C:\SD\`) since master-995 — upstream #1976 (54 segments + OOM at submit on 864→990) is fixed by
 #2181 (ggml small-BAR heap mask), validated on the workflow full path 2026-10-23 (36.2 min exit 0;
-the stock 54-segment plan is EXPECTED and survives). **LTX-2.5 still fails on the main build**
-(memory-manager workspace refusal): LTX routes keep the parallel build `C:\SD-6b3edaa\`
-(master-841, last validated for LTX). **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
+the stock 54-segment plan is EXPECTED and survives). **LTX-2.5 production routes keep the parallel build `C:\SD-6b3edaa\`**
+(master-841): the 33 f planner-level workspace refusal cleared on 995 (10-23 probe —
+#2181 likely fixes it too) but the 65 f production routes are NOT yet re-validated there. **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
 ("scarecrow with a glowing carved pumpkin head…") collapses the model to its talking-person prior —
 prompt ignored, photoreal man rendered; use objects/scenes/standard humans as subjects**:
 ```bash
