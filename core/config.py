@@ -45,14 +45,15 @@ charger_env()
 # Executable paths
 DEFAULT_LLAMA_CLI = os.getenv("LLAMA_CLI_PATH", r"C:\llama.cpp\llama-cli.exe")
 DEFAULT_SD_CLI = os.getenv("SD_CLI_PATH", r"C:\SD\sd-cli.exe")
-# LTX-only parallel build (master-841 6b3edaa): the main build (master-929+) cannot
-# fit LTX-2.5 in 16 GB (memory-manager workspace refusal — re-confirmed 2026-10-02
-# with --params-backend disk). Validated LTX routes pin this binary.
-# MiniMax-H3 does NOT need it anymore: #1976 (OOM at submit) is fixed upstream by
-# #2181 (ggml small-BAR heap mask), validated on master-995 2026-10-23 — h3_ref2va
-# runs on the main build (DEFAULT_SD_CLI). Keep 6b3edaa until an LTX re-validation
-# passes on the main build.
-DEFAULT_SD_CLI_LTX = os.getenv("SD_CLI_LTX_PATH", r"C:\SD-6b3edaa\sd-cli.exe")
+# Per-family video-build pin: since 2026-10-23 it resolves to the SAME main build
+# (master-995+) — upstream #2181 (ggml small-BAR heap mask) fixed the MiniMax-H3
+# OOM (#1976) AND cleared the LTX-2.5 workspace refusal; both 65 f production
+# routes (video_multishot T2V + monoplan_ia I2V) re-validated on 995 that evening.
+# The constant stays as a re-pin point: any future video-only regression can pin
+# LTX routes back to a parallel build here (env SD_CLI_LTX_PATH) without touching
+# the image path. The C:\SD-6b3edaa parallel build (master-841) is retired from
+# production (kept on disk).
+DEFAULT_SD_CLI_LTX = os.getenv("SD_CLI_LTX_PATH", r"C:\SD\sd-cli.exe")
 DEFAULT_SD_DIR = os.getenv("SD_DIR", r"C:\SD")
 DEFAULT_SD_SOURCE_DIR = os.getenv("SD_SOURCE_DIR", r"C:\GIT\stable-diffusion.cpp")
 DEFAULT_AUDIOCPP_CLI = os.getenv("AUDIOCPP_PATH", r"C:\audio-cpp\audiocpp_cli.exe")
