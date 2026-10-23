@@ -134,9 +134,9 @@ native 4K. `h3_ref2va` 22 frames ~38 min turbo (~70 min without). LTX ceiling �
 **⚠️ sd-cli build pitfall (state 2026-10-23, MEMORY_BANK §1.16-1.19)**: MiniMax-H3 runs on the
 main build again (`C:\SD\`, master-995+) — upstream #1976 (54 segments + OOM at submit, broken
 window 864→990) is fixed by #2181 (ggml small-BAR heap mask), validated on the workflow full
-path 10-23 (36.2 min exit 0; the stock 54-segment plan is expected and survives). **LTX-2.5
-still requires the parallel build** `C:\SD-6b3edaa\` (master-841, last validated for LTX; the
-main build's workspace refusal is unchanged): for `monoplan_ia` / `video_multishot`, prefix
+path 10-23 (36.2 min exit 0; the stock 54-segment plan is expected and survives). **LTX-2.5 production routes
+still require the parallel build** `C:\SD-6b3edaa\` (master-841): the 33 f planner refusal
+cleared on 995 (10-23 probe) but the 65 f routes are not yet re-validated there: for `monoplan_ia` / `video_multishot`, prefix
 `SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe"` (or `--sd-cli`). `h3_ref2va` needs NO override (main
 build default). Reliable video on the main build: Wan T2V/I2V ≤ ~20 frames with
 `--vae-on-cpu`. Video ESRGAN upscale (`scripts/upscale_video_ai.py`) remains validated. **Always
