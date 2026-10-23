@@ -179,14 +179,16 @@ requests. 4K YouTube masters go through `scripts/conform_youtube_hd.py`.
 any video render, this evolves with sd-cli updates)**: MiniMax-H3 is BACK on the main build
 (`C:\SD\`) since master-995 — upstream #1976 (54 segments + OOM at submit on 864→990) is fixed by
 #2181 (ggml small-BAR heap mask), validated on the workflow full path 2026-10-23 (36.2 min exit 0;
-the stock 54-segment plan is EXPECTED and survives). **LTX-2.5 production routes keep the parallel build `C:\SD-6b3edaa\`**
-(master-841): the 33 f planner-level workspace refusal cleared on 995 (10-23 probe —
-#2181 likely fixes it too) but the 65 f production routes are NOT yet re-validated there. **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
+the stock 54-segment plan is EXPECTED and survives). **LTX-2.5 is BACK on the main build too** (10-23 evening: BOTH 65 f production
+routes re-validated — `video_multishot` T2V + `monoplan_ia` I2V full chain; the #2181
+small-BAR mask cleared the workspace refusal). `DEFAULT_SD_CLI_LTX` now resolves to the
+same `C:\SD\sd-cli.exe` (kept as a per-family re-pin point, env `SD_CLI_LTX_PATH`);
+the `C:\SD-6b3edaa\` parallel build is retired from production. **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
 ("scarecrow with a glowing carved pumpkin head…") collapses the model to its talking-person prior —
 prompt ignored, photoreal man rendered; use objects/scenes/standard humans as subjects**:
 ```bash
-# monoplan_ia / video_multishot (LTX routes): prefix SD_CLI_PATH (resolved via core/config.py):
-SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe" uv run python main.py -w monoplan_ia ... 
+# monoplan_ia / video_multishot (LTX routes): run directly — NO override since 2026-10-23:
+uv run python main.py -w monoplan_ia ...
 ```
 `h3_ref2va` runs on the main build directly (workflow default — NO override). Reliable video:
 **Wan T2V/I2V ≤ ~20 frames with `--vae-on-cpu`** (`video`
