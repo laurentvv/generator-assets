@@ -131,17 +131,16 @@ native 4K. `h3_ref2va` 22 frames ~38 min turbo (~70 min without). LTX ceiling �
 832×480 (beyond: device-lost → reboot before blaming the recipe). YouTube masters: 4K mandatory
 (VP09/AV01), `scripts/conform_youtube_hd.py`, video upscale `scripts/upscale_video_ai.py`.
 
-**⚠️ sd-cli build pitfall (state Sept. 2026, MEMORY_BANK §1.16-1.19)**: MiniMax-H3 is broken on
-the installed sd-cli (`C:\SD\`, master-908 — 54 segments + OOM at submit, unchanged from
-master-864 to 908 despite upstream fix #1900); LTX-2.5 only passes the 33-frame T2V benchmark
-there with low desktop VRAM (rebooted machine, fragile ~120 MB margin) and its 65-frame I2V has
-not been retested there; last validated video build = **6b3edaa (master-841)**, installed in
-parallel in `C:\SD-6b3edaa\`. For `monoplan_ia`: prefix
-`SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe"` (or `--sd-cli`). For `h3_ref2va`: production through
-the parallel build (raw command in §1.16 if the workflow calls the binary hard-coded). On
-master-908, the only reliable video: Wan T2V/I2V ≤ ~20 frames with `--vae-on-cpu`. Video ESRGAN
-upscale (`scripts/upscale_video_ai.py`) remains validated. **Always re-check this state in
-MEMORY_BANK before a video render.**
+**⚠️ sd-cli build pitfall (state 2026-10-23, MEMORY_BANK §1.16-1.19)**: MiniMax-H3 runs on the
+main build again (`C:\SD\`, master-995+) — upstream #1976 (54 segments + OOM at submit, broken
+window 864→990) is fixed by #2181 (ggml small-BAR heap mask), validated on the workflow full
+path 10-23 (36.2 min exit 0; the stock 54-segment plan is expected and survives). **LTX-2.5
+still requires the parallel build** `C:\SD-6b3edaa\` (master-841, last validated for LTX; the
+main build's workspace refusal is unchanged): for `monoplan_ia` / `video_multishot`, prefix
+`SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe"` (or `--sd-cli`). `h3_ref2va` needs NO override (main
+build default). Reliable video on the main build: Wan T2V/I2V ≤ ~20 frames with
+`--vae-on-cpu`. Video ESRGAN upscale (`scripts/upscale_video_ai.py`) remains validated. **Always
+re-check this state in MEMORY_BANK before a video render.**
 
 ## Maintenance (interactive menu 33-35, outside generation)
 

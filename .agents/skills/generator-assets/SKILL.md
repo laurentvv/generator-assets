@@ -175,21 +175,21 @@ band).
 ~70 min for 22 frames, quality ≥ baseline). The 20-step mode is only for explicit quality A/B
 requests. 4K YouTube masters go through `scripts/conform_youtube_hd.py`.
 
-**⚠️ Common video pitfall (state as of 2026-10-08 — check `docs/MEMORY_BANK.md` §1.16-1.19 before
-any video render, this evolves with sd-cli updates)**: the installed sd-cli (`C:\SD\`, master-945)
-**breaks MiniMax-H3** (upstream regression #1976: 54 segments + OOM at submit; **the #2103 VAE-residency
-candidate fix shipped in 945 was tested 10-08 night — signature UNCHANGED, issue still open**); LTX-2.5
-fails there on the same workspace refusal. The parallel production build remains `C:\SD-6b3edaa\`
-(master-841, last validated for LTX/H3). **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
+**⚠️ Common video pitfall (state as of 2026-10-23 — check `docs/MEMORY_BANK.md` §1.16-1.19 before
+any video render, this evolves with sd-cli updates)**: MiniMax-H3 is BACK on the main build
+(`C:\SD\`) since master-995 — upstream #1976 (54 segments + OOM at submit on 864→990) is fixed by
+#2181 (ggml small-BAR heap mask), validated on the workflow full path 2026-10-23 (36.2 min exit 0;
+the stock 54-segment plan is EXPECTED and survives). **LTX-2.5 still fails on the main build**
+(memory-manager workspace refusal): LTX routes keep the parallel build `C:\SD-6b3edaa\`
+(master-841, last validated for LTX). **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
 ("scarecrow with a glowing carved pumpkin head…") collapses the model to its talking-person prior —
 prompt ignored, photoreal man rendered; use objects/scenes/standard humans as subjects**:
 ```bash
-# monoplan_ia: prefix SD_CLI_PATH (resolved via core/config.py):
+# monoplan_ia / video_multishot (LTX routes): prefix SD_CLI_PATH (resolved via core/config.py):
 SD_CLI_PATH="C:\SD-6b3edaa\sd-cli.exe" uv run python main.py -w monoplan_ia ... 
 ```
-For `h3_ref2va`, production also goes through the 6b3edaa build (the workflow may call
-`C:\SD\sd-cli.exe` hard-coded → use `--sd-cli` or the raw command documented in MEMORY_BANK
-§1.16). Reliable video on master-908: **Wan T2V/I2V ≤ ~20 frames with `--vae-on-cpu`** (`video`
+`h3_ref2va` runs on the main build directly (workflow default — NO override). Reliable video:
+**Wan T2V/I2V ≤ ~20 frames with `--vae-on-cpu`** (`video`
 workflow, validated 23-24/09). Rule: **any sd-cli matrix/validation runs on a freshly rebooted
 machine** (an LTX/H3 verdict can depend on the VRAM held by the desktop).
 
