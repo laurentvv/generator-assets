@@ -113,6 +113,25 @@ DEFAULT_QWEN_IMAGE21_TURBO_MODEL = os.getenv(
 )
 QWEN_IMAGE21_TURBO_SIGMAS = "1.0,0.978453,0.95418,0.926626,0.89508,0.845148,0.704534,0.414568,0.0"
 
+# MOSS-Image-SFT (OpenMOSS, 5.1B DiT flow-matching, Apache-2.0) — pipeline
+# USER VALIDATED 2026-10-24 ("Moss parfait oui", MEMORY_BANK §1.45): sd-cli
+# arch `moss_image` (since master-973), text encoder Qwen3.5-9B Q8_0 + external
+# tokenizer + flux2 VAE. Files stored on D:\Modeles_LLM (user's choice — USB
+# 3.0 HDD: cold loads are disk-bound ~4-8 MB/s, see MEMORY_BANK lesson 10-11).
+# Env-overridable so the paths can move (e.g. to C: NVMe) without code edits.
+DEFAULT_MOSS_IMAGE_MODEL = os.getenv(
+    "MOSS_IMAGE_MODEL_PATH", r"D:\Modeles_LLM\MOSS-Image-SFT-UD-Q4_K_XL.gguf"
+)
+DEFAULT_MOSS_IMAGE_LLM = os.getenv(
+    "MOSS_IMAGE_LLM_PATH", r"D:\Modeles_LLM\Qwen3.5-9B-Q8_0.gguf"
+)
+DEFAULT_MOSS_IMAGE_VAE = os.getenv(
+    "MOSS_IMAGE_VAE_PATH", r"D:\Modeles_LLM\moss_image_vae_flux2.safetensors"
+)
+DEFAULT_MOSS_IMAGE_TOKENIZER = os.getenv(
+    "MOSS_IMAGE_TOKENIZER_PATH", r"D:\Modeles_LLM\moss_image_tokenizer.json"
+)
+
 # Video models (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))
 DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))
