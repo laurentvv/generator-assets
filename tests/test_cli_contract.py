@@ -338,12 +338,15 @@ def test_famille_video_3d_migree_en_declarations():
     assert len(h3_ref2va.H3Ref2VAWorkflow.PARAMETRES) == 5    # --ref-frames --ref-audio --max-vram --turbo --dry-run
     from workflows import animal_godot
     assert len(animal_godot.AnimalGodotWorkflow.PARAMETRES) == 2
+    from workflows import open_water
+    assert len(open_water.OpenWaterWorkflow.PARAMETRES) == 6  # --ow-params --ow-duration --ow-warm --ow-crf --ow-loop --ow-dir
     toutes = WorkflowRegistry.parametres_declares()
     flags_agreges = {f for decl in toutes for f in decl["flags"]}
     assert {
         "--res", "--faces-cible", "--end-img", "--control-video", "--flow-shift",
         "--ref-frames", "--ref-audio", "--max-vram", "--turbo", "--dry-run",
         "--animal-prefixe", "--animal-actions",
+        "--ow-params", "--ow-duration", "--ow-warm", "--ow-crf", "--ow-loop", "--ow-dir",
     } <= flags_agreges
     # h3_ref2va contract: --turbo (recommended default mode) and --max-vram go through
     args = main.construire_parseur().parse_args(

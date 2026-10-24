@@ -1347,6 +1347,72 @@
  ],
  [
   [
+   "--ow-crf"
+  ],
+  "ow_crf",
+  "_StoreAction",
+  "'15'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--ow-dir"
+  ],
+  "ow_dir",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--ow-duration"
+  ],
+  "ow_duration",
+  "_StoreAction",
+  "10.0",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
+   "--ow-loop"
+  ],
+  "ow_loop",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
+   "--ow-params"
+  ],
+  "ow_params",
+  "_StoreAction",
+  "'preset=storm&float=0&yaw=200&pitch=6&h=6&fov=50'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--ow-warm"
+  ],
+  "ow_warm",
+  "_StoreAction",
+  "10.0",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
    "--palette"
   ],
   "palette",
