@@ -23,7 +23,7 @@ FAMILIES = [
 
 # workflow name -> family (every registry workflow must map; fallback: utils).
 WORKFLOW_FAMILY = {
-    "generate": "images", "qwen_image": "images", "spritesheet": "images",
+    "generate": "images", "qwen_image": "images", "moss_image": "images", "spritesheet": "images",
     "autotile_pack": "images", "tileable": "images", "pixelart": "images",
     "variations": "images", "ui_9slice": "images", "rembg": "images",
     "rpg_portrait": "images", "ip_adapter": "images",
@@ -115,6 +115,17 @@ WORKFLOW_META = {
         "warnings": [
             "RESEARCH license — personal / non-commercial use only.",
             "turbo: steps/CFG are forced (8 / 1.0) — leave them unset.",
+        ],
+    },
+    "moss_image": {
+        "primary": ["width", "height"],
+        "estimate": "≈36 min @1024² (USB disk-bound load + 42.5-43 s/step)",
+        "presets": [
+            {"name": "Validated 2026-10-24 (1024², 50 steps, CFG 3)", "values": {"seed": 42}},
+        ],
+        "warnings": [
+            "Small secondary text garbles (documented base weakness).",
+            r"Models live on D:\Modeles_LLM (USB HDD) — cold load ≈ 28 min; env MOSS_IMAGE_*_PATH to repoint.",
         ],
     },
     "spritesheet": {"primary": ["columns"], "estimate": "≈3–6 min"},

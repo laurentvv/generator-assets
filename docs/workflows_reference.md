@@ -10,7 +10,7 @@
   • 3D Geometry & PBR Textures     : material3d, mesh3d, mesh_ia, voxel3d, skybox, turnaround3d, flowmap, asset_blendkit
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
-  • 2D Sprites, Tiles & UI         : generate, qwen_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
+  • 2D Sprites, Tiles & UI         : generate, qwen_image, moss_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
   • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
   • Craft Suite (headless Rust apps): miniature, carte_fin, icone_jeu, titre_anime, prepa_i2v, filigrane_batch, doc_texte, classeur_donnees, rapport_deck, planche_pdf, maquette_ui, photo_develop, son_convertir, ocr_pdf, projet_montage
@@ -611,6 +611,25 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   uv run python main.py -w qwen_image "a vintage tavern sign that reads 'The Sleeping Dragon', night, lantern light" --qwen-turbo --seed 42
   # Compositing: blend a product cutout into a backdrop (RESEARCH license)
   uv run python main.py -w qwen_image "pengyu Apply consistent lighting to the product or object, enhance specular highlights, front-back spatial relationship, add natural contact shadow, and blend it seamlessly into the background"     -i composite_cutout.png -l "Qwenimag21_c2-st2000:1.0" --seed 42
+  ```
+
+---
+
+#### 3.10. `moss_image` — MOSS-Image-SFT Text-to-Image (Apache-2.0, In-Image Text Rendering)
+* **Process**:
+  1. Renders free-form natural-language prompts with MOSS-Image-SFT (OpenMOSS 5.1B DiT flow-matching GGUF, Vulkan) — headline strength: **reliable in-image text rendering** (storefront signs, labels, headlines) and clean layout composition.
+  2. System-load pre-check runs automatically before the launch (busy machine = aborted).
+  3. Everything resident in VRAM (11.4 GB on the 16 GB card): diffusion + Qwen3.5-9B-Q8_0 text encoder + flux2 VAE. Do NOT add `--offload-to-cpu` — with the weights filling the card the pinned-pool streaming path cannot allocate (pinned-memory failure measured 2026-10-24).
+  4. Model files live on `D:\Modeles_LLM` (USB 3.0 HDD): cold load ≈ 24-33 min at the measured 4-8 MB/s (MEMORY_BANK lesson 10-11). Repoint via env `MOSS_IMAGE_MODEL_PATH` / `MOSS_IMAGE_LLM_PATH` / `MOSS_IMAGE_VAE_PATH` / `MOSS_IMAGE_TOKENIZER_PATH` (e.g. to the C: NVMe) without code edits.
+* **Inputs**: `prompt`, `--width/--height` (**multiples of 32**, default 1024×1024), `--steps` (default 50 — validated recipe), `--cfg-scale` (default 3.0 — validated recipe), `--seed`, `--output-dir`, `-o/--output` (basename).
+* **Engine**: sd-cli master-973+ (`moss_image` architecture, PRs #2148/#2160) + `Qwen3.5-9B-Q8_0.gguf` text encoder + external `tokenizer.json` + `flux2` VAE (unsloth packaging, MD-verified at download).
+* **License**: **Apache-2.0** — commercial use OK (unlike the Qwen-Image RESEARCH path). No model-level NSFW filter; the user is responsible for the content.
+* **Performance** (measured 2026-10-24, RX 6950 XT): **42.5-43.0 s/step at 1024², 50 steps ≈ 36 min/image + load** — the arch is new on Vulkan (kernels still young; `conv2d/conv3d direct` probes fail and fall back to im2col). Re-evaluate on future sd-cli releases.
+* **Known weakness**: small secondary text garbles (documented base limitation — keep small text out of prompts or crop it away).
+* **Outputs**: `output/<name>_moss.png`.
+* **Example**:
+  ```bash
+  uv run python main.py -w moss_image 'a storefront sign that says "MOSS" in bold clean letters, daytime, sharp focus' --seed 42
   ```
 
 ---
