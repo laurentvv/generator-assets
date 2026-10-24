@@ -11,7 +11,7 @@
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, qwen_image, moss_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia, open_water
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
   • Craft Suite (headless Rust apps): miniature, carte_fin, icone_jeu, titre_anime, prepa_i2v, filigrane_batch, doc_texte, classeur_donnees, rapport_deck, planche_pdf, maquette_ui, photo_develop, son_convertir, ocr_pdf, projet_montage
 ```
@@ -1175,6 +1175,29 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   uv run python main.py -w voix_conversion --audio output/voix_off/ab_e01_l001_qwen_expr/voix_off_brut.wav --voice-ref output/voix_off/ab_e01_l001_voxcpm/ref_E01_L001.wav
   ```
 * **Status (2026-10-02)**: ✅ **User-validated** (*« voix anglaise bien »*) — Chatterbox q8_0 (1.94 GiB, `C:\Modeles_LLM\Chatterbox-GGUF`).
+
+---
+
+#### 4.20. `open_water` — Procedural Storm-Sea Clips (open-water, MIT) + Perfect Xfade Loop
+* **Process** (validated 2026-10-24, user « image ok » on the 4 Vent-Gris legs — MEMORY_BANK §1.47):
+  1. Starts the open-water static server (`tools/serve.mjs`, hardcoded port 5173 — part of the validated chain), or reuses one already answering.
+  2. Renders a fixed-camera, constant-weather clip via the LOCAL `tools/render_shot.mjs` addition (drives the interactive frame path; the upstream `render/render.mjs` plays a scripted, non-loopable 60 s film instead). Weather + camera are URL params (`--ow-params`): `preset wind rain clouds cloudDark elev yaw pitch h fov lightning float`.
+  3. Optional `--ow-loop`: perfect infinite loop with the in-game-validated xfade recipe (fps=24 on BOTH branches, offset = post_duration − fade, 1.5 s fade) reused from `scripts/faire_boucle_menu_vent_gris.py`, then black-band audit (`scripts/audit_bande_noire.py --zero --raccord`) reported as CONFORMING / NON-CONFORMING.
+  4. System-load pre-check runs automatically before the launch (busy machine = aborted).
+* **Engine**: local clone (default `C:\GIT\open-water`, env `OPEN_WATER_DIR` / `--ow-dir`) + headless Chrome ANGLE/D3D11 (puppeteer-core → system Chrome, `npm install` once) + ffmpeg on PATH. Zero PyTorch, GPU-light.
+* **Inputs**: `--ow-params` (default: validated storm-day recipe `preset=storm&float=0&yaw=200&pitch=6&h=6&fov=50`), `--ow-duration` (10 s), `--ow-warm` (10 s rendered warm-up), `--ow-crf` (15), `--ow-loop`, shared `--fps/--width/--height` (24 / 1920×1080), `-o`, `--output-dir`.
+* **Pitfalls (measured 2026-10-24, enforced as warnings)**: the storm preset defaults to UNSEEDED `lightning=0.7` → multi-second exposure crushes, unloopable → pass `lightning=0` for loops; `elev=<negative>` eases from the day default and the sun→moon switch wipes the cloud history (rebuilt on RENDERED frames only) → keep `--ow-warm >= 10`.
+* **Performance** (measured, RX 6950 XT): 1080p24 ≈ 0.17-0.19 s/frame → a 10 s leg ≈ 1.5 min total (warm-up + render).
+* **Outputs**: `output/<name>.mp4` (silent 10 s master, bt709) + optional `<name>_boucle.mp4` (8.5 s loop) + `<name>_render.log`. SILENT on purpose: the game / channel lays its own music bed.
+* **Style fit** (visual assessment): very dark gloomy twilight storm sea, credible foam streaks, plausibly in-family with the LTX Vent-Gris masters; open-sea framing only (no land in open-water). Use cases: silent backdrop loops (menu/transitions) + physics-grounded keyframes for LTX I2V.
+* **Example** (validated leg1 + loop):
+  ```bash
+  uv run python main.py -w open_water --ow-loop -o open_water_storm_day
+  # night no-lightning leg (validated leg2 recipe):
+  uv run python main.py -w open_water --ow-loop \
+    --ow-params "preset=storm&float=0&yaw=200&pitch=6&h=6&fov=50&elev=-14&lightning=0"
+  ```
+* **Status (2026-10-24)**: ✅ **User-validated** (*« image ok »* on the 4 night-test legs, `output/test_nuit_open_water/`) — workflow e2e re-validated the same evening (master + loop CONFORMING, joint L diff 1.42).
 
 ---
 

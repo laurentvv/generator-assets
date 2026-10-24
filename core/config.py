@@ -239,6 +239,12 @@ DEFAULT_THREADS = int(os.getenv("SD_THREADS", "16"))
 # Default output: output/ (git-ignored) — godot_assets/ remains the folder
 # of validated reference assets (README examples), no generation lands there anymore.
 DEFAULT_OUTPUT_DIR = os.getenv("OUTPUT_DIR", "output")
+
+# open-water (Leonxlnx, MIT) — procedural WebGL2 storm-sea renderer, pipeline
+# USER VALIDATED 2026-10-24 ("image ok", MEMORY_BANK §1.47) as a silent
+# backdrop/keyframe-loop source. Local clone with the render_shot.mjs addition
+# (fixed camera + constant weather); env-overridable like the other tool paths.
+DEFAULT_OPEN_WATER_DIR = os.getenv("OPEN_WATER_DIR", r"C:\GIT\open-water")
 DEFAULT_MPFB_DATA_DIR = os.getenv(
     "MPFB_DATA_DIR",
     os.path.expandvars(r"%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data")
