@@ -170,6 +170,7 @@ band).
 | 60 fps interpolation (RIFE) | `rife_interp` | `-w rife_interp -i clip.webm` |
 | 4×4 VFX particle sheet | `vfx_flipbook` | `-w vfx_flipbook "fire explosion"` |
 | Animated texture/shader loop | `anim_loop` | `-w anim_loop -i texture.png` |
+| Procedural storm-sea backdrop loop (WebGL2 physics ocean, MIT; silent; GPU-light ~1.5 min/10 s 1080p24; loops need `lightning=0` in `--ow-params`) | `open_water` | `-w open_water --ow-loop` |
 | Style consistency across assets (IP-Adapter) | `ip_adapter` | `-w ip_adapter -i reference.png` |
 
 **`h3_ref2va`: ALWAYS `--turbo`** (distilled 8-step LoRA, user-validated: ~38 min instead of

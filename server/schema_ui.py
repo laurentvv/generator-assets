@@ -40,7 +40,7 @@ WORKFLOW_FAMILY = {
     "pose_control": "characters", "animal_godot": "characters",
     "video": "video", "video_vace": "video", "video_multishot": "video",
     "h3_ref2va": "video", "monoplan_ia": "video", "rife_interp": "video",
-    "vfx_flipbook": "video", "anim_loop": "video",
+    "vfx_flipbook": "video", "anim_loop": "video", "open_water": "video",
     "voix_off": "voice", "voix_perso": "voice", "voix_robot": "voice",
     "voix_conversion": "voice", "tts_dialogue": "voice", "audio_upscale": "voice",
     "music_bg": "music", "chanson": "music", "musique_adn": "music",
@@ -218,6 +218,20 @@ WORKFLOW_META = {
     "audio_ambience": {"primary": ["ambience_type", "duration"], "estimate": "seconds (CPU)", "heavy": False},
     "upscale": {"primary": ["factor"], "estimate": "≈1–4 min"},
     "batch": {"primary": ["file", "continue_on_error"], "estimate": "depends on recipe"},
+    "open_water": {
+        "primary": ["ow_params", "ow_duration", "ow_loop"],
+        "estimate": "≈1.5 min / 10 s 1080p24 leg (GPU-light)",
+        "presets": [
+            {"name": "Storm day (validated leg1)", "values": {"ow_params": "preset=storm&float=0&yaw=200&pitch=6&h=6&fov=50"}},
+            {"name": "Night no-lightning (validated leg2)", "values": {"ow_params": "preset=storm&float=0&yaw=200&pitch=6&h=6&fov=50&elev=-14&lightning=0"}},
+            {"name": "Night moon (validated leg4)", "values": {"ow_params": "preset=storm&float=0&yaw=200&pitch=6&h=6&fov=50&elev=-14&lightning=0&clouds=0.82&cloudDark=0.55"}},
+        ],
+        "warnings": [
+            "storm preset defaults to UNSEEDED lightning=0.7 — add lightning=0 for loops.",
+            "elev<0 needs ≥10 s rendered warm-up (--ow-warm) or the first seconds dip dark.",
+            "Output is silent: the game/channel lays its own music bed.",
+        ],
+    },
 }
 
 # Workflows that skip the system load gate (pure CPU, seconds): derived from
