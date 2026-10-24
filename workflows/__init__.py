@@ -15,7 +15,7 @@ import pkgutil
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 _MODULES_ORDONNES = [
-    "generate", "qwen_image", "upscale", "miniature", "carte_fin", "icone_jeu", "titre_anime", "prepa_i2v", "filigrane_batch",
+    "generate", "qwen_image", "moss_image", "upscale", "miniature", "carte_fin", "icone_jeu", "titre_anime", "prepa_i2v", "filigrane_batch",
     "doc_texte", "classeur_donnees", "planche_pdf", "maquette_ui", "photo_develop", "son_convertir", "spritesheet", "variations", "tileable", "pixelart",
     "batch", "material3d", "skybox", "turnaround3d", "mesh3d", "mesh_ia", "rembg",
     "flowmap", "ui_9slice", "voxel3d", "autotile_pack", "rife_interp", "vfx_flipbook",

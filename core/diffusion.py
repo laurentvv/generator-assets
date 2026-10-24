@@ -17,6 +17,10 @@ from core.config import (
     DEFAULT_H3_REF2VA_MODEL,
     DEFAULT_H3_VIDEO_VAE,
     DEFAULT_LORA_DIRS,
+    DEFAULT_MOSS_IMAGE_LLM,
+    DEFAULT_MOSS_IMAGE_MODEL,
+    DEFAULT_MOSS_IMAGE_TOKENIZER,
+    DEFAULT_MOSS_IMAGE_VAE,
     DEFAULT_QWEN_IMAGE21_LLM,
     DEFAULT_QWEN_IMAGE21_MODEL,
     DEFAULT_QWEN_IMAGE21_VAE,
@@ -319,6 +323,84 @@ def generer_image_qwen21(
         return Image.open(output_path).copy()
     except Exception as e:
         print(f"❌ Error during the render (Qwen-Image-2.1) via sd-cli: {e}")
+        raise
+    finally:
+        if chemin_temporaire and os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except OSError:
+                pass
+
+
+def generer_image_moss(
+    prompt: str,
+    sd_cli: str = DEFAULT_SD_CLI,
+    model: str = DEFAULT_MOSS_IMAGE_MODEL,
+    llm: str = DEFAULT_MOSS_IMAGE_LLM,
+    vae: str = DEFAULT_MOSS_IMAGE_VAE,
+    tokenizer: str = DEFAULT_MOSS_IMAGE_TOKENIZER,
+    width: int = 1024,
+    height: int = 1024,
+    steps: int = 50,
+    cfg_scale: float = 3.0,
+    sampling_method: str = "euler",
+    seed: int = -1,
+    output_path: Optional[str] = None,
+) -> Image.Image:
+    """
+    Renders an image with MOSS-Image-SFT (OpenMOSS 5.1B DiT flow-matching, GGUF).
+
+    Pipeline user-VALIDATED 2026-10-24 on the RX 6950 XT (MEMORY_BANK §1.45,
+    "Moss parfait oui"): moss_image arch (sd-cli since master-973) + Qwen3.5-9B
+    Q8_0 text encoder + external tokenizer.json + flux2 VAE. Validated recipe:
+    euler, 50 steps, CFG 3.0, --fa, everything resident in VRAM (11.4 GB on the
+    16 GB card — do NOT pass --offload-to-cpu: it forces the graph through the
+    pinned-pool streaming path, which cannot allocate once the weights fill the
+    card). In-image text rendering is the model's strength; small secondary
+    text is garbled (documented base weakness). Apache-2.0: commercial use OK.
+
+    Dimensions must be multiples of 32 (same grid requirement as the other
+    flow-matching architectures). Measured 42.5-43.0 s/step at 1024x1024 on
+    RDNA2 (50 steps ≈ 36 min) — the arch is new on Vulkan, kernels still young.
+    Without output_path, goes through a unique temporary file like
+    generer_image_qwen21.
+    """
+    if width % 32 != 0 or height % 32 != 0:
+        raise ValueError(
+            f"MOSS-Image requires dimensions divisible by 32 (got {width}x{height})."
+        )
+
+    chemin_temporaire = output_path is None
+    if chemin_temporaire:
+        descripteur, output_path = tempfile.mkstemp(suffix=".png", prefix="ga_rendu_moss_")
+        os.close(descripteur)
+        os.remove(output_path)
+
+    print(f"[MOSS-Image-SFT - t2i] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
+    commande = [
+        sd_cli,
+        "--diffusion-model", model,
+        "--llm", llm,
+        "--vae", vae,
+        "--tokenizer", tokenizer,
+        "-p", prompt,
+        "--cfg-scale", str(cfg_scale),
+        "--sampling-method", sampling_method,
+        "--steps", str(steps),
+        "-W", str(width),
+        "-H", str(height),
+        "-s", str(seed),
+        "--fa",
+        "-o", output_path,
+    ]
+
+    try:
+        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli MOSS-Image")
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"The output file {output_path} was not produced.")
+        return Image.open(output_path).copy()
+    except Exception as e:
+        print(f"❌ Error during the render (MOSS-Image-SFT) via sd-cli: {e}")
         raise
     finally:
         if chemin_temporaire and os.path.exists(output_path):
