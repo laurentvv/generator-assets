@@ -75,6 +75,7 @@ Any CLI evolution must preserve this contract.
 | Clean cutout (transparent background) | `rembg` | `-w rembg -i image.png` |
 | 2x/4x/4K ESRGAN upscale | `upscale` | `-w upscale -i image.png --scale 4` |
 | JSON pack of batch generations | `batch` | `-w batch --recipe recipe.json` |
+| Local OCR on images/screenshots (FR/EN, ~4 s/page) | `ocr_image` | `-w ocr_image -i screenshot.png` |
 
 ### 🧱 PBR textures & 3D (Flux + DeepBump + Blender + TRELLIS.2)
 
