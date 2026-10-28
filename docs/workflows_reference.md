@@ -12,7 +12,7 @@
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, qwen_image, moss_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
   • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, lfm3_tts, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia, open_water
-  • Style Consistency & Utilities  : ip_adapter, upscale, batch
+  • Style Consistency & Utilities  : ip_adapter, ocr_image, upscale, batch
   • Craft Suite (headless Rust apps): miniature, carte_fin, icone_jeu, titre_anime, prepa_i2v, filigrane_batch, doc_texte, classeur_donnees, rapport_deck, planche_pdf, maquette_ui, photo_develop, son_convertir, ocr_pdf, projet_montage
 ```
 
@@ -1216,6 +1216,23 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   uv run python main.py -w lfm3_tts "System online." --tts-langue en --tts-voix male
   ```
 * **Status (2026-10-28)**: ✅ **User-validated** (*« voix parfaite »*) — E2E FR + EN/male exit 0 same session (`output/test_lfm3/`). ASR (same model, llama-mtmd-cli) stays a smoke-tested exercise, not a workflow.
+
+#### 4.22. `ocr_image` — Local OCR on Images & Screenshots (MiniCPM-OCR-1.0 via llama-server)
+* **Process** (validated 2026-10-28, user « OK GO » on the 3/3 smoke results — MEMORY_BANK §1.49):
+  1. System-load pre-check runs automatically before the launch (busy machine = aborted).
+  2. Starts ONE llama-server session (model + mmproj, `-ngl 99`, free port, health-gated), OCRs every input image through `/v1/chat/completions` with `reasoning_effort: "none"`, then shuts the server down (VRAM released) — one model load for the whole batch.
+  3. Server-only on purpose: the model transcribes inside its thinking block; only the request-level `reasoning_effort: "none"` routes the text to `content` (the mtmd-cli exposes no such flag — empty output measured).
+* **Engine**: openbmb MiniCPM-OCR-1.0 Q8_0 + mmproj f16-4x on `C:\Modeles_LLM` (~1.6 GB files, ~2 GB VRAM, Apache-2.0; env `MINICPM_OCR_MODEL_PATH` / `MINICPM_OCR_MMPROJ_PATH` / `LLAMA_SERVER_PATH`).
+* **Inputs**: `-i, --input` (one image or a directory: png/jpg/jpeg/webp/bmp), `--ocr-consigne` (custom instruction in English; default = exact transcription preserving layout), `-o`, `--output-dir`.
+* **Performance** (measured, RX 6950 XT): ~4 s/page (image encoding 2.7-3.9 s + generation ~237 t/s, Q8_0).
+* **Outputs**: `output/<name>_ocr.txt` (single image) or `output/ocr_resultat.md` (directory: one `##` section per image).
+* **Positioning**: vision path for scans, screenshots and UI captures, FR included — distinct from `ocr_pdf` (pdfcraft, native PDF text + English-only OCR fallback). Measured quality: EN word-perfect, FR 1-char error on ~250 (off the EN/ZH training spec), UI screenshots word-perfect.
+* **Example** (validated):
+  ```bash
+  uv run python main.py -w ocr_image -i output/test_minicpm_ocr/fixture_fr.png
+  uv run python main.py -w ocr_image -i output/test_minicpm_ocr -o ocr_test_minicpm
+  ```
+* **Status (2026-10-28)**: ✅ **User-validated** (« OK GO ») — E2E single-image + directory exit 0 same session (`output/fixture_fr_ocr.txt`, `output/ocr_test_minicpm.md`).
 
 ---
 
