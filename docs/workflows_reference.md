@@ -11,7 +11,7 @@
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, qwen_image, moss_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia, open_water
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, lfm3_tts, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia, open_water
   • Style Consistency & Utilities  : ip_adapter, upscale, batch
   • Craft Suite (headless Rust apps): miniature, carte_fin, icone_jeu, titre_anime, prepa_i2v, filigrane_batch, doc_texte, classeur_donnees, rapport_deck, planche_pdf, maquette_ui, photo_develop, son_convertir, ocr_pdf, projet_montage
 ```
@@ -1198,6 +1198,24 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
     --ow-params "preset=storm&float=0&yaw=200&pitch=6&h=6&fov=50&elev=-14&lightning=0"
   ```
 * **Status (2026-10-24)**: ✅ **User-validated** (*« image ok »* on the 4 night-test legs, `output/test_nuit_open_water/`) — workflow e2e re-validated the same evening (master + loop CONFORMING, joint L diff 1.42).
+
+---
+
+#### 4.21. `lfm3_tts` — Fast Local Voice Synthesis (LFM3-Audio-2B, llama.cpp Vulkan)
+* **Process** (validated 2026-10-28, user « voix parfaite » on the EN/FR listening samples — MEMORY_BANK §1.48):
+  1. System-load pre-check runs automatically before the launch (busy machine = aborted).
+  2. Synthesizes speech from the prompt text via `llama-tts` (llama.cpp, arch `lfm3` — support since master `d05706b`; the official release b11936 predates the LFM3 merges, so the local build is kept until a release ≥ b11937).
+* **Engine**: LiquidAI LFM3-Audio-2B Q8_0 + audio mmproj on `D:\Modeles_LLM` (user rule 2026-10-28: Liquid models stay on D:, too big for C:; env `LFM3_TTS_MODEL_PATH` / `LFM3_TTS_MMPROJ_PATH` / `LLAMA_TTS_PATH`).
+* **Inputs**: text prompt (positional), `--tts-langue` (ISO 639-1, default `fr`), `--tts-voix` (`female` default / `male`), `-o`, `--output-dir`. No seed: the audio sampling parameters baked into the GGUF rule the generation.
+* **Performance** (measured, RX 6950 XT): FASTER than real time — FR 2.1×, EN 1.1× wall clock, 24 kHz output; cold model load from D: ≈ 32 s (lesson 10-11).
+* **Outputs**: `output/<name>.wav` (raw 24 kHz — no LUFS mastering; chain through `son_convertir`/ffmpeg downstream if a production level is needed).
+* **Positioning**: fast drafts and short lines; the mastered production voices stay on the validated audio.cpp engines (`voix_off`).
+* **Example** (validated):
+  ```bash
+  uv run python main.py -w lfm3_tts "Bienvenue dans l'Héritier du Vide, voyageur." -o intro_fr
+  uv run python main.py -w lfm3_tts "System online." --tts-langue en --tts-voix male
+  ```
+* **Status (2026-10-28)**: ✅ **User-validated** (*« voix parfaite »*) — E2E FR + EN/male exit 0 same session (`output/test_lfm3/`). ASR (same model, llama-mtmd-cli) stays a smoke-tested exercise, not a workflow.
 
 ---
 

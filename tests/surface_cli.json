@@ -2154,6 +2154,28 @@
  ],
  [
   [
+   "--tts-langue"
+  ],
+  "tts_langue",
+  "_StoreAction",
+  "'fr'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--tts-voix"
+  ],
+  "tts_voix",
+  "_StoreAction",
+  "'female'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--turbo"
   ],
   "turbo",
