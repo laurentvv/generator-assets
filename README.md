@@ -181,6 +181,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`ui_9slice`** | Generates expandable UI frames/dialog boxes + Godot 4 `StyleBoxTexture.tres` | `uv run python main.py -w ui_9slice "golden fantasy dialog frame" --margin 32` | [Specs](docs/workflows_reference.md#37-ui_9slice--expandable-9-patch-frames--buttons) |
 | **`rembg`** | Neural background removal (RMBG / BiRefNet ONNX) with zero white fringes | `uv run python main.py -w rembg -i sprite.png -o sprite_clean` | [Specs](docs/workflows_reference.md#38-rembg--high-precision-neural-background-removal) |
 | **`upscale`** | 4K AI Super-Resolution (ESRGAN Vulkan) with 100% alpha transparency preservation | `uv run python main.py -w upscale -i item.png --factor 4` | [Specs](docs/workflows_reference.md#52-upscale--4k-ai-super-resolution-esrgan-vulkan) |
+| **`ocr_image`** | Local OCR on images & screenshots (MiniCPM-OCR-1.0 via llama-server — FR/EN, ~4 s/page, ~2 GB VRAM) | `uv run python main.py -w ocr_image -i screenshot.png` | [Specs](docs/workflows_reference.md#422-ocr_image--local-ocr-on-images--screenshots-minicpm-ocr-10-via-llamaserver) |
 
 ---
 

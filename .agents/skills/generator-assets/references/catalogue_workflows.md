@@ -80,6 +80,7 @@ standards, validation checklist and detailed pitfalls: [`pipeline_3d_blender.md`
 | `ocr_pdf` | **PDF → texte via PdfCraft headless** — couche texte native d'abord, OCR de repli pour les scans (**en seul en 0.9.0**, limite upstream) | `-i` (PDF ou dossier), `--language` (en), `--forcer-ocr`, `--timeout-ocr` (900) | `<name>.txt` (UTF-8) |
 | `prepa_i2v` | **I2V keyframe preparation via PhotoCraft headless** — centered crop to target ratio + lanczos resample (no upscale unless `--width/--height` given). Accepts a file or a directory | `-i` (file or dir), `--ratio` (16:9 · 9:16 · 1:1 · 4:3 · 3:4 · 21:9), `--format-sortie` (png), `--width/--height` (long side only, one at a time) | `<name>_i2v.png` |
 | `batch` | Batch generation from a JSON | `--recipe <file.json>` (default: stop at the first error, exit ≠ 0; `--continue-on-error` = full batch + failures listed) | per recipe |
+| `ocr_image` | Local OCR on images & screenshots — VALIDATED 2026-10-28 (« OK GO »; EN word-perfect, FR 1-char error off-spec, UI word-perfect): openbmb MiniCPM-OCR-1.0 1.3B Q8_0 + mmproj via llama-server Vulkan (`reasoning_effort:"none"` REQUIRED — mtmd-cli returns empty), ~4 s/page, ~2 GB VRAM | `-i` image or dir, `--ocr-consigne` (EN instruction), `-o`, `--output-dir` | `<name>_ocr.txt` (single) or `ocr_resultat.md` (dir) |
 
 Available LoRAs: `-l "game_icon_diablo_style:0.8"` (auto-switches to SDXL Juggernaut) — full list
 `python main.py --list-loras`.

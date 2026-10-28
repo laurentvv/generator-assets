@@ -1323,6 +1323,17 @@
  ],
  [
   [
+   "--ocr-consigne"
+  ],
+  "ocr_consigne",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--output",
    "-o"
   ],

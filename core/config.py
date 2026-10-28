@@ -147,6 +147,20 @@ DEFAULT_LFM3_TTS_MMPROJ = os.getenv(
     "LFM3_TTS_MMPROJ_PATH", r"D:\Modeles_LLM\mmproj-LFM3-Audio-2B-Q8_0.gguf"
 )
 
+# Local OCR engine — openbmb MiniCPM-OCR-1.0 (1.3B specialist, Apache-2.0),
+# served through llama.cpp `llama-server` (--mmproj). USER VALIDATED 2026-10-28
+# (MEMORY_BANK §1.49: EN word-perfect, FR 1-char error off-spec, UI screenshots
+# word-perfect; ~4 s/page, ~2 GB VRAM). Server-only on purpose: the mtmd-cli
+# cannot disable the model's thinking block, so the transcription only lands
+# in `content` with a request-level `reasoning_effort: "none"`.
+DEFAULT_LLAMA_SERVER = os.getenv("LLAMA_SERVER_PATH", r"C:\llama.cpp\llama-server.exe")
+DEFAULT_MINICPM_OCR_MODEL = os.getenv(
+    "MINICPM_OCR_MODEL_PATH", r"C:\Modeles_LLM\MiniCPM-OCR-1_0-Q8_0.gguf"
+)
+DEFAULT_MINICPM_OCR_MMPROJ = os.getenv(
+    "MINICPM_OCR_MMPROJ_PATH", r"C:\Modeles_LLM\mmproj-MiniCPM-OCR-1_0-f16-4x.gguf"
+)
+
 # Video models (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))
 DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))
