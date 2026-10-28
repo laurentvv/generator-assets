@@ -342,6 +342,8 @@ def test_famille_video_3d_migree_en_declarations():
     assert len(open_water.OpenWaterWorkflow.PARAMETRES) == 6  # --ow-params --ow-duration --ow-warm --ow-crf --ow-loop --ow-dir
     from workflows import lfm3_tts
     assert len(lfm3_tts.Lfm3TtsWorkflow.PARAMETRES) == 2      # --tts-langue --tts-voix
+    from workflows import ocr_image
+    assert len(ocr_image.OcrImageWorkflow.PARAMETRES) == 1    # --ocr-consigne
     toutes = WorkflowRegistry.parametres_declares()
     flags_agreges = {f for decl in toutes for f in decl["flags"]}
     assert {
@@ -350,6 +352,7 @@ def test_famille_video_3d_migree_en_declarations():
         "--animal-prefixe", "--animal-actions",
         "--ow-params", "--ow-duration", "--ow-warm", "--ow-crf", "--ow-loop", "--ow-dir",
         "--tts-langue", "--tts-voix",
+        "--ocr-consigne",
     } <= flags_agreges
     # h3_ref2va contract: --turbo (recommended default mode) and --max-vram go through
     args = main.construire_parseur().parse_args(
