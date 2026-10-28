@@ -43,6 +43,7 @@ WORKFLOW_FAMILY = {
     "vfx_flipbook": "video", "anim_loop": "video", "open_water": "video",
     "voix_off": "voice", "voix_perso": "voice", "voix_robot": "voice",
     "voix_conversion": "voice", "tts_dialogue": "voice", "audio_upscale": "voice",
+    "lfm3_tts": "voice",
     "music_bg": "music", "chanson": "music", "musique_adn": "music",
     "musique_essence": "music", "acestep_cover": "music", "retrait_voix": "music",
     "sfx": "music", "audio_ambience": "music",
@@ -200,6 +201,7 @@ WORKFLOW_META = {
     "voix_robot": {"primary": ["robot_voice", "robot_pitch", "robot_ringmod", "robot_tempo", "robot_gain"], "estimate": "≈1 min", "warnings": ["Defaults are the FROZEN validated recipe — don't improvise (§1.25)."]},
     "voix_conversion": {"primary": ["audio", "voice_ref"], "estimate": "≈1–2 min"},
     "tts_dialogue": {"primary": ["emotions", "pitch"], "estimate": "≈1 min/line"},
+    "lfm3_tts": {"primary": ["tts_langue", "tts_voix"], "estimate": "seconds (faster than real time, GPU)"},
     "audio_upscale": {"primary": ["upsr_variante", "upsr_rate"], "estimate": "CPU RTF ~13 (minutes)", "warnings": ["Mono output; refuses input > 24 kHz (§1.27)."]},
     "music_bg": {
         "primary": ["moteur", "variante", "lufs", "loop_mode", "candidats", "force_bpm", "tonalite", "mesure", "lyrics", "analyse"],
@@ -256,6 +258,7 @@ ESTIMATE_SECONDS = {
     "pixelart": 5, "flowmap": 5, "voxel3d": 10, "rembg": 15, "audio_ambience": 10,
     "anim_loop": 20, "rife_interp": 60, "sfx": 60, "tts_dialogue": 60,
     "voix_off": 90, "voix_perso": 90, "voix_robot": 60, "voix_conversion": 90,
+    "lfm3_tts": 15,
     "generate": 120, "tileable": 120, "variations": 120, "ui_9slice": 120,
     "spritesheet": 240, "ip_adapter": 120, "rpg_portrait": 180, "material3d": 300,
     "mesh3d": 180, "skybox": 360, "turnaround3d": 240, "upscale": 120,

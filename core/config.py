@@ -132,6 +132,21 @@ DEFAULT_MOSS_IMAGE_TOKENIZER = os.getenv(
     "MOSS_IMAGE_TOKENIZER_PATH", r"D:\Modeles_LLM\moss_image_tokenizer.json"
 )
 
+# LFM3-Audio-2B text-to-speech (LiquidAI, arch `lfm3`, LFM Open License v1.0) —
+# pipeline USER VALIDATED 2026-10-28 ("voix parfaite", MEMORY_BANK §1.48):
+# llama.cpp `llama-tts` (support since master d05706b; the official release
+# b11936 predates the LFM3 merges — keep the local build until >= b11937).
+# Files on D:\Modeles_LLM next to the MOSS weights (user rule 2026-10-28:
+# Liquid models stay on D: — 23 GB is too big for the C: NVMe free space;
+# lesson 10-11 applies: cold loads are disk-bound, env-overridable paths).
+DEFAULT_LLAMA_TTS = os.getenv("LLAMA_TTS_PATH", r"C:\llama.cpp\llama-tts.exe")
+DEFAULT_LFM3_TTS_MODEL = os.getenv(
+    "LFM3_TTS_MODEL_PATH", r"D:\Modeles_LLM\LFM3-Audio-2B-Q8_0.gguf"
+)
+DEFAULT_LFM3_TTS_MMPROJ = os.getenv(
+    "LFM3_TTS_MMPROJ_PATH", r"D:\Modeles_LLM\mmproj-LFM3-Audio-2B-Q8_0.gguf"
+)
+
 # Video models (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))
 DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))
