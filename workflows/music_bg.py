@@ -13,7 +13,6 @@ Produces:
 """
 
 import os
-import shutil
 from typing import Any, Dict, List
 
 import soundfile
@@ -22,6 +21,7 @@ from core.config import ACESTEP15_VARIANTES, DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.music_ai import (
     SR_CIBLE,
     analyser_boucle_flamingo,
+    apply_output_declick,
     charger_audio,
     construire_recette_ducking,
     convertir_mp3,
@@ -264,7 +264,11 @@ class MusicBgWorkflow(BaseWorkflow):
         #    the best one is promoted to the root level
         # ------------------------------------------------------------------
         wav_full = os.path.join(output_dir, f"{nom_base}_full.wav")
-        shutil.copyfile(meilleur["chemin"], wav_full)
+        # De-click the promoted loop before every export: generated audio starts
+        # mid-waveform and clicks at playback start (measured 2026-10-30, §1.50).
+        audio_final, sr_final = charger_audio(meilleur["chemin"])
+        audio_final = apply_output_declick(audio_final, sr_final)
+        soundfile.write(wav_full, audio_final, sr_final, subtype="PCM_16")
         bed = os.path.join(output_dir, f"{nom_base}_bed.wav")
         mesures_bed = exporter_bed_lufs(wav_full, bed, lufs_cible)
         ogg = convertir_ogg(bed, os.path.join(output_dir, f"{nom_base}.ogg"))

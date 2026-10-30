@@ -747,10 +747,35 @@ def _rms_db(audio: np.ndarray) -> float:
     return 20.0 * np.log10(max(rms, 1e-10))
 
 
+def apply_output_declick(audio: np.ndarray, sr: int, fade_ms: float = 10.0) -> np.ndarray:
+    """
+    Removes the start-of-file click of generated music: short raised-cosine
+    fade-in (default 10 ms) on a copy of the samples.
+
+    Rationale (measured 2026-10-30, MEMORY_BANK §1.50): ACE-Step starts the
+    generation mid-waveform, so the first sample of a raw output carries
+    full amplitude (gothic rock percussive: 0.066; older rustfs bed: 0.010)
+    and every export clicks at playback start. The fade never touches
+    samples past the fade window, so loop tail and body are untouched.
+    """
+    out = np.array(audio, dtype=np.float64, copy=True)
+    n_fade = min(int(sr * fade_ms / 1000.0), len(out) // 2)
+    if n_fade <= 1:
+        return out
+    t = np.arange(n_fade) / n_fade
+    envelope = 0.5 * (1.0 - np.cos(np.pi * t))
+    if out.ndim > 1:
+        envelope = envelope.reshape(-1, 1)
+    out[:n_fade] *= envelope
+    return out
+
+
 def verifier_boucle(chemin: str) -> Dict:
     """
     Checks that a WAV loops cleanly: seam continuity (100 ms RMS
-    start vs end), no clipping, duration, LUFS.
+    start vs end), no clipping, duration, LUFS. Also reports the raw
+    onset amplitude (max |sample| of the first 5 samples) — the chronic
+    start-of-file click signature of generated audio.
     """
     audio, sr = charger_audio(chemin)
     fen = int(0.1 * sr)
@@ -766,6 +791,7 @@ def verifier_boucle(chemin: str) -> Dict:
         "rms_fin_db": round(rms_fin, 1),
         "ecart_couture_db": round(ecart_couture, 1),
         "pic_dbfs": round(pic_dbfs, 1),
+        "onset_amplitude": round(float(np.abs(audio[:5]).max()), 5),
         "clipping": pic_dbfs > -0.1,
         "propre": ecart_couture <= 6.0 and pic_dbfs <= -0.1,
     }
