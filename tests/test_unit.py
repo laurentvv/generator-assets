@@ -17,6 +17,7 @@ from PIL import Image
 
 from core.config import charger_env, slugifier_texte
 from core.music_ai import (
+    apply_output_declick,
     construire_recette_ducking,
     fabriquer_boucle,
     fabriquer_boucle_ambiante,
@@ -24,6 +25,7 @@ from core.music_ai import (
     estimer_bpm,
     normaliser_pic,
     ressampler,
+    verifier_boucle,
 )
 from core.shader_maps import generer_flowmap
 from core.loop_ops import assembler_spritesheet_loop, creer_boucle_temporelle_circulaire
@@ -103,6 +105,55 @@ def test_normaliser_pic():
     sorti = normaliser_pic(audio, pic_dbfs=-1.0)
     pic_dbfs = 20 * np.log10(np.max(np.abs(sorti)))
     assert abs(pic_dbfs - (-1.0)) < 0.1
+
+
+def test_apply_output_declick_zero_le_depart_et_preserve_le_corps():
+    # Measured click signature (MEMORY_BANK §1.50): generation starts
+    # mid-waveform → first sample carries full amplitude.
+    n = int(2.0 * SR)
+    t = np.linspace(0, 2.0, n, endpoint=False)
+    audio = np.column_stack([0.5 * np.sin(2 * np.pi * 110 * t)])
+    audio[0] = 0.4  # mid-amplitude onset (the click)
+
+    sorti = apply_output_declick(audio, SR, fade_ms=10.0)
+    n_fade = int(SR * 0.010)
+
+    assert sorti.shape == audio.shape
+    assert abs(sorti[0, 0]) < 1e-9  # t=0 de-clicked
+    assert np.abs(sorti[:n_fade]).max() < 0.4 + 1e-9
+    # body untouched: everything past the fade window is bit-identical
+    np.testing.assert_array_equal(sorti[n_fade:], audio[n_fade:])
+    # exact raised-cosine envelope applied over the fade window
+    t_env = np.arange(n_fade) / n_fade
+    attendu = audio[:n_fade] * (0.5 * (1.0 - np.cos(np.pi * t_env)))[:, None]
+    np.testing.assert_allclose(sorti[:n_fade], attendu, atol=1e-12)
+    # input not mutated
+    assert audio[0, 0] == 0.4
+
+
+def test_apply_output_declick_garde_fouchette_tres_court():
+    # A file shorter than 2× the fade window must not break (guard n_fade<=1).
+    audio = np.full((3, 1), 0.5)
+    sorti = apply_output_declick(audio, SR, fade_ms=10.0)
+    assert sorti.shape == audio.shape
+
+
+def test_verifier_boucle_expose_onset_amplitude(tmp_path):
+    import soundfile as sf
+
+    n = int(1.0 * SR)
+    audio = np.full((n, 1), 0.05)
+    audio[0] = 0.42  # onset click signature
+    chemin = tmp_path / "loop.wav"
+    sf.write(chemin, audio, SR, subtype="PCM_16")
+
+    verdict = verifier_boucle(str(chemin))
+    assert verdict["onset_amplitude"] == pytest.approx(0.42, abs=1e-3)
+
+    # de-clicked version → onset collapses to ~0
+    sf.write(chemin, apply_output_declick(audio, SR), SR, subtype="PCM_16")
+    verdict2 = verifier_boucle(str(chemin))
+    assert verdict2["onset_amplitude"] < 1e-3
 
 
 def test_ressampler_diminue_la_duree_echantillons():
