@@ -27,7 +27,7 @@
     },
     "animate": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "RECIPES.md": "21ff63d84391db8d96ecdf9170095f55a42c836ccc36fd3269c4772bab031ba2",
         "SKILL.md": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c"
@@ -35,7 +35,7 @@
     },
     "animate-expo": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "RECIPES.md": "1193cb71334da2e2341778dd92bec9ac79d989cb07fd55d661f324ed5871e718",
         "SKILL.md": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a"
@@ -43,28 +43,28 @@
     },
     "animation-performance": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957"
       }
     },
     "animation-vocabulary": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94"
       }
     },
     "apple-design": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7"
       }
     },
     "ask-sonner": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "API.md": "4bb06f482c5757529e3d7a672a30fbeed42d24919a63e2571384a9ce1549aa7f",
         "SKILL.md": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f"
@@ -72,10 +72,10 @@
     },
     "blender-core": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
       "files": {
-        "SKILL.md": "92ab591e713d8b4cdd3ed591c813ad29df9f7ce3f90f6e84971719a6b1bdc51d",
-        "references/api-changes-5x.md": "ccf0b52a1d9fd836eb689abcec6a878b0ac57fb32ac600476b5070b9c8d22307",
+        "SKILL.md": "91588e225931c2df924819d02a7b9ca896568f0e4d458a09364b1611b709527f",
+        "references/api-changes-5x.md": "adc6abbff9aa0d57158805aaabf63cff3088779eb0a957253dfea1247f08bcaa",
         "references/bpy-patterns.md": "ba7bbc708bf198bdcdfa59d9d41d830a4ae119c24ae9457830b73d9e818e2af8",
         "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
         "scripts/env_report.py": "e628feed806dd265e0c1ce803d92591aac208a9f463d8c47cbb939476d3b347a",
@@ -84,9 +84,9 @@
     },
     "blender-export-pipelines": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
       "files": {
-        "SKILL.md": "b118b488f99bd5a2c45572bc78d76cb14cb6884d6fc00f8a7112a7b18f35896e",
+        "SKILL.md": "ed22458c62a4e09be4307d70085ff87dc171c7cd703199312474d6fe4f91d092",
         "references/godot-web.md": "a1de232e3abb1622968f7d531dc6d62aa5a5a7b6d4b97e0b18dd16dc52d6ff30",
         "references/roblox.md": "9079cd534349ce5ea0034abd983cf849a19c0a08676b88486393fe8caab7e263",
         "references/unity.md": "6ed7fbaa57f6d8d0bdf87438bfc442bb536465b05459ffebf72b75dfa238d080",
@@ -97,25 +97,25 @@
     },
     "blender-pipeline-automation": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
       "files": {
-        "SKILL.md": "590e1159205c68af5c338425456c3ff86837cdb8202e34f2d40a018e96ec79fa",
+        "SKILL.md": "1a9b4af73856ca95bc0e1a84c0c4331faa22ee82952c6ad36242a0ec7125dc58",
         "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
         "scripts/batch_process.py": "baedf17711a939981f3796879e1f32be3203c197c41d9dc3fad8a104b82bfe8e"
       }
     },
     "blender-rendering": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "71d031dab8bc6729504d11a78cbe91945401045f",
+      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
       "files": {
-        "SKILL.md": "ea4c7616fc1559cf8f1838e5e1cd6d49ff3c13fe716af3d8bd7aeca5877eeb45",
+        "SKILL.md": "6e98d9533699d754266c6965070ca9e01c37ba6294f4e7bc0ac238cd2912af8b",
         "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
         "scripts/render_batch.py": "2ee9043b297148b9d76b54fc22390e1e6062e2e27c33ab0386dcfa2fdb59c432"
       }
     },
     "break-ui": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "CATALOG.md": "7358efcc6bb48e35187be1c064cf60022dcb18c72c18fab58b606dfc5f421f15",
         "SKILL.md": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
@@ -133,6 +133,15 @@
       "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
       "files": {
         "SKILL.md": "b5e4b30e362c14e319f3c14eb725ce6b35d1f733c3314a1b5d0b592d39664fed"
+      }
+    },
+    "clone-website": {
+      "source": "JCodesMore/ai-website-cloner-template",
+      "ref": "ee3f5a2f31fd549b9593fa4f7cf6d2955ee593bb",
+      "files": {
+        "SKILL.md": "f5e326e2a51b5af7646ddd42f680797cc5ba7aaa6bdbb4e8b371ea3805287e4c",
+        "references/framer-and-motion.md": "8c84ee7a399d7751f995018a44305ca470cf915a50ba95a20efabbdd078f3e52",
+        "references/inspection-guide.md": "cc86abb90f420019e5e111bab162718cc9a04592c0044687432d3b6dce2e8d4e"
       }
     },
     "corporate-trust": {
@@ -172,7 +181,7 @@
     },
     "emil-design-eng": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939"
       }
@@ -269,17 +278,145 @@
     },
     "find-animation-opportunities": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2"
       }
     },
     "frontend-design": {
       "source": "anthropics/claude-plugins-official",
-      "ref": "ea10b213686c90bb1984b2016937310e05336cf3",
+      "ref": "a7ba5b93db0c7c8d17f3f1d25853adca79598a1a",
       "files": {
         "LICENSE.txt": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
         "SKILL.md": "d91970639e9f5c37682ac7ab60094d35f1c7c1f38d731bd56396563aee10c1d3"
+      }
+    },
+    "godot-2d-movement": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "ea396576540acb85f0ca2050a96cfa6399a03668971bb320ef612e52a32c8f0a",
+        "references/controller-recipes.md": "bcf89d3e8a820d75a78ed32eaa8eaf20c01ea1a8154791f58a8e3546d6fb0fba"
+      }
+    },
+    "godot-3d-essentials": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "6164f02300775b7db62a79ca9f65f8dc2232efa64268fb330621cf898bbec73d",
+        "references/scene-and-environment.md": "94d016b194b9d2a5d5ffa3b9cef531b639b15413740f0132ba9f4cc0cba03c34"
+      }
+    },
+    "godot-animation": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "43a339c8445b804ba84c32889ec9e4ca80e323003df74a35bcf4d3a7c8e9e99b",
+        "references/animation-tree-and-tween.md": "488900f895505dc6190b6e3626a4367c841dfda6ed288de8cf68a9891775c159"
+      }
+    },
+    "godot-audio": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "9ed39d72403eef39e2cbedb1015262ee8413f4f71c91734ba25f82eece839b5b",
+        "references/buses-and-effects.md": "f84f5c91fc78631670315b4c63643603841ad1ca1f211a7891c8bc408f8c3e80"
+      }
+    },
+    "godot-csharp": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "3b8d85099d5014d640858bed2d18fd5901b20803492e466b3fb5a82f079486c5",
+        "references/csharp-setup-and-interop.md": "e15d5d5f8f6019d627e7d01818a4004d8229e039975387497466346073f3a1d5"
+      }
+    },
+    "godot-export": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "473552185df50d5ab4a2ef874f47e08ffd7f6f552e191a7a5922c288b29800a6",
+        "references/presets-and-cli.md": "ab2388a1870a0b813d110066bb54bad9f3787d067d13043d10944baec5b13dc1"
+      }
+    },
+    "godot-gdscript": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "9039fb6de0980495fbc77fb87aae22256d92e7b5cca558b9e318b53dbf557459",
+        "references/annotations-and-typing.md": "b905cae5114ecbbba2cac14ad49b05a2c252535a670f5a1d701b41def3a90f78"
+      }
+    },
+    "godot-gdscript-headless-testing": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "980ecf1815cb179bc92749e419e3d5c87cc998413c57ed87035e34dc45e87034"
+      }
+    },
+    "godot-multiplayer": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "353319ed255916977fa21de4888496b404f400ee63b823db3ff743f5023b9cb6",
+        "references/replication-and-rpc.md": "05908f3ea13f0ceb21ddc561e7cc8c62e0f71e1b88cbb25cd7c13e8b7f3f6f39"
+      }
+    },
+    "godot-nodes-scenes": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "fc0096a774a8581678180ed0e71039eea52533411b4b45dee708ebad10c920af",
+        "references/tree-and-instancing.md": "be3c86180bd18dd46bfdfd7a47317bdb50fc6942cfc3e3d7342b4d0f7834b7a4",
+        "scripts/check_godot_project.py": "779b2130ce00c9566b6a1972dc49916bc270922e1df7fb705a93cc0d5053ef85"
+      }
+    },
+    "godot-physics": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "e318719b45091bc2731eb2ebd256027f23f7f50a39b06eb7047608cf8426b297",
+        "references/bodies-and-queries.md": "5d1616f73d9f0161df501cbcb1bdbbc3c4b8c2abb687172e1d02a5d5e7907223"
+      }
+    },
+    "godot-resources": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "1c89eb8eaef4ac889c21640822d454d41a9017e4ca205d4044b73d5fd017aa13",
+        "references/resource-patterns.md": "a848b0be5d5d78307ffa8a91152ffb3b03204cd742a3edd289e03873aab77425"
+      }
+    },
+    "godot-shaders": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "e96ac075c0d85f14af8de2a3f92bc4f0389a9bb9e9ac32bc1519f2aa4679d6be",
+        "references/shading-language.md": "406987a5728ac06e5a93b878d390387545a0f118a014b65a65d0e003bf3a64c9"
+      }
+    },
+    "godot-signals-groups": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "eccc8d79a708eff3ff2b1f108baaf8bf3bf3c39e73e396973ea605a6a1190784",
+        "references/signal-patterns.md": "7f28a8fccf5aef6029e85d2ee8817dcb4d58c0344744f1a421f059ed61fbab4d"
+      }
+    },
+    "godot-tilemap": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "c92a7103c764963a4d065a637941bb537f2409e54277d05aa05ea2bf8fc75971",
+        "references/tileset-and-terrains.md": "c2486c7bacdd3f099d981f50b1aa881a7647bb14112b343370f76e1753d12ed8"
+      }
+    },
+    "godot-ui-control": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "0b2cc92d670cc2274f6579748a1703ec6a2bf70dc3d2875985deea1018f05bdc",
+        "references/layout-and-theming.md": "5f54eed206cd7d7f5fecffd2ce1c189739eba5b5e18b2d1773f9ba7202427f66"
       }
     },
     "good-css": {
@@ -304,9 +441,78 @@
         "SKILL.md": "ce800390a6b41219fd8aaa9e3e225c680f1d5033ccd2663e553d191cf5cbf043"
       }
     },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "ref": "f5c80432f883a0ee437735305eafc2a9e1bdb7a0",
+      "files": {
+        "SKILL.md": "fab04b31f946573b00a8559db1fc070f8ea5825254d491c2b13156e5661a86d7",
+        "agents/impeccable_asset_producer.toml": "4dbdb0cfdc2466961da6b22d200f3ec7bf8bb47c27448a2e6e3c03cdbf589831",
+        "agents/impeccable_documenter.toml": "e7778229d8f31433fc11e29dd2caac8e85281e27ea5c9410474703bb0185100f",
+        "agents/impeccable_finish_reviewer.toml": "1b80232e22d52b06a7278b9ca1f24f871a181c62cd91f4b18728807e7cf49dbd",
+        "agents/impeccable_manual_edit_applier.toml": "4b01f4eb8a49fb00bc88248735c3b5442beb1791ec71d98e6d203f268a24010b",
+        "agents/openai.yaml": "ce9967ad70f99cf04456f3347c266723c2fbbb600267d10a822b7cd20562c321",
+        "reference/adapt.md": "9807cdc112b8bcbdeff9cd2516cda4d07129f1d47f29df4d57645344f34950c1",
+        "reference/adapt.native.md": "2455a2613e1fa29b986521c73cbad9424ccda70ef6cbe505779dbca5e16272a2",
+        "reference/android.md": "43780abcf10ac12a569d98001ae38af2b337727a0f7ce66268246ac1d54b5d34",
+        "reference/animate.md": "d658c48ffbe0031e8e3b318996cad6ceafe29e40aa50d5bb25e4bf1d6839dc7c",
+        "reference/audit.md": "5ba9e3a090fc4c4d212c8cbfa5a48f7454ceb10fa81a284b4a7b4e8351ece2f1",
+        "reference/audit.native.md": "2898eff507738f9102107809e671df3e69f889dee30073030fe96fb2483d8ea3",
+        "reference/bolder.md": "05b78fb0595e4d5afbf5f17470c84e89cf82f205fea3a6e9b6d8d779b7c4aab1",
+        "reference/clarify.md": "173dd66abe65633910dcb04a51f40d6ff2a793f87088f022a02fc4cad24dd133",
+        "reference/colorize.md": "bc5f71f1129d0f2c310d913d07c8dc609a1d25644121bd78c308f42d52a0b9e9",
+        "reference/component-review.md": "10489e5265e49a4ef2737cd0e674c149ed41e1f703efe922e53ea3c91e833427",
+        "reference/craft-floor.md": "808a50e0e6c74617a07b0eaf7fd80f58d8e48a13f48e47c658c7534b1724e5c2",
+        "reference/craft.md": "9205e222bc6565b37fb504ceec93233c2d2a456802b69d16e6b1c44723907c4c",
+        "reference/critique.md": "c210c9506877c6c8d88880a337fddd95d4315daf70ed6bc631ee6520481f1a0c",
+        "reference/degraded/asset-producer.md": "cf726ce0c7dd1005078fbf560745d4114afe363319648cc9de42d1536370d117",
+        "reference/degraded/documenter.md": "17b6328d809c86622789dcbe1bb1b12ec8937118ef6aa4b37bfd9130d79a205c",
+        "reference/degraded/finish-reviewer.md": "3e6cb6f54c2a4796940ce81b0cc3e9c1cfc2eed6445146088e6405a40cb44347",
+        "reference/degraded/manual-edit-applier.md": "357b19acc7ef688c337a4f020633a49db23c84620b13636f9ff20d3ab934df1a",
+        "reference/delight.md": "098a891028ce59c212b747d3c70468dd750aff7053a703d1336045ed31e0da7c",
+        "reference/distill.md": "8b9283510e38f0d190652f300ea0793acfb5a514b38b991fdc0a289bade83391",
+        "reference/doctor.md": "33aff200de6f76a74b333d7ae4f7d2f4fc2a0da4c1a57264567d88eb8f33b52b",
+        "reference/document.md": "7e7e97388cac7b5af7afa5b6fec19a6576c89ce6a998c973cb007b8e5494a8c9",
+        "reference/extract.md": "5477ae97189e5c1236cee71a25a5ae50014429a5a2e6da28355c8021a6cdeddd",
+        "reference/generate.md": "11385badfb532196cec249e73bac2b7f58ada033ed8c4b02b9f0d64ddb46f0dc",
+        "reference/harden.md": "4167eb7fc456cdfe09ff0ac2dbcb5e59cee57e590137aab6cc8ec08aafb6d775",
+        "reference/hooks.md": "ed38f149e04740707942465a2b2c75851b773fd52a2b52132c2a8e7f4b07f9dc",
+        "reference/init.md": "51349b3a32c7f907102dd680d8e2df9da27082caf46ee15c673be7ce14a5363b",
+        "reference/ios.md": "40c87038b5f75147a5952a96237acf312a327bf70c1bcd8e0a5f064625ae9668",
+        "reference/layout.md": "0bc7d7971b3edf2acd0580e847458dc6d84129d90715b452799ace3bed815c7c",
+        "reference/live-setup.md": "2b5b2fbf5f658f34ea1997fb1aeebe01604d05187f75c6a4f1f55a5bc78520a4",
+        "reference/live.md": "8735aa99406752a1d4bf903051ee9e9e6e3be1f4821c044b1f63d2a0556a6935",
+        "reference/mode-operate.md": "7a52dd7a94ee75f6ae89542c86a1b6e1d306812b16e0d9dbf12d4acad44d148b",
+        "reference/mode-persuade.md": "21e78c8a77badb3f83290cd4577ed3b24bd4dd3b57136d7da75733d4f3ee9ac0",
+        "reference/mode-read.md": "a569989e6a3d6453b4c45e9474e162a15cc54e11732ac6baa7990a6e7cccc0b5",
+        "reference/new-work.md": "4d9410bf9dfdb0890769a2f45e634be809392ac293abd91ee9553e8eabb18fe5",
+        "reference/onboard.md": "a2b8fd01ea12139b39b3285393f805bb8c326e11b2234dbff4c26c17b4e9c280",
+        "reference/operate.md": "a9d2203acd45ca33a13d5c68b02b23ed512425ac15f0e8438318ed124b43729d",
+        "reference/optimize.md": "092c85e5a644e6e528aaff0f341ee1ed57e012c195162fef0a5fc97605f9bb73",
+        "reference/overdrive.md": "0a0d4ae6eea720c6d6e1c073fc77192d7c2100f78a44d9a8d262ddf22270cf4d",
+        "reference/polish.md": "81666fc7f783b4e3514db6554e713dc0479bd9cdedb06e93d15f8b579aae869a",
+        "reference/quieter.md": "9e03b55c6bbdd4acba28cfa9c3b74ba1a4448cdbd35a7200990ab460c6eecaa0",
+        "reference/region-map.md": "778cedc9199b407d3e23fa1041e38d548b00b1101a33517aa2a2eb299f9d0edc",
+        "reference/routing.md": "77ae09542fbc10aa4e8b119d6fd19359908a47c13c30068d6a150bfdb50e3e10",
+        "reference/shape.md": "a55f016c046cb6a27c55bd7f346375aeb506a755c4fbca19a5f92dbd42309c23",
+        "reference/typeset.md": "c26c5b4524f3ccb650ed0680c10c25fd18083f8ebfd00a54c4d983c4747aab70",
+        "reference/visualize.md": "0c431d0dafbcac7ae8bde70ffa622f9ee542c44ec12e14b48bb44b269bef67eb",
+        "scripts/VERSION": "447836d46f39c5900faf74ad6a6554b8e1fafeca1f78de0416d5f05c6e09a080",
+        "scripts/command-metadata.json": "c6dcbeed7f13152205ca022c8f24d08683770835083f0a7325261c1c2d5f215c",
+        "scripts/data/font-index-failures.json": "835f19a0a3812f3652dd6979a2ce5597f654fd01f26e1b420b92d5f42b997ce4",
+        "scripts/data/font-index.json": "47edbdfaf27073c47033d1ac7dfee881be49e2dcbda7671d1157300481dde6da",
+        "scripts/engine-checksums.txt": "2f0235179cbc515d7c7ec71a9a08283d0cb88a5238d35ffa5a5f42122e78fe35",
+        "scripts/impeccable": "e91b8a68fe2595120fa4452ff1888d7a5216557f4bdaa93c537153c739de25c2",
+        "scripts/impeccable.cmd": "73c2e4d7613c38e35654df0444d559c97f1d09a9d373f4e72b3d7b21b6e1060c",
+        "scripts/live-browser-dom.js": "4b379aff87ce0f485008a2b6a0dc711d00a869f5cf0ec2459279d6364fbf0c9e",
+        "scripts/live-browser-ignores.js": "ba8905ab865fde5162e34fc17eb80eba26cc990b319b14a6eed6ca89fd491897",
+        "scripts/live-browser-session.js": "e042339a54d4521fc47555b602013ed5b51410ec9d7d8878d99a526f5f237f68",
+        "scripts/live-browser.js": "3beaec74d362b64fd32656b22e3bd09f3b983ed2b3068625475dbe46b6867ed9",
+        "scripts/modern-screenshot.umd.js": "bb36665889124a0b6e15f16045265737449c3bdcf2712cdb08af3cfa01563e2b"
+      }
+    },
     "improve-animations": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "AUDIT.md": "551c8473e20e5f4774680bc24d45e1c68e50992582720905c6b077756b7b5a55",
         "PLAN-TEMPLATE.md": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad",
@@ -352,6 +558,16 @@
         "template/render.mjs": "2112d356740263a5af68f81e18fdb4a2b3901665280cf5807d3e41d2b6e636f5"
       }
     },
+    "llm-evals": {
+      "source": "(authored)",
+      "ref": "2026-10-28",
+      "files": {
+        "references/deepeval.md": "2923b1c6f1466d2537f50d006ede6cc87d303a80b56370f3b511e2b1c4ac74dd",
+        "references/inspect-ai.md": "ac821dfc1b0eec2720fbfe6cd5bca4ede9aa6d4687b3f313a6844dab08c63e26",
+        "references/promptfoo.md": "5348a86d6a82cd941d0891ac659233d3c8e76bc42d8caa6ddea05af4dff0a11b",
+        "SKILL.md": "37be2c7aa626f28863efaa6bb7620bf602f9e2852af60aba43632254ecbb88f5"
+      }
+    },
     "minimal-change-engineer": {
       "source": "(authored)",
       "ref": "2026-10-11",
@@ -362,14 +578,14 @@
     },
     "mobile-native": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55"
       }
     },
     "moli-webfetch": {
       "source": "lexmount/moli",
-      "ref": "9279ef478a65874ae1f7b4d744d6260a1bb709b4",
+      "ref": "28701350d91991670b5690b2f0bec8e6cdb9d51d",
       "files": {
         "SKILL.md": "2bad2f4f24eb6396c4f0872756c605eb93fbe821aa9f53802b817e9e3a1fbc89",
         "agents/openai.yaml": "d331d49b7637f0a5bc2ae60dd323aa9535196739a2dd3ebd9b48b556ee9ea562",
@@ -381,6 +597,66 @@
       "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
       "files": {
         "SKILL.md": "bc71fa3bba394f4a314b244003eabfad4a705caaee407a277f721267b14deb2e"
+      }
+    },
+    "oil-ui": {
+      "source": "oil-oil/oil-ui",
+      "ref": "29085f117c5b9bf00ddc53de9386a3bb6c01f017",
+      "files": {
+        ".github/workflows/tests.yml": "5b04ddcfcb51490681d9226f2bee2e698288719abcaf6c04f8e632bd9e16fe1a",
+        ".gitignore": "81f2db0af12e2c1268f92a7e2aa5a826dedbb5778f288b2d988ea07bfe6c69d5",
+        "LICENSE": "d44a3ca218007a85d3be41a0b76553d746e42336c7a63c6c6687d2619199c3c4",
+        "README.en.md": "e6e3de57281654b678a3ff31c589e6508fd9b968dbf6dc7e05c90a656614c129",
+        "README.md": "3f82a6edc50951bb2cc64c56344fe1619bf61b47ece776037639856bb4d44f90",
+        "README.zh-CN.md": "692722a5f4b8f433ae99e078b264daa5feefeb2316350d79403c2f3374ba77f3",
+        "SKILL.md": "e6763faa6d08137f62402ce2616e1e22a30da52b05e1e1edd26c70cb3442dd6d",
+        "assets/fonts/instrument-serif/InstrumentSerif-Regular.ttf": "498efd461f6ddfcb7a111bf9a565709d2085d48201d501ead960d93e84ffbb88",
+        "assets/fonts/instrument-serif/OFL.txt": "129ed7618959716959f2941fdd5b49e0ad6e6c1d78726761786a00253d865521",
+        "assets/logo.png": "35f58a88e195bf4472e2f0fc795122fb9396464cbb3f0d7a2cb639b6c004f972",
+        "assets/readme/hero.en.webp": "153da056bab4c8d489b4b7d36a129485fa94f57eeb1355a6203b2aac12f3ef7a",
+        "assets/readme/hero.webp": "bca34c2ca0b7a7bee550fb47ee6b09391c56152b06e517a2ddd97f10868eaff6",
+        "assets/readme/proof-mona-lisa.webp": "8c0933fa041f13fcf29dd1b64020e935f9e51f5f1d9eca7c33be3138fb303199",
+        "assets/readme/proof-van-gogh.webp": "620a97a9b70fcc5c8304d72e68c9fe8313e2e90fdc836ef10604ce0a6eb094aa",
+        "assets/readme/showcase.en.webp": "ea71ae0ab3ef12f4e4c4a61d49833792b71e93f830b4ef1ff8ab22311cf010c1",
+        "assets/readme/showcase.webp": "92058c5846515a9c6073578fc683808208ac9af880993f9223c248198afa7071",
+        "assets/style-explorer.html": "910bbc6ed3e4a8bf92bd24883ac87b400f346fe146f2deafd8eee2ce38b4962e",
+        "assets/vendor/alpine.min.js": "1d8911c7b8a55bd0ceb79896251ca00d575915e2cd4348e8007a850e59ba0dc0",
+        "references/design-direction.md": "89b999d0b8a1a6402f0fd2329ead16aad2a562fb3c7bb1689f3197647910080d",
+        "references/direction-persuasion.md": "f229766bf763be2628c50ce9045c052d87018ffc91aea4a7964eb8a215cd146c",
+        "references/image-ideation.md": "93d6ee27d8b10e8634920346f030951f6de4651f44a17eebef6f59d6804a0876",
+        "references/layout-and-viewport.md": "18385f506a894025175a6f1f47e0d759eab09f603e1bbacccce44fea20a857be",
+        "references/media.md": "ce83a8992a8bdde1688f1ed5794761a183f8680b7748ea3ddbd589b56ca4dafa",
+        "references/motion.md": "d4bb6feb692b86812d459534d1f443c500dbc953ee5273db17108067aab91f76",
+        "references/play.md": "1785dd9eb73525631dcc516b7be45ba9676eb298742495615f6db67d1dd4baf5",
+        "references/reviewer-manual.md": "7448a7887e5b04d1a817d0beb48e01ddfe534b5934692bba88ea1474c44276f8",
+        "references/scroll-narrative.md": "568faf68eb4ae2fd5cf7e35d8caa055ccd352c787488caa1e1d41985f9edf8d2",
+        "references/style-explorer.md": "3e2dc3c1c0c0e4544a0b12688490bcf42c04a63339857b06e6dbd2e13dc4e65c",
+        "references/task-explore.md": "07a853988b844033b55c4fd386de30acd663279c5548ac483f9203e4cce7508d",
+        "references/task-review.md": "f7aa2861f851ebeb378cca45ab7a29eb2f46da089a53c656497dd9ee35cfe869",
+        "references/tools.md": "20ef94a916a39cc045ec668255aae95c1fe14b9c08ab621d6386a058c34bf557",
+        "references/ux-review.md": "e06cf3ae9ebb01b679286b1dd2e7f1f18585cecc05116703b8435a23b2d12c39",
+        "references/ux-reviewer.md": "aafc0753939c06591d5078b066a89d8fe15bc539022b82b9778348a600b119fc",
+        "references/visual-language.md": "667ee3bdfcfbed643cc230171dca28a45e3e5d93002634f364d0683dd9b7faea",
+        "references/visual-review.md": "4fdf18787953e6e3decc0f9acc0382252e265d4ba621cbf5eb49108d331992f0",
+        "references/workdir.md": "8f56ed917e9784565c06e236bb783a8d7d644830daf67f27b2f3eff87ed0ca94",
+        "scripts/build_explorer.py": "a48d3cc52a0b273b8cdb84f2d29224c31e22f0e07c0ac0c56119d86f38788dd3",
+        "scripts/check_update.py": "49bb8a2d423b3a2f110f9b777df8de55f8d4c629c8ee79485df4372e2b237f3a",
+        "scripts/check_update.sh": "eeebaf44eb29d61784690e09e0d8d306a44ca2a3025c48a42928b7ac7174d7d4",
+        "scripts/chrome.mjs": "dcdc40740e541c97dc467f28f3430edc632469545504fdc165f633383ea01de3",
+        "scripts/curate-media.mjs": "2bc60a4bd761b7082ac17d0d3e2d4bc1d4630cf763138e9f3bd291d6ceb3bdf4",
+        "scripts/measure_reference.py": "7a10a0f87c2b1434d5047dea1903e7b0ec324ba539c68a448c0808c3a2aac536",
+        "scripts/oiloil-image.mjs": "9def8ef07485436207db85a97f4a8b2a5b8ccd7b3d381547834cfcb7ed6d0164",
+        "scripts/prep-image.mjs": "e886cb55c3e8e99317793fb53bc33aef1bfe4511c2c3aef66de6b48bdf107782",
+        "scripts/recommend_once.py": "c1b28d9cec6d47ab637e65fa19b3b183ddddf4a4a950b5bdc6f11aa113bb9672",
+        "scripts/shoot.mjs": "d11704d96d03e46bf0a0dbe725e585d57e7e863918477f3e3f7852577e748d3e",
+        "tests/test_build_explorer.py": "79bf92ffe465186289ec3de77fa632c6cda15954ad75f72a450be57b2928f6a9",
+        "tests/test_check_update.py": "3dac4095924b3bfeaf5311c89d6d423819d0983689f086c2d23d2bfbbc715c86",
+        "tests/test_curate_media.py": "20244105f024df559569c56caae0977af50d15c4eeee2fc9571e66000fd1981d",
+        "tests/test_measure_reference.py": "a16ebe5ea0b4321d22267f61e5cbea92e30fc79513a626bac7678ec36333b9ce",
+        "tests/test_oiloil_image.py": "a59a0e0cb66bcff4c81472c18e220cf5c07efea5b94ab78cb1115eda672c7c15",
+        "tests/test_prep_image.py": "ac182cfd9869574bca5ca64694578b9344c9b181597e06090e7135a22ec74a20",
+        "tests/test_shoot.py": "21aa627fb9e7e808e36bc127be7de3f3487729d085f470d6899887da0c2f2475",
+        "tests/test_workdir.py": "05b252138f0eef0c8c06911ddd910ad4d2b9886c49a442ee62d8543b216f927a"
       }
     },
     "painted-animation": {
@@ -420,7 +696,7 @@
     },
     "pick-ui-library": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
       }
@@ -441,7 +717,7 @@
     },
     "prototype": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "PICKER.md": "31a55eec94715cc79942e91e172e539e3031dcd5e2e5ee7c1446cf2caee960a6",
         "SKILL.md": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9"
@@ -471,15 +747,90 @@
     },
     "review-animations": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af",
         "STANDARDS.md": "e7d3605034acda54ca13e43aec9e64d65b53de20f75b11b8d694e373012fbe07"
       }
     },
+    "roblox-characters": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "e5ca39a32a1fd83ba887d7c52a1f02775bc7278847ecf1c66844daec325537e0",
+        "agents/openai.yaml": "d206f4538baeb195e01d29cc53ea712948e6820c3c6539f7f2e2cce6656b8885",
+        "references/lifecycle-and-animation.md": "ecee2fe0dc55245ef94861d68852bbdb5c7de09eb2cb2c60e5e37295c3cfbed0"
+      }
+    },
+    "roblox-datastores": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "8fd15365225d7e5428040ed2d09872f7d5547cb0010576ce39fda1880c74b439",
+        "references/sessions-and-limits.md": "4f2cbb7da7273b3aab86ca124f8391684d1c1771a9735c7785bbfd6961bb0e7c"
+      }
+    },
+    "roblox-luau": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "3b9310d54cd5d4b390e79e97157c6224ceb7676a5087352928ad84f8ea8218cb",
+        "references/client-server.md": "6ff67b85345105480af3a6dbdbfff7c240e7a15eaf5c84d8079307993f72bdc7"
+      }
+    },
+    "roblox-networking": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "4ceb603d88d8e26303c7efc33ead1241f6eba88f5c5039636ec95e31d60ed1db",
+        "agents/openai.yaml": "b3f530519ed19704b115584ded1842ca430fef1650fa873694c4d9cfc7e29401",
+        "references/validation-and-testing.md": "c75e0bb08c7b0515ab503ae00b86674a194b28371ee3a493769ba8b1f5b7b9ba"
+      }
+    },
+    "roblox-physics": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "93b8879bb9a7b631cfa7a3d0ed8c8dd4ef7b839d89b93365ed637bd98f7c18fa",
+        "agents/openai.yaml": "55b06a72b4e88c5ec5a4c9d7c3a9684849b6362545d97c8703e79a22120500bf",
+        "references/queries-and-ownership.md": "04c07117f22e7af7c74ee9b5150d9dbd41763b116753def52b2043a88493a459"
+      }
+    },
+    "roblox-studio-workflow": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "d49e1a1e075eba99c89c85f0a576605d970569e027059b3288eaea6e11782042",
+        "agents/openai.yaml": "34f2fe7716ef36610d0a577e05bdcfb36cbaaa25da23a159ee9c02a2d248c7d3",
+        "references/studio-verification.md": "c476e8180ce27d6e0f7798b92741523e8c3550c433b7495340aec72bbecbeab0"
+      }
+    },
+    "roblox-ui": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "f3875cccdb75523c0cc90c55f911d5b267ad9f6566bd5d552b565c329e8ab71c",
+        "agents/openai.yaml": "4c67a26a3054126e21db6fb6f893135944a8ca0fac9d619506e867b989073ded",
+        "assets/inventory-quality-test.model.json": "cf9b4953a17bf85709aff48ff0da8acfb3a4ed2760c79e30534878820fb06d38",
+        "assets/inventory-quality-test.project.json": "ab2388eefb502d3e9e165aadc55aba09841940c757ad6d06048e4a8fcdfa0348",
+        "references/input-navigation.md": "a31a6379911db1827ef00b70a2eeeb56996f3e757526305bc661a5d46a38137b",
+        "references/responsive-layout.md": "99572066781c1705c06acfc693d36e8eaf60643df16ae14d7fbfda29cd908ecc"
+      }
+    },
+    "router": {
+      "source": "gamedev-skills/awesome-gamedev-agent-skills",
+      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "files": {
+        "SKILL.md": "69c1167073530655dac859e33c4b8893903b94f13326ef1c85f152b8008418ba",
+        "agents/openai.yaml": "1304cad1da9611f8cf73ffb122bf7628b0fd6f0cce5a9f9072cd3fbdbe9ce128",
+        "references/custom-engines.md": "0880a19b3e150e064751af2890573a47652dffcd7586809c2135d14f47dc151a",
+        "references/engine-detection.md": "914b3fa795eca0df8842b632e3ee09aabc9c6a81884ece29ac6a67f4907f5f68",
+        "references/routing-table.md": "2048329d5c29e2d09de7de130a99de44a8a63c7fe27212bea02d53cc59c73a5b"
+      }
+    },
     "rust-best-practices": {
       "source": "apollographql/skills",
-      "ref": "aafc8944365a766d48cc519ce8b8575f93f953a4",
+      "ref": "9dda1397730370aeb8df4ff8f2015c34c86b5003",
       "files": {
         "SKILL.md": "b1651a95a2c36a8350c033449f52d07eebfdbf08e3bd1d5b22c4b7f55f7aa17c",
         "references/chapter_01.md": "def0d5dc6ad2c8e143aed03c888c3f55b7f2b8f245c563e970f8fa951f7d7b52",
@@ -493,6 +844,46 @@
         "references/chapter_09.md": "bdd59af111d402e4385c77e26fa6d53fc113e40ef678a9cf7aaff221e5c21917"
       }
     },
+    "rust-port": {
+      "source": "morganlinton/BeautifulRust",
+      "ref": "40db61c6fee84bd121cf288755f0e2f22a50e995",
+      "files": {
+        "SKILL.md": "f7c8ee4f328ae52086245b4ef628a9ed5d8f306c4dbee7f41551871cac93d073",
+        "evals/port-c-config-parser/case.yaml": "8f1e3292a2b06a257d94b11021bbc770eca3724bbfde5ac9326657308c29efa2",
+        "evals/port-c-config-parser/files/config.c": "bdf52cdcfa15a2e6c557a5da8bb5b181bee6f147e36dd292a4ae6bd84ec494e3",
+        "evals/port-c-config-parser/files/config.h": "670378f55c07b92c25e624c31c3e774c38f5fc248eccad19d643dfd1f0b97577",
+        "evals/port-c-config-parser/files/test_config.c": "8ea75dbd5d632fcd420f530fac3a668060a0ce7e72a7b2fa4605da95ebf9372c",
+        "evals/port-c-config-parser/graders/01-builds-and-tests-pass.md": "488ca6542373205a72e0f956ec47b6ee8c85eb6c8bfdcb67f8b378afa6cd9422",
+        "evals/port-c-config-parser/graders/02-clippy-clean.md": "74ac82c250ba94cb6ad5951cf57adf2c29d4f1449771f7a5935d04625adcaed2",
+        "evals/port-c-config-parser/graders/03-no-unsafe.md": "1a536fa028660dbcf4bfdac27fbed7734901013e94202900331e04ac46a3358b",
+        "evals/port-c-config-parser/graders/04-every-test-ported.md": "6723382fe01c603f396538ddacbe1f290e1dd0d1dae8a8f57f7dc5fc959477b5",
+        "evals/port-c-config-parser/graders/05-errors-as-result.md": "1a9d229c0b16ef794394d6f36c0efd237d18c664e6ec41d10898eb72fb2f20d3",
+        "evals/port-c-config-parser/graders/06-error-implements-error.md": "49d8f459296518b7a6370dd3f6379a7019227ad5a3f88c06c11bcc58eeef04f6",
+        "evals/port-c-config-parser/graders/07-option-for-absent.md": "0127d942511f688e106253dea62f5b800891ccdd22ad6a730bfbcd70e81166e5",
+        "evals/port-c-config-parser/graders/08-typed-flags.md": "a12ef2cb2eec0ffbd45363bccdcdfa5c4b026042e378442d897bcf975e5a0138",
+        "evals/port-c-config-parser/graders/09-behavior-preserved.md": "786bb6d2bf8a63ec69a067345704e98e40f7a3f734b8f3bba5ff27febf5635eb",
+        "evals/port-c-config-parser/graders/10-porting-notes.md": "130872abce04dab59b28954385ce57118084ac2159d1d9361b6b5f66a2426847",
+        "evals/port-c-config-parser/graders/11-proportionate.md": "d6c79bec93acc3a7b74239ae1961d3535a609b5105cbb00569e5eb8b38409341",
+        "evals/port-c-config-parser/place-files.sh": "841ddfa163cad7bfb1217717eca171b8464dea243cf19f3cf449d9a60b01251d",
+        "evals/port-c-config-parser/prompt.md": "3baac25dc4d15437a1b5fc9563efc783a1146cd354a4257823bf746b1130dd61",
+        "evals/port-python-task-graph/case.yaml": "6b8314b7bc2388d7e85d4a04764c23969f73b7a58a3fa39258b41c81bda91719",
+        "evals/port-python-task-graph/files/taskgraph.py": "81a1f48f8d585ecf7d762f6704a5c99edb2235670b69f9e2bda01135db7f4d64",
+        "evals/port-python-task-graph/files/test_taskgraph.py": "3d738bf25df2f91d91fc27fcd9201dadfe295879167783cd91928ffbb3b8c6b0",
+        "evals/port-python-task-graph/graders/01-builds-and-tests-pass.md": "488ca6542373205a72e0f956ec47b6ee8c85eb6c8bfdcb67f8b378afa6cd9422",
+        "evals/port-python-task-graph/graders/02-clippy-clean.md": "74ac82c250ba94cb6ad5951cf57adf2c29d4f1449771f7a5935d04625adcaed2",
+        "evals/port-python-task-graph/graders/03-every-test-ported.md": "6f4d0a4ba8981c335167fdd2c25ff4c3ca4460fc96652a86b718f8fa5e7becf6",
+        "evals/port-python-task-graph/graders/04-exceptions-as-error-enum.md": "69d3e3a39287d382970c268fee1eb02e724c043a142272f4b79c157dcd91dccd",
+        "evals/port-python-task-graph/graders/05-kind-is-enum.md": "99273cee30555653e0a036b53b8e690c7949399c7324fae30a7705985b925630",
+        "evals/port-python-task-graph/graders/06-priority-is-option.md": "613ff7b61e03c9055f69b983a1a02eeb4081fe15114deacc14e1d3cba9e9ec84",
+        "evals/port-python-task-graph/graders/07-definition-order-preserved.md": "8df54693e551f8b4b8610132732fd9dab8aa4c545bef1378dbea1cad086c4723",
+        "evals/port-python-task-graph/graders/08-order-and-cycle-match.md": "fda3487f4ccc7a87394623efac8f88e1d94fef99a94d7c96d4d9148d9e166803",
+        "evals/port-python-task-graph/graders/09-summary-every-kind-in-order.md": "f24f39476f12802fc4442e444b80424c287c872b50ca9d536a95326d49bbf7ac",
+        "evals/port-python-task-graph/graders/10-porting-notes.md": "2abea11ad82d5c6bb5ebee82d62b8a192153e91f29854fc2f0a4f763b9602b34",
+        "evals/port-python-task-graph/graders/11-proportionate.md": "cec31ec5fd1a8a696c9da61699a4e0b2075f0382640a89f7b491319bea2de4ba",
+        "evals/port-python-task-graph/place-files.sh": "841ddfa163cad7bfb1217717eca171b8464dea243cf19f3cf449d9a60b01251d",
+        "evals/port-python-task-graph/prompt.md": "778390737b81b2da4e1a3af677cfd0ec9d4f3424102304f10eced720057a52b2"
+      }
+    },
     "rust-refactoring": {
       "source": "(authored)",
       "ref": "2026-10-11",
@@ -501,9 +892,50 @@
         "SKILL.md": "8793ba41e7e47f529ffaf5192567e7bc93839a4446c46da43c60400119241521"
       }
     },
+    "rust-review": {
+      "source": "morganlinton/BeautifulRust",
+      "ref": "40db61c6fee84bd121cf288755f0e2f22a50e995",
+      "files": {
+        "SKILL.md": "3a2ee9874896d2f8f980b617e2b32ce3daff8275ec6ee12c2fb2710e2ae91a9f",
+        "evals/review-bevy-arena/case.yaml": "984e3b91c53b9356f295886428c2ccf067e9aca13bc4f9aaabcea2ea6e83222c",
+        "evals/review-bevy-arena/files/Cargo.lock": "e600ab9927c3cbf9242c99e5907fb0320fa9f5baa9e3258c456eed0b2ef7a54a",
+        "evals/review-bevy-arena/files/Cargo.toml": "3539445fe6404b9d2344a0431790e1a233b9081ef89fb22c4115cf33d69f1cb9",
+        "evals/review-bevy-arena/files/src/lib.rs": "b8779913a993e93d0e20abc55be1855d20c9e90148752f221dfdfec443be8e3c",
+        "evals/review-bevy-arena/files/tests/arena.rs": "40d86e555caabc9ad25850e4987d2472f4a46385489e6b127c0c1a6f164155f9",
+        "evals/review-bevy-arena/graders/01-flags-query-conflict.md": "9c188e08da1c687d5adff763e74971e1de4c795099a85c13cdc5307161bddb6d",
+        "evals/review-bevy-arena/graders/02-flags-deferred-wave-ordering.md": "760815d8b9592a26c816d41c7b98bfc468f22c0650c114fa3b4a77b28b8b00b5",
+        "evals/review-bevy-arena/graders/03-flags-single-unwrap.md": "d2526360c8bb97138aa34bdb38fff7d0ff3ae38b62ad5052cfa36c9a55e64748",
+        "evals/review-bevy-arena/graders/04-flags-bool-parameter.md": "16d56cbd6ffcc6502ced780cbcf9fb587ebc5afc430727f9ebc3c6a40b55eedf",
+        "evals/review-bevy-arena/graders/05-keeps-system-params-by-value.md": "792bd5f9aa2660230b35f988119e32577e343d3c124fda09d69319392f85e600",
+        "evals/review-bevy-arena/graders/06-accepts-bevy-prelude.md": "fff2b198e6c371e8ffdf5119ae5486dbbb00db9ce9d9f43c43b8d6a660e23f32",
+        "evals/review-bevy-arena/graders/07-passive-components-keep-pub-fields.md": "92ef2b97c7f83dea99c2aca02bc135bad95cec6d58ece20a437722055e19dd6b",
+        "evals/review-bevy-arena/graders/08-type-complexity-handled-as-ecs.md": "5ede724bac867ed6097a2ac7439eaae83da6c01ae7be2e3ab48989c7ab56487f",
+        "evals/review-bevy-arena/graders/09-findings-cite-locations-and-rules.md": "e9f64389e13c913b4f5654da5001d2aa2d20327a3f9b6fbc2648678dbfa66f1b",
+        "evals/review-bevy-arena/graders/10-fixes-shown-as-code.md": "e1165316d24878d7e5e541b8afbecaaf73cfdd53086790ef2adc404b2f9b1e65",
+        "evals/review-bevy-arena/graders/11-code-left-unchanged.md": "ad56654b5cfce97315d968b267667abada121fe5ffd3996aec05f6a12a606eee",
+        "evals/review-bevy-arena/place-files.sh": "841ddfa163cad7bfb1217717eca171b8464dea243cf19f3cf449d9a60b01251d",
+        "evals/review-bevy-arena/prompt.md": "cfeb2780a40fdd5c404d50f2ebb7c0959c5bac515e2f3aaf00b3036d0368c3d3",
+        "evals/review-inventory-module/case.yaml": "230f49ed8964e1813707bbaf4cf8c5c7ab2c7d48529b2f91ed0046151fc9d1b7",
+        "evals/review-inventory-module/files/inventory.rs": "da0d9d63a50e01fc56d815c3cd6b6bc8f59fe07938b0e6e4a9e34722957571da",
+        "evals/review-inventory-module/graders/01-flags-panics-as-top-priority.md": "6995a28c4a61a79599a1daaf4a7c62224b58589ba3bacd92607b074910896f09",
+        "evals/review-inventory-module/graders/02-flags-rc-refcell-api.md": "6c230b13aabf4ab7bfda1383606e07b381f12c9d151875bb0fa8d707c831bb52",
+        "evals/review-inventory-module/graders/03-flags-borrowed-param-types.md": "557cca38b60605d40f831e4ba92f1e61ef244543bbc96fbe2aad866ef8a0d885",
+        "evals/review-inventory-module/graders/04-flags-error-type.md": "c610e832602b626cceed2f7c4c8352d0426b186e3777f26be63a3c745df6a78c",
+        "evals/review-inventory-module/graders/05-flags-bool-parameter.md": "f133c8c90ea05650f480f361ba766992314ec3d1b95ab47a12498f1720f5432c",
+        "evals/review-inventory-module/graders/06-flags-nondeterministic-output.md": "16fa886170f26c20c46b4ba997b58ab84585c21efba0743bceef611d27a1ef58",
+        "evals/review-inventory-module/graders/07-flags-deny-warnings.md": "9cabd2ac21fa366008e36a80b7247380f5667b8a00ee38af0b775756b4acdc86",
+        "evals/review-inventory-module/graders/08-findings-cite-locations.md": "f4cdcc762549c228d109c907b2ce3c0c41e3198eb38829831e66b6f4446585c6",
+        "evals/review-inventory-module/graders/09-findings-cite-named-rules.md": "66234f21ead99752a8ac3c6b38761433e34aee0df00e3fd541bc5cd5d246fd1a",
+        "evals/review-inventory-module/graders/10-fixes-shown-as-code.md": "613ca96aa4fb62495313144736570fab8b97b9f87609acd17eb1a3b72f1d2921",
+        "evals/review-inventory-module/graders/11-says-what-is-good.md": "f390def1c26f70484a7eefd7836c3b0cf023ec4536945d4b1eb013bbe180ebbd",
+        "evals/review-inventory-module/graders/12-code-left-unchanged.md": "661f500134ae3b483b6e04725619c5f986e29023332bce220884685e3d8683b1",
+        "evals/review-inventory-module/place-files.sh": "841ddfa163cad7bfb1217717eca171b8464dea243cf19f3cf449d9a60b01251d",
+        "evals/review-inventory-module/prompt.md": "4a7ab79aa08e2e84fce3151e78baef05bd59b9556c13313bd6809f3856544c55"
+      }
+    },
     "skill-creator": {
       "source": "anthropics/claude-plugins-official",
-      "ref": "ea10b213686c90bb1984b2016937310e05336cf3",
+      "ref": "a7ba5b93db0c7c8d17f3f1d25853adca79598a1a",
       "files": {
         "LICENSE.txt": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
         "SKILL.md": "dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf",
@@ -548,7 +980,7 @@
     },
     "using-superpowers": {
       "source": "obra/superpowers",
-      "ref": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
+      "ref": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
       "files": {
         "SKILL.md": "82c5c8866ad7f5dd4440ce66bd7806ba48a2f13771beae5cf112e53f08fe36ba",
         "references/antigravity-tools.md": "4880f6de3da4e32f9659ebe7a72b9e0ebfff04e028c2ed96173f86d0387a04c0",
@@ -578,7 +1010,7 @@
     },
     "write-swift": {
       "source": "emilkowalski/skills",
-      "ref": "2d228630ba1446365f614a108cb8252f1feda202",
+      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447"
       }

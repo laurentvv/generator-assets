@@ -23,3 +23,5 @@ server/static/*.wav -text
 # agents-kit artifacts: byte-frozen skill installs (LF) and the DuckDB ledger (binary)
 .agents/skills/** text eol=lf
 .agent/*.duckdb* binary
+*.cmd -text
+*.bat -text
