@@ -22,7 +22,7 @@ _MODULES_ORDONNES = [
     "rpg_portrait", "sfx", "ip_adapter", "anim_loop", "pose_control", "tts_dialogue",
     "audio_ambience", "music_bg", "voix_off", "voix_robot", "voix_perso", "lfm3_tts", "chanson", "musique_adn",
     "musique_essence", "retrait_voix", "outfit", "video", "video_vace", "video_multishot", "h3_ref2va", "monoplan_ia", "open_water",
-    "makehuman_clothes", "character_makeup", "asset_blendkit", "audio_upscale", "ocr_pdf", "rapport_deck", "projet_montage",
+    "makehuman_clothes", "character_makeup", "asset_blendkit", "audio_upscale", "audio_restaure", "ocr_pdf", "rapport_deck", "projet_montage",
     "animal_godot", "acestep_cover", "voix_conversion",
 ]
 
