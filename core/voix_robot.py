@@ -11,17 +11,24 @@ Validated recipe (output/test_voix_robot/essai17_kokoro_ringmod120_tranquille.mp
               120 Hz ring modulation (aeval — the voice multiplied by a sine loses
               its fundamental → metallic timbre), gain -4 dB.
 
-⚠️ Engine: the audio.cpp release zip (v0.7.4 and v0.8.0) cannot launch
-kokoro_tts ("Could not load eSpeak-ng" — neither shared espeak DLL nor static
-pack provided, see MEMORY_BANK §1.21) → the scratch binary `build-357` (embedded espeak)
-is resolved automatically as long as it exists; overridable via the
-AUDIOCPP_KOKORO_CLI environment variable. To revisit if a release ships espeak.
+⚠️ Engine: the audio.cpp release zips ship no espeak-ng (the static
+`espeak-ng-data.bin` is only read by `AUDIOCPP_STATIC_ESPEAK=ON` builds —
+MEMORY_BANK §1.21), so the release binary loads a SHARED espeak-ng through
+the `AUDIOCPP_ESPEAK_LIBRARY` / `AUDIOCPP_ESPEAK_DATA` env vars, injected
+before launch from core/config.py defaults (installed 2026-11-05, same
+paths as the ai-doc2video bridge). The former scratch binary `build-357`
+(embedded espeak, `C:\\IA\\audio_cpp_master_test`) is gone with its folder.
+Override: AUDIOCPP_KOKORO_CLI environment variable.
 """
 
 import os
 from typing import Any, Dict
 
-from core.config import DEFAULT_MODEL_DIR
+from core.config import (
+    AUDIOCPP_ESPEAK_DATA,
+    AUDIOCPP_ESPEAK_LIBRARY,
+    DEFAULT_MODEL_DIR,
+)
 from core.music_ai import convertir_mp3, resoudre_ffmpeg
 from core.process import run_engine
 
@@ -29,12 +36,6 @@ from core.process import run_engine
 MODELE_KOKORO = os.getenv(
     "KOKORO_TTS_MODEL",
     os.path.join(DEFAULT_MODEL_DIR, "Kokoro-82M-GGUF", "kokoro-82m-q8_0.gguf"),
-)
-
-# Scratch binary with embedded espeak-ng (kokoro_tts unusable in the release,
-# see docstring). Override: AUDIOCPP_KOKORO_CLI.
-BINARIE_SCRATCH_KOKORO = (
-    r"C:\IA\audio_cpp_master_test\build-357\bin\Release\audiocpp_cli.exe"
 )
 
 # Settings validated by the user (trial 17) — workflow defaults.
@@ -48,16 +49,32 @@ RECIPE = {
 
 
 def resoudre_audiocpp_kokoro() -> str:
-    """Resolves an audiocpp binary able to run kokoro_tts (espeak present)."""
+    """Resolves an audiocpp binary able to run kokoro_tts (espeak present).
+
+    The scratch build-357 binary (embedded espeak) is gone with its folder —
+    the release binary now runs kokoro through the shared espeak-ng env vars
+    published by setup_espeak_env (MEMORY_BANK §1.21).
+    """
     surcharge = os.getenv("AUDIOCPP_KOKORO_CLI")
     if surcharge and os.path.exists(surcharge):
         return surcharge
-    if os.path.exists(BINARIE_SCRATCH_KOKORO):
-        return BINARIE_SCRATCH_KOKORO
-    # Fallback: release binary (will fail on kokoro without shared espeak-ng —
-    # the "Could not load eSpeak-ng" error stays explicit).
     from core.music_ai import resoudre_audiocpp
     return resoudre_audiocpp()
+
+
+def setup_espeak_env() -> None:
+    """Publishes the shared espeak-ng paths to this process's environment.
+
+    The release audio.cpp binary loads espeak-ng only through
+    AUDIOCPP_ESPEAK_LIBRARY / AUDIOCPP_ESPEAK_DATA (bridge parity with
+    ai-doc2video). setdefault keeps an explicit shell setting authoritative,
+    and each var is set only if its path exists so the engine's explicit
+    "Could not load eSpeak-ng" error stays honest otherwise.
+    """
+    if os.path.exists(AUDIOCPP_ESPEAK_LIBRARY):
+        os.environ.setdefault("AUDIOCPP_ESPEAK_LIBRARY", AUDIOCPP_ESPEAK_LIBRARY)
+    if os.path.isdir(AUDIOCPP_ESPEAK_DATA):
+        os.environ.setdefault("AUDIOCPP_ESPEAK_DATA", AUDIOCPP_ESPEAK_DATA)
 
 
 def generer_base_kokoro(
@@ -79,6 +96,7 @@ def generer_base_kokoro(
             f"Kokoro-82M not found: {MODELE_KOKORO} — download it from "
             f"audio-cpp/Kokoro-82M-GGUF (scripts/telecharger_gros_fichier_parallele.py)."
         )
+    setup_espeak_env()
     audiocpp = resoudre_audiocpp_kokoro()
     cmd = [
         audiocpp, "--task", "tts", "--family", "kokoro_tts",
