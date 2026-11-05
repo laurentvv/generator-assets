@@ -43,6 +43,7 @@ WORKFLOW_FAMILY = {
     "vfx_flipbook": "video", "anim_loop": "video", "open_water": "video",
     "voix_off": "voice", "voix_perso": "voice", "voix_robot": "voice",
     "voix_conversion": "voice", "tts_dialogue": "voice", "audio_upscale": "voice",
+    "audio_restaure": "voice",
     "lfm3_tts": "voice",
     "music_bg": "music", "chanson": "music", "musique_adn": "music",
     "musique_essence": "music", "acestep_cover": "music", "retrait_voix": "music",
@@ -204,6 +205,7 @@ WORKFLOW_META = {
     "lfm3_tts": {"primary": ["tts_langue", "tts_voix"], "estimate": "seconds (faster than real time, GPU)"},
     "ocr_image": {"primary": ["input", "ocr_consigne"], "estimate": "≈5 s/page (GPU, ~2 GB VRAM)", "heavy": False},
     "audio_upscale": {"primary": ["upsr_variante", "upsr_rate"], "estimate": "CPU RTF ~13 (minutes)", "warnings": ["Mono output; refuses input > 24 kHz (§1.27)."]},
+    "audio_restaure": {"primary": ["restore_chunk", "restore_overlap"], "estimate": "≈seconds (Vulkan RTF ~0.5)", "warnings": ["Speech only (RE-USE); output = input rate/channels/length (§1.53)."]},
     "music_bg": {
         "primary": ["moteur", "variante", "lufs", "loop_mode", "candidats", "force_bpm", "tonalite", "mesure", "lyrics", "analyse"],
         "estimate": "≈5–15 min (× candidates)",

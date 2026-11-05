@@ -425,3 +425,20 @@ def test_generer_image_qwen21_init_image_absente_leve_erreur(tmp_path):
             output_path=str(tmp_path / "out.png"),
             init_image=str(tmp_path / "absente.png"),
         )
+
+
+def test_construire_cmd_reuse_options_chunk_conditionnelles(monkeypatch):
+    """Chunk options are transmitted only when --restore-chunk > 0 (CLI contract:
+    unprovided options keep engine defaults — same rule as the other audio workflows)."""
+    from core import audio_restore
+
+    monkeypatch.setattr(audio_restore, "resoudre_audiocpp", lambda: "audiocpp_cli")
+    base = audio_restore.construire_cmd_reuse("m.gguf", "in.wav", "out.wav")
+    assert base[base.index("--family") + 1] == "reuse"
+    assert base[base.index("--backend") + 1] == "vulkan"
+    assert not any("audio_chunk" in token for token in base)
+
+    chunked = audio_restore.construire_cmd_reuse(
+        "m.gguf", "in.wav", "out.wav", chunk=10.0, overlap=1.0)
+    assert "audio_chunk_duration_sec=10.0" in chunked
+    assert "audio_chunk_overlap_sec=1.0" in chunked
