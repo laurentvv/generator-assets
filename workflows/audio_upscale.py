@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Audio Super-Resolution Workflow: restoration → 48 kHz via UniverSR
-(audio.cpp, CPU backend — Vulkan broken on this family, see the docstring
-of core/audio_upscale.py).
+(audio.cpp — Vulkan first with CPU fallback, see the version-bound engine
+state in the docstring of core/audio_upscale.py).
 
 RECIPE USER-VALIDATED on 2026-09-18: 16 kHz voice "copie sans bug,
 parfait même", 24 kHz music "très bien" (MEMORY_BANK §1.27).
@@ -21,12 +21,12 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class AudioUpscaleWorkflow(BaseWorkflow):
-    """Audio super-resolution → 48 kHz (UniverSR CPU, validated recipe)."""
+    """Audio super-resolution → 48 kHz (UniverSR Vulkan→CPU, validated recipe)."""
 
     name = "audio_upscale"
-    description = ("Audio super-resolution → 48 kHz via UniverSR (CPU): 16 kHz voice "
-                   "or 24 kHz music restored (validated recipe 2026-09-18) — "
-                   "48 kHz mono WAV + MP3, RTF ~13")
+    description = ("Audio super-resolution → 48 kHz via UniverSR (Vulkan first, CPU "
+                   "fallback above the ~14 s ceiling): 16 kHz voice or 24 kHz music "
+                   "restored (validated recipe 2026-09-18) — 48 kHz mono WAV + MP3")
 
     emoji = "🔊"
 
@@ -74,7 +74,8 @@ class AudioUpscaleWorkflow(BaseWorkflow):
 
         self.log(
             f"Restoration {res['frequence_source']} → 48 kHz "
-            f"(variant {res['variante']}, declared band {res['bande']} Hz):",
+            f"(variant {res['variante']}, declared band {res['bande']} Hz, "
+            f"backend {res['backend']}):",
             emoji="🎉",
         )
         self.log(f"  • WAV: {wav} (48 kHz mono)", "💾")

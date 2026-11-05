@@ -157,9 +157,10 @@ work.
 **Validated audio recipes**: `music_bg` → `[Instrumental]` (no vocals) for instrumental beds; the
 production output is a −30 LUFS bed with possible ducking; `voix_robot` = fixed validated recipe
 (kokoro `af_heart`, pitch +30%, ringmod 120 Hz, atempo 0.65, gain −4 dB) — do not improvise other
-settings without user agreement; `audio_upscale` = UniverSR CPU validated for voice ("perfect") and
-music ("very good") — **slow (RTF ~13) and MONO output**, refuse inputs > 24 kHz (already full
-band); `audio_restaure` = RE-USE NemotronLabs F32 Vulkan validated on degraded voice ("OK") —
+settings without user agreement; `audio_upscale` = UniverSR validated for voice ("perfect") and
+music ("very good") — Vulkan first + CPU fallback (v0.9.4: Vulkan bit-equivalent but capped at
+~14 s of input, longer falls back to CPU RTF ~41-50), **MONO output**, refuse inputs > 24 kHz
+(already full band); `audio_restaure` = RE-USE NemotronLabs F32 Vulkan validated on degraded voice ("OK") —
 output = input rate/channels/length, F32 package MANDATORY on Vulkan (F16/Q8 broken), deterministic
 within a binary version (ggml arithmetic changes across audio.cpp versions alter the floats).
 
