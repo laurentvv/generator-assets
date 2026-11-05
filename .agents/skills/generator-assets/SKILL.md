@@ -149,6 +149,7 @@ work.
 | Re-voice a recording in another voice (Chatterbox VC, 24 kHz) | `voix_conversion` | `-w voix_conversion --audio take.wav --voice-ref target_voice.wav` |
 | EN robot voice (validated kokoro + ringmod recipe) | `voix_robot` | `-w voix_robot --texte "..."` |
 | Audio super-resolution → 48 kHz (16k voice / 24k music) | `audio_upscale` | `-w audio_upscale -i voice_16k.wav --upsr-variante speech` |
+| Speech restoration — degraded/noisy voice repair (RE-USE, Vulkan) | `audio_restaure` | `-w audio_restaure -i degraded_take.wav` |
 | Emotional character voice + Godot lip-sync | `tts_dialogue` | `-w tts_dialogue --texte "..." --emotion angry` |
 | SFX sound effect (procedural or AI) | `sfx` | `-w sfx "sword swing whoosh"` |
 | Seamless loopable sound ambiance | `audio_ambience` | `-w audio_ambience "forest night, wind"` |
@@ -158,7 +159,9 @@ production output is a −30 LUFS bed with possible ducking; `voix_robot` = fixe
 (kokoro `af_heart`, pitch +30%, ringmod 120 Hz, atempo 0.65, gain −4 dB) — do not improvise other
 settings without user agreement; `audio_upscale` = UniverSR CPU validated for voice ("perfect") and
 music ("very good") — **slow (RTF ~13) and MONO output**, refuse inputs > 24 kHz (already full
-band).
+band); `audio_restaure` = RE-USE NemotronLabs F32 Vulkan validated on degraded voice ("OK") —
+output = input rate/channels/length, F32 package MANDATORY on Vulkan (F16/Q8 broken), deterministic
+within a binary version (ggml arithmetic changes across audio.cpp versions alter the floats).
 
 ### 🎬 AI video (Wan 2.1/2.2, LTX-2.5, MiniMax-H3 — sd-cli Vulkan)
 

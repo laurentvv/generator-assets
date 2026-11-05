@@ -1685,6 +1685,28 @@
  ],
  [
   [
+   "--restore-chunk"
+  ],
+  "restore_chunk",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
+   "--restore-overlap"
+  ],
+  "restore_overlap",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
    "--robot-gain"
   ],
   "robot_gain",
