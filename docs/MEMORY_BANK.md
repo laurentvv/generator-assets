@@ -545,6 +545,15 @@ Annuaire communautaire du challenge ComfyUI (oct. 2026, 25 000 $ — Higgsfield 
 
 Liste brute capturée : `output/test_m1031/higgsfield_projects.json` (107 projets, 9 catégories).
 
+### 🔊 1.53. RE-USE (restauration de parole audio-to-audio, familles `reuse`/`realtime_reuse` audio.cpp) — TESTED 2026-11-05 sur v0.9.3 (offline OK, RTF 0,46) — awaiting user validation (écoute) ; `realtime_reuse` = v0.9.4 requis (#1192, release 11-05)
+
+Nouvelle famille **enhancement de parole** de l'org audio-cpp (GGUF auto-configurés : config + model spec embarqués, aucun tokenizer/encodeur séparé) : conv encoder/decoder + 30 blocs Mamba temps-fréquence bidirectionnels, entrée 8-48 kHz canaux traités indépendamment. 4 packages sur [audio-cpp/RE-USE-GGUF](https://huggingface.co/audio-cpp/RE-USE-GGUF) : `reuse-f32` (original nvidia, NSCLv1 **non-commercial**), `reuse-nemotronlabs-f32` (OpenMDW-1.1, **commercial-friendly** = le nôtre pour contenu publié), `reuse-laughter-f32` (préservation du rire), `realtime-reuse-f32` (causal, streaming 20 ms, NSCLv1 **non-commercial**). Installés 05-11 : `reuse-nemotronlabs-f32.gguf` (38,7 MB) + `realtime-reuse-f32.gguf` (54,8 MB) → `C:\Modeles_LLM\RE-USE-GGUF\`.
+
+* **Test 05-11 sur audio.cpp v0.9.3 (41c1f8ff), Vulkan, gate verte** : échantillon dégradé construit depuis `output/alaric_conforme.wav` (48 kHz mono, 9,075 s ; bruit blanc amplitude 0.04 + lowpass 6 kHz) → `--task s2s --family reuse --model reuse-nemotronlabs-f32.gguf --backend vulkan` = **exit 0, 4,21 s wall = RTF 0,46**, durée/canaux préservés (sortie s16le vs entrée s24le — cosmétique). Stats : degraded peak −0,09 dB / RMS −20,0 dB → restored peak −1,38 dB / RMS −21,2 dB. Evidence `output/test_reuse_20261105/` (clean ref + degraded + restored + log). **Verdict qualitatif en attente d'écoute user** (A/B degraded vs restored).
+* **⚠️ F32 obligatoire sur Vulkan** (doc upstream : F16/Q8_0 = sortie Vulkan INCORRECTE, validés CUDA seulement) — nos packages F32 sont les bons.
+* **⚠️ `realtime_reuse` refusé par v0.9.3** (`unsupported model family hint`, 0,03 s) — famille ajoutée par **#1192 dans v0.9.4 sorti le 05-11** → test offline+streaming DÛ après GO update v0.9.4. Licence realtime = **non-commercial** (jamais de contenu publié avec) ; offline NemotronLabs = production OK.
+* Use case candidat : restauration de voix legacy (réservoirs TTS/qwen3 dégradés, archives 32 kHz,refs clonage bruitées). Pas de workflow tant que non validé.
+
 ## 🎬 2. Validated Masters and Production Files
 
 
