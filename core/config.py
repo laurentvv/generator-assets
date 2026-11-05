@@ -57,6 +57,18 @@ DEFAULT_SD_CLI_LTX = os.getenv("SD_CLI_LTX_PATH", r"C:\SD\sd-cli.exe")
 DEFAULT_SD_DIR = os.getenv("SD_DIR", r"C:\SD")
 DEFAULT_SD_SOURCE_DIR = os.getenv("SD_SOURCE_DIR", r"C:\GIT\stable-diffusion.cpp")
 DEFAULT_AUDIOCPP_CLI = os.getenv("AUDIOCPP_PATH", r"C:\audio-cpp\audiocpp_cli.exe")
+# Shared eSpeak-ng runtime for kokoro_tts on the release audio.cpp binary —
+# the release zips ship no espeak (MEMORY_BANK §1.21): the binary loads the
+# DLL only through these env vars (same paths as the ai-doc2video bridge,
+# installed 2026-11-05).
+AUDIOCPP_ESPEAK_LIBRARY = os.getenv(
+    "AUDIOCPP_ESPEAK_LIBRARY",
+    r"C:\IA\espeak-ng-loader\lib\espeakng_loader\espeak-ng.dll",
+)
+AUDIOCPP_ESPEAK_DATA = os.getenv(
+    "AUDIOCPP_ESPEAK_DATA",
+    r"C:\IA\espeak-ng-loader\lib\espeakng_loader\espeak-ng-data",
+)
 
 
 def _detecter_ffmpeg() -> str:
