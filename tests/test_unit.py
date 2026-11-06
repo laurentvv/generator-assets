@@ -442,3 +442,65 @@ def test_construire_cmd_reuse_options_chunk_conditionnelles(monkeypatch):
         "m.gguf", "in.wav", "out.wav", chunk=10.0, overlap=1.0)
     assert "audio_chunk_duration_sec=10.0" in chunked
     assert "audio_chunk_overlap_sec=1.0" in chunked
+
+
+# ============================================================================
+# core.audio_upscale — Vulkan → CPU fallback (audio.cpp v0.9.4, §1.27)
+# ============================================================================
+
+def _patcher_universr(monkeypatch, audio_upscale, backend_en_echec=None, tmp=None):
+    """Stubs the engine layer: records backends tried, fails the given one."""
+    from core.process import EngineError
+
+    essais = []
+
+    def faux_run_engine(cmd, **kwargs):
+        backend = cmd[cmd.index("--backend") + 1]
+        essais.append(backend)
+        if backend == backend_en_echec:
+            raise EngineError("audio.cpp universr failed", cmd, 1,
+                              "UniverSR conditioning contains unsupported backend op 'MUL_MAT'")
+        with open(cmd[cmd.index("--out") + 1], "wb") as f:
+            f.write(b"RIFF")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(audio_upscale, "run_engine", faux_run_engine)
+    monkeypatch.setattr(audio_upscale, "resoudre_modele", lambda variante: "fake.gguf")
+    monkeypatch.setattr(audio_upscale, "detecter_frequence", lambda chemin: 24000)
+    monkeypatch.setattr(audio_upscale, "resoudre_audiocpp", lambda: "audiocpp.exe")
+    return essais
+
+
+def test_restaurer_universr_auto_repli_cpu_apres_echec_vulkan(tmp_path, monkeypatch):
+    """auto = Vulkan first, CPU retry when the >14 s MUL_MAT ceiling hits."""
+    from core import audio_upscale
+
+    essais = _patcher_universr(monkeypatch, audio_upscale, "vulkan")
+    res = audio_upscale.restaurer_universr(
+        "src.wav", str(tmp_path / "out.wav"), variante="speech")
+    assert essais == ["vulkan", "cpu"]
+    assert res["backend"] == "cpu"
+    assert res["bande"] == 24000
+
+
+def test_restaurer_universr_auto_vulkan_reussit_sans_repli(tmp_path, monkeypatch):
+    """Short inputs (≤ ceiling): Vulkan succeeds, no CPU attempt."""
+    from core import audio_upscale
+
+    essais = _patcher_universr(monkeypatch, audio_upscale)
+    res = audio_upscale.restaurer_universr(
+        "src.wav", str(tmp_path / "out.wav"), variante="audio")
+    assert essais == ["vulkan"]
+    assert res["backend"] == "vulkan"
+
+
+def test_restaurer_universr_cpu_force_echec_propage(tmp_path, monkeypatch):
+    """backend="cpu" forces a single CPU attempt; its failure propagates."""
+    from core import audio_upscale
+    from core.process import EngineError
+
+    essais = _patcher_universr(monkeypatch, audio_upscale, "cpu")
+    with pytest.raises(EngineError):
+        audio_upscale.restaurer_universr(
+            "src.wav", str(tmp_path / "out.wav"), backend="cpu")
+    assert essais == ["cpu"]
