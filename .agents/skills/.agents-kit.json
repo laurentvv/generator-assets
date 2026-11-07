@@ -1,6 +1,29 @@
 {
   "version": 1,
   "skills": {
+    "adaptive": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "e7a778745599729973cd6a07f0c90be3355e9785f650680daece8905fe0f617d",
+        "references/android/develop/ui/compose/layouts/adaptive/flexbox/container-behavior.md": "7a33b15b827dbf21557a2ac808d3e0c2653cf33cc4c58277f2eb94ebfa41aa5f",
+        "references/android/develop/ui/compose/layouts/adaptive/flexbox/get-started.md": "2333ea80100012554a3891048f237b6aeacf9e5f9d8b54d8b10c4cf639897813",
+        "references/android/develop/ui/compose/layouts/adaptive/flexbox/index.md": "952ca4608d36dcb0db9a36aed865f9cdb5e85583480cd85e9e364327be460ecb",
+        "references/android/develop/ui/compose/layouts/adaptive/flexbox/item-behavior.md": "94e894a59857662ed784913774a4d0c5bcec7d16468c4c910962a7d806a0e562",
+        "references/android/develop/ui/compose/layouts/adaptive/grid/container-properties.md": "fb12005053f5f040c26c5b74a93c11825d5a27f1802ec7748859b24ee2c030c7",
+        "references/android/develop/ui/compose/layouts/adaptive/grid/get-started.md": "96a2eeb05283eb5c99b751b4bf68769b59462e2d0bb70170260325004240e673",
+        "references/android/develop/ui/compose/layouts/adaptive/grid/index.md": "f6fb9a8d962dc7053fa5a1a20234d96fd0eeb9d4252fc98c40826353816815ab",
+        "references/android/develop/ui/compose/layouts/adaptive/grid/item-properties.md": "ef0a67039918022d01ac26983b3cc06c798050736d42ffe692c98e3c4517b45a",
+        "references/android/develop/ui/compose/layouts/adaptive/mediaquery/index.md": "1e79df59c053569d5376a618c414b793670fdf35e337d7c8aecce81bf09f90d7",
+        "references/android/guide/navigation/navigation-3/recipes/material-listdetail.md": "e4781cf0fc691f92c202400a07ebc80424666681f9547e757f660388252cdb29",
+        "references/android/guide/navigation/navigation-3/save-state.md": "88f4e8e8831368f58fba9dc28f2cb40a0dcf0a627df5c09eb5b2a837486f9d6f",
+        "references/android/studio/preview/compose-screenshot-testing-with-testsuites.md": "4b4ada7a50201bcf9ab90b0d9f00cc2ceb16513d1de7f63c12d634318a2ec20d",
+        "references/custom_cursors.md": "a6673e5540ea54e73c871a1e28e47c73b5f8e7cbc5a28bde18acd8ff3d6fd2fe",
+        "references/foldable-tabletop.md": "5133e364ce466df05a3c012565f237b6fa27f853dbc92d2d65982045c20f2a79",
+        "references/keyboard_shortcuts.md": "72c2876b4c805f00b00c948f00f0e41d9a3d2c9207a38262f45cd2ab03327513",
+        "references/tooltips.md": "c87d96b2da4488cbbfd097a25a6b4557c48de055df96c7602bd7cb2966d2e4e9"
+      }
+    },
     "agent-mcp": {
       "source": "(authored)",
       "ref": "2026-10-18",
@@ -18,11 +41,89 @@
         "SKILL.md": "f909119fd031e7bf9f163bbdd4d842adc7b543fde698b448a0099cddf53adcca"
       }
     },
+    "agp-9-upgrade": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "edc7fc5f742619372f6f2c58915bf63a2d73b68f50d996145595ceecde1d654a",
+        "references/android/build/migrate-to-built-in-kotlin.md": "5dc2f8f2b337eecb8e405ff06da2df6c3119c66c7428111da2803510f52817bf",
+        "references/android/build/releases/agp-9-0-0-release-notes.md": "c9f86f9f9b62f5ee9edec4172554fa75f3d5e7945b43d24271fba614df76e5b2",
+        "references/buildconfig.md": "28d97a9afb78d002577f771f15b69ba52fec788b434496f0166c4a47e2a66f64",
+        "references/ksp-kapt.md": "f9f75335f88e5fcf45ea79bf918a934bc0c51c76abd74ffca5de6c266640a536",
+        "references/paparazzi-gradle-9.md": "bbf9d0f0e87480f411edbdae49e3bdc3d63b964fc231b5826a1ab2ce075e0d29",
+        "references/recipes.md": "09a40328201b5b6b6ac2e0721af4b12bdce58f8d0510c89950fb3da396edeb7f"
+      }
+    },
     "agy": {
       "source": "(authored)",
       "ref": "2026-10-04",
       "files": {
         "SKILL.md": "65d8daa554ef5a67bbdb821589409dbddcc33f85f804759db3c96f60ea1a9b1f"
+      }
+    },
+    "android-cli": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "2d35bb178b30581a9d4a31c30cf4895861a095863a9d8434a134fd10c2fca0b3"
+      }
+    },
+    "android-for-cars-parked-apps": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "e438fb4eebb4b6b9f6541c0d17a308d81b0e7724e6ef9b1e0499cbeab54d1195",
+        "references/android/docs/quality-guidelines/car-app-quality/index.md": "976f858d2f1d06c0600df891896e5aca830a6f6a02a03aa719d2987e3ee25a54"
+      }
+    },
+    "android-intent-security": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "5f1c8dfed64b3da008e04ffb4c013e469f49f2758e0ce76bb031b7666b9140d4"
+      }
+    },
+    "android-permissions-security": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "0be27b6540b74417cb82f6cb452c2945bc996576de452d16b6077edfb1e9d2cf",
+        "references/android/guide/topics/manifest/permission-element.md": "06e8c6e6eee6c53ed26db9599e5d461ccadcd2e54c785e7eabaf676cb5a16587",
+        "references/android/guide/topics/permissions/overview.md": "95e34ec29d120e352814c905f574175ceb30f1ffe062e7ea8eddb36852b9419a",
+        "references/android/privacy-and-security/risks/sender-of-pending-intents.md": "74adeb0c724b5c43a45de8953698707a8034a81238bb1c91d27684e1f262f2bb",
+        "references/android/training/permissions/requesting.md": "cec4c45adaa81e9f819fdb51f0d5b4c747493fa48682e67e20cff9bb7751fef8"
+      }
+    },
+    "android-profiler": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "d3083b151de83707950ac4edd68e84a11d153bd83d334e5315a44d45ce13b6be",
+        "analysis/analysis_orchestrator.md": "363ef7842f71b69ab46e86de6a1b262f6852b763d3958b7dd5fff58f9484898b",
+        "analysis/workflows/perfetto-sql/perfetto_sql.md": "ab547b6219e58c51eca8712b1baa7f8d0a3392d6fe40ac09b16a711b7a956dc6",
+        "analysis/workflows/perfetto-trace-analysis/perfetto_trace_analysis.md": "e2a1f1041e437ead24dfea2dcd745bf0a308639f763b2c76076ca39094263ed3",
+        "analysis/workflows/perfetto-trace-analysis/references/hints/hints_cpu.md": "fd536d521436049f3ff04f6178128be2734f40f97e838f069bae6d8766257c4b",
+        "analysis/workflows/perfetto-trace-analysis/references/hints/hints_graphics.md": "d2bd17c046cb8a6ecd8c81c736087c013fb908dce5d2b276d6d6ee354676d657",
+        "analysis/workflows/perfetto-trace-analysis/references/hints/hints_io.md": "559da3bf6824a96122e6e755827b51669e4e42618f90ed2d81b12ee75f943c8e",
+        "analysis/workflows/perfetto-trace-analysis/references/hints/hints_ipc.md": "ea5f15cb53251b86ef04eafe464a61455a1bd67583a90bf6df9f9b7bc04636e3",
+        "analysis/workflows/perfetto-trace-analysis/references/hints/hints_memory.md": "c02cf981a091c7c69c0c42e91e7783efe37c6b133734831868de5947e623ee29",
+        "analysis/workflows/perfetto-trace-analysis/references/hints/hints_power.md": "d1cf6f2681506b43ca3c3f57389bc86d9c232faa5fe3abb5e7adf3cd831070c7",
+        "analysis/workflows/perfetto-trace-analysis/references/per_candidate_analysis.md": "b6a00fb47db4233f94b3cb75fc22d696e96cb90aa7b7ae625557fa5235e00d6f",
+        "analysis/workflows/perfetto-trace-analysis/references/triage.md": "ce763b46ebaaf8c5f1a6d40979fb2291b6e64112f42d2d589ade4b4ea473389f",
+        "recording/recording_orchestrator.md": "ff9cbcf9b2876d6aaa4d749ce4ceaa5fa128d2a0807fd026f27b9b2270033d2c",
+        "recording/workflows/perfetto-trace-recording/perfetto_trace_recording.md": "20c49c7759ec7124ea065b8ddc388cc1b5344c5d16b36e7c3970d7f1a7207282",
+        "recording/workflows/perfetto-trace-recording/references/example-configs/app_jank.pftxt": "41bcc23a2300eb8913fc51b4e57578701bbb286cd60b549e3acec6b48da125ca",
+        "recording/workflows/perfetto-trace-recording/references/example-configs/cpu_profile.pftxt": "62b0a152896bd4a99e4296770baff539c05bf79692818b33fa6d2043bc2a4092",
+        "recording/workflows/perfetto-trace-recording/references/example-configs/java_heap_dump.pftxt": "5b47447092cfdf81f780fd695fce7ca7aa70d5330325ae4f2cc67c504877159d",
+        "recording/workflows/perfetto-trace-recording/references/example-configs/long_background.pftxt": "87b1aa82a782941b15278678b9bd0a44db2d91165b7062b27dd16a6cf3110b71",
+        "recording/workflows/perfetto-trace-recording/references/example-configs/memory_counters.pftxt": "e4298731b59c3a01cdfa5151446d3f3af845491ff8b98694357e09de58fc49df",
+        "recording/workflows/perfetto-trace-recording/references/example-configs/native_heap.pftxt": "e67c5ad23119c08ede35468e2b66ee63317ae55b54e4a06c9b0af2c043459be8",
+        "recording/workflows/perfetto-trace-recording/references/example-configs/sched_cpu.pftxt": "a37c989c0b3aa5d1d609f138d52c0625b728a2ec140ba8603991f562e614d9e0",
+        "recording/workflows/perfetto-trace-recording/references/trace_config_reference.md": "9e0c9db5859dd619a96c3885f9c210af26fe321d46d02936825f593ee7b13d75",
+        "references/env_setup.md": "30ed3d16abbcbe381399339f13798b84f52e273cb2555fafa7b5be8da4a3b7a2",
+        "references/perfetto/bin/trace_processor": "8615f60867c20e0370ce24cafa72ed358e6f8cd0b74787ec753e85f7fabffe7e",
+        "references/perfetto/setup.md": "8e5e1d7ec95bf848ac3d2f70acde12a3324865e212527c9b7dc0e7bbcc4ffc4b",
+        "references/perfetto/sql.md": "1a85db538f8c3e300cc8c9b6cf45ba52c8df8e9e32de41481e4021f8ce19db0e"
       }
     },
     "animate": {
@@ -53,6 +154,29 @@
       "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94"
+      }
+    },
+    "anr-audit-and-fix": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "0ea6c5ab75a621b0cf24fa6276cdfa2c6799bbd2538631b8fc81a1e4dcd282bd",
+        "references/anr_trace_report_template.md": "7e8494d46a0aaf97d19b7efc59ade16b3be4eca922f9025c178152595a76f5a6",
+        "references/risk_analysis_guide.md": "71ea8e0ae7ee5cd708a9b97e818691a93a88d638df6d24984ba8b93de707ea13",
+        "references/trace_analysis_guide.md": "86361ab2892ec91e424a7d0f8c6712d3ed4aa98f8b74d74aa0dbcc2774726011"
+      }
+    },
+    "appfunctions": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "73bf2a917955a8bb691fbd9ad417c3b5e742c0263dd592947dcb1d9c084d1fee",
+        "references/adb-interaction-testing.md": "6fe6114a38d9edd48c1c5dca20b80157d2074f20edb67d0faaf75877e0d43ee9",
+        "references/context.md": "758c07a9439b3ebc5ab0b3c7093008f1524d1c8a895eb2b3cfb9be4aadc68e0b",
+        "references/feature-discovery-analysis.md": "83950e0d821e934c810055f7559edbf07a04c1d9dd0933a01e1520b7707d7e54",
+        "references/implementation-configuration.md": "8edb1f43d01344d4fe0ad61d80302e1848f8193fb5171d81b271349574b378f5",
+        "references/kdoc-refinement-optimization.md": "926bc1a83e982d8ff71d4c616a63694fde09b497990d8d40b87f9730f63fa896",
+        "references/migrate-to-service-entry-point.md": "d27353035594d6b54523c8a6ccb3356a83fb955a1a01fb0d1e55e1c8f07bc6bb"
       }
     },
     "apple-design": {
@@ -128,6 +252,25 @@
         "SKILL.md": "7e16d97e74a303d62d572ad02c155d65dccd478fcf3372416765585b12ed0702"
       }
     },
+    "camerax": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "f8cc772cad4d164ef0fae61961d2a9df584ef52929fde9f318a84981cb0c109d",
+        "references/camera1-to-camerax.md": "f66838722b779dfe597973f9b612251708d8ea43aaeaa5986fa5e0ced136f911",
+        "references/camera2-to-camerax.md": "539363795cbdcb1e2d361cd3df231ec9b53ba7a903e0f0742d5cbbba1cedd9c9",
+        "references/expert-blueprints.md": "c8bab111ff37ccc4369bd3a88ee3e9932ad1b2f0eea191ebccfde5f01167e50e",
+        "references/foldables.md": "8dc92d22664738c4437133775c2487355b5860694879e5abe553dfffae064b14",
+        "references/immutability.md": "2e510941c469be0ae71ade2e8b7ba300845ef912eb811078a99cbdd6ed347d9b",
+        "references/low-light.md": "63927cc7896848d535b54c3dd56e23304bcef5ffdd33b47c168586c07a3361c3",
+        "references/mlkit-spatial.md": "2bdf0acd7b8a54d5928ee15e45dbdb4d4957246814a81cc03fca6b4b0ee5e5d1",
+        "references/modern-apis.md": "e9a3f77f6c37c55bde47f4b11b19ddb762db5cd7cd3efecabd7959e87f1a39fb",
+        "references/testing.md": "c4ede48673354afcfb6433dfeddec8e741502e3dfd05e3d103dee2e0039ba7a9",
+        "references/thermals.md": "7572166c2e81767092fce274b91b523bbc5a80351b62b294fbac24d28402e162",
+        "references/wear-os.md": "2bb72578d94932b9654478d75631733b93f8aea7fb9daadbe1e61c153896940d",
+        "references/xr.md": "607820bb74b11079bb75860c1567f680ce4bdd2f82fb4c81d3e59f16142590c0"
+      }
+    },
     "cinematic-motion": {
       "source": "madebymustafa/design-taste",
       "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
@@ -165,11 +308,50 @@
         "SKILL.md": "c848bbddfdea89962da7b90faf53e033e9b2a8c1944f5dc98dbd78aeb758489f"
       }
     },
+    "display-glasses-with-jetpack-compose-glimmer": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "eef3896fa5e6f5e1cb47a7b7ca5d92821aa2f65b2cdc64cdda5359d8c5f4ca79",
+        "references/android/design/ui/ai-glasses/guides/interaction/inputs.md": "961dc2dbef5d65d34efd5b1ad8ca37592a960eef6cd69ebae6fee97ca2349083",
+        "references/android/develop/xr/jetpack-xr-sdk/access-hardware-projected-context.md": "22bf628c6da0388bc0f79c0679bdcd4d1398375fce53b896cfdf72092295dc14",
+        "references/android/develop/xr/jetpack-xr-sdk/request-hardware-permissions.md": "c61dcb8c28e817bc4a7e9dca14630d31271b2022791ca16fcb022272bee9ef5b",
+        "references/button-samples-source.md": "2ba50f8693dd642d3719862d2f8a186da89acec64e6672dc17c0cca9824e7820",
+        "references/button-source.md": "ecec710535e4f28c7d23bd3b427bb5b085cc572156da45626ead3f8070154190",
+        "references/card-samples-source.md": "24a4cb44d501e7ad07d3348e1f0d658723f0dbffb9659e2e4dbf6783d10b8dc5",
+        "references/card-source.md": "baf6a1cd6187bcf4b73c58b518be1c6a54d02eb21809e4e1fc532d9cd2d0f2a5",
+        "references/deptheffect-source.md": "92977b84947cdbf840a2e9987e1e12fc3dca6db197717fd2f26f04bcc7fd22e6",
+        "references/deptheffectlevels-source.md": "39a890b1a1cc68f7536a3ab13bf14e7bd4b2284a5b8876ead4e873f25a733a80",
+        "references/glimmersansflextypography-source.md": "7b42e83f2d26f339f5500d1cccd433e4f8ac32cde28fa1ed3764fb434311accd",
+        "references/glimmertheme-source.md": "08b941da9dd5112ab5fe93f5954e030e0a4fdd5cddda14f1fb72d544b4a0aae0",
+        "references/icon-source.md": "ce4d7d4b1ef665d873a7e1707e992f02a6b648985c84a188d14445b9d54dfec5",
+        "references/iconbutton-source.md": "640c24bc0a7f2d91e1208eeb2f46abc7d89c3be7601a2c36cbfdc2d0ac35986e",
+        "references/iconsizes-source.md": "a1ab8db92b601e28c9c12f0d78609bce9b80f310ed51ab06842007393766f23c",
+        "references/list-source.md": "3c1304fcef99762415b4c98ee99ff4998b25abb5b4e556102ca0d83ec172a23f",
+        "references/listitem-source.md": "7b8f9c6af2034d9aace55f2d2b3936271a5f5fcbba2b5bfdb0f0b930347a72d0",
+        "references/liststate-source.md": "8b6d2660b8d47ada005f5f9abc9f6491b0da98931b0495b2ec8be59fe82762f7",
+        "references/material-hct-source.md": "3c4a20f43950a1f91f7ef2382546290d2bd10b7e5122beb791f86cd151de64db",
+        "references/projectedcontext-source.md": "1152d2e3850abf14e92f646ac4d2135c92992a37ad9410b3611c05d0f291caf0",
+        "references/stack-source.md": "eeee5a7b6d4e35491b0fd962d27dbfc03ad2a37c9603925706146df19da5df9c",
+        "references/stackitemscope-source.md": "f930f9319c61c288500dcc91532202a76ddf76ba242eb398d31b80565484da6f",
+        "references/stackstate-source.md": "3e3edfa0dbf2117ff1b1b0ff130e6175d6a36713258fde26a3e854b6c4407a20",
+        "references/surface-source.md": "864b9f3dff9080567d4672bd27aedb2996785f0f2982ba11d1a00cfe4b76e59b",
+        "references/titlechip-samples-source.md": "641402c288ed8ea6f9a8fc97be0982dedd3617bf119b014349e5d996e6dfb9e0",
+        "references/titlechip-source.md": "ebf82efb5225d5d48c41261d6757a7a4b7c1723d85cd78838d443d0c82b6dcc6"
+      }
+    },
     "docs-fishing": {
       "source": "(authored)",
       "ref": "2026-10-02",
       "files": {
         "SKILL.md": "0509cb91550025ff59d36efdf500fe8d3bac90f6a74a583e029f947e089e7c0c"
+      }
+    },
+    "edge-to-edge": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "4ca04cb6a5330b96e51410bc815f878b4ca642fba46fe5e1ad724c94e04d6eb8"
       }
     },
     "editorial-minimal": {
@@ -184,6 +366,41 @@
       "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
       "files": {
         "SKILL.md": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939"
+      }
+    },
+    "engage-sdk-integration": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "2bfe2f8dac7cc6bceb0f280c9c735545669ecadbb5a27fc0fc6f251c8f216a07",
+        "references/android/guide/playcore/engage/faq.md": "9299de0e31fe792ee14f7b5f5661b5665fc5d0b4c849351b46c25e12c8239a53",
+        "references/android/guide/playcore/engage/food.md": "208ef246fcb67699e66b4b61b5219d2b2c9c66e19b99d21b0cb9b66c827a3217",
+        "references/android/guide/playcore/engage/healthandfitness.md": "f63bd90ab6398b75cc950d06d6c9e4e4ebde8fdd4e2dd275414ca0bc7df68975",
+        "references/android/guide/playcore/engage/listen.md": "99b1a13939371b14c55b704f316f0b61fc1d580babc1bdf0bb2b5c5ff8426105",
+        "references/android/guide/playcore/engage/otherverticals.md": "2347ba679e490f924ae50c8591915f094b7f334c3745092b304dce3650b0ea55",
+        "references/android/guide/playcore/engage/read.md": "986be3e21b9ed3604cc0e7c73b0fd65f1e28c25442fac8d6ec23a2e9fa81b1dd",
+        "references/android/guide/playcore/engage/shopping.md": "220d653fe66b74bf1d7a4f398357eb101e8b5b1fb60cef87304aee16127e31b0",
+        "references/android/guide/playcore/engage/social.md": "d1b3395c05e030ba7befc661dfc0213f190cca3ed1eecb4bbfe7642382ba7e9e",
+        "references/android/guide/playcore/engage/travel.md": "9f6597d44a5c0207c4334594ef13bdb0fadc865ff9d9bf933ced017021c09032",
+        "references/android/guide/playcore/engage/tv/continue-watching/index.md": "6ebeea082b65db76acc745438d8cc8068748e4764abba195351fc5f9549b5fba",
+        "references/android/guide/playcore/engage/tv/entitlements.md": "d56c022f5a3d760bb06b9d12e27e23529f3b29679b7930a600a999594b971e99",
+        "references/android/guide/playcore/engage/tv/getting-started.md": "d25766fafaf2ecbe87c0bd374dd9ef0e25a6720808ae44bbc8173bee133ed501",
+        "references/android/guide/playcore/engage/tv/recommendations.md": "3cbfdc2beacc842b5c89a01d87d1f5cd200c1a9f99e8959debb533ef1bdeb86b",
+        "references/android/guide/playcore/engage/watch.md": "a50152a6aca7fde1799cc41b618628a0e3677efcd74ad28fb1e1073bcb80ac84",
+        "references/clusters.md": "8b02cc48cb732bec9effac91530e1b4d0032ec393b695a34f1851906d920107d",
+        "references/common.md": "e6a683defc1ad9fb5f708fe16b483c18c3e12e0c36fb53d0b09d83ff65e85593",
+        "references/patterns.md": "0232e34e25c2bad7a3ac876026825c73d59b008f7840c0e82d7246ac8a7964b2",
+        "references/requests.md": "609b8e902236c36db83b7359fa583b18303f086bfe41fbc4e6e8c4e10f3e25c1",
+        "references/schemas/food.md": "6950d695d14dc77ad8839734fe11099d91690cd218834ec531642545952e880c",
+        "references/schemas/listen.md": "52d3b300e91b8660008e49882f522040e07ab2f88acc5dbcabeccfea8fd212a3",
+        "references/schemas/other.md": "c310f55df9942d0c4cb45b53144768911938dc5b1ba5a233f8788895ec9463ce",
+        "references/schemas/read.md": "1c1657131d959a891d17515946fac2d6d8a2c4ca5b9b4c34793ccbba0d020ef0",
+        "references/schemas/shopping.md": "431f033bb566fb9b7d6b3fa8de7dd4b7632273d86770268f0194b5a3ce5b5742",
+        "references/schemas/social.md": "8d4f9339d29a647c5f27b3c5cc09d5d5b04f86cced58920d223ee483a0a8c721",
+        "references/schemas/travel.md": "ecbc740543ba2fb07b84fe7919aeb124c47d0cb38ebf2dbf1f5bec6fadb49a5a",
+        "references/schemas/tv.md": "f79891b072a9b54018646a9d3820b8991d19fef6d6dded79c6b5900862ec3534",
+        "references/schemas/watch.md": "00a0b86f3ef9d22a948348d5e9a3f2ee2415d8186fa68ded481dfa5cd006cae3",
+        "references/troubleshooting.md": "0152c59d7b343d17953ce20b139381d4314c5d968d5f740db2f7031ab3bd5403"
       }
     },
     "explainer": {
@@ -291,6 +508,119 @@
         "SKILL.md": "d91970639e9f5c37682ac7ab60094d35f1c7c1f38d731bd56396563aee10c1d3"
       }
     },
+    "glance-appwidget-updates-and-memory": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "11a6783a5b8eacc82a957547deabd3d35320119367d64107997dc4ce249005fe",
+        "references/AndroidManifest.xml": "05e781d9f266ba49a73c49081207e6a0fb79b5802f33e06b9678a6095475dee6",
+        "references/ClassicWidgetImageUpdater.kt": "e1bb4a82b50e78fffab1e7baf1e91b4d6796670e35a801bf7d9945792f0f6268",
+        "references/FeedCollectionGlanceWidget.kt": "c2b4b6c607dcf413e2e06487afc374c7814976dd1c01d89a09ef27a2b261a5c9",
+        "references/SampleGlanceWidget.kt": "17d2cc6abbeb2a8864cc61d048918620b582471c9cf69c9816fb313190bc1500",
+        "references/WidgetBitmapUtils.kt": "f48763efda989c89e6dea73f5b90e1061006fa3e7466d8b4c03078ae21eea94e",
+        "references/WidgetStateAndActions.kt": "08651b83f7e34035dbabb43d64e980e25866827c19a5dbf7dfca3fd6776dfcca",
+        "references/android/about/versions/17/behavior-changes-17.md": "874603dca2f8cb2a8e7aa5ba7fb9b23db3b6c0350ae30e1d0af0534d4763bf8a",
+        "references/android/develop/ui/compose/glance/create-app-widget.md": "b33db74100c013372e58b14058b46d59842055c5ffd4029074e0200fd38d8bc2",
+        "references/android/develop/ui/views/appwidgets/index.md": "18f2db319e752773b51a760f6762c2daff7d5aa0fe68b6a43d790f05df0e43ef",
+        "references/proguard-rules.pro": "e469cc810455ad61132f82a0121c2d9299c24c241702213d4039c7345a340525",
+        "references/res/xml/file_paths.xml": "581545bb0d5972a035f342f8a69856247016a6809f9ed11808f5389cd17023a9",
+        "references/res/xml/sample_widget_info.xml": "f9ad4878033363fe8a9c12b97a57f001a0eb1bf5ba1ab8a56503149355503e5e"
+      }
+    },
+    "glance-canonical-layouts": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "7a6db0d7d91774103c7892f8f8571647e64fa1bd825cc28d9e9bdc79b2ef2dba",
+        "references/ActionDemonstrationActivity.kt": "448bdeba443b50f765f6aeea5d847f271291069709af1c02a209b9a550bb0877",
+        "references/CanonicalLayoutActivity.kt": "177797b791c441904722e4c76249a217f9445ff16f3d9c12d9854d5e0c56fe0e",
+        "references/CollectionsKtx.kt": "b79b9cda4ba9e1d46a1af5e03843ea933cca76d542baa771c7828269a7307fb2",
+        "references/collections/ActionListAppWidget.kt": "6c7d8fa7d902a57d607dc2a351511673f9e919885177b597d73df60aa0da1503",
+        "references/collections/CheckListAppWidget.kt": "92afd5ae7c7e78182a55254e9ed015e56a609a5d62141e9be9c485353ff690a3",
+        "references/collections/ImageGridAppWidget.kt": "35a3b0265d5bf0c36181d9c6ab303a325666a10b61498975f5890ae7a795b9cb",
+        "references/collections/ImageTextListAppWidget.kt": "0a6f84e1a753ca89309f572aa5fb0b69f549342e5c1b0edc53902983a766a986",
+        "references/collections/data/FakeActionListDataRepository.kt": "3414def6f7482c4aa43becd3daf4791b5048bc86ef4f6f22fafd8e1f05f3ffb1",
+        "references/collections/data/FakeCheckListDataRepository.kt": "9a7bc50c16cb5da56ad40de3006a48151b99093397d9ca8a6f1e36096eea5113",
+        "references/collections/data/FakeImageGridDataRepository.kt": "880af0508c39c7c519c3e58d11d06d3f879b10ec19147875aabaa0718b3d0e89",
+        "references/collections/data/FakeImageTextListDataRepository.kt": "bf561e3bbbfec545f6e54c1eda30687f09311662427e04e68c382bb05b360ddd",
+        "references/collections/layout/ActionListLayout.kt": "09878c7ca9afcb6f1a659f3323b099c737eaee205ee43fb044767c601e26f700",
+        "references/collections/layout/CheckListLayout.kt": "ef77162ff6fb57349b28d55841f580cfc2f93c63b6776d363473a94da01f2b79",
+        "references/collections/layout/EmptyListContent.kt": "8947872ea9802c75754775ee44b8334fcf067aa70556846cdee7463533180b7c",
+        "references/collections/layout/ImageGridLayout.kt": "67c6b146644240c9a6b8141f0d7d89d0bac9f3a89f77cfd8d2533bcba2f8e04a",
+        "references/collections/layout/ImageTextListLayout.kt": "009da058a5828b5966eecd689e604b4d6a140b84edd1dc3661a4fe2b6e95872d",
+        "references/collections/layout/ListItem.kt": "40477e44480dbfb0368fc3905034350038535f0ea548db3558ff7ef651fb88a3",
+        "references/collections/layout/NoDataContent.kt": "00013f81ccedee426a38f846b3cd7d09d1334ca62fd18c3aa28afeaa3f3b5710",
+        "references/collections/layout/RoundedScrollingLazyColumn.kt": "2bf28c28df96adf21fd0f45e7bbe37cc333de85c6d7e32971950a0a4ea84cc43",
+        "references/collections/layout/RoundedScrollingLazyVerticalGrid.kt": "664cac4d5069e21dd650f531c21f1e45ffd7c9ef2ec384c4380abf768d692d08",
+        "references/collections/layout/VerticalListItem.kt": "8820af1cf29f9a10f403275b3ddf316f5d8e425545d5503ec60467daff5c1d43",
+        "references/res/drawable/four_side_cookie_background.xml": "c5aed80edd89e40678eb0b117c72dc5c9d36d4a277cbd93f676d1dafb76168fe",
+        "references/res/drawable/sample_ac_icon.xml": "f53e98407ddb12ae9565c1aafc525ee63086c745c5b36c688a5a875c47a4b4c4",
+        "references/res/drawable/sample_add_icon.xml": "39128d138ed95e12abc78815db974e482fa62ac7eaf8ee84048d6711ef54e64f",
+        "references/res/drawable/sample_app_logo.xml": "ef9fb1cadd3bad34bfb579dfd1c978c439d40ee577ed448a051ade47d915f84c",
+        "references/res/drawable/sample_arrow_right_icon.xml": "994681608e88936506268c0e86e01b196ab01fa17d444c78071c31fbd68a60f2",
+        "references/res/drawable/sample_bulb_icon.xml": "999c47152c6807f6bc05fb1eb5795d77b9f553b25f1343affc78569bcaf9752c",
+        "references/res/drawable/sample_camera_icon.xml": "612b330ffe8541e00bc9c0286d7d6d4a608d8ba2e199c80e6125b221a412a4fb",
+        "references/res/drawable/sample_checked_circle_icon.xml": "09fbb57a5f1721f8b9865b929cea8430b37daff1ea540ccd5e18b47af631517e",
+        "references/res/drawable/sample_circle_icon.xml": "4fd53c4b6cca428574426fa7b34db80da127644749551f148c0eb85601701aeb",
+        "references/res/drawable/sample_delete_icon.xml": "1e6c00b361076d57301c6d2116ccf6a208ced4256a879b291769aca8b5bb1a39",
+        "references/res/drawable/sample_door_icon.xml": "02efda8eb5b489a8a39e4944ddd2af97bbb67df1b54b43cff3252135a015f105",
+        "references/res/drawable/sample_edit_icon.xml": "f55c760cf769770231a581cc80edf61e89e74ad7af4536edc5cb08d5f4851903",
+        "references/res/drawable/sample_file_upload_icon.xml": "1230fa42c7d3a5ae4df49eb3d4143889066e36e6c4942db14acd60df0be6b525",
+        "references/res/drawable/sample_grid_icon.xml": "75b2fca1c2ea9804a60c59463d9574baf7b4be958760285f4bf7c5624ec3ec56",
+        "references/res/drawable/sample_heart_icon.xml": "e8a55be8692e53d513ee346abeb2dc5a685a7cd57fb35efb8b0d0e9642c54209",
+        "references/res/drawable/sample_home_icon.xml": "2c458863cfebbcc9069d591a0cf464be335b3860147f9c0470709847045052fe",
+        "references/res/drawable/sample_image_icon.xml": "93bad8561841dd249c2a556a047fe0ae2b53fee04ce6efa111c8e5fc809ec534",
+        "references/res/drawable/sample_info_icon.xml": "adc5f4eb4d9399a9ab89679a4b10ac4158fb6900420fad17dd49cf1b2447c8e8",
+        "references/res/drawable/sample_mic_icon.xml": "8a709b42cc4195d871b567a443bac32507ac31fdf38b5a7046c1a39b8feb51fb",
+        "references/res/drawable/sample_no_data_icon.xml": "1f7fb7ba4898c41742861c4ac8372a4071b4806378f9389de28afac3e300566c",
+        "references/res/drawable/sample_pin_icon.xml": "2eb1b5b11803fdc9293011e3f514532c9c530855ed3901179cc837f6b94f1602",
+        "references/res/drawable/sample_power_settings_icon.xml": "e214ea8a4837b847bdb4f66f66482aafe6cce5645e5585fde30dae6392e6f3ae",
+        "references/res/drawable/sample_refresh_icon.xml": "47686b3ce7c2d3cdc044ce932b134ec36c2760f8d07ea9d4707d22359597f021",
+        "references/res/drawable/sample_scrim_gradient.xml": "06b9c3b2599f6eda9e79a6457ca5404825900821efd10d2e217feb1c01bef7f8",
+        "references/res/drawable/sample_search_icon.xml": "2edc5e2c67d5ff295ede780f880dc3f98548efb26a0bd131b4bd7e586c12f673",
+        "references/res/drawable/sample_share_icon.xml": "7b386b88a82782f425af565cc0b967e3646db1884871ebd22cb0b8b426e9c826",
+        "references/res/drawable/sample_snooze_icon.xml": "17863c44e858b3ce73c9850c61ef30d34dbfcd8110393e3d3989a61bb2654e74",
+        "references/res/drawable/sample_text_icon.xml": "543fbb550d5cc983aba44e7e4648c1f03a5b0e1f8a4f6e8c6bb24ae09c33e8b9",
+        "references/res/drawable/sample_thermostat_icon.xml": "8b3d482c68fbe9bf1c650bce8dcd6da0aa036eb87c6a8c62596dbfc7683f8d37",
+        "references/res/drawable/sample_videocam_icon.xml": "57b812ba782f07314072a72abd6fe76be3b87309f5467345f3df527203cfc44a",
+        "references/res/values/dimens.xml": "34bbd525b277b9a382b972f01910d302505b46cd23096331919aaf0204d55ec4",
+        "references/res/values/strings.xml": "496ca8e69ba441fcb57b306359fadc840129a9fedb4e85a0829a4f77f680eb8b",
+        "references/res/xml/sample_action_list_widget_info.xml": "ad556579db45f8609a25fa88b65a41182662683f351270122985dbca4340393f",
+        "references/res/xml/sample_check_list_widget_info.xml": "4603b08c82c288d58ae8c89eb0eef468d8220ebddc203413143a5d0f6bf03bff",
+        "references/res/xml/sample_expressive_toolbar_widget_info.xml": "a9c617ed39a33b7e0b02e58c7afd985a620a7f598b111c6b317910134a1417c1",
+        "references/res/xml/sample_full_bleed_image_widget_info.xml": "f1498bfb1bc67897d4bdfdf76840204a8d9ef71f85ad7f8bdf21c42e99e14ff7",
+        "references/res/xml/sample_image_grid_widget_info.xml": "baf66280a92b6035ed511ba79506c1120f321b7249d30a991a2522239ac6aea3",
+        "references/res/xml/sample_image_text_list_widget_info.xml": "d98f05672df606ee6c2af3f3d532be5f2d45d83dd78f10755131130b00a9a967",
+        "references/res/xml/sample_long_text_widget_info.xml": "c335b5caf75a8678863b3e9c9cee0e0fc2d05e881031a2972a4d066f995041e7",
+        "references/res/xml/sample_search_toolbar_widget_info.xml": "15a2a2c3d411f0c4e2c923e15773d0994a2d63a016de584aac56b18947c01a25",
+        "references/res/xml/sample_text_with_image_widget_info.xml": "467b822a1218345d805fd6b5a2f886e21a385b8d8b3a775e760b1897409de9a1",
+        "references/res/xml/sample_toolbar_widget_info.xml": "3a00ae1a258a4f51ba2883e68bfc091fab6e748c1c8e328176ac1fabea5816e9",
+        "references/text/FullBleedImageAppWidget.kt": "2aa36a5c99fe2a6bd46134b04cb085524c593d55013491223109549645ba6ce2",
+        "references/text/LongTextAppWidget.kt": "d6c29c965e1fe578fd4d4e4f6a8483e67f140f854811291bb154f025fc2f4fac",
+        "references/text/TextWithImageAppWidget.kt": "7caeddb6fa37fdd2791b3df3429cb4247cec8e39bfb29b23292fa3e24f73dba9",
+        "references/text/data/FakeLongTextRespository.kt": "fd67639a9bf500ea603e58be3edcb5efb849d98443c9bede923085f133262142",
+        "references/text/data/FakeTextWithImageRepository.kt": "d66ece297b8a0345c3e973e8d400324a51323a4537d9b6b15e00391a07f48ab7",
+        "references/text/layout/FullBleedImageLayout.kt": "8ee73e973b5a92a09485b168e996537e04cf5d1abef5aaa3c51836dcf3bb5992",
+        "references/text/layout/LongTextLayout.kt": "7b61241522e81ecc10c6633cda1030a960e63468b64b21187870b46e09e7fe59",
+        "references/text/layout/TextWithImageLayout.kt": "ada0efa853b08ea6e11ae22357fe8663a42f960ee6821edc1b8c4d538fb53602",
+        "references/toolbars/ExpressiveToolbarAppWidget.kt": "d0f4e39cc3f2a4372a31881eea89c09b77f35734fd649a4969cc72af6de9c485",
+        "references/toolbars/SearchToolBarAppWidget.kt": "fd6dca45f34bd43bd077fe162267451afc43ca55331980f0c33fb0f182eee8d0",
+        "references/toolbars/ToolBarAppWidget.kt": "57bf8af004a9b398aa31931f227f71908c32683fe196f9a39df176ee4449c662",
+        "references/toolbars/layout/Buttons.kt": "b56ba41a9e0ba3f94f80a443546b151bb849788be41b861980f6e0733339b94e",
+        "references/toolbars/layout/ExpressiveToolbarLayout.kt": "5c6f3519207d2d1e26c24b8fe6414e2866826a6d732f71ab261faa3ef677f1df",
+        "references/toolbars/layout/LayoutComponents.kt": "31ed958fe592ff33e34c3abbfb189e74030e5e2677d12477a2cc655d1bfce646",
+        "references/toolbars/layout/SearchToolBarLayout.kt": "fbd2462b2f8aefe4094d547a31014bdadfc7afec6ebbe876519439cb6fa01137",
+        "references/toolbars/layout/ToolBarLayout.kt": "90360bf244b471d3a717dad7fb9b0c395561f866c1689faea81c922b5db35518",
+        "references/ui/theme/Color.kt": "2edbf57bbcdbc42178470cadf2cfca87a5a5c48def30b44543d4fec4a04c57fc",
+        "references/ui/theme/Theme.kt": "b977b9f7bdaa726243431c9f57a73691f3024aa8375653bb4ae786741e9ea054",
+        "references/ui/theme/Type.kt": "5dfe42f17a71353546ce371160447e345b4dd2431db99e68641a2f885d094dcb",
+        "references/utils/ActionUtils.kt": "01e14c356da00a16f9039883a5873204c6f87bc3b70c50ad23764d68e78e8cc9",
+        "references/utils/FontUtils.kt": "3ca0ee5ce84522a660666b2fd45ae8818d50ec31e91bad5b440d87a7fb4503d1",
+        "references/utils/ImageAspectRatio.kt": "6d489cca79af8d8fcbb48821f85a14f85d71014fa51a0b7dbde5bec7d1cdf282",
+        "references/utils/ImageUtils.kt": "764e3253e8b64bcf867df6a7e921d2ec560664763e9a9384ba04de98cf8ff86a",
+        "references/utils/PreviewAnnotations.kt": "26f9f0129dc35b24cdcf111231381fe8394b6ac46e41916d58679a287ae2cd86"
+      }
+    },
     "godot-2d-movement": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
@@ -354,6 +684,34 @@
         "SKILL.md": "980ecf1815cb179bc92749e419e3d5c87cc998413c57ed87035e34dc45e87034"
       }
     },
+    "godot-lighting-environment": {
+      "source": "laurentvv/godot-skill-quality",
+      "ref": "1771e83e3d5a63b4f7ee7320ec8de891d1a36b9b",
+      "files": {
+        "LICENSE": "2679f099f2170cedc164532793f86a8f201d2db5ae2a92a0287464b765547310",
+        "PROVENANCE.md": "1887722d1b7ca241f642bde63740d04497511b6656307d96dfd59785fcf09e80",
+        "SKILL.md": "ab0e47241418a4b07aa44e70ec87633bb192230cba437c1099799ad6ebd35a37",
+        "evals/evals.json": "3b6d6340c2661ccc0afa3b01d5bad3bc92bb6ff2b4111535c4c62bff7389d223",
+        "evals/files/flat_village/main.tscn": "248e59808e7b3c4071919d41170679c7728ac5d726c9007bf9db486424994f67",
+        "evals/files/flat_village/project.godot": "3830b24c9d2726566ecd57a2430373b8f8fe111643b483ab234efdb767716bbe",
+        "references/evidence.md": "8427cca2d9c42d1d4c778516384cb923bae1fb18ac6c7b54036bb2fdd2b0ee30",
+        "references/settings.md": "d01d2e0fc4ab6e5a0a07c37d65ac7112b977318897dedf87959483fa7a7398ed",
+        "scripts/lighting_preset.gd": "5bbb2715400073fa0052ebeeb1a36f8d07a92cc6478d3c2239ede9e7b2a12a7b"
+      }
+    },
+    "godot-lights-camera-post": {
+      "source": "laurentvv/godot-skill-quality",
+      "ref": "1771e83e3d5a63b4f7ee7320ec8de891d1a36b9b",
+      "files": {
+        "LICENSE": "2679f099f2170cedc164532793f86a8f201d2db5ae2a92a0287464b765547310",
+        "PROVENANCE.md": "1366aa4b745c138c01bc89e1a932f0bd024c3849ec4a9589de0d3a85ee64a05e",
+        "SKILL.md": "cd7b7b6c06dae0f1a92b2ccc6242bf4708c1a344a2922bc8252f3c9fe1372070",
+        "assets/vignette_grain.gdshader": "a408f893d9017788b92934254cdfd7098887f4f484f087e34172b2b0703fcc38",
+        "evals/evals.json": "4b36738792758a203cdbb827432a370da20479d79acad5a33683c1ac36449888",
+        "references/evidence.md": "ebfe2904789198499615e7ecd00b58d6c0ba36b294b5050a15bd77e9cc4962ea",
+        "scripts/lights_camera_post.gd": "39e394f4f2b26d052135d221cbfedf781b2e0e4a50154214e6092814661aa5a6"
+      }
+    },
     "godot-multiplayer": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
       "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
@@ -377,6 +735,19 @@
       "files": {
         "SKILL.md": "e318719b45091bc2731eb2ebd256027f23f7f50a39b06eb7047608cf8426b297",
         "references/bodies-and-queries.md": "5d1616f73d9f0161df501cbcb1bdbbc3c4b8c2abb687172e1d02a5d5e7907223"
+      }
+    },
+    "godot-render-performance": {
+      "source": "laurentvv/godot-skill-quality",
+      "ref": "1771e83e3d5a63b4f7ee7320ec8de891d1a36b9b",
+      "files": {
+        "LICENSE": "2679f099f2170cedc164532793f86a8f201d2db5ae2a92a0287464b765547310",
+        "PROVENANCE.md": "442fb3ec5475cd025a3192e4e7ceb8311a23682bc962c86b6d46c22944cc11d6",
+        "SKILL.md": "60b02c32455dd8b3a0a8563b6c616ed065dcb3215e2af5b9e0678f2bf6d9fb7f",
+        "evals/evals.json": "b174c9e99a655fb79bf04b9c81924195995a0fd406163066f0d0a85cb8daaddb",
+        "references/evidence.md": "6081b35b92085e6e451ad8de5ef9da8b2113c25b31bbf2896b6e49967c711e18",
+        "scripts/bench_switches.gd": "a472d64e9022f39fcda5542d39cd2389ba806d1a17be576230c4c933ff233715",
+        "scripts/shadow_budget.gd": "f482effe06a9dbc23e7bd5aa150349f409bf7d85804f2afbb00418a35967d06a"
       }
     },
     "godot-resources": {
@@ -417,6 +788,24 @@
       "files": {
         "SKILL.md": "0b2cc92d670cc2274f6579748a1703ec6a2bf70dc3d2875985deea1018f05bdc",
         "references/layout-and-theming.md": "5f54eed206cd7d7f5fecffd2ce1c189739eba5b5e18b2d1773f9ba7202427f66"
+      }
+    },
+    "godot-vegetation-shaders": {
+      "source": "laurentvv/godot-skill-quality",
+      "ref": "1771e83e3d5a63b4f7ee7320ec8de891d1a36b9b",
+      "files": {
+        "LICENSE": "2679f099f2170cedc164532793f86a8f201d2db5ae2a92a0287464b765547310",
+        "PROVENANCE.md": "384bcbe1a00b08a968edf4e8f18b383ce2c5188ea18b6784e901fed2b528b327",
+        "SKILL.md": "192f20529b412cc44d9726802e1db5163dd90da3cd5f99c26cf2459f9db054cd",
+        "assets/grass_wind.gdshader": "4c05926341f1cf8204bc73a9727aafd0ff9eba530c978d75b0bb64ec041eb9d2",
+        "assets/ground_blend.gdshader": "b14c1fd7bf9080d97085d6a6b9aeb13d40fe6a6110bb14b534be8bdd1aad3ca7",
+        "assets/leaf_canopy.gdshader": "9795ca261a14ce79651880bd1d69ff2b170265fe0129042be41b0ad961f35f31",
+        "evals/evals.json": "54661cc02a8983ca3eaf35d1c1da9501feaeb798cfbcff4bebe343df0b22e618",
+        "references/evidence.md": "f9beecd363bcf27aeb76e1e2b129d708f4cd5f5b63b5d4c6b0e6f3757af96167",
+        "scripts/blender_grass_vertex_colors.py": "2c89aea6558f13ac0eeca954f46621e298bad2d73ac3be6e1200e7fc5c9bffe6",
+        "scripts/blender_leaf_card_normals.py": "485ddda711a0fc2f476dae3a67c984cdea7b0165508d09014032f3781b6c9090",
+        "scripts/ground_mask.gd": "65e9ac1aad3a49c495f863b170f3fb2ab646db59f9c5d83a939706469694bbd9",
+        "scripts/scatter_multimesh.gd": "ed932931c9290df3d6ed262ec8fd285f0f7b509e02a8c72f3087f513eaf6644d"
       }
     },
     "good-css": {
@@ -519,11 +908,54 @@
         "SKILL.md": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6"
       }
     },
+    "ink-app-builder": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "0656157fbd54f8327924f30047a08fa18ec5181912c682190e116c0a1a125db3",
+        "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-brush-apis.md": "32df7c527d42ad4cd50b2496d41fb0acc37fe8e1ef695e442d57933c078d3d61",
+        "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-draw-stroke.md": "79c324523e0035e36d9dd525478539b926568b11e410f50f703353bf3b4eae3c",
+        "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-geometry-apis.md": "9a5a70380d7e3a1d19eb3983465ebd7502e510caa707cae0437c8f61503f7600",
+        "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-setup.md": "20ca4f02a7268e0fbd2b78f2af8e14e49e35ca3c878abdbb08ccfea85010f52e",
+        "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-state-preservation.md": "8cc68035e2574a828346131b04b434d5cbef431839b58199d8a1bac4d6bf7412",
+        "references/drawing-and-brushes.md": "895bf00d8706cefa382bedaf457f3a8a5a92649498a47840102f0fa5d4cf2525",
+        "references/editing-and-architecture.md": "9e9dbbf706ff15d073141c6bed374570ba74d0275a953ec394c3b9eb5a137174",
+        "references/persistence-and-advanced.md": "26a6069770f2bb65c29905927b4cbfd10e0ec3ced2d3cda94aff113a8897f03b"
+      }
+    },
+    "ink-custom-brush-builder": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "ee48c45317e8ab1a10ffdf51b385ee7eb0aa876f235449621b20834cc086a51a",
+        "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-brush-apis.md": "32df7c527d42ad4cd50b2496d41fb0acc37fe8e1ef695e442d57933c078d3d61",
+        "references/brush-behaviors.md": "8b5f04019268e206b736b1097762bc5e91db113ba88b6e0ee1b4ec221bc20dc2",
+        "references/brush-structure.md": "b252f83ca5600a44943cb16607670201b26798090bfe1c74b4912a645c4d82cd",
+        "references/examples.md": "9234bd64bf1de5d4a742ac5e07a5ee82060781d4f93c5b69c43d1ad38ff55378",
+        "references/textures-and-serialization.md": "4cac89c0fcbe679778540833a932707f19372c9358f37017791db27adceb43fe"
+      }
+    },
     "japanese-minimal": {
       "source": "madebymustafa/design-taste",
       "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
       "files": {
         "SKILL.md": "7b96ba5a48afd7d4e69f79f589f95e4fa6874384db0762c6d90b5cad0e1a6465"
+      }
+    },
+    "jetpack-compose-performance": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "a1680a1ae079faa47fc706bf034b88d4c4c4903dfa4187e98e0af8b056e1848b",
+        "references/android/develop/ui/compose/custom-modifiers.md": "b4ede8f37dc56c54f3621a5ad21f91a649450a9854bc1bacc1a24eb65fe31b38",
+        "references/android/develop/ui/compose/performance/backwards-write.md": "e9b5b1afa36dca37f9548a8d706cc8474b3f03e61bc77037dfa6ab7b1a2169b7",
+        "references/android/develop/ui/compose/performance/stability/strongskipping.md": "3a69e68553d6d628e8787b3e499766798e73d86779a149c800fff7bb4340cce4",
+        "references/animation.md": "fe21a3bc55b85b807e3655f427f00e3898a7a0da0590a9fe2825a20d43e440fe",
+        "references/effects-and-threading.md": "4a612526c8e9d28d26fb51b1d942d1b34a1fa2316dfe43d2869206dda49bbfa3",
+        "references/graphics-performance.md": "3dc5881c2fb8eb4bcbf59b410008d995321a5fd2583e98194ee42407bdb7d266",
+        "references/layouts.md": "619da0bd169a2a2c1b7e99868ab358a3be8c06f25f2bef0dd15353670ce12c06",
+        "references/lazy-layouts.md": "68a0a4f43d311e4d57238ce745d0de775b1948748ab462608d5cbfe8f07b9bfe",
+        "references/state-and-stability.md": "46aff96f166d19d1b2f5510c35679a0efac4fe9f578b4a1e186f5017a696ba37"
       }
     },
     "kinetic-reel": {
@@ -558,6 +990,36 @@
         "template/render.mjs": "2112d356740263a5af68f81e18fdb4a2b3901665280cf5807d3e41d2b6e636f5"
       }
     },
+    "leanback-to-compose-tv-migration": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "4d044013bfe5ddd9f67aeecb99f7ec8f1339defc9215ed86366d9f723aa77f11",
+        "references/android/training/tv/get-started/navigation.md": "08c2dff86700bd54ae63b7b02de1d9e3b5e333378a9854e6f96b6a5d7258e725",
+        "references/android/training/tv/playback/compose/browse.md": "f40cafe780fb3b037784d9da7672750654b8bc040a4e17ccd96cd0926f0fbae3",
+        "references/android/training/tv/playback/compose/index.md": "a5959e964cdd60aedce26260c17d4fcfcc377e3cba6e7f8cc1cc3c13b628957a"
+      }
+    },
+    "litert-lm": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "9b8c8aa13f289b6ab5e2fda29c6c4b6d5252d32055dab272647cf2e1efc0827f",
+        "references/android/google/play/on-device-ai.md": "3e5d8f41ee195f87d658a8cb1305dc7d169a8f4d6935f6380ace2a1468646bb7",
+        "references/get-a-model.md": "0e30d5eb6c762dde7d3d65a8039d7d2b0d864762ee38e1272d5ef666fe85d268"
+      }
+    },
+    "litert-runtime": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "4a61b022a5b96b07c897a6a2713dfdeeb9f092c69256a754ebbe42511498b717",
+        "references/android/google/play/on-device-ai.md": "3e5d8f41ee195f87d658a8cb1305dc7d169a8f4d6935f6380ace2a1468646bb7",
+        "references/migration.md": "c7fde3ba4b869c19fc7d92c2341442092fa0644c0322396b6c8333bdd84040db",
+        "references/play-services.md": "ebe0f2319f994640c6b04c3afa906effdf0e7827b4efe51c885b57e92d5eae43",
+        "references/verify.md": "a15d1fa8121544d6bd0e039c43b1e137a4c0f9a1ca33d55b5c2c1154ff7449e1"
+      }
+    },
     "llm-evals": {
       "source": "(authored)",
       "ref": "2026-10-28",
@@ -568,12 +1030,58 @@
         "SKILL.md": "37be2c7aa626f28863efaa6bb7620bf602f9e2852af60aba43632254ecbb88f5"
       }
     },
+    "media3-cast-integration": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "34dd7b45a71c6029ec099d97256f956d0e97d7ab64fd60c3421b2293aa025b6b",
+        "references/android/media/media3/cast/create-castplayer.md": "a142f57d197ba7bc8b85427740d47c4f7dbb67d730b0b9b61aef94f1c4bc462f",
+        "references/android/media/media3/cast/customize-castoptions.md": "b44e77d95b7eb751475c441a0851870848a2d239fb8880002537dfcdfc7986f7",
+        "references/android/media/media3/cast/index.md": "9c85fc784634bdfc7cdda16d7f206843ac00c235a42badf42c44ae8968f30ea5"
+      }
+    },
+    "migrate-xml-views-to-jetpack-compose": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "79d7bdcbf88f1a0e88bce08f7d016d24648a609059cd7f2c9adaa0abbfb16f18",
+        "references/analysis-of-the-project-and-layout.md": "6c62575a08ac698b33ee41e8806858cc9536669ab83c8a18653a4e086e4fce0a",
+        "references/android/develop/ui/compose/designsystems/migrate-xml-theme-to-compose.md": "f87dc398550d898fedbd6c5ac382a927013064ed6148fe25d56c518049db1ee1",
+        "references/android/develop/ui/compose/migrate/interoperability-apis/compose-in-views.md": "0c177f3275584e2a7977eb54e4409af7a0a0ebcb37a536a29a420ac541acfc57",
+        "references/android/develop/ui/compose/migrate/interoperability-apis/views-in-compose.md": "1ef0315bd99b5d3cea9270e6fb2f883989eb6b9cb56f64dcc0d6e67467441ad7",
+        "references/android/develop/ui/compose/setup-compose-dependencies-and-compiler.md": "0250383f52bb725d5f4b4ae1f27cb3b3ed53640c59aa040af637b783ca8545e0",
+        "references/identify-optimal-xml-candidate.md": "acd036633dd2c1b0d286be9340f8565143f6700cb2fa8e3c04c0e10d886eb1ba",
+        "references/xml-layout-migration.md": "c5e41a6b97a963407606d428f273938693ed3da7d4195bb30fd15dd4dc68916f"
+      }
+    },
     "minimal-change-engineer": {
       "source": "(authored)",
       "ref": "2026-10-11",
       "files": {
         "NOTICE.md": "93c498ca64f29c5325190bb9d828a6a79adb13675b8b8a36143ed1b4f0b5d62e",
         "SKILL.md": "dd8062f2d09fb83aea542f95136d70bbf4f46324e76769bf83d363f070b3353c"
+      }
+    },
+    "ml-kit-genai-prompt-api": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "a8ff20f65d0b4a077f2635dd76763c3235b7427c32c2fbbc15b97e0b1f78742f",
+        "references/get-started.md": "1ccb7145b30bad14f0304d439b92bf629ab0da1a67542035d124462f64880a36",
+        "references/prefix-caching.md": "f306926da65aa6fc0579e079626530fbbba5e7acf2b905a7c14d55391618f86f",
+        "references/prompt-design.md": "fdaeb50d5d87ea94dd477529366d8900447e84bdaf8b21f002654e97283ce1b9",
+        "references/prompt-optimization.md": "7a1f6d33e40f5ba3626972874aba083a6c595a4a2d0fb14496aab734d99a90b7",
+        "references/structured-output.md": "0d2456c2d528fbac9935abcdd6119be130aa11d0d9ceb3ef3e73b806c8ce2bfa",
+        "references/system-instructions.md": "e378a294190bbca7345fef3fb5f1e50be706285259d0d8ed2b511c9944b2a149"
+      }
+    },
+    "mlkit-agent-api": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "0c0326f211d8a62f3a26057d7a9d2aff308aa3cacdf741d945878593aa1329f8",
+        "references/session_lifecycle.md": "2e6158b97dfbfc69d8c0fee9be16e4ec39a735e6b694f6384dcd7dc3fe8dd049",
+        "references/tools_and_functions.md": "b007dcb535880c990963ad5f48a6874c834da3ae28f21aa457ed354944e146ba"
       }
     },
     "mobile-native": {
@@ -590,6 +1098,51 @@
         "SKILL.md": "2bad2f4f24eb6396c4f0872756c605eb93fbe821aa9f53802b817e9e3a1fbc89",
         "agents/openai.yaml": "d331d49b7637f0a5bc2ae60dd323aa9535196739a2dd3ebd9b48b556ee9ea562",
         "references/fetch-recipes.md": "1b40d43ea209c7e36cfce9606fd7277910472bfddff44ef206edfd151f63d632"
+      }
+    },
+    "navigation-3": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "e2bc8ec434bc104f71ef753ca21665678b00db8f14ef3fd36847ab85b313b4af",
+        "references/android/guide/navigation/navigation-3/index.md": "a6170dc40e2769e1034d51a5021b0b6dbc5df9bc9d9bbcae3c576a0647d0b6cf",
+        "references/android/guide/navigation/navigation-3/migration-guide.md": "2ba7d44e4b0b5ab827925354810645da026e9fb721bd9589a4f94b6f5d7bc954",
+        "references/android/guide/navigation/navigation-3/recipes/animations.md": "50c54d09fe14cb28f27d02cd9aaad4204dfe975a14bc8292b0bd40f61ad5300d",
+        "references/android/guide/navigation/navigation-3/recipes/basic.md": "f96b02408f311d07c8df16c1867e25598c4bcc1794b52aaaa290a3b377727495",
+        "references/android/guide/navigation/navigation-3/recipes/basicdsl.md": "d077507172cbf9ed6916899ef2d17b5f9aebcc9d3b46d51725d30166949daa14",
+        "references/android/guide/navigation/navigation-3/recipes/basicsaveable.md": "93f01733db02f06a66c54bc5372a88688831bad14ded07ad181a16a12b848110",
+        "references/android/guide/navigation/navigation-3/recipes/bottomsheet.md": "63d7fe5d044bd0d9c4dbb913b47ecaf2d7677305ac94c51c9295ebabfc1ef76f",
+        "references/android/guide/navigation/navigation-3/recipes/common-ui.md": "835be092ff7114870543b4f7fb1f0893157c0ad07e00d70682a1256e95f5f3db",
+        "references/android/guide/navigation/navigation-3/recipes/conditional-transitions.md": "bb41f81b08f422aaa201d2716f0feaa22705ebc9154d914ade0c25b3d3052063",
+        "references/android/guide/navigation/navigation-3/recipes/conditional.md": "1197b80637b7f670d7f7a426e1c5e47958139954888ddbe5cad68a82dda0fe2f",
+        "references/android/guide/navigation/navigation-3/recipes/deeplinks-custommatcher.md": "96c0a9a617fffc4e5e9113da2b55fd1bd8bbe40593c836425a9dc2984854d0b0",
+        "references/android/guide/navigation/navigation-3/recipes/deeplinks-staticuri.md": "f131fe946f25f108601b66dcdb62be6add8cf685437fc78621d8b92dd67bd201",
+        "references/android/guide/navigation/navigation-3/recipes/deeplinks-syntheticbackstack.md": "12bf69439480fab3111f4b513118be0128ad574dd9d0aecd199ea37d0f75c4b2",
+        "references/android/guide/navigation/navigation-3/recipes/deeplinks-uriarguments.md": "bb8afb2616dfc7202376175752bdb5c99b19a64642b7a1b1f6f651527dfdf129",
+        "references/android/guide/navigation/navigation-3/recipes/dialog.md": "b8ac45054125a6aed66c5df682200c74440336d0584d7e1894078954c719200a",
+        "references/android/guide/navigation/navigation-3/recipes/lifecycle-owner.md": "45e204c1494179deadb56e9b544c78c6f6f17be4d3d660d841a5db5e4245038f",
+        "references/android/guide/navigation/navigation-3/recipes/material-listdetail.md": "e4781cf0fc691f92c202400a07ebc80424666681f9547e757f660388252cdb29",
+        "references/android/guide/navigation/navigation-3/recipes/material-supportingpane.md": "f0dc47a8d0aaceeefc6a48bf73563b3f9449e608c2ef71140acd5dcd13377e6d",
+        "references/android/guide/navigation/navigation-3/recipes/modular-hilt.md": "a11572b32f8a72ea6736db0ccea44eb94f575dd272c9246bdf24d1b76c31f539",
+        "references/android/guide/navigation/navigation-3/recipes/modular-koin.md": "591bd833b2b725d9e2e8f5ca5658a825c7d2f589c6c5d3103066e320a82e4fb9",
+        "references/android/guide/navigation/navigation-3/recipes/multiple-backstacks.md": "ee3300492f924914c649e157f3e72ce67af1b3b2fb356465a86b0b37e7b47d11",
+        "references/android/guide/navigation/navigation-3/recipes/passingarguments.md": "bc53a9bbabb799865bf8bc3130faeae6e6d2b2838c3e44f48574443b6467e0a5",
+        "references/android/guide/navigation/navigation-3/recipes/results-event.md": "e3f3371d6c5f06a3696c2f90f095bd5c530abd1a8dc59e666631b4e1d2926589",
+        "references/android/guide/navigation/navigation-3/recipes/results-state.md": "17fbf45258b3c928e300adfa07ec320ffbd591e3209236499c74bbb736a1acec",
+        "references/android/guide/navigation/navigation-3/recipes/scenes-listdetail.md": "2a19b4d03973c179eb4e4be8f95f9b728af34b55015619dde73dcd72af916e8c",
+        "references/android/guide/navigation/navigation-3/recipes/scenes-twopane.md": "d0cb99ae3054cf463a598fd348d3d9a07aa4b6805ab22121bdc11561a60b1f64",
+        "references/android/guide/navigation/type-safe-destinations.md": "ad5f13e3d5ee1bc849d2da5941d4f99a3e2a5748d52fcdfde96d1bc21bf47acb"
+      }
+    },
+    "navigation-event": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "4e9acfb0190cdee56dafb063868965992fdba2ad1694a7fc2524b9046a199609",
+        "references/android/guide/navigation/navigation-event/dispatcher.md": "c7ea58494c01b81554058c04090489a867731ca6cd995541446b22ddb0f42bba",
+        "references/android/guide/navigation/navigation-event/handle-back.md": "83268d85190a87e96f3738bec946d7f920abf2779f78d1f7c81822b4697a251b",
+        "references/android/guide/navigation/navigation-event/index.md": "c6fa437e86e893fba81b80c1667dec134eb9530eea77861e23ec8dc1ac4747a5",
+        "references/android/guide/navigation/navigation-event/setup.md": "c117a8fbffa985a0640fd3a1738e568d6d4e26c2c5a941601146fea687258d84"
       }
     },
     "neo-brutalism": {
@@ -701,6 +1254,36 @@
         "SKILL.md": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
       }
     },
+    "play-billing-library-version-upgrade": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "486bd0b932c7fa2a92098d9e5a09a70c342e17f30471e627f7ceb2aad55eefad",
+        "references/android/google/play/billing/release-notes.md": "c4f0dbbdaa0d3ca2b406818e8894aa7e2dfa90e1008b7bece6e57534649b8e12",
+        "references/migration-logic.md": "1bc9c473c6ef2b2cbc86082580bbd098dcde99363449d943729467f39a09d842",
+        "references/version-checklist.md": "22a81c4974413f9c73f5a68fa3d889e452f72cad54c071794a5e6fc61a4fc3ad"
+      }
+    },
+    "play-policy-insights": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "cc7b9074b746a07b14ba998d5620df0a57f7923545cb078fb47fd2e2c388d467",
+        "resources/common_mandates.md": "30623c7d55e54f2126fc0ed1b44356129af92121dce27f58f205e4079cd735f7",
+        "resources/compliance_report_template.md": "fedf8de0653f5887c2bfb0b6952c5fb8591b2fbfdae8a6c24c152707a79d3d2a",
+        "resources/critic.md": "1152e64b2e3ab93964ba7ec7e9f20b59ce953b8560fadfd6dab7c2ecc1e0fd01",
+        "resources/goal_data_safety.md": "385e67139e20276b1ecb75bd7703f55068aec324f0371adcde5a7ef0eb530b27",
+        "resources/goal_permissions_and_apis.md": "74b52c77a6643cc9c755fbc1e36900d30a7a5457b46f27c78d38444cf6c57383",
+        "resources/goal_user_account.md": "2f2fea579e4311587fa90c85bd26662fc0a43ecc105e7487b507fd8928463dc1",
+        "resources/policies.json": "acb66e054c7cad6f0c9b230573fe16a28dd8d168d0499a105fcaf3f80c95f5fa",
+        "resources/scanner_config.json": "05ab96810e728f288b50c1ddb54a74200c62cc34e1136e6c8737de92833df1e6",
+        "scripts/generate_report.py": "66a3536cf206ab883307c9410ff2154798f1f207b366d6b3ea562b60223c33c7",
+        "scripts/orchestrator.py": "14b81cbc25e46eeb6dc0fe2afef9a0d414ba543dba8bfc299e33cf86072aff5a",
+        "scripts/play_store_scraper.py": "1a7cfce2b04659ec5d003ccaebf2dc6b57b9280fadb287e31dc7cf50fbea92eb",
+        "scripts/scanner.py": "9deb80401cad900a4efdcde7d63bc0f554e4bf283fb3c14b5ed618c4c3184c08",
+        "scripts/template_engine.py": "766140144502ff1f3f84749df2fc93f634da0b9aa3160054eae8f5f922f5e467"
+      }
+    },
     "playful-color": {
       "source": "madebymustafa/design-taste",
       "ref": "c4a6bff0871eb4b15371b0e7d2751628b0ed4608",
@@ -713,6 +1296,17 @@
       "ref": "2026-10-04",
       "files": {
         "SKILL.md": "72e53de56f18acf95bff707c29f7d6eb03b1fd0c1a2aa5375f7d6c296777f3a4"
+      }
+    },
+    "projected-hardware": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "a56446cc42c56301ba732488ceb7918bea685ef85f110fd66e282b0be4372aad",
+        "references/android/develop/xr/jetpack-xr-sdk/access-hardware-projected-context.md": "22bf628c6da0388bc0f79c0679bdcd4d1398375fce53b896cfdf72092295dc14",
+        "references/android/develop/xr/jetpack-xr-sdk/glasses/check-availability.md": "b7b0e89167ca6798eede172c1f741c557097a0e527ddba4269bcdaa4685884bb",
+        "references/android/develop/xr/jetpack-xr-sdk/glasses/support-different-types.md": "11c622d25e6b90bc9d6391ef65ea953fd1ea860101cb780b9459f1f53ea76b1a",
+        "references/android/develop/xr/jetpack-xr-sdk/request-hardware-permissions.md": "c61dcb8c28e817bc4a7e9dca14630d31271b2022791ca16fcb022272bee9ef5b"
       }
     },
     "prototype": {
@@ -730,12 +1324,37 @@
         "SKILL.md": "3f439a21dbb284554449563c05cb2da6fab9b156bd08a2ab5168b4c5cc781468"
       }
     },
+    "r8-analyzer": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "b6001b06ff0ebcbe87b98534a239c8c22b818b97681972db50d5b26466d2bf06",
+        "references/CONFIGURATION.md": "61669860168d5c1f9628f4eb49d68b28e06d60f301a550107d96c030a1389ab2",
+        "references/FULL_BUILD_CONFIG_ANALYZER.md": "e35ee7cebcf2c2bff5f17b5691ad9ac3a58bc2755ae5d7c3f326a9911d3e6f06",
+        "references/INSPECT-RULES.md": "35c2c579ab8693365ed9caba4b08e70228484d3d98e74efe143047e8df9996c4",
+        "references/REPORT_FORMAT.md": "34f11005ccc09e7198fedcb2e56f270127c5e8ac6e95c5fce6e4d9b52a55c323",
+        "references/android/topic/performance/app-optimization/enable-app-optimization.md": "560048d6c973301d60c4ee058147f16043c50e5490f6e464c45754a38a7a92bb",
+        "scripts/analyze.py": "59b55ac94cc1509e244792edeef26111b048d130eb74b6eb4f14ad5f1f30473b",
+        "scripts/convert_pb_to_json.py": "06397052c96d80cc0ffd7077faf197555c2e9c9363a7fff59ae84f28169998e2",
+        "scripts/keep_radius_pb2.py": "37f0f038d7870c71b8d3cdd5b9b9361d79bde265e2754e3ffd511f53107a2e1a"
+      }
+    },
     "reality-checker": {
       "source": "(authored)",
       "ref": "2026-10-11",
       "files": {
         "NOTICE.md": "fd8fe8e6da21549ebc561f5b5c7b5bbffe79dbcc1decf0073c7af097d904262d",
         "SKILL.md": "0b45f299089997863b62428ce7456f69b77da72c83946fddb98932901bafa92f"
+      }
+    },
+    "restore-credentials": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "e1fefb897e1f1d9f4bf216223b700c215c532f0a88207ee73627128f995230ba",
+        "references/android/guide/topics/manifest/application-element.md": "4ae9445ff82dcbad38ba2a118d71d17ef844727639a93a281041e1117b2c7e59",
+        "references/android/identity/passkeys/create-passkeys.md": "c96a08a2ef4ed3312ae05547dd5a28492755cfaf1cc395bc5f50376f151757e1",
+        "references/android/identity/passkeys/sign-in-with-passkeys.md": "04e21eaf82b230e200c1aea9e660566470484fd5a4d6383a2c0fb91f5451e608"
       }
     },
     "retro-print": {
@@ -978,6 +1597,17 @@
         "SKILL.md": "1d2a07263d33ce98cc708a2d056eadb1636e9a78d9ad04a93896630bf6ec5213"
       }
     },
+    "testing-setup": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "613970834fedb22c5f85bbc900e600e9a17cd953157af5a7e953e5938d7c2457",
+        "references/android/develop/ui/compose/testing/common-patterns.md": "57fc697835d875cae7179d1b164db371e1b8c37881719fb32be51c09fa5c8c35",
+        "references/android/studio/preview/compose-screenshot-testing-with-testsuites.md": "4b4ada7a50201bcf9ab90b0d9f00cc2ceb16513d1de7f63c12d634318a2ec20d",
+        "references/android/studio/preview/compose-screenshot-testing.md": "d9b9c86efe82e0aa841f43435e4a29466794e75dd452e84a29fdc4f332a4d699",
+        "references/android/training/dependency-injection/hilt-testing.md": "5e774a6ab09c0f469b4712ea8c468402b38dd4a19dce9570bacc49ad9af9c814"
+      }
+    },
     "using-superpowers": {
       "source": "obra/superpowers",
       "ref": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
@@ -990,6 +1620,20 @@
         "references/hermes-tools.md": "e2185c976a3c87503910e05e2aea58cc89bc8e569bb624b93df9958ac47a9190",
         "references/muse-tools.md": "5a1da5c575fe18456ca71cd47ebfd8a38c745f8d82a67fe64d5b83080000eeb3",
         "references/pi-tools.md": "703dbc83d23ecab9c6f388460c38abc482e9dee2fe6772a8c7a255152ad3a4d5"
+      }
+    },
+    "verified-email": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "edeaae75ed7f1b5504edc4f1bc69dfd314df8a798bdceeb88f6b0e0ce1198986",
+        "references/android/identity/credential-manager/index.md": "b472b71ca3b9d6eeab02d01103973072e38a0fe08584bd93efb47131946e21ea",
+        "references/android/identity/digital-credentials/credential-verifier/request-credential.md": "b816cfbf2acbaa57d6b0f16eceee80d28e8309a6e0102298b8d20e62cc61fabc",
+        "references/android/identity/digital-credentials/email-verification-implementation.md": "5c2d0e1a487ddec1164a485b80451ed7497938ee37857abda1e20c7b29139e27",
+        "references/android/identity/digital-credentials/email-verification.md": "0bfed5c943ebae58677d93c1a219b34c636403616972be7115d6b806cac6438b",
+        "references/android/identity/digital-credentials/index.md": "f79b36376ba09798e6d4a7671852214989d16da7688820eb06f651e32277fe80",
+        "references/android/identity/passkeys/create-passkeys.md": "c96a08a2ef4ed3312ae05547dd5a28492755cfaf1cc395bc5f50376f151757e1",
+        "references/android/identity/sign-in/credential-manager-webview.md": "f72a683c01bff1e32bab80eb96be3cc8fcf575e0484f09870c2cbeb79ab2540c"
       }
     },
     "video-toolchain": {
@@ -1006,6 +1650,76 @@
       "files": {
         "NOTICE.md": "1bbac6cca2eefe5f312e0f8db55a97d3731d15339c88239e18185787cd5e128f",
         "SKILL.md": "e173ea8e7d98491d4549046b0f78448382d54679fc1362f70ec2d4f6ad15d675"
+      }
+    },
+    "wear-compose-m3": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "40bf5d82a6a9b90b625aef8c6292c8b5ff446e5e6de82a08ec3c4fe6ac9f5b9b",
+        "references/android/training/wearables/compose/migrate-to-material3.md": "4beb86e1da95a57f0ae7f5a23fefb888ebc1ff805d2440c72db8681bf0cfa9f7",
+        "references/foundation/AmbientModeSample.kt.md": "79e555c8eec3143646397ae27b4fc4ab9466a1179757f0f75ba792b653465fbd",
+        "references/foundation/CurvedWorldSample.kt.md": "448050300b3511a43b85e7cbc566c77e69af51405d86afdd5f7dd6d8b32eaf4a",
+        "references/foundation/ExpandableSample.kt.md": "bffdd565f4768864c0ddf0fb6f792c346203c0cc461593d26196f4a372beb842",
+        "references/foundation/HierarchicalFocusSample.kt.md": "f6e8374deb126f2ef8b5b61fa60e386690de5208f05bc23bb03ddde5b4139f8f",
+        "references/foundation/PagerSamples.kt.md": "9b5f78d34cf11f81ef4dbde1f61d0e12943de9b229e98e8c7cf0318dbddeae20",
+        "references/foundation/RotarySamples.kt.md": "f2c4aff48f7e2e5086b7fa5c9d0197db8b0b194714ab009a738fe211133aac76",
+        "references/foundation/SwipeToDismissBoxSample.kt.md": "8658ec94800538218485b6ed237071c93ad483a2dca1b884e35187899ac30feb",
+        "references/foundation/TransformingLazyColumnSample.kt.md": "210553f8b5de57f1cb26c17bcb04202a3bc59335f12f8587277412e1f9256b2d",
+        "references/material3/AlertDialogSample.kt.md": "6e5affdb7e9daf7137834d3dc26dbab345c2a8f080396455fa6b0975c67c078e",
+        "references/material3/AnimatedTextSample.kt.md": "753d54e3f689be9dde8aaeede67d162dc4585cc9996e30de3e7b09bfb84f891f",
+        "references/material3/ButtonGroupSample.kt.md": "7bf3a06fcd6ce383a70ef99d48976813eaaf69808a692abd3447b0d150347053",
+        "references/material3/ButtonSample.kt.md": "e37cae676c08053ad7f1fa067c24e0a65bfa0fd1d0d6b6e508b55c1ef242fc67",
+        "references/material3/CardSample.kt.md": "76e9a02c6596df27468b2a0cd3b7660326727f4e78ba0629006a254f2a794586",
+        "references/material3/CheckboxButtonSample.kt.md": "bac381d7ed28d490eef34150b5240086fa0b426d309c75426098def58e2a7ac7",
+        "references/material3/ConfirmationDialogSample.kt.md": "4a40b7b4eb45eaab0a76dd4979eed1f9f7dc53b145a9a367a6adb001a8b0a43d",
+        "references/material3/CurvedTextSamples.kt.md": "c8cde9e6661eef1e798080b55e0010648d01d7943a1091d7eec2b4f8f7eedac5",
+        "references/material3/DatePickerSample.kt.md": "36b019039c69fa0147ba2e77c973ab0cf07bd921838358a8e763c258c2116bc5",
+        "references/material3/DynamicColorSchemeSample.kt.md": "96b83d16f713a33b5717da647a4fb1c374b92bfb807d54583f47bba740f9082e",
+        "references/material3/EdgeButtonSample.kt.md": "a6febbfae6af473182a0ce02ffbd2c32f43f0252118f9ecbdd0ec163f63e25d9",
+        "references/material3/FadingExpandingLabelSample.kt.md": "5dc93585ab7288299d3e2cc81f556ac9eb7625e15c1c973ad6dfe0d76b1c31f1",
+        "references/material3/IconButtonSample.kt.md": "d58e49661c3d74493de9c029814cb276303c583efb305953011ea2d95fa21593",
+        "references/material3/IconToggleButtonSample.kt.md": "955300f93bb3ef8c67bfd0c4f13b316848ea1e12dd74f4d18a09084799d8d56a",
+        "references/material3/LevelIndicatorSample.kt.md": "b68c491cbe8543c1cd4742067f3af05820a755b3f3136a44209516edb3f14a5a",
+        "references/material3/LinearProgressIndicatorSample.kt.md": "692da1534a7328629b2eae80265ec991bee8d6d636b6c6bd6128e6dc19abd740",
+        "references/material3/ListHeaderSample.kt.md": "951a2cb1b9263702eadb9035f53da1b2c0fa2dc27cf28ebd8e7365b7cb6d20f4",
+        "references/material3/OneHandedGestureSamples.kt.md": "1531d46c57543b3c22d6c0875c883b1258fd9fcf983ef1ec908f6a64b6ea6db3",
+        "references/material3/OpenOnPhoneDialogSample.kt.md": "727277e83f46ee3c9b66b71190447b6645c16f509ba8d8f39ae06df01bf8e91f",
+        "references/material3/PageIndicatorSample.kt.md": "16a53b90907b15595e02de95aed9471df76aec11cf66e5c4c495333e0ac8b8a8",
+        "references/material3/PagerScaffoldSample.kt.md": "e67d174fd6e8cc381481e45ca2eb30202d159f9cb56191d6f4f10e90c348f808",
+        "references/material3/PickerGroupSample.kt.md": "ea89f195a556c83fd10a9d835715ebc8a277001c32ebeb7f1b95ba1feb6ab366",
+        "references/material3/PickerSample.kt.md": "31826e646cb6f9600a23bd4271635d4813aac4167ece1caccc81d283a0fb7a10",
+        "references/material3/PlaceholderSample.kt.md": "7871669d3a9e2bdd0ca5ac7aea850c33786f89d14dd2c69662857412058bfb96",
+        "references/material3/ProgressIndicatorSample.kt.md": "70211417bb25bc7fae6d7047fc89b8f6de4c6b4f173b7e1da5df26c2e10f4218",
+        "references/material3/RadioButtonSample.kt.md": "f260f14ab20cbcb72f0dc9e9bd09cb4040129ae3f1d7c3f5e196680c89a78f23",
+        "references/material3/ScaffoldSample.kt.md": "53e7c3242fd8d766debad5d2c7397e7b1624b29a144cec6a13ef7f5948f70d91",
+        "references/material3/ScrollAwaySample.kt.md": "c4cb25c100d0f5f0cff8bdb98efd7d3c121a0d76b273ce6a779724c46d32eaf0",
+        "references/material3/ScrollIndicatorSample.kt.md": "c896b05d9bb2215b162cf38226f6b5a3025839c5f6d7f1df9d155365d744bfc8",
+        "references/material3/SliderSample.kt.md": "68aab4dff04a43b4f05133985bd0c8c34e19e6fdc08e5b08986f66a814a0cbe1",
+        "references/material3/StepperSample.kt.md": "8c733535a3dbe22cca641e8a9734894aa4dcf5cfb8f9c791eb65be8873ea3b2b",
+        "references/material3/SurfaceTransformationSample.kt.md": "1aa29bedb3aaf0640b1a1a16c7ce918fcb8d683556aed7e683a54c5cb055bae8",
+        "references/material3/SwipeToDismissBoxSample.kt.md": "cc9f6ae83f9c0b695f88296e4c363df9201b1a02594c4cc03cacd93d16507648",
+        "references/material3/SwipeToRevealSample.kt.md": "3142707df68def83b070cc1064c04d6b32594f1296741fbf694a7ae7f504b64f",
+        "references/material3/SwitchButtonSample.kt.md": "17d4be88826971f0ab6b709cb8bd472857ebf134dbc35bd143f1f891f34aa811",
+        "references/material3/TextButtonSample.kt.md": "99ecf490951951a07d42161b7387d8463403bd738d96fc315a4ae174cfd54aff",
+        "references/material3/TextToggleButtonSample.kt.md": "c19961d9a692ace8003599e77a74ee379ece11cf7143c4c65f3752561214c2ad",
+        "references/material3/TimePickerSample.kt.md": "d77875c69479f01c2300425a19f65d5c4ce032d18eab5595cc75cf8fcb3e63d8",
+        "references/material3/TimeTextSample.kt.md": "d476c6a95508435c3c6b2eb6770fe8b95c1e656cb9873ee71098d69c151b3bcc",
+        "references/material3/TransformationSpecSample.kt.md": "b2ca1641d102a4831e590269250884bc4121f7b0cc7d9b276366ee4d1b65ba13",
+        "references/material3/TransformingLazyColumnNotificationsSample.kt.md": "8d7face4199434daffe3f581a641ba10863e49a255f34f4a4b911677ec395b6a",
+        "references/material3/TransformingLazyColumnSample.kt.md": "ead69c50d777d82554cf9909a526274403d1c2b1ac3d3abaccf85d1dffac1ea0",
+        "references/navigation3/SwipeDismissableSceneStrategySample.kt.md": "831b118bd1048eba5f20984ae194cd4e0a258d1f1855a699996d5ac9b88f2aa6"
+      }
+    },
+    "wear-widgets": {
+      "source": "android/skills",
+      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "files": {
+        "SKILL.md": "55141fcb1c516f08a392355d71bbb67fe4db2ea4ec5af9bfa984256b92e32b0a",
+        "references/previews-and-testing.md": "3c3ea51bfc53dc722a34f15c7e0145d52ed9b445a5699aa2f304faa5b6eaca08",
+        "references/remote-compose-layouts.md": "bab22798bd349e526813ec6d9ce787ef99b5bc98894f568192dfdc60bab2e0bf",
+        "references/state-and-actions.md": "6f21ac02591e677b491beed654bf6101a021a0f555e16aaf47a5706127a243dc",
+        "references/widget-service-and-manifest.md": "81d33482b357a95b958971d4d855422f72254bff2563ccd17d9bc87c010af744"
       }
     },
     "write-swift": {
