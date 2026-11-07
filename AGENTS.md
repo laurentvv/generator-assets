@@ -3,7 +3,7 @@
 > Instructions for any AI coding agent working in this repository.
 > Structure: **common block** (delimited, resyncable) + **project-specific section** (free).
 
-<!-- BEGIN:agents-common v3.0 — block shared across repositories (agents-kit). Do not edit by hand: resync with scripts/sync_agents.py -->
+<!-- BEGIN:agents-common v3.3 — block shared across repositories (agents-kit). Do not edit by hand: resync with scripts/sync_agents.py -->
 <!-- The script only replaces what lies between the BEGIN/END markers; all repository-specific content is preserved -->
 
 > **Priority on conflict**: explicit user instruction > this repo's §7 > this common block. The §5 prohibitions are lifted only on a formal explicit request. This block is overwritten on every sync: add nothing here (lessons → §7, see §6).
@@ -26,7 +26,7 @@ Never rely on the context window alone: it degrades, gets compressed, gets erase
 uv run --no-project .agents/skills/agent-state/scripts/state_agents.py [--repo PATH] <command>
 ```
 
-The dependency (`duckdb>=1.1.0`) is declared inside the script (PEP 723): uv builds and caches an isolated environment — no global install. Tables: `features` (pending | in_progress | completed), `contract_criteria` + `contract_meta` (frozen validation contract, 15-30 criteria, test command), `sprint_progress` (objective + milestones), `execution_log` (append-only event log; no rotation, no archive). **Proportionality**: the ledger is for feature suites — a question or a one-off fix does not open a sprint (one log entry is enough if the ledger exists). The database is committed to git (source of truth); only `*.duckdb.wal` is ignored. A legacy 4-file ledger (`feature_list*.json`, `contract.md`, `progress.md`, `log.md`) is auto-migrated with backup on the first `bootstrap`.
+The dependency (`duckdb>=1.1.0`) is declared inside the script (PEP 723): uv builds and caches an isolated environment — no global install. Tables: `features` (pending | in_progress | completed), `contract_criteria` + `contract_meta` (frozen validation contract, 15-30 criteria, test command), `sprint_progress` (objective + milestones), `execution_log` (append-only event log; no rotation, no archive). **Proportionality**: the ledger is for feature suites — a question or a one-off fix does not open a sprint (one log entry is enough if the ledger exists). The database stays local: `.agent/` and `.agents/` are git-ignored from initialization and never committed (heavy binary, installed scripts — they would bloat public repositories and skew their language stats). A legacy 4-file ledger (`feature_list*.json`, `contract.md`, `progress.md`, `log.md`) is auto-migrated with backup on the first `bootstrap`.
 
 1. **Bootstrap** — on every start, crash or restart, run `bootstrap`: bounded state (active features, sprint, contract, the last 20 log entries). Never query the full history unfiltered — use `search-log`.
 2. **Action** — `log <type> "<message>"` (type ∈ init | gen | eval | fix | sync | done | err, ~200 chars) at the start and at the end of each action.
@@ -45,9 +45,13 @@ The dependency (`duckdb>=1.1.0`) is declared inside the script (PEP 723): uv bui
 ## §4 Git & delivery
 
 - **Never work or push directly on the default branch** (`main`/`master`): `feat/…` or `fix/…` branch before any change.
+- **PRs stay small and deterministic**: one PR, one self-contained change — declared scope, no drive-by edits, green tests; the whole diff is reviewable in one pass and rebuildable from the branch alone.
+- **Agents review the PRs**: an orchestrator agent dispatches review agents on every submitted PR (diff + checklist); their findings are folded back into the branch before human review.
+- **Stacked delivery on long arcs**: long work is cut into a series of small end-to-end PRs, each green and mergeable on its own and stacked on the previous one — never one long-lived branch piling up unreviewed work.
 - Once the PR is submitted: **stop** (no waiting loop); merge only on explicit instruction.
 - **Never a destructive git command on live work**: `reset --hard`, `clean -fd`, `checkout -- .` / `restore .`, `push --force` on a shared branch. To undo a test commit: `git reset --soft HEAD~1`, then targeted cleanup.
 - Push only on the user's explicit request.
+- **No CI on GitHub's infrastructure**: agents never create, edit or enable GitHub Actions workflows (`.github/workflows/`) — builds and validation run locally; modifying an existing workflow requires a formal explicit request.
 - **Pre-commit checklist**: tests/linters green · no secret in the diff · maintained docs up to date · ledger synced.
 
 ## §5 Security & integrity
@@ -114,6 +118,7 @@ uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # big
 - **Every test VALIDATED by the user becomes a workflow** (`main.py -w`, code `core/`+`workflows/`, README, MEMORY_BANK, skill); conversely: never a workflow for an unvalidated test (status "tested, not validated" in MEMORY_BANK).
 - **Test campaigns: max 1 hour of tests per day window, except overnight runs** (user rule 2026-09-28: "c trop long pas plus d'1 heure de test sauf la nuit !"). Size benchmark matrices in advance (sd-cli A/B legs, multi-leg suites): cut to the minimum decisive set or defer the full matrix to a night window.
 - **Sound notification at task end** (user rule 2026-10-05: "Notifie moi avec un son quand tu auras fini"): at the end of every test window, long generation/night run — or any turn leaving artifacts for the user to verify — play a system sound (`powershell` `Media.SoundPlayer` e.g. `C:\Windows\Media\Windows Notify System Generic.wav` + console beep fallback) so the user knows to come check the result.
+- **Sound notification when user input is needed** (user rule 2026-11-07: "notifie moi par un son si besoin de moi"): play the same system sound whenever the agent blocks on a user decision — explicit GO required (external action, merge, publish), approval gate, ambiguity only the user can resolve — even mid-task. A question left pending must be audible, not just written.
 - **`h3_ref2va`: always `--turbo`** (VALIDATED 2026-09-09, ~38 min vs ~70 min for 22 frames); 20-step base only in A/B or explicit request.
 
 ### Watch & updates
