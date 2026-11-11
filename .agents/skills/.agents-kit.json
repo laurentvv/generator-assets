@@ -3,15 +3,15 @@
   "skills": {
     "adaptive": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "e7a778745599729973cd6a07f0c90be3355e9785f650680daece8905fe0f617d",
+        "SKILL.md": "c1e674393d0ea57d04349f8ec85df5b7e043d4ea1cbbe5b0c5989ac3dac456a1",
         "references/android/develop/ui/compose/layouts/adaptive/flexbox/container-behavior.md": "7a33b15b827dbf21557a2ac808d3e0c2653cf33cc4c58277f2eb94ebfa41aa5f",
-        "references/android/develop/ui/compose/layouts/adaptive/flexbox/get-started.md": "2333ea80100012554a3891048f237b6aeacf9e5f9d8b54d8b10c4cf639897813",
+        "references/android/develop/ui/compose/layouts/adaptive/flexbox/get-started.md": "3f9cd51f4de0096cc33d926a3b0870cf1230ea51ea10b2778a9c79abe382f143",
         "references/android/develop/ui/compose/layouts/adaptive/flexbox/index.md": "952ca4608d36dcb0db9a36aed865f9cdb5e85583480cd85e9e364327be460ecb",
         "references/android/develop/ui/compose/layouts/adaptive/flexbox/item-behavior.md": "94e894a59857662ed784913774a4d0c5bcec7d16468c4c910962a7d806a0e562",
         "references/android/develop/ui/compose/layouts/adaptive/grid/container-properties.md": "fb12005053f5f040c26c5b74a93c11825d5a27f1802ec7748859b24ee2c030c7",
-        "references/android/develop/ui/compose/layouts/adaptive/grid/get-started.md": "96a2eeb05283eb5c99b751b4bf68769b59462e2d0bb70170260325004240e673",
+        "references/android/develop/ui/compose/layouts/adaptive/grid/get-started.md": "332cc50dbb916ab4a2a7f5cf2ce91e73eeb5142204377192ef05ccd8e36c6731",
         "references/android/develop/ui/compose/layouts/adaptive/grid/index.md": "f6fb9a8d962dc7053fa5a1a20234d96fd0eeb9d4252fc98c40826353816815ab",
         "references/android/develop/ui/compose/layouts/adaptive/grid/item-properties.md": "ef0a67039918022d01ac26983b3cc06c798050736d42ffe692c98e3c4517b45a",
         "references/android/develop/ui/compose/layouts/adaptive/mediaquery/index.md": "1e79df59c053569d5376a618c414b793670fdf35e337d7c8aecce81bf09f90d7",
@@ -43,7 +43,7 @@
     },
     "agp-9-upgrade": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "edc7fc5f742619372f6f2c58915bf63a2d73b68f50d996145595ceecde1d654a",
         "references/android/build/migrate-to-built-in-kotlin.md": "5dc2f8f2b337eecb8e405ff06da2df6c3119c66c7428111da2803510f52817bf",
@@ -63,31 +63,31 @@
     },
     "android-cli": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "2d35bb178b30581a9d4a31c30cf4895861a095863a9d8434a134fd10c2fca0b3"
       }
     },
     "android-for-cars-parked-apps": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "e438fb4eebb4b6b9f6541c0d17a308d81b0e7724e6ef9b1e0499cbeab54d1195",
+        "SKILL.md": "43048417b8bcb299d9630fc970a41619862275b73e140be8ece7f8ae9f60581a",
         "references/android/docs/quality-guidelines/car-app-quality/index.md": "976f858d2f1d06c0600df891896e5aca830a6f6a02a03aa719d2987e3ee25a54"
       }
     },
     "android-intent-security": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "5f1c8dfed64b3da008e04ffb4c013e469f49f2758e0ce76bb031b7666b9140d4"
+        "SKILL.md": "21b8e2a94bc4388585d10eaa1a84951cf0760a705303750a23d9b502e840bb7e"
       }
     },
     "android-permissions-security": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "0be27b6540b74417cb82f6cb452c2945bc996576de452d16b6077edfb1e9d2cf",
+        "SKILL.md": "d6e9b1f12728336b15e82daee9f3f8d050dbd792d8e5d52227fd1972e92a12e3",
         "references/android/guide/topics/manifest/permission-element.md": "06e8c6e6eee6c53ed26db9599e5d461ccadcd2e54c785e7eabaf676cb5a16587",
         "references/android/guide/topics/permissions/overview.md": "95e34ec29d120e352814c905f574175ceb30f1ffe062e7ea8eddb36852b9419a",
         "references/android/privacy-and-security/risks/sender-of-pending-intents.md": "74adeb0c724b5c43a45de8953698707a8034a81238bb1c91d27684e1f262f2bb",
@@ -96,7 +96,7 @@
     },
     "android-profiler": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "d3083b151de83707950ac4edd68e84a11d153bd83d334e5315a44d45ce13b6be",
         "analysis/analysis_orchestrator.md": "363ef7842f71b69ab46e86de6a1b262f6852b763d3958b7dd5fff58f9484898b",
@@ -128,15 +128,15 @@
     },
     "animate": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "RECIPES.md": "21ff63d84391db8d96ecdf9170095f55a42c836ccc36fd3269c4772bab031ba2",
-        "SKILL.md": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c"
+        "SKILL.md": "39138996033e0dbe53e73217514116eaeca774bae84a0687c80d445a4e0cc3a6"
       }
     },
     "animate-expo": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "RECIPES.md": "1193cb71334da2e2341778dd92bec9ac79d989cb07fd55d661f324ed5871e718",
         "SKILL.md": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a"
@@ -144,21 +144,21 @@
     },
     "animation-performance": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
-        "SKILL.md": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957"
+        "SKILL.md": "6c60f45ab416ff3f7d7765a5427beead77fab0d82487fe610d2a298397558d0a"
       }
     },
     "animation-vocabulary": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "SKILL.md": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94"
       }
     },
     "anr-audit-and-fix": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "0ea6c5ab75a621b0cf24fa6276cdfa2c6799bbd2538631b8fc81a1e4dcd282bd",
         "references/anr_trace_report_template.md": "7e8494d46a0aaf97d19b7efc59ade16b3be4eca922f9025c178152595a76f5a6",
@@ -168,27 +168,27 @@
     },
     "appfunctions": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "73bf2a917955a8bb691fbd9ad417c3b5e742c0263dd592947dcb1d9c084d1fee",
+        "SKILL.md": "161a64851884046163d5501db6b9932110ce81458098689262b79b3ed09f437d",
         "references/adb-interaction-testing.md": "6fe6114a38d9edd48c1c5dca20b80157d2074f20edb67d0faaf75877e0d43ee9",
         "references/context.md": "758c07a9439b3ebc5ab0b3c7093008f1524d1c8a895eb2b3cfb9be4aadc68e0b",
         "references/feature-discovery-analysis.md": "83950e0d821e934c810055f7559edbf07a04c1d9dd0933a01e1520b7707d7e54",
-        "references/implementation-configuration.md": "8edb1f43d01344d4fe0ad61d80302e1848f8193fb5171d81b271349574b378f5",
+        "references/implementation-configuration.md": "031ea2bde57ae6a967f77cffa2f1191287a743f95483cc69577df960e867e4bc",
         "references/kdoc-refinement-optimization.md": "926bc1a83e982d8ff71d4c616a63694fde09b497990d8d40b87f9730f63fa896",
-        "references/migrate-to-service-entry-point.md": "d27353035594d6b54523c8a6ccb3356a83fb955a1a01fb0d1e55e1c8f07bc6bb"
+        "references/migrate-to-service-entry-point.md": "159599491e62df27c7bc750e467ef043b976e43fd70ea4cdece092e86bc4f93e"
       }
     },
     "apple-design": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "SKILL.md": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7"
       }
     },
     "ask-sonner": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "API.md": "4bb06f482c5757529e3d7a672a30fbeed42d24919a63e2571384a9ce1549aa7f",
         "SKILL.md": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f"
@@ -196,7 +196,7 @@
     },
     "blender-core": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
+      "ref": "389f28addc79b87b28764898e38e7bf408d14b77",
       "files": {
         "SKILL.md": "91588e225931c2df924819d02a7b9ca896568f0e4d458a09364b1611b709527f",
         "references/api-changes-5x.md": "adc6abbff9aa0d57158805aaabf63cff3088779eb0a957253dfea1247f08bcaa",
@@ -208,7 +208,7 @@
     },
     "blender-export-pipelines": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
+      "ref": "389f28addc79b87b28764898e38e7bf408d14b77",
       "files": {
         "SKILL.md": "ed22458c62a4e09be4307d70085ff87dc171c7cd703199312474d6fe4f91d092",
         "references/godot-web.md": "a1de232e3abb1622968f7d531dc6d62aa5a5a7b6d4b97e0b18dd16dc52d6ff30",
@@ -221,7 +221,7 @@
     },
     "blender-pipeline-automation": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
+      "ref": "389f28addc79b87b28764898e38e7bf408d14b77",
       "files": {
         "SKILL.md": "1a9b4af73856ca95bc0e1a84c0c4331faa22ee82952c6ad36242a0ec7125dc58",
         "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
@@ -230,7 +230,7 @@
     },
     "blender-rendering": {
       "source": "EL4CTEO/blender-skills",
-      "ref": "fb92cfb4cc5a238c22113a6a230b09f535bd0656",
+      "ref": "389f28addc79b87b28764898e38e7bf408d14b77",
       "files": {
         "SKILL.md": "6e98d9533699d754266c6965070ca9e01c37ba6294f4e7bc0ac238cd2912af8b",
         "scripts/_bpyx.py": "a3339ba8a678469e8ed29510e32a7331e0235202191ca4edb977af4720819b4b",
@@ -239,7 +239,7 @@
     },
     "break-ui": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "CATALOG.md": "7358efcc6bb48e35187be1c064cf60022dcb18c72c18fab58b606dfc5f421f15",
         "SKILL.md": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
@@ -254,20 +254,20 @@
     },
     "camerax": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "f8cc772cad4d164ef0fae61961d2a9df584ef52929fde9f318a84981cb0c109d",
+        "SKILL.md": "e3f1930af89bda0ccc0528e6a61250c3d48bb9c067712d1c0e765a87e953f9e3",
         "references/camera1-to-camerax.md": "f66838722b779dfe597973f9b612251708d8ea43aaeaa5986fa5e0ced136f911",
-        "references/camera2-to-camerax.md": "539363795cbdcb1e2d361cd3df231ec9b53ba7a903e0f0742d5cbbba1cedd9c9",
+        "references/camera2-to-camerax.md": "c3a6dbf7e407df86e2ccf20c394da46914ca974abd743adbd6b0598d18bf3e90",
         "references/expert-blueprints.md": "c8bab111ff37ccc4369bd3a88ee3e9932ad1b2f0eea191ebccfde5f01167e50e",
-        "references/foldables.md": "8dc92d22664738c4437133775c2487355b5860694879e5abe553dfffae064b14",
+        "references/foldables.md": "0362cabbb3f7af404d0c9841e5063264f2095682dbced838923773ad6f5d2219",
         "references/immutability.md": "2e510941c469be0ae71ade2e8b7ba300845ef912eb811078a99cbdd6ed347d9b",
-        "references/low-light.md": "63927cc7896848d535b54c3dd56e23304bcef5ffdd33b47c168586c07a3361c3",
-        "references/mlkit-spatial.md": "2bdf0acd7b8a54d5928ee15e45dbdb4d4957246814a81cc03fca6b4b0ee5e5d1",
+        "references/low-light.md": "9a0d8005fa728fd7645f56d189c294e4673141858031c34fe757972b2e83cb9a",
+        "references/mlkit-spatial.md": "b1a89db75ecee384e127014d5f1446f9fbe9c0b53a095d2d9cae6d01f9c284a5",
         "references/modern-apis.md": "e9a3f77f6c37c55bde47f4b11b19ddb762db5cd7cd3efecabd7959e87f1a39fb",
         "references/testing.md": "c4ede48673354afcfb6433dfeddec8e741502e3dfd05e3d103dee2e0039ba7a9",
-        "references/thermals.md": "7572166c2e81767092fce274b91b523bbc5a80351b62b294fbac24d28402e162",
-        "references/wear-os.md": "2bb72578d94932b9654478d75631733b93f8aea7fb9daadbe1e61c153896940d",
+        "references/thermals.md": "b67cde809086dc0447db69addc908039db14bcaf8fca94cd5c933644228ffbf4",
+        "references/wear-os.md": "2d581aa86dd3edb738c5f49a8e60a024086a7387db88f7ad13428dac876c4f2d",
         "references/xr.md": "607820bb74b11079bb75860c1567f680ce4bdd2f82fb4c81d3e59f16142590c0"
       }
     },
@@ -310,14 +310,14 @@
     },
     "display-glasses-with-jetpack-compose-glimmer": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "eef3896fa5e6f5e1cb47a7b7ca5d92821aa2f65b2cdc64cdda5359d8c5f4ca79",
+        "SKILL.md": "2e8648a7398c187021946f6981fcb843bcce552e37d63c097423e63271e4ac18",
         "references/android/design/ui/ai-glasses/guides/interaction/inputs.md": "961dc2dbef5d65d34efd5b1ad8ca37592a960eef6cd69ebae6fee97ca2349083",
-        "references/android/develop/xr/jetpack-xr-sdk/access-hardware-projected-context.md": "22bf628c6da0388bc0f79c0679bdcd4d1398375fce53b896cfdf72092295dc14",
-        "references/android/develop/xr/jetpack-xr-sdk/request-hardware-permissions.md": "c61dcb8c28e817bc4a7e9dca14630d31271b2022791ca16fcb022272bee9ef5b",
-        "references/button-samples-source.md": "2ba50f8693dd642d3719862d2f8a186da89acec64e6672dc17c0cca9824e7820",
-        "references/button-source.md": "ecec710535e4f28c7d23bd3b427bb5b085cc572156da45626ead3f8070154190",
+        "references/android/develop/xr/jetpack-xr-sdk/access-hardware-projected-context.md": "4c848db29e0509c5aa2976cbf5790222c65d53d6d584a4f3749f76872a820dac",
+        "references/android/develop/xr/jetpack-xr-sdk/request-hardware-permissions.md": "82a77ffaefc217754d320e32d140766acc741e513ddf6cdfaa72d028dcbbbdbe",
+        "references/button-samples-source.md": "04db58735bd91ac4dc3d23a072f1c71867cedd25071b424c939ea53cce7efe0f",
+        "references/button-source.md": "edc4008f325b758be907484685f21aec6beae33ece16135da26d79bcac9f6f7a",
         "references/card-samples-source.md": "24a4cb44d501e7ad07d3348e1f0d658723f0dbffb9659e2e4dbf6783d10b8dc5",
         "references/card-source.md": "baf6a1cd6187bcf4b73c58b518be1c6a54d02eb21809e4e1fc532d9cd2d0f2a5",
         "references/deptheffect-source.md": "92977b84947cdbf840a2e9987e1e12fc3dca6db197717fd2f26f04bcc7fd22e6",
@@ -349,7 +349,7 @@
     },
     "edge-to-edge": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "4ca04cb6a5330b96e51410bc815f878b4ca642fba46fe5e1ad724c94e04d6eb8"
       }
@@ -363,14 +363,14 @@
     },
     "emil-design-eng": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
-        "SKILL.md": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939"
+        "SKILL.md": "965cc3108047a1f68e504977ae7816c66115b202a32e7509c0b8305314839c54"
       }
     },
     "engage-sdk-integration": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "2bfe2f8dac7cc6bceb0f280c9c735545669ecadbb5a27fc0fc6f251c8f216a07",
         "references/android/guide/playcore/engage/faq.md": "9299de0e31fe792ee14f7b5f5661b5665fc5d0b4c849351b46c25e12c8239a53",
@@ -495,14 +495,14 @@
     },
     "find-animation-opportunities": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "SKILL.md": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2"
       }
     },
     "frontend-design": {
       "source": "anthropics/claude-plugins-official",
-      "ref": "a7ba5b93db0c7c8d17f3f1d25853adca79598a1a",
+      "ref": "0412be76f50ab4f4f8abff3753efa9269fbbca5b",
       "files": {
         "LICENSE.txt": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
         "SKILL.md": "d91970639e9f5c37682ac7ab60094d35f1c7c1f38d731bd56396563aee10c1d3"
@@ -510,7 +510,7 @@
     },
     "glance-appwidget-updates-and-memory": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "11a6783a5b8eacc82a957547deabd3d35320119367d64107997dc4ce249005fe",
         "references/AndroidManifest.xml": "05e781d9f266ba49a73c49081207e6a0fb79b5802f33e06b9678a6095475dee6",
@@ -529,7 +529,7 @@
     },
     "glance-canonical-layouts": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "7a6db0d7d91774103c7892f8f8571647e64fa1bd825cc28d9e9bdc79b2ef2dba",
         "references/ActionDemonstrationActivity.kt": "448bdeba443b50f765f6aeea5d847f271291069709af1c02a209b9a550bb0877",
@@ -623,7 +623,7 @@
     },
     "godot-2d-movement": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "ea396576540acb85f0ca2050a96cfa6399a03668971bb320ef612e52a32c8f0a",
         "references/controller-recipes.md": "bcf89d3e8a820d75a78ed32eaa8eaf20c01ea1a8154791f58a8e3546d6fb0fba"
@@ -631,7 +631,7 @@
     },
     "godot-3d-essentials": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "6164f02300775b7db62a79ca9f65f8dc2232efa64268fb330621cf898bbec73d",
         "references/scene-and-environment.md": "94d016b194b9d2a5d5ffa3b9cef531b639b15413740f0132ba9f4cc0cba03c34"
@@ -639,15 +639,15 @@
     },
     "godot-animation": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
-        "SKILL.md": "43a339c8445b804ba84c32889ec9e4ca80e323003df74a35bcf4d3a7c8e9e99b",
-        "references/animation-tree-and-tween.md": "488900f895505dc6190b6e3626a4367c841dfda6ed288de8cf68a9891775c159"
+        "SKILL.md": "924eba14c119e7b08a53a77be3949def5d226c69db3b38de7d351285dfbb5bb8",
+        "references/animation-tree-and-tween.md": "7b10c70963f8211c72733716cd98992fb7f168724c59815aa9e22d2423bc8221"
       }
     },
     "godot-audio": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "9ed39d72403eef39e2cbedb1015262ee8413f4f71c91734ba25f82eece839b5b",
         "references/buses-and-effects.md": "f84f5c91fc78631670315b4c63643603841ad1ca1f211a7891c8bc408f8c3e80"
@@ -655,23 +655,23 @@
     },
     "godot-csharp": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
-        "SKILL.md": "3b8d85099d5014d640858bed2d18fd5901b20803492e466b3fb5a82f079486c5",
+        "SKILL.md": "5e938190143a1e7a86e08d15b76b6991775325a435b88e6aadad38c9819bdbb7",
         "references/csharp-setup-and-interop.md": "e15d5d5f8f6019d627e7d01818a4004d8229e039975387497466346073f3a1d5"
       }
     },
     "godot-export": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "473552185df50d5ab4a2ef874f47e08ffd7f6f552e191a7a5922c288b29800a6",
-        "references/presets-and-cli.md": "ab2388a1870a0b813d110066bb54bad9f3787d067d13043d10944baec5b13dc1"
+        "references/presets-and-cli.md": "4f1a080d0f126cc3ca657e2af633ed2e4f781460ad4640e8567986f669f5972d"
       }
     },
     "godot-gdscript": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "9039fb6de0980495fbc77fb87aae22256d92e7b5cca558b9e318b53dbf557459",
         "references/annotations-and-typing.md": "b905cae5114ecbbba2cac14ad49b05a2c252535a670f5a1d701b41def3a90f78"
@@ -679,7 +679,7 @@
     },
     "godot-gdscript-headless-testing": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "980ecf1815cb179bc92749e419e3d5c87cc998413c57ed87035e34dc45e87034"
       }
@@ -714,7 +714,7 @@
     },
     "godot-multiplayer": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "353319ed255916977fa21de4888496b404f400ee63b823db3ff743f5023b9cb6",
         "references/replication-and-rpc.md": "05908f3ea13f0ceb21ddc561e7cc8c62e0f71e1b88cbb25cd7c13e8b7f3f6f39"
@@ -722,16 +722,16 @@
     },
     "godot-nodes-scenes": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
-        "SKILL.md": "fc0096a774a8581678180ed0e71039eea52533411b4b45dee708ebad10c920af",
-        "references/tree-and-instancing.md": "be3c86180bd18dd46bfdfd7a47317bdb50fc6942cfc3e3d7342b4d0f7834b7a4",
-        "scripts/check_godot_project.py": "779b2130ce00c9566b6a1972dc49916bc270922e1df7fb705a93cc0d5053ef85"
+        "SKILL.md": "0c9384e5db7314fdbc90477faf7557315ff77e9fef24ba5a478b1f8f4d0d31e0",
+        "references/tree-and-instancing.md": "77969d551ac2b644f78c0cc0bf67613b19de7ee26675629b8190115901879464",
+        "scripts/check_godot_project.py": "e2140049251ca5cbe9ab222a8074407e7e12e5a742d911e821b5ad374685ec66"
       }
     },
     "godot-physics": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "e318719b45091bc2731eb2ebd256027f23f7f50a39b06eb7047608cf8426b297",
         "references/bodies-and-queries.md": "5d1616f73d9f0161df501cbcb1bdbbc3c4b8c2abb687172e1d02a5d5e7907223"
@@ -752,7 +752,7 @@
     },
     "godot-resources": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "1c89eb8eaef4ac889c21640822d454d41a9017e4ca205d4044b73d5fd017aa13",
         "references/resource-patterns.md": "a848b0be5d5d78307ffa8a91152ffb3b03204cd742a3edd289e03873aab77425"
@@ -760,7 +760,7 @@
     },
     "godot-shaders": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "e96ac075c0d85f14af8de2a3f92bc4f0389a9bb9e9ac32bc1519f2aa4679d6be",
         "references/shading-language.md": "406987a5728ac06e5a93b878d390387545a0f118a014b65a65d0e003bf3a64c9"
@@ -768,7 +768,7 @@
     },
     "godot-signals-groups": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "eccc8d79a708eff3ff2b1f108baaf8bf3bf3c39e73e396973ea605a6a1190784",
         "references/signal-patterns.md": "7f28a8fccf5aef6029e85d2ee8817dcb4d58c0344744f1a421f059ed61fbab4d"
@@ -776,7 +776,7 @@
     },
     "godot-tilemap": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "c92a7103c764963a4d065a637941bb537f2409e54277d05aa05ea2bf8fc75971",
         "references/tileset-and-terrains.md": "c2486c7bacdd3f099d981f50b1aa881a7647bb14112b343370f76e1753d12ed8"
@@ -784,7 +784,7 @@
     },
     "godot-ui-control": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "0b2cc92d670cc2274f6579748a1703ec6a2bf70dc3d2875985deea1018f05bdc",
         "references/layout-and-theming.md": "5f54eed206cd7d7f5fecffd2ce1c189739eba5b5e18b2d1773f9ba7202427f66"
@@ -810,7 +810,7 @@
     },
     "good-css": {
       "source": "vojtaholik/good-css",
-      "ref": "92d436ba1937d1b1407c47e35abb3e199eaace2e",
+      "ref": "35e0e8c673854ca34d8e1879038e44834c855dfb",
       "files": {
         "SKILL.md": "30b8858e7b407fa00196d6b242d943b202860f1d9f4dd9348fa79f0b1d950375",
         "references/foundations.md": "51d699363c7e16a33dc9f2e2ed22dd034a1757d5660b6213dd9609928265501a",
@@ -832,12 +832,12 @@
     },
     "impeccable": {
       "source": "pbakaus/impeccable",
-      "ref": "f5c80432f883a0ee437735305eafc2a9e1bdb7a0",
+      "ref": "b3ced85312e91797bcb7929f858cecdf6138d3bd",
       "files": {
-        "SKILL.md": "fab04b31f946573b00a8559db1fc070f8ea5825254d491c2b13156e5661a86d7",
+        "SKILL.md": "ec5c81f17af6476cafd351875d9109b7d03329e05b3f845cb2d0bbbd4bc31b2c",
         "agents/impeccable_asset_producer.toml": "4dbdb0cfdc2466961da6b22d200f3ec7bf8bb47c27448a2e6e3c03cdbf589831",
         "agents/impeccable_documenter.toml": "e7778229d8f31433fc11e29dd2caac8e85281e27ea5c9410474703bb0185100f",
-        "agents/impeccable_finish_reviewer.toml": "1b80232e22d52b06a7278b9ca1f24f871a181c62cd91f4b18728807e7cf49dbd",
+        "agents/impeccable_finish_reviewer.toml": "f52cdfbaeea0623c31c25442cab373e93f10e96c65838cd8b672cd345f610d7e",
         "agents/impeccable_manual_edit_applier.toml": "4b01f4eb8a49fb00bc88248735c3b5442beb1791ec71d98e6d203f268a24010b",
         "agents/openai.yaml": "ce9967ad70f99cf04456f3347c266723c2fbbb600267d10a822b7cd20562c321",
         "reference/adapt.md": "9807cdc112b8bcbdeff9cd2516cda4d07129f1d47f29df4d57645344f34950c1",
@@ -855,7 +855,7 @@
         "reference/critique.md": "c210c9506877c6c8d88880a337fddd95d4315daf70ed6bc631ee6520481f1a0c",
         "reference/degraded/asset-producer.md": "cf726ce0c7dd1005078fbf560745d4114afe363319648cc9de42d1536370d117",
         "reference/degraded/documenter.md": "17b6328d809c86622789dcbe1bb1b12ec8937118ef6aa4b37bfd9130d79a205c",
-        "reference/degraded/finish-reviewer.md": "3e6cb6f54c2a4796940ce81b0cc3e9c1cfc2eed6445146088e6405a40cb44347",
+        "reference/degraded/finish-reviewer.md": "04ba3571cd0f405dffb6b51d892add0e4f19fd7e2bc4815320f2bd2ab5bd2a8a",
         "reference/degraded/manual-edit-applier.md": "357b19acc7ef688c337a4f020633a49db23c84620b13636f9ff20d3ab934df1a",
         "reference/delight.md": "098a891028ce59c212b747d3c70468dd750aff7053a703d1336045ed31e0da7c",
         "reference/distill.md": "8b9283510e38f0d190652f300ea0793acfb5a514b38b991fdc0a289bade83391",
@@ -864,12 +864,12 @@
         "reference/extract.md": "5477ae97189e5c1236cee71a25a5ae50014429a5a2e6da28355c8021a6cdeddd",
         "reference/generate.md": "11385badfb532196cec249e73bac2b7f58ada033ed8c4b02b9f0d64ddb46f0dc",
         "reference/harden.md": "4167eb7fc456cdfe09ff0ac2dbcb5e59cee57e590137aab6cc8ec08aafb6d775",
-        "reference/hooks.md": "ed38f149e04740707942465a2b2c75851b773fd52a2b52132c2a8e7f4b07f9dc",
-        "reference/init.md": "51349b3a32c7f907102dd680d8e2df9da27082caf46ee15c673be7ce14a5363b",
+        "reference/hooks.md": "22f99dc8f891dcc620fb6dc670eab09b84585c1810bf7a3c2063a6e6f7f42152",
+        "reference/init.md": "c2826a6369f86a325e84edb324021753fa8331b86f22a23c884b0b36b7a15488",
         "reference/ios.md": "40c87038b5f75147a5952a96237acf312a327bf70c1bcd8e0a5f064625ae9668",
         "reference/layout.md": "0bc7d7971b3edf2acd0580e847458dc6d84129d90715b452799ace3bed815c7c",
         "reference/live-setup.md": "2b5b2fbf5f658f34ea1997fb1aeebe01604d05187f75c6a4f1f55a5bc78520a4",
-        "reference/live.md": "8735aa99406752a1d4bf903051ee9e9e6e3be1f4821c044b1f63d2a0556a6935",
+        "reference/live.md": "b8ff9aaf183187e52eb10a24b1036b4725ff51eb11abd97a360d5678e32561dc",
         "reference/mode-operate.md": "7a52dd7a94ee75f6ae89542c86a1b6e1d306812b16e0d9dbf12d4acad44d148b",
         "reference/mode-persuade.md": "21e78c8a77badb3f83290cd4577ed3b24bd4dd3b57136d7da75733d4f3ee9ac0",
         "reference/mode-read.md": "a569989e6a3d6453b4c45e9474e162a15cc54e11732ac6baa7990a6e7cccc0b5",
@@ -885,32 +885,32 @@
         "reference/shape.md": "a55f016c046cb6a27c55bd7f346375aeb506a755c4fbca19a5f92dbd42309c23",
         "reference/typeset.md": "c26c5b4524f3ccb650ed0680c10c25fd18083f8ebfd00a54c4d983c4747aab70",
         "reference/visualize.md": "0c431d0dafbcac7ae8bde70ffa622f9ee542c44ec12e14b48bb44b269bef67eb",
-        "scripts/VERSION": "447836d46f39c5900faf74ad6a6554b8e1fafeca1f78de0416d5f05c6e09a080",
+        "scripts/VERSION": "a93167bc7b1e6cf2ffcbba0f51fea8122c7e61252cefe1f5152bee90beacd8b4",
         "scripts/command-metadata.json": "c6dcbeed7f13152205ca022c8f24d08683770835083f0a7325261c1c2d5f215c",
         "scripts/data/font-index-failures.json": "835f19a0a3812f3652dd6979a2ce5597f654fd01f26e1b420b92d5f42b997ce4",
         "scripts/data/font-index.json": "47edbdfaf27073c47033d1ac7dfee881be49e2dcbda7671d1157300481dde6da",
-        "scripts/engine-checksums.txt": "2f0235179cbc515d7c7ec71a9a08283d0cb88a5238d35ffa5a5f42122e78fe35",
-        "scripts/impeccable": "e91b8a68fe2595120fa4452ff1888d7a5216557f4bdaa93c537153c739de25c2",
+        "scripts/engine-checksums.txt": "583d3adfe32f054166f15398e7e50d22e9b408333256a8329b9adc689ebbf0cb",
+        "scripts/impeccable": "137173707b882616104b9d621b53bea37f135de09461add3301b9fcb3d7de461",
         "scripts/impeccable.cmd": "73c2e4d7613c38e35654df0444d559c97f1d09a9d373f4e72b3d7b21b6e1060c",
         "scripts/live-browser-dom.js": "4b379aff87ce0f485008a2b6a0dc711d00a869f5cf0ec2459279d6364fbf0c9e",
         "scripts/live-browser-ignores.js": "ba8905ab865fde5162e34fc17eb80eba26cc990b319b14a6eed6ca89fd491897",
         "scripts/live-browser-session.js": "e042339a54d4521fc47555b602013ed5b51410ec9d7d8878d99a526f5f237f68",
-        "scripts/live-browser.js": "3beaec74d362b64fd32656b22e3bd09f3b983ed2b3068625475dbe46b6867ed9",
+        "scripts/live-browser.js": "144335146f4f5a3a06be4b5daab24cac82653510c0007ad3786dbd3ef1a02f6e",
         "scripts/modern-screenshot.umd.js": "bb36665889124a0b6e15f16045265737449c3bdcf2712cdb08af3cfa01563e2b"
       }
     },
     "improve-animations": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
-        "AUDIT.md": "551c8473e20e5f4774680bc24d45e1c68e50992582720905c6b077756b7b5a55",
+        "AUDIT.md": "63fa8fcf7e7b3a3e252938e55c60e1f399f607e73553163e8dacf9df40f3ebed",
         "PLAN-TEMPLATE.md": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad",
         "SKILL.md": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6"
       }
     },
     "ink-app-builder": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "0656157fbd54f8327924f30047a08fa18ec5181912c682190e116c0a1a125db3",
         "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-brush-apis.md": "32df7c527d42ad4cd50b2496d41fb0acc37fe8e1ef695e442d57933c078d3d61",
@@ -925,7 +925,7 @@
     },
     "ink-custom-brush-builder": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "ee48c45317e8ab1a10ffdf51b385ee7eb0aa876f235449621b20834cc086a51a",
         "references/android/develop/ui/compose/touch-input/stylus-input/ink-api-brush-apis.md": "32df7c527d42ad4cd50b2496d41fb0acc37fe8e1ef695e442d57933c078d3d61",
@@ -944,7 +944,7 @@
     },
     "jetpack-compose-performance": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "a1680a1ae079faa47fc706bf034b88d4c4c4903dfa4187e98e0af8b056e1848b",
         "references/android/develop/ui/compose/custom-modifiers.md": "b4ede8f37dc56c54f3621a5ad21f91a649450a9854bc1bacc1a24eb65fe31b38",
@@ -992,7 +992,7 @@
     },
     "leanback-to-compose-tv-migration": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "4d044013bfe5ddd9f67aeecb99f7ec8f1339defc9215ed86366d9f723aa77f11",
         "references/android/training/tv/get-started/navigation.md": "08c2dff86700bd54ae63b7b02de1d9e3b5e333378a9854e6f96b6a5d7258e725",
@@ -1002,7 +1002,7 @@
     },
     "litert-lm": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "9b8c8aa13f289b6ab5e2fda29c6c4b6d5252d32055dab272647cf2e1efc0827f",
         "references/android/google/play/on-device-ai.md": "3e5d8f41ee195f87d658a8cb1305dc7d169a8f4d6935f6380ace2a1468646bb7",
@@ -1011,7 +1011,7 @@
     },
     "litert-runtime": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "4a61b022a5b96b07c897a6a2713dfdeeb9f092c69256a754ebbe42511498b717",
         "references/android/google/play/on-device-ai.md": "3e5d8f41ee195f87d658a8cb1305dc7d169a8f4d6935f6380ace2a1468646bb7",
@@ -1032,7 +1032,7 @@
     },
     "media3-cast-integration": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "34dd7b45a71c6029ec099d97256f956d0e97d7ab64fd60c3421b2293aa025b6b",
         "references/android/media/media3/cast/create-castplayer.md": "a142f57d197ba7bc8b85427740d47c4f7dbb67d730b0b9b61aef94f1c4bc462f",
@@ -1042,7 +1042,7 @@
     },
     "migrate-xml-views-to-jetpack-compose": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "79d7bdcbf88f1a0e88bce08f7d016d24648a609059cd7f2c9adaa0abbfb16f18",
         "references/analysis-of-the-project-and-layout.md": "6c62575a08ac698b33ee41e8806858cc9536669ab83c8a18653a4e086e4fce0a",
@@ -1064,7 +1064,7 @@
     },
     "ml-kit-genai-prompt-api": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "a8ff20f65d0b4a077f2635dd76763c3235b7427c32c2fbbc15b97e0b1f78742f",
         "references/get-started.md": "1ccb7145b30bad14f0304d439b92bf629ab0da1a67542035d124462f64880a36",
@@ -1077,7 +1077,7 @@
     },
     "mlkit-agent-api": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "0c0326f211d8a62f3a26057d7a9d2aff308aa3cacdf741d945878593aa1329f8",
         "references/session_lifecycle.md": "2e6158b97dfbfc69d8c0fee9be16e4ec39a735e6b694f6384dcd7dc3fe8dd049",
@@ -1086,14 +1086,14 @@
     },
     "mobile-native": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "SKILL.md": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55"
       }
     },
     "moli-webfetch": {
       "source": "lexmount/moli",
-      "ref": "28701350d91991670b5690b2f0bec8e6cdb9d51d",
+      "ref": "61f19f033281af13e4c1fd45c567f79b6425c772",
       "files": {
         "SKILL.md": "2bad2f4f24eb6396c4f0872756c605eb93fbe821aa9f53802b817e9e3a1fbc89",
         "agents/openai.yaml": "d331d49b7637f0a5bc2ae60dd323aa9535196739a2dd3ebd9b48b556ee9ea562",
@@ -1102,11 +1102,11 @@
     },
     "navigation-3": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "e2bc8ec434bc104f71ef753ca21665678b00db8f14ef3fd36847ab85b313b4af",
+        "SKILL.md": "da661728611eb5b0e474128ee8aeb926ac916e5ceff3589310e3916da0df9cc3",
         "references/android/guide/navigation/navigation-3/index.md": "a6170dc40e2769e1034d51a5021b0b6dbc5df9bc9d9bbcae3c576a0647d0b6cf",
-        "references/android/guide/navigation/navigation-3/migration-guide.md": "2ba7d44e4b0b5ab827925354810645da026e9fb721bd9589a4f94b6f5d7bc954",
+        "references/android/guide/navigation/navigation-3/migration-guide.md": "9dc0676a5066ae09359e31fdb7e55fb98fd6ebb22e2ab9d7f111bc26aec46e50",
         "references/android/guide/navigation/navigation-3/recipes/animations.md": "50c54d09fe14cb28f27d02cd9aaad4204dfe975a14bc8292b0bd40f61ad5300d",
         "references/android/guide/navigation/navigation-3/recipes/basic.md": "f96b02408f311d07c8df16c1867e25598c4bcc1794b52aaaa290a3b377727495",
         "references/android/guide/navigation/navigation-3/recipes/basicdsl.md": "d077507172cbf9ed6916899ef2d17b5f9aebcc9d3b46d51725d30166949daa14",
@@ -1136,7 +1136,7 @@
     },
     "navigation-event": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "4e9acfb0190cdee56dafb063868965992fdba2ad1694a7fc2524b9046a199609",
         "references/android/guide/navigation/navigation-event/dispatcher.md": "c7ea58494c01b81554058c04090489a867731ca6cd995541446b22ddb0f42bba",
@@ -1154,15 +1154,16 @@
     },
     "oil-ui": {
       "source": "oil-oil/oil-ui",
-      "ref": "29085f117c5b9bf00ddc53de9386a3bb6c01f017",
+      "ref": "16b30579489155ed4fae723c4d031e9f4d3c36df",
       "files": {
-        ".github/workflows/tests.yml": "5b04ddcfcb51490681d9226f2bee2e698288719abcaf6c04f8e632bd9e16fe1a",
+        ".github/workflows/tests.yml": "eebda676d0305f15358e94b248b726f0deea2b6c73b66e4eb6bc1717002d11be",
         ".gitignore": "81f2db0af12e2c1268f92a7e2aa5a826dedbb5778f288b2d988ea07bfe6c69d5",
         "LICENSE": "d44a3ca218007a85d3be41a0b76553d746e42336c7a63c6c6687d2619199c3c4",
         "README.en.md": "e6e3de57281654b678a3ff31c589e6508fd9b968dbf6dc7e05c90a656614c129",
-        "README.md": "3f82a6edc50951bb2cc64c56344fe1619bf61b47ece776037639856bb4d44f90",
-        "README.zh-CN.md": "692722a5f4b8f433ae99e078b264daa5feefeb2316350d79403c2f3374ba77f3",
-        "SKILL.md": "e6763faa6d08137f62402ce2616e1e22a30da52b05e1e1edd26c70cb3442dd6d",
+        "README.ja.md": "793a7401161c7e9d7f2771f06331ea5a8a5bf635c5289639da437468ad7eaec4",
+        "README.md": "cbcbb7cbb3799d8e97e9691ba0371cf63fa3797a72afa8b57509bcc6e8c96d55",
+        "README.zh-CN.md": "07e6e2a095b7c109d5842702be701247678a5c718c0460f0522016fad5293b43",
+        "SKILL.md": "c4505ffcadfffab99dc8f79cb57a4e36021cb3a86013647e880d1209d89dd424",
         "assets/fonts/instrument-serif/InstrumentSerif-Regular.ttf": "498efd461f6ddfcb7a111bf9a565709d2085d48201d501ead960d93e84ffbb88",
         "assets/fonts/instrument-serif/OFL.txt": "129ed7618959716959f2941fdd5b49e0ad6e6c1d78726761786a00253d865521",
         "assets/logo.png": "35f58a88e195bf4472e2f0fc795122fb9396464cbb3f0d7a2cb639b6c004f972",
@@ -1174,9 +1175,9 @@
         "assets/readme/showcase.webp": "92058c5846515a9c6073578fc683808208ac9af880993f9223c248198afa7071",
         "assets/style-explorer.html": "910bbc6ed3e4a8bf92bd24883ac87b400f346fe146f2deafd8eee2ce38b4962e",
         "assets/vendor/alpine.min.js": "1d8911c7b8a55bd0ceb79896251ca00d575915e2cd4348e8007a850e59ba0dc0",
-        "references/design-direction.md": "89b999d0b8a1a6402f0fd2329ead16aad2a562fb3c7bb1689f3197647910080d",
+        "references/design-direction.md": "6cd52ca6beb0f0ff542a8c59164d6f94ac20346f556e8c3e5aa18dc9bde3421a",
         "references/direction-persuasion.md": "f229766bf763be2628c50ce9045c052d87018ffc91aea4a7964eb8a215cd146c",
-        "references/image-ideation.md": "93d6ee27d8b10e8634920346f030951f6de4651f44a17eebef6f59d6804a0876",
+        "references/image-ideation.md": "b26066c5d92e3044cf298870432f2733d4f4949f2a8e250e11e5b7958c674e7e",
         "references/layout-and-viewport.md": "18385f506a894025175a6f1f47e0d759eab09f603e1bbacccce44fea20a857be",
         "references/media.md": "ce83a8992a8bdde1688f1ed5794761a183f8680b7748ea3ddbd589b56ca4dafa",
         "references/motion.md": "d4bb6feb692b86812d459534d1f443c500dbc953ee5273db17108067aab91f76",
@@ -1186,14 +1187,14 @@
         "references/style-explorer.md": "3e2dc3c1c0c0e4544a0b12688490bcf42c04a63339857b06e6dbd2e13dc4e65c",
         "references/task-explore.md": "07a853988b844033b55c4fd386de30acd663279c5548ac483f9203e4cce7508d",
         "references/task-review.md": "f7aa2861f851ebeb378cca45ab7a29eb2f46da089a53c656497dd9ee35cfe869",
-        "references/tools.md": "20ef94a916a39cc045ec668255aae95c1fe14b9c08ab621d6386a058c34bf557",
-        "references/ux-review.md": "e06cf3ae9ebb01b679286b1dd2e7f1f18585cecc05116703b8435a23b2d12c39",
+        "references/tools.md": "9f7cae54437f7c78cd790fe3b9eebb6c42ee911b446e031842a4bf1a2aa91596",
+        "references/ux-review.md": "1cfc3eafaf90a53170a9de375a5dee56ecb656dfc4a174fc95f2ebbf084b0b17",
         "references/ux-reviewer.md": "aafc0753939c06591d5078b066a89d8fe15bc539022b82b9778348a600b119fc",
         "references/visual-language.md": "667ee3bdfcfbed643cc230171dca28a45e3e5d93002634f364d0683dd9b7faea",
-        "references/visual-review.md": "4fdf18787953e6e3decc0f9acc0382252e265d4ba621cbf5eb49108d331992f0",
+        "references/visual-review.md": "27f4ff47c93741c72004769097c871b6cfb351659b36a54f43efa83c8578d55f",
         "references/workdir.md": "8f56ed917e9784565c06e236bb783a8d7d644830daf67f27b2f3eff87ed0ca94",
         "scripts/build_explorer.py": "a48d3cc52a0b273b8cdb84f2d29224c31e22f0e07c0ac0c56119d86f38788dd3",
-        "scripts/check_update.py": "49bb8a2d423b3a2f110f9b777df8de55f8d4c629c8ee79485df4372e2b237f3a",
+        "scripts/check_update.py": "a50605dbf50c1bc7226dc7801aa53acac2dbfacaa5b1e75beba2adb3f3d30b16",
         "scripts/check_update.sh": "eeebaf44eb29d61784690e09e0d8d306a44ca2a3025c48a42928b7ac7174d7d4",
         "scripts/chrome.mjs": "dcdc40740e541c97dc467f28f3430edc632469545504fdc165f633383ea01de3",
         "scripts/curate-media.mjs": "2bc60a4bd761b7082ac17d0d3e2d4bc1d4630cf763138e9f3bd291d6ceb3bdf4",
@@ -1203,7 +1204,7 @@
         "scripts/recommend_once.py": "c1b28d9cec6d47ab637e65fa19b3b183ddddf4a4a950b5bdc6f11aa113bb9672",
         "scripts/shoot.mjs": "d11704d96d03e46bf0a0dbe725e585d57e7e863918477f3e3f7852577e748d3e",
         "tests/test_build_explorer.py": "79bf92ffe465186289ec3de77fa632c6cda15954ad75f72a450be57b2928f6a9",
-        "tests/test_check_update.py": "3dac4095924b3bfeaf5311c89d6d423819d0983689f086c2d23d2bfbbc715c86",
+        "tests/test_check_update.py": "dc07e776739c5feafa62a580881c132d7a1914da7bbecb2625d807f7069f68f9",
         "tests/test_curate_media.py": "20244105f024df559569c56caae0977af50d15c4eeee2fc9571e66000fd1981d",
         "tests/test_measure_reference.py": "a16ebe5ea0b4321d22267f61e5cbea92e30fc79513a626bac7678ec36333b9ce",
         "tests/test_oiloil_image.py": "a59a0e0cb66bcff4c81472c18e220cf5c07efea5b94ab78cb1115eda672c7c15",
@@ -1249,14 +1250,14 @@
     },
     "pick-ui-library": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "SKILL.md": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
       }
     },
     "play-billing-library-version-upgrade": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "486bd0b932c7fa2a92098d9e5a09a70c342e17f30471e627f7ceb2aad55eefad",
         "references/android/google/play/billing/release-notes.md": "c4f0dbbdaa0d3ca2b406818e8894aa7e2dfa90e1008b7bece6e57534649b8e12",
@@ -1266,7 +1267,7 @@
     },
     "play-policy-insights": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "cc7b9074b746a07b14ba998d5620df0a57f7923545cb078fb47fd2e2c388d467",
         "resources/common_mandates.md": "30623c7d55e54f2126fc0ed1b44356129af92121dce27f58f205e4079cd735f7",
@@ -1300,18 +1301,18 @@
     },
     "projected-hardware": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "a56446cc42c56301ba732488ceb7918bea685ef85f110fd66e282b0be4372aad",
-        "references/android/develop/xr/jetpack-xr-sdk/access-hardware-projected-context.md": "22bf628c6da0388bc0f79c0679bdcd4d1398375fce53b896cfdf72092295dc14",
+        "SKILL.md": "b91458b095a7dedccc109edf9e648a76d3aab9bf192a6994e29b99051631cd4b",
+        "references/android/develop/xr/jetpack-xr-sdk/access-hardware-projected-context.md": "4c848db29e0509c5aa2976cbf5790222c65d53d6d584a4f3749f76872a820dac",
         "references/android/develop/xr/jetpack-xr-sdk/glasses/check-availability.md": "b7b0e89167ca6798eede172c1f741c557097a0e527ddba4269bcdaa4685884bb",
         "references/android/develop/xr/jetpack-xr-sdk/glasses/support-different-types.md": "11c622d25e6b90bc9d6391ef65ea953fd1ea860101cb780b9459f1f53ea76b1a",
-        "references/android/develop/xr/jetpack-xr-sdk/request-hardware-permissions.md": "c61dcb8c28e817bc4a7e9dca14630d31271b2022791ca16fcb022272bee9ef5b"
+        "references/android/develop/xr/jetpack-xr-sdk/request-hardware-permissions.md": "82a77ffaefc217754d320e32d140766acc741e513ddf6cdfaa72d028dcbbbdbe"
       }
     },
     "prototype": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "PICKER.md": "31a55eec94715cc79942e91e172e539e3031dcd5e2e5ee7c1446cf2caee960a6",
         "SKILL.md": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9"
@@ -1326,7 +1327,7 @@
     },
     "r8-analyzer": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "b6001b06ff0ebcbe87b98534a239c8c22b818b97681972db50d5b26466d2bf06",
         "references/CONFIGURATION.md": "61669860168d5c1f9628f4eb49d68b28e06d60f301a550107d96c030a1389ab2",
@@ -1349,12 +1350,14 @@
     },
     "restore-credentials": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "e1fefb897e1f1d9f4bf216223b700c215c532f0a88207ee73627128f995230ba",
+        "SKILL.md": "c594f1a914f55d7661005bd328bf3b0f7094a806ed88de22c70a84b402fc4828",
         "references/android/guide/topics/manifest/application-element.md": "4ae9445ff82dcbad38ba2a118d71d17ef844727639a93a281041e1117b2c7e59",
         "references/android/identity/passkeys/create-passkeys.md": "c96a08a2ef4ed3312ae05547dd5a28492755cfaf1cc395bc5f50376f151757e1",
-        "references/android/identity/passkeys/sign-in-with-passkeys.md": "04e21eaf82b230e200c1aea9e660566470484fd5a4d6383a2c0fb91f5451e608"
+        "references/android/identity/passkeys/sign-in-with-passkeys.md": "04e21eaf82b230e200c1aea9e660566470484fd5a4d6383a2c0fb91f5451e608",
+        "references/android/identity/sign-in/test-restore-credentials.md": "d9900986f8a5b40eb217c76a133378cfafcc1c0e61581805949bac306fa373e7",
+        "references/android/studio/preview/backup-restore-testing.md": "6396046be55a7015816b11b58a3a4a8dc6408efa5f39c0c312b60aa581629e3d"
       }
     },
     "retro-print": {
@@ -1366,15 +1369,15 @@
     },
     "review-animations": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
-        "SKILL.md": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af",
-        "STANDARDS.md": "e7d3605034acda54ca13e43aec9e64d65b53de20f75b11b8d694e373012fbe07"
+        "SKILL.md": "5f9fb98b69cace7107af8b393a4196fd42fa42d98bce0e5afc1f866ff3b8a41c",
+        "STANDARDS.md": "8f5fe3f5a04537556dd4e6a37f7a8d6f616d840eb80f2f68b5b594febb170657"
       }
     },
     "roblox-characters": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "e5ca39a32a1fd83ba887d7c52a1f02775bc7278847ecf1c66844daec325537e0",
         "agents/openai.yaml": "d206f4538baeb195e01d29cc53ea712948e6820c3c6539f7f2e2cce6656b8885",
@@ -1383,15 +1386,15 @@
     },
     "roblox-datastores": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
-        "SKILL.md": "8fd15365225d7e5428040ed2d09872f7d5547cb0010576ce39fda1880c74b439",
-        "references/sessions-and-limits.md": "4f2cbb7da7273b3aab86ca124f8391684d1c1771a9735c7785bbfd6961bb0e7c"
+        "SKILL.md": "d9db87b0ac7af02813e2fcae76fa68231d8a877b2a42ced7160bcb7ab9ea8ed2",
+        "references/sessions-and-limits.md": "124909ec4a0e3451e9e35f25f50193118182347aedd63e88d41e3cbd22bcb421"
       }
     },
     "roblox-luau": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "3b9310d54cd5d4b390e79e97157c6224ceb7676a5087352928ad84f8ea8218cb",
         "references/client-server.md": "6ff67b85345105480af3a6dbdbfff7c240e7a15eaf5c84d8079307993f72bdc7"
@@ -1399,7 +1402,7 @@
     },
     "roblox-networking": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "4ceb603d88d8e26303c7efc33ead1241f6eba88f5c5039636ec95e31d60ed1db",
         "agents/openai.yaml": "b3f530519ed19704b115584ded1842ca430fef1650fa873694c4d9cfc7e29401",
@@ -1408,7 +1411,7 @@
     },
     "roblox-physics": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "93b8879bb9a7b631cfa7a3d0ed8c8dd4ef7b839d89b93365ed637bd98f7c18fa",
         "agents/openai.yaml": "55b06a72b4e88c5ec5a4c9d7c3a9684849b6362545d97c8703e79a22120500bf",
@@ -1417,7 +1420,7 @@
     },
     "roblox-studio-workflow": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "d49e1a1e075eba99c89c85f0a576605d970569e027059b3288eaea6e11782042",
         "agents/openai.yaml": "34f2fe7716ef36610d0a577e05bdcfb36cbaaa25da23a159ee9c02a2d248c7d3",
@@ -1426,7 +1429,7 @@
     },
     "roblox-ui": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
         "SKILL.md": "f3875cccdb75523c0cc90c55f911d5b267ad9f6566bd5d552b565c329e8ab71c",
         "agents/openai.yaml": "4c67a26a3054126e21db6fb6f893135944a8ca0fac9d619506e867b989073ded",
@@ -1438,9 +1441,9 @@
     },
     "router": {
       "source": "gamedev-skills/awesome-gamedev-agent-skills",
-      "ref": "19d93f97c9c1ea0f8b306e77aa81e0d3e352d3e9",
+      "ref": "4cce500ce1a779b12fdd824be581c7d2ab4e7ba2",
       "files": {
-        "SKILL.md": "69c1167073530655dac859e33c4b8893903b94f13326ef1c85f152b8008418ba",
+        "SKILL.md": "c3693d3d700d76ebe5b5a1aaf39d711faa83256aae0c12452d51e31a0944774f",
         "agents/openai.yaml": "1304cad1da9611f8cf73ffb122bf7628b0fd6f0cce5a9f9072cd3fbdbe9ce128",
         "references/custom-engines.md": "0880a19b3e150e064751af2890573a47652dffcd7586809c2135d14f47dc151a",
         "references/engine-detection.md": "914b3fa795eca0df8842b632e3ee09aabc9c6a81884ece29ac6a67f4907f5f68",
@@ -1465,7 +1468,7 @@
     },
     "rust-port": {
       "source": "morganlinton/BeautifulRust",
-      "ref": "40db61c6fee84bd121cf288755f0e2f22a50e995",
+      "ref": "b9718436d77ee7bcf17cdcb6aa27628feb95d97a",
       "files": {
         "SKILL.md": "f7c8ee4f328ae52086245b4ef628a9ed5d8f306c4dbee7f41551871cac93d073",
         "evals/port-c-config-parser/case.yaml": "8f1e3292a2b06a257d94b11021bbc770eca3724bbfde5ac9326657308c29efa2",
@@ -1513,7 +1516,7 @@
     },
     "rust-review": {
       "source": "morganlinton/BeautifulRust",
-      "ref": "40db61c6fee84bd121cf288755f0e2f22a50e995",
+      "ref": "b9718436d77ee7bcf17cdcb6aa27628feb95d97a",
       "files": {
         "SKILL.md": "3a2ee9874896d2f8f980b617e2b32ce3daff8275ec6ee12c2fb2710e2ae91a9f",
         "evals/review-bevy-arena/case.yaml": "984e3b91c53b9356f295886428c2ccf067e9aca13bc4f9aaabcea2ea6e83222c",
@@ -1554,7 +1557,7 @@
     },
     "skill-creator": {
       "source": "anthropics/claude-plugins-official",
-      "ref": "a7ba5b93db0c7c8d17f3f1d25853adca79598a1a",
+      "ref": "0412be76f50ab4f4f8abff3753efa9269fbbca5b",
       "files": {
         "LICENSE.txt": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
         "SKILL.md": "dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf",
@@ -1599,7 +1602,7 @@
     },
     "testing-setup": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "613970834fedb22c5f85bbc900e600e9a17cd953157af5a7e953e5938d7c2457",
         "references/android/develop/ui/compose/testing/common-patterns.md": "57fc697835d875cae7179d1b164db371e1b8c37881719fb32be51c09fa5c8c35",
@@ -1610,7 +1613,7 @@
     },
     "using-superpowers": {
       "source": "obra/superpowers",
-      "ref": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "ref": "22f0b463e7a5e579904dd6211a520321035526f7",
       "files": {
         "SKILL.md": "82c5c8866ad7f5dd4440ce66bd7806ba48a2f13771beae5cf112e53f08fe36ba",
         "references/antigravity-tools.md": "4880f6de3da4e32f9659ebe7a72b9e0ebfff04e028c2ed96173f86d0387a04c0",
@@ -1624,11 +1627,11 @@
     },
     "verified-email": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "edeaae75ed7f1b5504edc4f1bc69dfd314df8a798bdceeb88f6b0e0ce1198986",
+        "SKILL.md": "7cf5fcfdc361bb483eccbf1bc2a98086b9a092edd3f7b95c8738da111d919086",
         "references/android/identity/credential-manager/index.md": "b472b71ca3b9d6eeab02d01103973072e38a0fe08584bd93efb47131946e21ea",
-        "references/android/identity/digital-credentials/credential-verifier/request-credential.md": "b816cfbf2acbaa57d6b0f16eceee80d28e8309a6e0102298b8d20e62cc61fabc",
+        "references/android/identity/digital-credentials/credential-verifier/request-credential.md": "d0d618460e3dbbae4b403ccbf6badeaf21ef149a709c6f29e5687cfd5b7fe806",
         "references/android/identity/digital-credentials/email-verification-implementation.md": "5c2d0e1a487ddec1164a485b80451ed7497938ee37857abda1e20c7b29139e27",
         "references/android/identity/digital-credentials/email-verification.md": "0bfed5c943ebae58677d93c1a219b34c636403616972be7115d6b806cac6438b",
         "references/android/identity/digital-credentials/index.md": "f79b36376ba09798e6d4a7671852214989d16da7688820eb06f651e32277fe80",
@@ -1654,10 +1657,10 @@
     },
     "wear-compose-m3": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
-        "SKILL.md": "40bf5d82a6a9b90b625aef8c6292c8b5ff446e5e6de82a08ec3c4fe6ac9f5b9b",
-        "references/android/training/wearables/compose/migrate-to-material3.md": "4beb86e1da95a57f0ae7f5a23fefb888ebc1ff805d2440c72db8681bf0cfa9f7",
+        "SKILL.md": "b1023e536272f658d5ebf279dcd234d9493ae33fc14a5abab709c575592ad7e8",
+        "references/android/training/wearables/compose/migrate-to-material3.md": "cd0a13314ed07da50048313304420a49fd56af04d2ab58a6cef7213ada93dd57",
         "references/foundation/AmbientModeSample.kt.md": "79e555c8eec3143646397ae27b4fc4ab9466a1179757f0f75ba792b653465fbd",
         "references/foundation/CurvedWorldSample.kt.md": "448050300b3511a43b85e7cbc566c77e69af51405d86afdd5f7dd6d8b32eaf4a",
         "references/foundation/ExpandableSample.kt.md": "bffdd565f4768864c0ddf0fb6f792c346203c0cc461593d26196f4a372beb842",
@@ -1665,7 +1668,7 @@
         "references/foundation/PagerSamples.kt.md": "9b5f78d34cf11f81ef4dbde1f61d0e12943de9b229e98e8c7cf0318dbddeae20",
         "references/foundation/RotarySamples.kt.md": "f2c4aff48f7e2e5086b7fa5c9d0197db8b0b194714ab009a738fe211133aac76",
         "references/foundation/SwipeToDismissBoxSample.kt.md": "8658ec94800538218485b6ed237071c93ad483a2dca1b884e35187899ac30feb",
-        "references/foundation/TransformingLazyColumnSample.kt.md": "210553f8b5de57f1cb26c17bcb04202a3bc59335f12f8587277412e1f9256b2d",
+        "references/foundation/TransformingLazyColumnSample.kt.md": "df3852629ec314bbe33bf7776e0cebad9b3eb57ca9f1d9ac7232db72c2259c6b",
         "references/material3/AlertDialogSample.kt.md": "6e5affdb7e9daf7137834d3dc26dbab345c2a8f080396455fa6b0975c67c078e",
         "references/material3/AnimatedTextSample.kt.md": "753d54e3f689be9dde8aaeede67d162dc4585cc9996e30de3e7b09bfb84f891f",
         "references/material3/ButtonGroupSample.kt.md": "7bf3a06fcd6ce383a70ef99d48976813eaaf69808a692abd3447b0d150347053",
@@ -1683,7 +1686,7 @@
         "references/material3/LevelIndicatorSample.kt.md": "b68c491cbe8543c1cd4742067f3af05820a755b3f3136a44209516edb3f14a5a",
         "references/material3/LinearProgressIndicatorSample.kt.md": "692da1534a7328629b2eae80265ec991bee8d6d636b6c6bd6128e6dc19abd740",
         "references/material3/ListHeaderSample.kt.md": "951a2cb1b9263702eadb9035f53da1b2c0fa2dc27cf28ebd8e7365b7cb6d20f4",
-        "references/material3/OneHandedGestureSamples.kt.md": "1531d46c57543b3c22d6c0875c883b1258fd9fcf983ef1ec908f6a64b6ea6db3",
+        "references/material3/OneHandedGestureSamples.kt.md": "65ccd231bf7182a21c23b55306072703c84fc4fa2bc346b3eb2abc9a3e238a21",
         "references/material3/OpenOnPhoneDialogSample.kt.md": "727277e83f46ee3c9b66b71190447b6645c16f509ba8d8f39ae06df01bf8e91f",
         "references/material3/PageIndicatorSample.kt.md": "16a53b90907b15595e02de95aed9471df76aec11cf66e5c4c495333e0ac8b8a8",
         "references/material3/PagerScaffoldSample.kt.md": "e67d174fd6e8cc381481e45ca2eb30202d159f9cb56191d6f4f10e90c348f808",
@@ -1713,7 +1716,7 @@
     },
     "wear-widgets": {
       "source": "android/skills",
-      "ref": "bf68e2d66a992a1e6aeb7e9263293cc23fcbf475",
+      "ref": "5815d27fda564aa9f07ebdcb5e57ed3e8d904e0d",
       "files": {
         "SKILL.md": "55141fcb1c516f08a392355d71bbb67fe4db2ea4ec5af9bfa984256b92e32b0a",
         "references/previews-and-testing.md": "3c3ea51bfc53dc722a34f15c7e0145d52ed9b445a5699aa2f304faa5b6eaca08",
@@ -1724,7 +1727,7 @@
     },
     "write-swift": {
       "source": "emilkowalski/skills",
-      "ref": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+      "ref": "715c1807e08c497cfd1dc4feb450a2a3300ef2a9",
       "files": {
         "SKILL.md": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447"
       }
