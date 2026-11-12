@@ -402,3 +402,9 @@ for when a CLI/Vulkan equivalent exists.
 | Repo | ★ | What it is | Verdict for our stack |
 |---|---|---|---|
 | [neuregex/freefield](https://github.com/neuregex/freefield) (1156★ at flag time, MIT, created ≤11-06) | "Open-source Higgsfield on ComfyUI": 120 image, video, VFX and audio apps built around open-weights models (topics: LTX-Video, Wan2, Higgsfield); runs on Modal or your own GPU. A recipe/workflow catalogue rather than an engine. | **Ideas only, no action.** ComfyUI/PyTorch path → not installable on the zero-PyTorch AMD Vulkan stack. Same category as the Higgsfield contest entries already triaged (paintaplate 10-28 §13, openjutsu §14): kept as a source of workflow ideas — its open-weights app list is worth mining if a channel need matches one of the 120 apps. |
+
+## 16. 2026-11-12 — Watch flag triage: hollisorg/iv-studio
+
+| Repo | ★ | What it is | Verdict for our stack |
+|---|---|---|---|
+| [hollisorg/iv-studio](https://github.com/hollisorg/iv-studio) (103★ at flag time, MIT, created 10-28) | "Free, open-source AI film studio on your own PC" (Infinite Variance desktop app, JavaScript, Windows-Mac-Linux): recurring actors (face + voice reference), MiniMax H3 and Seedance shot generation, pictures/songs/spoken lines, short-film wizard, built-in editor; drives the user's own ComfyUI (or cloud GPU); **214 MCP tools** so coding agents (Claude Code, Codex, Hermes) can run the whole studio. | **Ideas only, no action (runtime); blueprint value (pipeline).** The ComfyUI/PyTorch runtime stays off-perimeter (zero-PyTorch AMD Vulkan). Transferable part: the recurring-actor pipeline design — face/voice reference binding + shot wizard + preview-hunt-then-finish-best — maps onto the chain validated natively this week (dance pose sheets §1.55 → `monoplan_ia`/`h3_ref2va`); the MCP-tool-per-capability decomposition is also a reference for exposing our own workflows to agents. Same category as freefield §15. |
