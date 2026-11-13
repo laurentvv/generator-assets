@@ -92,6 +92,24 @@ def ffmpeg() -> str:
 
 # Base folders and models
 DEFAULT_MODEL_DIR = os.getenv("MODEL_DIR", r"C:\Modeles_LLM")
+
+# Cold-storage tier: dormant/validated-but-idle model families live on the D:
+# mirror (external USB 3.0 HDD — cold loads are slow, 10-11 lesson, so only the
+# C: NVMe carries the hot production paths; user rule 2026-11-13). The resolvers
+# and the moved-file defaults below search MODEL_DIRS in order: C: first so a
+# model present on both keeps the fast path.
+MODEL_DIRS = [DEFAULT_MODEL_DIR, r"D:\Modeles_LLM"]
+
+
+def chercher_fichier_modele(nom: str) -> str:
+    """Absolute path of a model file searched across MODEL_DIRS (first existing hit)."""
+    for d in MODEL_DIRS:
+        p = os.path.join(d, nom)
+        if os.path.exists(p):
+            return p
+    return os.path.join(MODEL_DIRS[0], nom)
+
+
 DEFAULT_LLM_MODEL = os.getenv("LLM_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "LFM2.5-8B-A1B-Q6_K.gguf"))
 DEFAULT_SD_MODEL = os.getenv("SD_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "flux1-dev-Q6_K.gguf"))
 DEFAULT_CLIP_L = os.getenv("SD_CLIP_L_PATH", os.path.join(DEFAULT_MODEL_DIR, "clip_l.safetensors"))
@@ -175,8 +193,8 @@ DEFAULT_MINICPM_OCR_MMPROJ = os.getenv(
 
 # Video models (Wan 2.1 / Wan 2.2, LTX-2.3 / LTX-2.5, MiniMax-H3)
 DEFAULT_WAN_MODEL = os.getenv("WAN_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-1.3b-q8_0.gguf"))
-DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors"))
-DEFAULT_WAN_T5XXL = os.getenv("WAN_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q8_0.gguf"))
+DEFAULT_WAN_VAE = os.getenv("WAN_VAE_PATH", chercher_fichier_modele("wan_2.1_vae.safetensors"))
+DEFAULT_WAN_T5XXL = os.getenv("WAN_T5XXL_PATH", chercher_fichier_modele("umt5-xxl-encoder-Q8_0.gguf"))
 
 # MiniMax-H3 Ref2VA video models (video+audio reference → generated video, webm output with audio).
 # ⚠️ The ref2va DiT is DISTINCT from fl2va (T2VA/I2VA) — source: leejet/MiniMax-H3-GGUF
@@ -207,10 +225,10 @@ DEFAULT_H3_REF2VA_TURBO_LORA = os.getenv(
 # Recipe: MEMORY_BANK §1.28 — I2V + --control-video, offload + vae-on-cpu mandatory (16 GB).
 DEFAULT_VACE_MODEL = os.getenv(
     "VACE_MODEL_PATH",
-    os.path.join(DEFAULT_MODEL_DIR, "Wan2.1_14B_LightX2V_StepCfgDistill_VACE-Q3_K_S.gguf"),
+    chercher_fichier_modele("Wan2.1_14B_LightX2V_StepCfgDistill_VACE-Q3_K_S.gguf"),
 )
 DEFAULT_VACE_T5XXL = os.getenv(
-    "VACE_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q4_K_M.gguf")
+    "VACE_T5XXL_PATH", chercher_fichier_modele("umt5-xxl-encoder-Q4_K_M.gguf")
 )  # VACE validated recipe uses the Q4_K_M umt5 (the plain-Wan default is Q8_0)
 
 # Music models (MiniMax-Music3 GGUF via audio.cpp + Music Flamingo via llama.cpp)
@@ -486,7 +504,8 @@ def resoudre_modele_onnx(cle_ou_chemin: Optional[str], defaut_path: Optional[str
 def resoudre_modele_video(chemin: Optional[str] = None) -> str:
     """
     Resolves the video DiT model (Wan 2.1 / 2.2, LTX-2.3 / 2.5).
-    Automatically searches DEFAULT_MODEL_DIR if no valid direct path is provided.
+    Automatically searches MODEL_DIRS (C: hot pool, then D: cold mirror)
+    if no valid direct path is provided.
     """
     if chemin and os.path.exists(chemin):
         return os.path.abspath(chemin)
@@ -503,24 +522,27 @@ def resoudre_modele_video(chemin: Optional[str] = None) -> str:
         "ltx-video-2b-v0.9-Q8_0.gguf"
     ]
     for nom in candidats:
-        p = os.path.join(DEFAULT_MODEL_DIR, nom)
-        if os.path.exists(p):
-            return p
+        for d in MODEL_DIRS:
+            p = os.path.join(d, nom)
+            if os.path.exists(p):
+                return p
 
-    # Fuzzy search in DEFAULT_MODEL_DIR
-    if os.path.exists(DEFAULT_MODEL_DIR):
-        for f in os.listdir(DEFAULT_MODEL_DIR):
-            f_lower = f.lower()
-            if (f_lower.startswith("wan") or f_lower.startswith("ltx")) and f_lower.endswith((".gguf", ".safetensors")):
-                if "vae" not in f_lower and "encoder" not in f_lower:
-                    return os.path.join(DEFAULT_MODEL_DIR, f)
+    # Fuzzy search across MODEL_DIRS (C: hot pool first)
+    for d in MODEL_DIRS:
+        if os.path.exists(d):
+            for f in os.listdir(d):
+                f_lower = f.lower()
+                if (f_lower.startswith("wan") or f_lower.startswith("ltx")) and f_lower.endswith((".gguf", ".safetensors")):
+                    if "vae" not in f_lower and "encoder" not in f_lower:
+                        return os.path.join(d, f)
 
     return os.path.join(DEFAULT_MODEL_DIR, "wan2.1-t2v-14b-Q4_K_M.gguf")
 
 
 def resoudre_t5xxl_video(chemin: Optional[str] = None) -> str:
     """
-    Resolves the UMT5-XXL text encoder for Wan 2.1 (Q4_K_M, Q8_0 or fp16).
+    Resolves the UMT5-XXL text encoder for Wan 2.1 (Q4_K_M, Q8_0 or fp16),
+    searched across MODEL_DIRS (C: hot pool, then D: cold mirror).
     """
     if chemin and os.path.exists(chemin):
         return os.path.abspath(chemin)
@@ -533,15 +555,17 @@ def resoudre_t5xxl_video(chemin: Optional[str] = None) -> str:
         "umt5_xxl_fp16.safetensors"
     ]
     for nom in candidats:
-        p = os.path.join(DEFAULT_MODEL_DIR, nom)
-        if os.path.exists(p):
-            return p
+        for d in MODEL_DIRS:
+            p = os.path.join(d, nom)
+            if os.path.exists(p):
+                return p
 
-    if os.path.exists(DEFAULT_MODEL_DIR):
-        for f in os.listdir(DEFAULT_MODEL_DIR):
-            f_lower = f.lower()
-            if "umt5" in f_lower and f_lower.endswith((".gguf", ".safetensors")):
-                return os.path.join(DEFAULT_MODEL_DIR, f)
+    for d in MODEL_DIRS:
+        if os.path.exists(d):
+            for f in os.listdir(d):
+                f_lower = f.lower()
+                if "umt5" in f_lower and f_lower.endswith((".gguf", ".safetensors")):
+                    return os.path.join(d, f)
 
     return os.path.join(DEFAULT_MODEL_DIR, "umt5-xxl-encoder-Q8_0.gguf")
 
@@ -559,9 +583,10 @@ def resoudre_vae_video(chemin: Optional[str] = None) -> str:
         "wan2.2_vae.safetensors"
     ]
     for nom in candidats:
-        p = os.path.join(DEFAULT_MODEL_DIR, nom)
-        if os.path.exists(p):
-            return p
+        for d in MODEL_DIRS:
+            p = os.path.join(d, nom)
+            if os.path.exists(p):
+                return p
 
     return os.path.join(DEFAULT_MODEL_DIR, "wan_2.1_vae.safetensors")
 
