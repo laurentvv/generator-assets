@@ -770,6 +770,14 @@ def apply_output_declick(audio: np.ndarray, sr: int, fade_ms: float = 10.0) -> n
     return out
 
 
+def declick_fichier_wav(chemin_wav: str, fade_ms: float = 10.0) -> str:
+    """Applies start-of-file declick in place on an existing PCM16 WAV file."""
+    audio, sr = charger_audio(chemin_wav)
+    nettoye = apply_output_declick(audio, sr, fade_ms=fade_ms)
+    soundfile.write(chemin_wav, nettoye, sr, subtype="PCM_16")
+    return chemin_wav
+
+
 def verifier_boucle(chemin: str) -> Dict:
     """
     Checks that a WAV loops cleanly: seam continuity (100 ms RMS
