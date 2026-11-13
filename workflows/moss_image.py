@@ -65,6 +65,11 @@ class MossImageWorkflow(BaseWorkflow):
         cfg_scale = 3.0 if raw_cfg in (None, 1.0) else float(raw_cfg)
         seed = params.get("seed")
         seed = int(seed) if seed is not None else -1
+        if params.get("size") is not None:
+            self.log(
+                f"⚠️ Ignoring -s/--size ({params['size']}) on moss_image: "
+                "use --seed for determinism and --width/--height for dimensions.",
+            )
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         os.makedirs(output_dir, exist_ok=True)
