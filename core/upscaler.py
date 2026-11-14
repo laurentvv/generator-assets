@@ -27,6 +27,14 @@ from core.process import run_engine
 _VALID_UPSCALE_MODES = ("auto", "esrgan", "seedvr2", "lanczos")
 
 
+def valider_chunk_temporel_seedvr2(temporal_chunk_size: int) -> None:
+    """Validates SeedVR2 temporal chunk size (1 or 4n+1 per sd-cli upscaler rules)."""
+    if temporal_chunk_size < 1 or (temporal_chunk_size > 1 and (temporal_chunk_size - 1) % 4 != 0):
+        raise ValueError(
+            f"--vsr-temporal-chunk-size must be 1 or 4n+1 (got {temporal_chunk_size})."
+        )
+
+
 def resoudre_options_upscale(params: dict) -> tuple[str, int, int]:
     """Resolves upscale mode, SeedVR2 temporal chunk size, and seed from CLI/UI params."""
     # Upscale owns its own mode key: global --mode belongs to asset_blendkit ("prop"/"plate").
@@ -37,6 +45,8 @@ def resoudre_options_upscale(params: dict) -> tuple[str, int, int]:
     )
     raw_chunk = params.get("vsr_temporal_chunk_size")
     temporal_chunk = 1 if raw_chunk is None else int(raw_chunk)
+    if mode == "seedvr2":
+        valider_chunk_temporel_seedvr2(temporal_chunk)
     seed = int(params.get("seed", 42))
     return mode, temporal_chunk, seed
 
@@ -281,10 +291,7 @@ def upscale_video_seedvr2(
         raise FileNotFoundError(f"SeedVR2 model not found: {seedvr2_model_path}")
     if not os.path.exists(seedvr2_vae_path):
         raise FileNotFoundError(f"SeedVR2 VAE not found: {seedvr2_vae_path}")
-    if temporal_chunk_size < 1 or (temporal_chunk_size > 1 and (temporal_chunk_size - 1) % 4 != 0):
-        raise ValueError(
-            f"--vsr-temporal-chunk-size must be 1 or 4n+1 (got {temporal_chunk_size})."
-        )
+    valider_chunk_temporel_seedvr2(temporal_chunk_size)
     sd_cli = sd_cli or DEFAULT_SD_CLI
     ffmpeg = ffmpeg or DEFAULT_FFMPEG
 

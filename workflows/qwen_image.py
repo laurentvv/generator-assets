@@ -119,6 +119,16 @@ class QwenImageWorkflow(BaseWorkflow):
         # Compositing / Reference mode (-i pixel blend vs -r VLM reference).
         init_image = params.get("input")
         ref_images = list(params.get("ref_images") or [])
+        ref_lib = (params.get("ref_lib") or "").strip()
+        if ref_lib:
+            from core.web_assets import resoudre_reference_web_assets
+
+            lib_hit = resoudre_reference_web_assets(ref_lib, asset_type="image")
+            ref_images.append(lib_hit["abs_path"])
+            self.log(
+                f"Reference image resolved from web-assets: {lib_hit['rel_path']} "
+                f"({lib_hit['licence']['licence']})"
+            )
         loras = list(params.get("loras") or [])
         lora_dir = params.get("lora_dir")
         strength = params.get("strength")

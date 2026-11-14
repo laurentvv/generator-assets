@@ -320,6 +320,21 @@
  ],
  [
   [
+   "--control-extract"
+  ],
+  "control_extract",
+  "_StoreAction",
+  "'canny'",
+  [
+   "canny",
+   "depth_proxy",
+   "edges_bold"
+  ],
+  null,
+  null
+ ],
+ [
+  [
    "--control-video"
   ],
   "control_video",
@@ -427,6 +442,17 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--delight"
+  ],
+  "delight",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
  ],
  [
   [
@@ -709,6 +735,17 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--from-lib"
+  ],
+  "from_lib",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
  ],
  [
   [
@@ -1498,6 +1535,17 @@
  ],
  [
   [
+   "--pbr-group"
+  ],
+  "pbr_group",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--percentage"
   ],
   "percentage",
@@ -1678,6 +1726,17 @@
   ],
   "ref_images",
   "_AppendAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--ref-lib"
+  ],
+  "ref_lib",
+  "_StoreAction",
   "None",
   null,
   null,
@@ -1904,6 +1963,17 @@
  ],
  [
   [
+   "--scan-web-assets"
+  ],
+  "scan_web_assets",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
    "--sd-cli"
   ],
   "sd_cli",
@@ -2051,6 +2121,28 @@
    "--skin"
   ],
   "skin",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--skip-qc"
+  ],
+  "skip_qc",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
+   "--source-video"
+  ],
+  "source_video",
   "_StoreAction",
   "None",
   null,

@@ -603,3 +603,56 @@ def notifier_scan_web_assets(
             return {"ok": 200 <= resp.status < 300, "status": resp.status, "data": payload}
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         return {"ok": False, "error": str(exc), "endpoint": endpoint}
+
+
+def resoudre_reference_web_assets(
+    query: str,
+    *,
+    asset_type: str,
+    min_duration_ms: Optional[int] = None,
+    max_duration_ms: Optional[int] = None,
+    commercial_only: bool = False,
+    db_path: Optional[str] = None,
+    library_dir: Optional[str] = None,
+) -> dict[str, Any]:
+    """Resolves a single verified asset from C:\\GIT\\web-assets with NO_AI filtering enforced."""
+    q = (query or "").strip()
+    if not q:
+        raise ValueError("Empty --ref-lib query.")
+
+    if asset_type == "audio" and min_duration_ms is not None and max_duration_ms is not None:
+        hit = choisir_reference_audio(
+            q,
+            min_duration_ms=min_duration_ms,
+            max_duration_ms=max_duration_ms,
+            commercial_only=commercial_only,
+            db_path=db_path,
+            library_dir=library_dir,
+        )
+    else:
+        hits = rechercher_assets(
+            q,
+            asset_type=asset_type,
+            min_duration_ms=min_duration_ms,
+            max_duration_ms=max_duration_ms,
+            exclude_no_ai=True,
+            commercial_only=commercial_only,
+            limit=5 if asset_type == "image" else 1,
+            db_path=db_path,
+            library_dir=library_dir,
+        )
+        if asset_type == "image" and hits:
+            visual_hits = [
+                h for h in hits
+                if h.get("pbr_role") in (None, "", "albedo")
+                and h.get("abs_path") and os.path.exists(h["abs_path"])
+            ]
+            hit = visual_hits[0] if visual_hits else hits[0]
+        else:
+            hit = hits[0] if hits else None
+
+    if not hit or not hit.get("abs_path") or not os.path.exists(hit["abs_path"]):
+        raise FileNotFoundError(
+            f"No eligible {asset_type} reference found in web-assets for '{q}' (NO_AI excluded)."
+        )
+    return hit

@@ -15,10 +15,12 @@ comparison: MEMORY_BANK §1.28. Mandatory memory placement on 16 GB:
 """
 
 import os
+from pathlib import Path
 from typing import Any, Dict
 
 from core.config import DEFAULT_OUTPUT_DIR, DEFAULT_VACE_MODEL, DEFAULT_VACE_T5XXL, DEFAULT_WAN_VAE, slugifier_texte
 from core.diffusion import generer_video_vulkan
+from core.vace_control import CONTROL_EXTRACT_MODES, extraire_frames_controle_video
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
@@ -36,7 +38,13 @@ class VideoVaceWorkflow(BaseWorkflow):
 
     # NOTE: --control-video is NOT redeclared here — it is already part of the global
     # CLI surface (declared once by workflows/video.py); this workflow only consumes it.
-    PARAMETRES = []
+    PARAMETRES = [
+        dict(flags=("--source-video",), dest="source_video", default=None,
+             help="video_vace: raw driving video to auto-extract synchronized VACE control frames when --control-video is omitted."),
+        dict(flags=("--control-extract",), dest="control_extract", default="canny",
+             choices=list(CONTROL_EXTRACT_MODES),
+             help="video_vace: structural extraction filter for --source-video (canny | edges_bold | depth_proxy; default: canny)."),
+    ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
@@ -47,12 +55,6 @@ class VideoVaceWorkflow(BaseWorkflow):
             raise ValueError(
                 "The 'input' reference image is required for video_vace (I2V+VACE: appearance is "
                 "locked by --input, motion by --control-video) — validated use case only."
-            )
-        control_dir = params.get("control_video")
-        if not control_dir:
-            raise ValueError(
-                "The '--control-video' frame folder is required for video_vace (VACE guidance) — "
-                "preprocess pose/depth/skeleton frames first (see MEMORY_BANK §1.28)."
             )
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
@@ -74,6 +76,33 @@ class VideoVaceWorkflow(BaseWorkflow):
         steps = int(params.get("steps", 8)) or 8
         cfg_scale = float(params.get("cfg_scale", 1.0))
         seed = int(params.get("seed", 42))
+
+        control_dir = params.get("control_video")
+        source_video = params.get("source_video")
+        extract_mode = None
+        if not control_dir:
+            if source_video:
+                extract_mode = params.get("control_extract") or "canny"
+                auto_ctrl_dir = os.path.join(output_dir, f"{Path(video_output_path).stem}_control_{extract_mode}")
+                self.log(
+                    f"Extracting {extract_mode} control frames from '{source_video}' "
+                    f"({frames} frames @ {fps} fps, {width}x{height})..."
+                )
+                ctrl_meta = extraire_frames_controle_video(
+                    video_path=source_video,
+                    output_dir=auto_ctrl_dir,
+                    mode=extract_mode,
+                    width=width,
+                    height=height,
+                    max_frames=frames,
+                    fps=fps,
+                )
+                control_dir = ctrl_meta["control_dir"]
+            else:
+                raise ValueError(
+                    "Provide '--control-video' (pre-extracted PNG folder) or '--source-video' "
+                    "for automatic VACE control extraction."
+                )
 
         self.log(
             f"VACE generation ({frames} frames @ {fps} fps, {width}x{height}, {steps} steps, "
@@ -112,6 +141,7 @@ class VideoVaceWorkflow(BaseWorkflow):
             "video_path": video_path,
             "reference_image": input_img,
             "control_video_dir": control_dir,
+            "control_extract_mode": extract_mode,
             "frames": frames,
             "fps": fps,
             "resolution": f"{width}x{height}",
