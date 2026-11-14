@@ -1,6 +1,6 @@
 # 📦 Complete Workflow Technical Reference
 
-> Exhaustive reference manual for all 70 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
+> Exhaustive reference manual for all 71 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
 > Back to main: [README.md](../README.md)
 
 ---
@@ -11,7 +11,7 @@
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, qwen_image, moss_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, lfm3_tts, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, audio_repaint, retrait_voix, audio_upscale, audio_restaure, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia, open_water
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, lfm3_tts, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, audio_repaint, retrait_voix, audio_upscale, audio_restaure, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, video_s2v, h3_ref2va, monoplan_ia, open_water
   • Style Consistency & Utilities  : ip_adapter, ocr_image, upscale, batch
   • Craft Suite (headless Rust apps): miniature, carte_fin, icone_jeu, titre_anime, prepa_i2v, filigrane_batch, doc_texte, classeur_donnees, rapport_deck, planche_pdf, maquette_ui, photo_develop, son_convertir, ocr_pdf, projet_montage
 ```
@@ -911,6 +911,27 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 
   # Two-stage native 1216x704 Spatial Upscaler x2 (defaults to 33 frames):
   uv run python main.py -w video_multishot -p "Stormy sea cliffs at dusk. A hard cut transitions to waves crashing on a lighthouse." --hires --seed 42 -o phare_hires
+  ```
+
+#### 4.9d. video_s2v — Speech-to-Video talking portrait (Wan2.2-S2V 14B, LightX2V 4-step)
+
+![Wan2.2-S2V 14B Talking Portrait 33 Frames](exemples/videos/wan22_s2v_512_sheet.png)
+
+- **Role**: Generates an audio-driven talking portrait video (`.webm` + Windows-playable H.264/AAC `.mp4`) from a single portrait reference image (`-i`) and a driving speech track (`--audio`), **USER VALIDATED 2026-11-14** (`s2v_probe_512_33f_4step.mp4`).
+- **Engine & Models**: `sd-cli.exe -M vid_gen` with `Wan2.2-S2V-14B-Q4_K_M.gguf` (12.91 GiB), `umt5-xxl-encoder-Q4_K_M.gguf` (3.40 GiB), `wan_2.1_vae.safetensors` (0.24 GiB), `wav2vec2_large_english_fp16.safetensors` (0.59 GiB), and distilled `lightx2v-Wan2.2-T2V-A14B-4steps-lora-rank64-Seko-V2.0-low_noise.safetensors` (automatically active when `steps <= 8`).
+- **Process**:
+  1. Checks system load via `scripts/check_charge_systeme.py` (aborts if exit code `1`).
+  2. **Temporary NVMe staging (`D: -> C:`)**: Cold-stored models on `D:\Modeles_LLM\` (USB 3.0 HDD, `2.8-30 MB/s` on segmented re-reads) are copied to a temporary folder under `C:\Modeles_LLM\` (verifies free disk space with a `5 GiB` safety margin and exact byte sizes), then deterministically deleted in `finally:` after `sd-cli` exits (`~2.94 min` one-shot copy for `17.14 GiB` at `99.4 MB/s`).
+  3. Converts non-WAV audio inputs temporarily via FFmpeg to 24 kHz mono `pcm_s16le` WAV (`_preparer_wav_s2v`).
+  4. Runs `sd-cli -M vid_gen` with `--sampling-method euler --flow-shift 3.0 --cfg-scale 1.0 --backend diffusion=vulkan0,te=cpu,vae=cpu --max-vram 10 --offload-to-cpu --vae-tiling --flash-attn off,diffusion=on --rng cpu`.
+  5. Remuxes `sd-cli`'s `.webm` (VP8 + `pcm_s16le`) into `.mp4` (`libx264` CRF `18`, `yuv420p`, `aac` `128k`, `-movflags +faststart`) and runs `auditer_clip_video` QC.
+- **Validated Benchmark & Hardware Envelope (RX 6950 XT 16 GB + 32 GB RAM)**:
+  - **`512×512`, `33f @ 16 fps`, `4 steps` (`9,216` latent tokens) — VALIDATED**: `1446.51 s` (`24.11 min`) compute (`12.45 s` CPU VAE encode + `12.91 s` `wav2vec2` cond + `6.48 s` T5 CPU + `868.71 s` sampling over `42` segments [`~212.5-230.9 s/it`] + `558.01 s` CPU VAE decode) + `2.94 min` cold NVMe staging.
+  - **`832×480`, `33f` (`14,040` tokens) — REJECTED / HARDWARE CEILING**: `--flash-attn off,diffusion=on` fails in `9.82 s` (`vk::Queue::submit: ErrorDeviceLost`); `--flash-attn off` spills to `53.18 GiB` Commit / swap thrashing (`58.33 min` stall at ~12/42 segments of step `1/4`). Keep `512×512` (`<= 9,216` tokens) and upscale downstream with RealESRGAN / SeedVR2 if HD is required.
+- **CLI Options**: Reuses shared flags `-i/--input` (portrait, required), `--audio` (speech track, required), `-p/--prompt`, `-o/--output`, `-d/--output-dir`, `-W/--width` (default `512`), `-H/--height` (default `512`), `--frames` (default `33`), `--fps` (default `16`), `--steps` (global `25` mapped to `4`), `--cfg-scale` (`1.0`), `--flow-shift` (`3.0`), `-s/--seed`, `-l/--lora` (`"none"` to disable), `--lora-dir`, `--max-vram` (`10`), `--dry-run`.
+- **Example**:
+  ```bash
+  uv run python main.py -w video_s2v -i portrait.png --audio speech.wav -p "A person speaking calmly and clearly, natural lip-sync and subtle head movements, steady camera." -o talking_portrait
   ```
 
 #### 4.9. `h3_ref2va` — Video+Audio Continuation (Ref2VA) & Keyframe Morphing (FL2VA) via MiniMax-H3 (webm with sound)

@@ -21,7 +21,7 @@ _MODULES_ORDONNES = [
     "flowmap", "ui_9slice", "voxel3d", "autotile_pack", "rife_interp", "vfx_flipbook",
     "rpg_portrait", "sfx", "ip_adapter", "anim_loop", "pose_control", "tts_dialogue",
     "audio_ambience", "music_bg", "voix_off", "voix_robot", "voix_perso", "lfm3_tts", "chanson", "musique_adn",
-    "musique_essence", "retrait_voix", "outfit", "video", "video_vace", "video_multishot", "h3_ref2va", "monoplan_ia", "open_water",
+    "musique_essence", "retrait_voix", "outfit", "video", "video_vace", "video_s2v", "video_multishot", "h3_ref2va", "monoplan_ia", "open_water",
     "makehuman_clothes", "character_makeup", "asset_blendkit", "audio_upscale", "audio_restaure", "ocr_pdf", "rapport_deck", "projet_montage",
     "animal_godot", "acestep_cover", "audio_repaint", "voix_conversion",
 ]
