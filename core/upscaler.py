@@ -24,6 +24,23 @@ from core.config import (
 from core.process import run_engine
 
 
+_VALID_UPSCALE_MODES = ("auto", "esrgan", "seedvr2", "lanczos")
+
+
+def resoudre_options_upscale(params: dict) -> tuple[str, int, int]:
+    """Resolves upscale mode, SeedVR2 temporal chunk size, and seed from CLI/UI params."""
+    # Upscale owns its own mode key: global --mode belongs to asset_blendkit ("prop"/"plate").
+    mode = (
+        params.get("upscale_mode")
+        or (params.get("mode") if params.get("mode") in _VALID_UPSCALE_MODES else None)
+        or "auto"
+    )
+    raw_chunk = params.get("vsr_temporal_chunk_size")
+    temporal_chunk = 1 if raw_chunk is None else int(raw_chunk)
+    seed = int(params.get("seed", 42))
+    return mode, temporal_chunk, seed
+
+
 def _reinjecter_alpha(image_source: Image.Image, img_upscaled_rgb: Image.Image) -> Image.Image:
     """Restores the source alpha channel resized cleanly onto an upscaled RGB image."""
     if image_source.mode != "RGBA":

@@ -11,7 +11,7 @@ from typing import Any, Dict
 from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
-from core.upscaler import upscaler_asset, upscale_video
+from core.upscaler import resoudre_options_upscale, upscaler_asset, upscale_video
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
@@ -39,16 +39,7 @@ class UpscaleWorkflow(BaseWorkflow):
 
         facteur = float(params.get("factor", 2.0))
         taille_cible = params.get("size")
-        # Upscale owns its own mode key: the global CLI --mode belongs to
-        # asset_blendkit ("prop"/"plate") and must not silently disable ESRGAN.
-        # Legacy batch recipes using mode="auto"/"esrgan"/"seedvr2"/"lanczos" still work.
-        mode = (
-            params.get("upscale_mode")
-            or (params.get("mode") if params.get("mode") in ("auto", "esrgan", "seedvr2", "lanczos") else None)
-            or "auto"
-        )
-        temporal_chunk = int(params.get("vsr_temporal_chunk_size") or 1)
-        seed = int(params.get("seed", 42))
+        mode, temporal_chunk, seed = resoudre_options_upscale(params)
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         nom_sortie = params.get("output")
         modele_demande = params.get("upscale_model") or self.config.get("esrgan_model")

@@ -465,38 +465,48 @@ def repaint_acestep(
     _, dit_model_path = ACESTEP15_VARIANTES[variante]
 
     wav_source = _preparer_wav_temp(chemin_source, sr=SR_CIBLE, etiquette="ffmpeg repaint source")
-    cmd = [
-        exe, "--task", "gen", "--family", "ace_step",
-        "--model", gguf, "--backend", backend,
-        "--task-route", "repaint",
-        "--threads", str(int(threads)), "--log", "--metrics",
-        "--audio", wav_source,
-        "--text", description,
-        "--request-option", f"ace_step.repainting_start={start_sec:g}",
-        "--request-option", f"ace_step.repainting_end={end_sec:g}",
-        "--request-option", f"ace_step.repaint_mode={repaint_mode}",
-        "--session-option", "ace_step.mem_saver=true",
-        "--out", chemin_sortie,
-    ]
-    if dit_model_path:
-        cmd.extend(["--load-option", f"ace_step.dit_model_path={dit_model_path}"])
-    if repaint_strength is not None:
-        val = max(0.0, min(1.0, float(repaint_strength)))
-        cmd.extend(["--request-option", f"ace_step.repaint_strength={val:g}"])
-    if lyrics:
-        cmd.extend(["--request-option", f"ace_step.lyrics={lyrics}"])
-    if langue:
-        cmd.extend(["--request-option", f"ace_step.language={langue}"])
-    if steps is not None and steps > 0:
-        cmd.extend(["--request-option", f"ace_step.num_inference_steps={int(steps)}"])
-    if graine >= 0:
-        cmd.extend(["--seed", str(int(graine))])
-
-    log(
-        f"⏱️  ACE-Step {variante} repaint [{start_sec:g}s..{end_sec:g}s] on CPU "
-        f"(bit-exact outside mask; slow ~28x RT on xl-turbo)..."
-    )
     try:
+        info = soundfile.info(wav_source)
+        duration_sec = float(info.duration)
+        if duration_sec <= 0:
+            raise ValueError(f"Source audio has non-positive duration: {chemin_source}")
+        if start_sec >= duration_sec or end_sec > duration_sec:
+            raise ValueError(
+                f"Repaint span [{start_sec:g}, {end_sec:g}] exceeds source duration {duration_sec:.3f}s."
+            )
+
+        cmd = [
+            exe, "--task", "gen", "--family", "ace_step",
+            "--model", gguf, "--backend", backend,
+            "--task-route", "repaint",
+            "--threads", str(int(threads)), "--log", "--metrics",
+            "--audio", wav_source,
+            "--text", description,
+            "--request-option", f"ace_step.repainting_start={start_sec:g}",
+            "--request-option", f"ace_step.repainting_end={end_sec:g}",
+            "--request-option", f"ace_step.repaint_mode={repaint_mode}",
+            "--session-option", "ace_step.mem_saver=true",
+            "--out", chemin_sortie,
+        ]
+        if dit_model_path:
+            cmd.extend(["--load-option", f"ace_step.dit_model_path={dit_model_path}"])
+        if repaint_strength is not None:
+            val = max(0.0, min(1.0, float(repaint_strength)))
+            cmd.extend(["--request-option", f"ace_step.repaint_strength={val:g}"])
+        if lyrics:
+            cmd.extend(["--request-option", f"ace_step.lyrics={lyrics}"])
+        if langue:
+            cmd.extend(["--request-option", f"ace_step.language={langue}"])
+        if steps is not None and steps > 0:
+            cmd.extend(["--request-option", f"ace_step.num_inference_steps={int(steps)}"])
+        if graine >= 0:
+            cmd.extend(["--seed", str(int(graine))])
+
+        backend_lbl = backend.upper() if backend.lower() == "cpu" else backend
+        log(
+            f"⏱️  ACE-Step {variante} repaint [{start_sec:g}s..{end_sec:g}s] on {backend_lbl} "
+            f"(bit-exact outside mask; slow ~28x RT on xl-turbo)..."
+        )
         resultat = run_engine(
             cmd, check=False, capture=True, timeout=timeout_s,
             etiquette="audio.cpp acestep repaint",
@@ -556,6 +566,10 @@ def inpaint_stable_audio(
         duration_sec = float(info.duration)
         if duration_sec <= 0:
             raise ValueError(f"Source audio has non-positive duration: {chemin_source}")
+        if start_sec >= duration_sec or end_sec > duration_sec:
+            raise ValueError(
+                f"Inpaint span [{start_sec:g}, {end_sec:g}] exceeds source duration {duration_sec:.3f}s."
+            )
 
         cmd = [
             resoudre_audiocpp(),

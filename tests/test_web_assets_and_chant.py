@@ -226,3 +226,95 @@ def test_moss_image_warns_on_size(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 
     wf.run({"prompt": "stone lantern", "size": 42, "output_dir": str(tmp_path)})
     assert any("-s/--size" in msg and "--seed" in msg for msg in captured)
+
+
+def test_web_assets_edge_cases_null_pagination_missing_audio_corrupt_blob(tmp_path: Path):
+    from core.web_assets import normaliser_rel_path
+
+    assert normaliser_rel_path(None) == ""
+    db_path = tmp_path / "app.db"
+    lib_dir = tmp_path / "lib"
+    _creer_fausse_db(db_path, lib_dir)
+
+    con = sqlite3.connect(db_path)
+    # 45 blocked no-AI rows ahead of 1 valid commercial row (tests OFFSET pagination past limit*4=33)
+    for idx in range(20, 65):
+        rel_blocked = f"modeles_3d/fab/rogue_character_model/blocked_{idx}.wav"
+        con.execute(
+            "INSERT INTO assets (id, rel_path, ext, type, duration_ms, category, title, description, keywords, flag_delete) "
+            "VALUES (?, ?, 'wav', 'audio', 2500, 'sfx', ?, 'blocked sfx', 'pagedtag', 0)",
+            (idx, rel_blocked, f"Blocked {idx}"),
+        )
+        con.execute(
+            "INSERT INTO assets_fts (rowid, title, description, keywords, path) VALUES (?, ?, 'blocked sfx', 'pagedtag', ?)",
+            (idx, f"Blocked {idx}", rel_blocked),
+        )
+    con.execute(
+        "INSERT INTO assets (id, rel_path, ext, type, duration_ms, category, title, description, keywords, flag_delete) "
+        "VALUES (90, 'audio/kenney/ghost_only.wav', 'wav', 'audio', 3000, 'sfx', 'Ghost Missing', 'not on disk', 'pagedtag', 0)"
+    )
+    con.execute(
+        "INSERT INTO assets_fts (rowid, title, description, keywords, path) VALUES (90, 'Ghost Missing', 'not on disk', 'pagedtag', 'audio/kenney/ghost_only.wav')"
+    )
+    con.execute(
+        "INSERT INTO assets (id, rel_path, ext, type, duration_ms, category, title, description, keywords, flag_delete) "
+        "VALUES (91, NULL, 'png', 'image', NULL, 'texture', 'Null Rel', 'null rel row', 'nullrow', 0)"
+    )
+    con.execute(
+        "INSERT INTO assets_fts (rowid, title, description, keywords, path) VALUES (91, 'Null Rel', 'null rel row', 'nullrow', NULL)"
+    )
+    con.execute("DELETE FROM embeddings")
+    con.execute("INSERT INTO embeddings VALUES (1, 'clip', ?)", (np.array([1.0, 0.0], dtype=np.float32).tobytes(),))
+    con.execute("INSERT INTO embeddings VALUES (3, 'clip', ?)", (np.array([0.99, 0.1], dtype=np.float32).tobytes(),))
+    con.execute("INSERT INTO embeddings VALUES (5, 'clip', ?)", (b"\x01\x02\x03",))
+    con.execute("INSERT INTO embeddings VALUES (6, 'clip', ?)", (np.array([np.nan, 1.0], dtype=np.float32).tobytes(),))
+    con.execute("INSERT INTO embeddings VALUES (4, 'clip', ?)", (np.array([0.8, 0.6], dtype=np.float32).tobytes(),))
+    con.commit()
+    con.close()
+
+    # NULL rel_path does not crash search
+    null_hits = rechercher_assets("Null Rel", db_path=str(db_path), library_dir=str(lib_dir))
+    assert any(h["id"] == 91 and h["rel_path"] == "" for h in null_hits)
+
+    # Pagination skips all 45 excluded rows and finds surviving id=90
+    paged_hits = rechercher_assets("pagedtag", limit=1, exclude_no_ai=True, db_path=str(db_path), library_dir=str(lib_dir))
+    assert len(paged_hits) == 1 and paged_hits[0]["id"] == 90
+
+    # No candidate exists on disk for 'pagedtag' -> None instead of phantom path
+    picked = choisir_reference_audio("pagedtag", db_path=str(db_path), library_dir=str(lib_dir))
+    assert picked is None
+
+    # Similarity skips corrupt blob (5), NaN vec (6), and no-AI id=3 -> returns valid id=4
+    sims = rechercher_similaires(1, exclude_no_ai=True, limit=1, db_path=str(db_path), library_dir=str(lib_dir))
+    assert [s["id"] for s in sims] == [4]
+
+
+def test_licence_matrix_covers_all_registered_workflows_and_non_flux_3d():
+    from workflows import WorkflowRegistry
+
+    for wf_name in ("animal_godot", "asset_blendkit", "character_makeup", "character3d", "voix_conversion"):
+        lic = classifier_licence_workflow(wf_name)
+        assert lic["tier"] == LICENCE_COMMERCIAL, wf_name
+        assert lic["commercial_ok"] is True
+
+    up_lic = classifier_licence_workflow("audio_upscale")
+    assert up_lic["tier"] == LICENCE_CONDITIONNELLE
+    assert up_lic["commercial_ok"] is True
+    assert "CC-BY-4.0" in up_lic["licence"]
+
+    prod_workflows = [
+        name for name in WorkflowRegistry.list_all()
+        if WorkflowRegistry.get(name).__module__.startswith("workflows.")
+    ]
+    assert len(prod_workflows) >= 70
+    for wf_name in prod_workflows:
+        lic = classifier_licence_workflow(wf_name)
+        assert "Verify upstream model weight license" not in lic["licence"], wf_name
+
+
+def test_chant_score_bool_and_whole_note_cadence():
+    with pytest.raises(ValueError):
+        note_vers_midi(True)
+
+    whole = compiler_partition_chant("fin.", duree_defaut=1, inscrire_bpm=False)
+    assert whole == "fin<P_57><NOTE_1>"
