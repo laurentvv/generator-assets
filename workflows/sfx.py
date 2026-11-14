@@ -19,7 +19,9 @@ import numpy as np
 
 from core.audio_ops import exporter_sfx_godot, synthetiser_sfx
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.music_ai import charger_audio, normaliser_pic, ressampler
 from core.sfx_ia import generer_sfx_ia
+from core.web_assets import resoudre_reference_web_assets
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
@@ -44,16 +46,38 @@ class SFXWorkflow(BaseWorkflow):
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        prompt = params.get("prompt") or "sword_slash"
+        ref_lib = (params.get("ref_lib") or "").strip()
+        prompt = params.get("prompt") or (ref_lib if ref_lib else "sword_slash")
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         duree = float(params.get("duration", 1.5))
         graine = int(params.get("seed", 42))
-        moteur = params.get("sfx_engine") or "ia"
+        engine = params.get("sfx_engine") or "ia"
         nom_base = params.get("output") or f"{slugifier_texte(prompt)}_sfx"
 
         os.makedirs(output_dir, exist_ok=True)
+        lib_hit = None
 
-        if moteur == "ia":
+        if ref_lib:
+            from scripts.generer_depuis_reference import convertir_en_wav
+
+            lib_hit = resoudre_reference_web_assets(
+                ref_lib, asset_type="audio", max_duration_ms=30000
+            )
+            self.log(
+                f"Curated SFX resolved from web-assets: {lib_hit['rel_path']} "
+                f"({lib_hit['licence']['licence']})"
+            )
+            wav_src = convertir_en_wav(lib_hit["abs_path"])
+            try:
+                audio_raw, sr_in = charger_audio(wav_src)
+            finally:
+                if wav_src != lib_hit["abs_path"] and os.path.exists(wav_src):
+                    os.remove(wav_src)
+            audio_res, sr = ressampler(audio_raw, sr_in, 44100)
+            audio_data = normaliser_pic(audio_res, pic_dbfs=-1.0)
+            duree = round(len(audio_data) / float(sr), 3)
+            engine = "web_assets"
+        elif engine == "ia":
             self.log(f"AI synthesis (SA3 small SFX, seed {graine}) for '{prompt}' (Duration: {duree:.1f}s, 44.1kHz stereo)...")
             res = generer_sfx_ia(prompt, duree=duree, seed=graine)
             audio_data, sr = res["audio"], res["sr"]
@@ -78,6 +102,7 @@ class SFXWorkflow(BaseWorkflow):
             "wav": chemin_wav,
             "ogg": chemin_ogg,
             "duration": duree,
-            "engine": moteur,
+            "engine": engine,
+            "ref_lib_asset": lib_hit["rel_path"] if lib_hit else None,
             "files": [chemin_wav, chemin_ogg]
         }

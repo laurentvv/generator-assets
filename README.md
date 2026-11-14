@@ -69,6 +69,11 @@ Generate fluid, high-frame-rate cinematic shots natively with **Wan 2.2 MoE**, *
 | <img src="docs/exemples/videos/video_ltx25_dragon_audio.gif" width="100%" alt="LTX-2.5 Dragon with Audio" /> | <img src="docs/exemples/personnages/boucle_run.gif" width="55%" alt="ControlNet Run Cycle" /> |
 | *8 steps, 22B DiT + native audio synthesis — [Download MP4](docs/exemples/videos/video_ltx25_dragon_audio.mp4)* | *Locked identity + rig skeletal control frame-by-frame* |
 
+| LTX-2.5 `--hires` Spatial Upscaler ×2 (`1216×704` vs Lanczos ×2) | MiniMax-H3 FL2VA (`22f` Keyframe Morph + Native Audio) |
+| :---: | :---: |
+| <img src="docs/exemples/videos/ltx25_2stage_crop_zoom.png" width="100%" alt="LTX-2.5 Two-Stage Hires Comparison" /> | <img src="docs/exemples/videos/h3_fl2va_22f_sheet.png" width="100%" alt="MiniMax-H3 FL2VA 22 Frames" /> |
+| *Two-stage latent upscaler micro-detail (`608×352 → 1216×704`) — [Full Contact Sheet](docs/exemples/videos/ltx25_1stage_vs_2stage_sheet.png)* | *First+Last Frame morphing (`--init-img` / `--end-img --turbo`)* |
+
 ---
 
 ### 2. 🧱 3D Game Meshes & PBR Materials
@@ -83,6 +88,11 @@ Full PBR material channels (Albedo, DeepBump Normal, Roughness, Height, AO) auto
 | :---: | :---: | :---: |
 | <img src="docs/exemples/workflows_3d/casque_1024_planche.png" width="320" alt="TRELLIS.2 3D Mesh" /> | <img src="godot_assets/pilier_runique_3d_albedo.png" width="160" alt="Runic Pillar" /> | <img src="godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.png" width="280" alt="360 Skybox" /> |
 | *Volumetric closed 3D model (.glb) with PBR atlas* | *Blender quad geometry with embedded PBR* | *2:1 spherical sky + Godot IBL environment* |
+
+| PBR Albedo Delighting (`material3d --delight`) — Raw vs Delighted Albedo, Normal & ORM |
+| :---: |
+| <img src="docs/exemples/workflows_3d/pbr_delight_ab_sheet.png" width="100%" alt="PBR Albedo Delighting A/B" /> |
+| *CPU gradient & hotspot flattening reduces baked shadow bleed into DeepBump normal maps* |
 
 ---
 
@@ -104,6 +114,11 @@ Isolate game items with zero white halos, quantize to classic retro palettes, an
 | <img src="godot_assets/potion_diablo.png" width="150" alt="Diablo Potion" /> | <img src="godot_assets/casque_esrgan_4x.png" width="150" alt="ESRGAN 4x" /> | <img src="godot_assets/casque_pico8.png" width="150" alt="Pico-8 Palette" /> | <img src="docs/exemples/workflows_2d/ui_9slice_demo.png" width="220" alt="9-Patch Stretch" /> |
 | *Neural background removal* | *Sharp 4096px, intact alpha* | *16-color authentic palette* | *Scales with zero corner distortion* |
 
+| ControlNet++ Union SDXL ProMax (`canny` & `tile` @ 1024×1024) | Qwen-Image 2.1 Multi-Angles Orbit (`--multi-angles`) |
+| :---: | :---: |
+| <img src="docs/exemples/workflows_2d/cn_union_promax_sheet.png" width="100%" alt="ControlNet Union ProMax Canny and Tile" /> | <img src="docs/exemples/workflows_2d/qwen21_multi_angles_sheet.png" width="100%" alt="Qwen 2.1 Multi Angles Orbit" /> |
+| *Single unified checkpoint via `--control-image --control-type canny\|tile --control-strength`* | *Multimodal VLM `--ref-image` + `<mva>` LoRA camera viewpoints (Research license)* |
+
 ---
 
 <span id="workflow-hub"></span>
@@ -118,7 +133,7 @@ uv run python main.py -w <workflow_name> [options]
 ### 🧱 1. 3D Meshes & Materials
 | Workflow | What it does | 1-Line Example | Reference |
 | :--- | :--- | :--- | :---: |
-| **`material3d`** | Complete PBR texture pack (Albedo, Normal, ORM, Height) + Godot `.tres` | `uv run python main.py -w material3d "ancient gothic stone tile" -s 1024` | [Specs](docs/workflows_reference.md#11-material3d--production-pbr-texture-pack) |
+| **`material3d`** | Complete PBR texture pack (Albedo, Normal, ORM, Height) + Godot `.tres`, optional `--delight` & `--from-lib`/`--pbr-group` web-assets import | `uv run python main.py -w material3d "ancient gothic stone tile" -s 1024` | [Specs](docs/workflows_reference.md#11-material3d--production-pbr-texture-pack) |
 | **`mesh3d`** | Parametric 3D meshes (`tile`, `cube`, `pillar`, `sphere`, `card`, `cutout`) via headless Blender | `uv run python main.py -w mesh3d "iron treasure chest" --shape cube` | [Specs](docs/workflows_reference.md#12-mesh3d--textured-3d-meshes-glb-via-headless-blender) |
 | **`mesh_ia`** | **AI 2D image → volumetric closed 3D model (.glb)** via TRELLIS.2 / Pixal3D (Vulkan) | `uv run python main.py -w mesh_ia -i casque.png --res 512 --faces-cible 30000` | [Specs](docs/workflows_reference.md#17-mesh_ia--ai-volumetric-3d-objects-from-image-or-prompt-trellis2-gguf-vulkan) |
 | **`skybox`** | 360° panoramic equirectangular sky + Godot `WorldEnvironment.tres` (IBL) | `uv run python main.py -w skybox "purple cosmic nebula starfield"` | [Specs](docs/workflows_reference.md#14-skybox--360-equirectangular-panoramic-environments) |
@@ -132,12 +147,12 @@ uv run python main.py -w <workflow_name> [options]
 ### 🎬 2. AI Video & Cinematics
 | Workflow | What it does | 1-Line Example | Reference |
 | :--- | :--- | :--- | :---: |
-| **`monoplan_ia`** 🏆 | Single-take cinematic shot (LTX-2.5 + slow-mo + anti-jitter zoom + title card + **4K UHD**) | `uv run python main.py -w monoplan_ia "dolly-in fortress on cliff" -i scene.png --4k` | [Specs](docs/workflows_reference.md#410-monoplan_ia--single-take-cinematic-shot-from-a-still-image-ltx-25--slow-motion--designed-zoom-) |
+| **`monoplan_ia`** 🏆 | Single-take cinematic shot (LTX-2.5 + slow-mo + anti-jitter zoom + title card + **4K UHD** / `--hires` 1216×704) | `uv run python main.py -w monoplan_ia "dolly-in fortress on cliff" -i scene.png --4k` | [Specs](docs/workflows_reference.md#410-monoplan_ia--single-take-cinematic-shot-from-a-still-image-ltx-25--slow-motion--designed-zoom-) |
 | **`open_water`** 🌊 | Procedural storm-sea silent clips (WebGL2 physics ocean, MIT) + perfect xfade loop | `uv run python main.py -w open_water --ow-loop` | [Specs](docs/workflows_reference.md#420-open_water--procedural-storm-sea-clips-open-water-mit--perfect-xfade-loop) |
 | **`video`** | Hardware-accelerated T2V, I2V, and FLF2V (Wan 2.2, LTX-2.5) + optional `--upscale --upscale-mode seedvr2` | `uv run python main.py -w video "waterfall cascading in jungle" --frames 33` | [Specs](docs/workflows_reference.md#48-video--native-hardware-accelerated-video-generation-webm) |
-| **`video_multishot`** 🏆 | Multi-cut video with continuous audio across cuts in a SINGLE generation pass | `uv run python main.py -w video_multishot -p "Shot 1. A hard cut to Shot 2..."` | [Specs](docs/workflows_reference.md#49c-video_multishot--multi-cut-video--continuous-soundtrack-in-one-generation-ltx-25-native-multishot) |
+| **`video_multishot`** 🏆 | Multi-cut video with continuous audio across cuts in a SINGLE generation pass (`--hires` 1216×704) | `uv run python main.py -w video_multishot -p "Shot 1. A hard cut to Shot 2..."` | [Specs](docs/workflows_reference.md#49c-video_multishot--multi-cut-video--continuous-soundtrack-in-one-generation-ltx-25-native-multishot) |
 | **`h3_ref2va`** ⚡ | Video & sound via MiniMax-H3: **Ref2VA** (`-i` continuation) or **FL2VA** (`--init-img`/`--end-img`), `--turbo` | `uv run python main.py -w h3_ref2va -i intro.mp4 -p "dragon roars" --turbo` | [Specs](docs/workflows_reference.md#49-h3_ref2va--videoaudio-continuation-via-minimax-h3-ref2va-webm-with-sound) |
-| **`video_vace`** | Motion-locked video: reference image + control frames (Wan 2.1 VACE distilled) | `uv run python main.py -w video_vace -i ref.png --control-video frames_dir/` | [Specs](docs/workflows_reference.md#49b-video_vace--motion-locked-video-reference-image--control-frames-wan-21-vace-lightx2v-distilled) |
+| **`video_vace`** | Motion-locked video: reference image + `--control-video` frames or auto-extracted `--source-video` (`--control-extract canny\|edges_bold\|depth_proxy`, Wan 2.1 VACE distilled) | `uv run python main.py -w video_vace -i ref.png --source-video clip.mp4 --control-extract canny` | [Specs](docs/workflows_reference.md#49b-video_vace--motion-locked-video-reference-image--control-frames-wan-21-vace-lightx2v-distilled) |
 | **`rife_interp`** | AI frame rate multiplication up to 60 FPS preserving alpha transparency | `uv run python main.py -w rife_interp -i spritesheet.png --factor 2` | [Specs](docs/workflows_reference.md#47-rife_interp--ai-frame-rate-multiplication-60-fps) |
 
 ---
@@ -147,17 +162,17 @@ uv run python main.py -w <workflow_name> [options]
 | :--- | :--- | :--- | :---: |
 | **`music_bg`** | Seamless AI music loops (−30 LUFS bed + automatic sidechain ducking command) | `uv run python main.py -w music_bg "minimal techno groove, no vocals" --duration 20` | [Specs](docs/workflows_reference.md#43-music_bg--ai-music-loops-as-background-beds-minimax-music3--ace-step-15-gguf-vulkan) |
 | **`chanson`** | Complete sung songs with French/English lyrics (`ACE-Step 1.5 xl-turbo`; `VocalRender-Pro` = `zh`-only) | `uv run python main.py -w chanson lyrics.txt --duration 180 -o song` | [Specs](docs/workflows_reference.md#410-chanson--full-songs-with-lyrics-ace-step-15-xl-turbo-vulkan) |
-| **`musique_adn`** | Generates new music imposing the exact detected BPM and key of a reference | `uv run python main.py -w musique_adn "gothic rock" -i ref.mp3 --duration 45` | [Specs](docs/workflows_reference.md#411-musique_adn--new-music-with-a-references-dna-auto-bpm--key-imposed-on-the-planner) |
+| **`musique_adn`** | Generates new music imposing the exact detected BPM and key of a reference (`-i` or `--ref-lib`) | `uv run python main.py -w musique_adn "gothic rock" -i ref.mp3 --duration 45` | [Specs](docs/workflows_reference.md#411-musique_adn--new-music-with-a-references-dna-auto-bpm--key-imposed-on-the-planner) |
 | **`audio_repaint`** | Surgical time-span repainting: `ACE-Step 1.5` bit-exact outside mask (MIT, `--lyrics`) or `SA3 Medium` fast Vulkan | `uv run python main.py -w audio_repaint --audio track.wav -p "brass solo" --repaint-start 12 --repaint-end 18` | [Specs](docs/workflows_reference.md#424-audio_repaint--surgical-time-span-audio-repainting-ace-step-15--sa3-medium) |
 | **`audio_restaure`** | Speech repair (`RE-USE` Vulkan, OpenMDW-1.1) or 44.1 kHz music polish (`--restore-engine apollo`, `-1 dBTP` guard) | `uv run python main.py -w audio_restaure -i track.wav --restore-engine apollo` | [Specs](docs/workflows_reference.md#423-audio_restaure--audio-restoration-re-use-speech--apollo-441-khz-music) |
 | **`audio_upscale`** | Audio super-resolution → 48 kHz mono (UniverSR: Vulkan ≤14 s + CPU fallback) | `uv run python main.py -w audio_upscale -i voice_16k.wav --upsr-variante speech` | [Specs](docs/workflows_reference.md#415-audio_upscale--audio-super-resolution--48-khz-universr) |
 | **`voix_conversion`** | Re-voices a recording into another speaker timbre (Chatterbox `vc`, 24 kHz mono Vulkan) | `uv run python main.py -w voix_conversion --audio take.wav --voice-ref ref.wav` | [Specs](docs/workflows_reference.md#419-voix_conversion--re-voice-a-recording-chatterbox-voice-conversion) |
-| **`voix_off`** | Expressive AI voice-over with voice cloning (Qwen3-TTS / VoxCPM2 / Drama 3 / KittenTTS2, −16 LUFS) | `uv run python main.py -w voix_off "Welcome!" --voix-ref speaker.wav` | [Specs](docs/workflows_reference.md#49-voix_off--expressive-ai-voice-over-with-voice-cloning-qwen3-tts--voxcpm2--fish-s2-pro--drama-3-gguf-vulkan) |
+| **`voix_off`** | Expressive AI voice-over with voice cloning (Qwen3-TTS / VoxCPM2 / Drama 3 / KittenTTS2, `--voix-ref` or `--ref-lib`, −16 LUFS) | `uv run python main.py -w voix_off "Welcome!" --voix-ref speaker.wav` | [Specs](docs/workflows_reference.md#49-voix_off--expressive-ai-voice-over-with-voice-cloning-qwen3-tts--voxcpm2--fish-s2-pro--drama-3-gguf-vulkan) |
 | **`voix_perso`** | Character voice lines with pitch shift, whisper filter, or hollow void effects | `uv run python main.py -w voix_perso "Halt!" --kokoro-voice am_onyx --hollow` | [Specs](docs/workflows_reference.md#417-voix_perso--english-character-voice-kokoro-preset-or-qwen3-voicedesign--validated-post-chains) |
 | **`voix_robot`** | Metallic robot assistant voice (Kokoro + 120 Hz ring modulation) | `uv run python main.py -w voix_robot "System online. Initiating scan."` | [Specs](docs/workflows_reference.md#414-voix_robot--english-robot-voice-kokoro-82m--ring-modulation) |
 | **`lfm3_tts`** | Fast local voice synthesis (LFM3-Audio-2B, llama.cpp Vulkan — faster than real time, FR/EN) | `uv run python main.py -w lfm3_tts "Bienvenue, voyageur." --tts-langue fr` | [Specs](docs/workflows_reference.md#421-lfm3_tts--fast-local-voice-synthesis-lfm3-audio-2b-llamacpp-vulkan) |
 | **`retrait_voix`** | Vocal removal & stem separation: `htdemucs` (4 stems), `mel_roformer`/`bs_roformer` (SOTA 2-stem, `--apollo`), `sam` | `uv run python main.py -w retrait_voix -i track.mp3 --sep-engine mel_roformer --apollo` | [Specs](docs/workflows_reference.md#412-retrait_voix--vocal-removal--stem-separation-htdemucs-gguf-vulkan) |
-| **`sfx`** | AI sound effect generation (Stable Audio 3) or procedural waveform synthesis | `uv run python main.py -w sfx "heavy sword slash metal impact" --duration 1.2` | [Specs](docs/workflows_reference.md#41-sfx--ai--procedural-sound-effects-synthesis) |
+| **`sfx`** | AI sound effect generation (Stable Audio 3, supports `--ref-lib` `web-assets` reference) or procedural waveform synthesis | `uv run python main.py -w sfx "heavy sword slash metal impact" --duration 1.2` | [Specs](docs/workflows_reference.md#41-sfx--ai--procedural-sound-effects-synthesis) |
 | **`audio_ambience`**| Procedural seamless ambient soundscapes (dungeon, forest, storm) + Godot bus | `uv run python main.py -w audio_ambience "dark subterranean dungeon"` | [Specs](docs/workflows_reference.md#42-audio_ambience--procedural-seamless-looping-ambient-soundscapes) |
 
 ---
@@ -176,7 +191,7 @@ uv run python main.py -w <workflow_name> [options]
 ### 🎨 5. 2D Sprites, Tiles & UI
 | Workflow | What it does | 1-Line Example | Reference |
 | :--- | :--- | :--- | :---: |
-| **`generate`** | Isolated 2D game items with neural background removal and Godot anchor centering | `uv run python main.py -w generate "gold shield with lion crest" --upscale` | [Specs](docs/workflows_reference.md#31-generate--standard-isolated-2d-game-asset) |
+| **`generate`** | Isolated 2D game items with neural background removal, ControlNet++ Union ProMax (`--control-image`, `--control-type canny\|tile`, `--control-strength`), and Godot anchor centering | `uv run python main.py -w generate "gold shield with lion crest" --upscale` | [Specs](docs/workflows_reference.md#31-generate--standard-isolated-2d-game-asset) |
 | **`qwen_image`** | Photorealistic T2I, compositing, `-r` VLM conditioning & `--multi-angles` orbit (`--qwen-turbo`, Research license) | `uv run python main.py -w qwen_image "ceramic vase" -i ref.png --multi-angles orbit` | [Specs](docs/workflows_reference.md#39-qwen_image--qwen-image-21-photorealistic-text-to-image-and-compositing-research-license) |
 | **`moss_image`** | MOSS-Image-SFT text-to-image, strong in-image text rendering (Apache-2.0, commercial OK) | `uv run python main.py -w moss_image "storefront sign 'MOSS'" --seed 42` | [Specs](docs/workflows_reference.md#310-moss_image--moss-image-sft-text-to-image-apache-20-in-image-text-rendering) |
 | **`spritesheet`** | 4-angle aligned character perspective sheet + Godot JSON frame atlas | `uv run python main.py -w spritesheet "undead skeleton warrior" --columns 4` | [Specs](docs/workflows_reference.md#32-spritesheet--multi-angle-character-sprite-sheet) |
@@ -184,7 +199,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`pixelart`** | Downsamples and quantizes sprites into retro hardware palettes (Pico-8, GameBoy) | `uv run python main.py -w pixelart -i item.png --palette pico8 --grid-size 64` | [Specs](docs/workflows_reference.md#35-pixelart--retro-palette-color-quantization--downsampling) |
 | **`ui_9slice`** | Generates expandable UI frames/dialog boxes + Godot 4 `StyleBoxTexture.tres` | `uv run python main.py -w ui_9slice "golden fantasy dialog frame" --margin 32` | [Specs](docs/workflows_reference.md#37-ui_9slice--expandable-9-patch-frames--buttons) |
 | **`rembg`** | Neural background removal (RMBG / BiRefNet ONNX) with zero white fringes | `uv run python main.py -w rembg -i sprite.png -o sprite_clean` | [Specs](docs/workflows_reference.md#38-rembg--high-precision-neural-background-removal) |
-| **`upscale`** | AI Super-Resolution: ESRGAN Vulkan (alpha preserved) or **SeedVR2 3B** (`--upscale-mode seedvr2`) for images & video | `uv run python main.py -w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` | [Specs](docs/workflows_reference.md#52-upscale--4k-ai-super-resolution-esrgan-vulkan) |
+| **`upscale`** | AI Super-Resolution: ESRGAN Vulkan (alpha preserved) or **SeedVR2 3B** (`--upscale-mode seedvr2`) for images & video (auto QC gate, `--skip-qc` to override) | `uv run python main.py -w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` | [Specs](docs/workflows_reference.md#52-upscale--4k-ai-super-resolution-esrgan-vulkan) |
 | **`ocr_image`** | Local OCR on images & screenshots (MiniCPM-OCR-1.0 via llama-server — FR/EN, ~4 s/page, ~2 GB VRAM) | `uv run python main.py -w ocr_image -i screenshot.png` | [Specs](docs/workflows_reference.md#422-ocr_image--local-ocr-on-images--screenshots-minicpm-ocr-10-via-llamaserver) |
 
 ---
@@ -239,12 +254,13 @@ uv run python -m server    # → Opens http://127.0.0.1:8765
 <span id="web-and-agents"></span>
 ## 🖥️ Web Console & AI Agent Interfaces
 
-### 🌐 The Full-Python Web Console
+### 🌐 The Full-Python Web Console & `web-assets` Bridge
 Prefer a visual dashboard over the CLI? Run `uv run python -m server`:
 - Built with **FastAPI + Jinja2 + HTMX** (zero Node.js, zero npm, zero React bloat).
 - Automatically inspects all 70 workflows and generates interactive forms.
 - Features a **serialized GPU run queue** with automatic system load checks.
 - Live log streaming (SSE), media gallery, and model inventory.
+- **`web-assets` library integration**: resolve AI-eligible audio/image references (`--ref-lib`) or PBR material packs (`--from-lib`, `--pbr-group`) with `NO_AI` strictly excluded, and trigger optional library re-indexing via `--scan-web-assets`.
 
 <span id="skill-ia"></span>
 ### 🤖 Built-in AI Agent Skill (`.agents/skills/generator-assets/`)

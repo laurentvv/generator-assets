@@ -22,13 +22,13 @@
 
 #### 1.1. `material3d` — Production PBR Texture Pack
 * **Process**:
-  1. Accepts either a textual concept (e.g., *"dungeon stone runes"*) or an existing 2D texture (`-i texture.png`).
-  2. If prompt-based, generates a 1024×1024 diffuse albedo texture via Flux.1 Dev Vulkan.
-  3. Feeds the albedo into DeepBump ONNX neural network to estimate physically accurate OpenGL normal, roughness, displacement height, and ambient occlusion maps (falls back to Sobel spatial gradients if `--pbr-engine sobel`).
+  1. Accepts either a textual concept (e.g., *"dungeon stone runes"*), an existing 2D texture (`-i texture.png`), or a curated CC0/commercial PBR pack imported from `C:\GIT\web-assets` via `--from-lib "<query>"` or `--pbr-group "<group_id>"` (`NO_AI` licenses automatically excluded).
+  2. If prompt-based, generates a 1024×1024 diffuse albedo texture via Flux.1 Dev Vulkan. When `--delight` is enabled, flattens low-frequency baked lighting gradients and softens low-saturation specular hotspots (`core.pbr_deep.delight_albedo`) before relief estimation.
+  3. Feeds the albedo into DeepBump ONNX neural network to estimate physically accurate OpenGL normal, roughness, displacement height, and ambient occlusion maps (falls back to Sobel spatial gradients if `--pbr-engine sobel`; curated maps from `--from-lib`/`--pbr-group` require an `albedo` channel and are reused directly unless `--delight` is active or a channel is missing; passing an explicit nonexistent `-i` raises `FileNotFoundError`).
   4. Packs AO (Red), Roughness (Green), and Metallic (Blue) into a unified Godot-standard ORM texture.
   5. Computes a 3×3 repeating grid to verify seamless tiling borders.
   6. Automatically writes a native Godot 4 `StandardMaterial3D` (`.tres`) linking all maps with correct UV channels.
-* **Inputs**: `prompt` or `-i, --input`, `-s, --size` (512, 1024, 2048), `--pbr-engine` (`auto`, `deep`, `sobel`), `--normal-strength` (default: 3.5).
+* **Inputs**: `prompt` or `-i, --input` or `--from-lib <query>` / `--pbr-group <group_id>`, `-s, --size` (512, 1024, 2048), `--pbr-engine` (`auto`, `deep`, `sobel`), `--normal-strength` (default: 3.5), `--delight` (flatten baked lighting on albedo and recompute derived maps).
 * **Engines**: Flux.1 Dev GGUF, DeepBump ONNX, PIL, NumPy.
 * **Outputs**: `_albedo.png`, `_normal.png`, `_roughness.png`, `_height.png`, `_ao.png`, `_orm.png`, `_material.tres`, `_preview3x3.png`.
 
@@ -39,9 +39,16 @@
 | **Normal Map (DeepBump)** | <img src="../godot_assets/sol_runique_normal.png" width="130" /> | <img src="../godot_assets/cuir_ancien_normal.png" width="130" /> | <img src="../godot_assets/old_cracked_wood_planks_normal.png" width="130" /> | *Repeating Tile Verification* |
 | **Godot ORM** | <img src="../godot_assets/sol_runique_orm.png" width="130" /> | <img src="../godot_assets/cuir_ancien_orm.png" width="130" /> | <img src="../godot_assets/old_cracked_wood_planks_orm.png" width="130" /> | *R=AO, G=Roughness, B=Metal* |
 
+| PBR Albedo Delighting A/B (`--delight`: Raw vs Delighted Albedo → Normal → ORM) |
+| :---: |
+| <img src="../docs/exemples/workflows_3d/pbr_delight_ab_sheet.png" width="760" /> |
+| *CPU luma flattening + specular hotspot dampening before DeepBump relief synthesis* |
+
 * **Example**:
   ```bash
   uv run python main.py -w material3d "ancient gothic stone tile with purple runes and moss" -s 1024 -o runic_stone
+  # Delight a photo-lit texture and recompute clean PBR channels:
+  uv run python main.py -w material3d -i wood_door.png --delight -o wood_door_clean
   ```
 
 #### 1.2. `mesh3d` — Textured 3D Meshes (.GLB) via Headless Blender
@@ -423,12 +430,12 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 * **Process**:
   1. Accepts an item, character, prop, or tile concept.
   2. Optional prompt expansion via local LLM (`--use-llm`) or direct passthrough (default).
-  3. Renders the asset on solid contrast background via Flux.1 Dev or SDXL with optional LoRAs (`-l`).
-  4. Automatically removes background via flood-fill or AI neural segmentation (`--segmenter birefnet`).
+  3. Renders the asset on solid contrast background via Flux.1 Dev or SDXL with optional LoRAs (`-l`) or ControlNet++ Union SDXL ProMax (`--control-image` + `--control-type canny|tile`, which auto-switches to SDXL 1024×1024 with `controlnet_union_sdxl_promax.safetensors`, USER VALIDATED 2026-11-14).
+  4. Automatically removes background via flood-fill or AI neural segmentation (`--segmenter birefnet`, or `--segmenter none` to keep full-frame ControlNet art intact).
   5. Crops tight bounding box and centers the asset with Godot bottom-center (characters) or exact-center (items) anchor offsets.
   6. Optionally triggers 4K AI ESRGAN upscaling (`--upscale`).
-* **Inputs**: `prompt`, `-t, --type` (`item`, `character`, `prop`, `tile`), `-i, --input` (Img2Img), `--upscale`, `-l, --lora`.
-* **Engines**: Flux.1 / SDXL, RMBG-1.4 / BiRefNet ONNX, Real-ESRGAN Vulkan.
+* **Inputs**: `prompt`, `-t, --type` (`item`, `character`, `prop`, `tile`), `-i, --input` (Img2Img), `--control-image`, `--control-type` (`canny`, `tile`), `--control-strength` (`0.0..1.0`, default `0.85` canny / `0.75` tile), `--width`/`--height`, `--upscale`, `-l, --lora`.
+* **Engines**: Flux.1 / SDXL (+ ControlNet++ Union SDXL ProMax), RMBG-1.4 / BiRefNet ONNX, Real-ESRGAN Vulkan.
 * **Outputs**: Clean isolated transparent `.png`.
 
 ##### 🖼️ Isolated & Cut-Out 2D Assets (Items, Accessories & UI)
@@ -437,9 +444,16 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 | <img src="../godot_assets/potion_diablo.png" width="140" /> | <img src="../godot_assets/casque.png" width="140" /> | <img src="../godot_assets/ico_sac.png" width="140" /> | <img src="../godot_assets/ico_furtif.png" width="140" /> |
 | *Diablo LoRA + BiRefNet cutout* | *Source PBR equipment sprite* | *128px Godot-centered UI icon* | *Transparent skill icon* |
 
+| ControlNet++ Union SDXL ProMax (`canny` edge guidance & `tile` obsidian retexture @ 1024×1024) |
+| :---: |
+| <img src="../docs/exemples/workflows_2d/cn_union_promax_sheet.png" width="760" /> |
+| *Unified ProMax checkpoint: `--control-type canny` (left pair) & `--control-type tile` (right pair)* |
+
 * **Example**:
   ```bash
   uv run python main.py -w generate "legendary royal gold shield with an engraved lion" --upscale
+  # ControlNet++ Union SDXL ProMax (canny edge guide or tile retexture, auto-SDXL @ 1024x1024):
+  uv run python main.py -w generate "dark obsidian fantasy shield with runes" --control-image shield_canny.png --control-type canny --control-strength 0.85 --segmenter none
   ```
 
 #### 3.2. `spritesheet` — Multi-Angle Character Sprite Sheet
@@ -597,13 +611,18 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   2. System-load pre-check runs automatically before the launch (busy machine = aborted).
   3. Text encoder (Qwen3-VL-8B Q4_K_M) runs from system RAM, diffusion from VRAM (`--offload-to-cpu`).
   4. **Compositing mode** (`-i` + `-l`, validated 2026-10-05 night A/B): a product CUTOUT pasted onto a background photo gets consistent lighting, specular highlights and a natural contact shadow via the RunningHubAI compositing LoRA (`Qwenimag21_c2-st2000`, sd-cli applies 448/448 tensors). The paste MUST be a white-keyed cutout — a pasted WHITE BOX survives img2img even at strength 0.90. Start the prompt with the LoRA trigger word `pengyu`, keep `--strength 0.65` (validated; steps snap 40→24 in img2img). Recipe: white-key threshold ~18 + 1 px feather, PIL alpha paste.
-* **Inputs**: `prompt`, `-n/--negative-prompt` or `--negative-prompt-file`, `--width/--height` (**multiples of 32**, default 1152×640 = exact 16:9), `--steps` (default 40; 24 in img2img), `--cfg-scale` (default 6.0 — lower silently disables the negative prompt), `--seed`, `-i/--input` (init image → img2img compositing mode, or reference image when `--multi-angles` is set), `--ref-image` (repeatable, maps to `-r` + `--llm_vision mmproj-Qwen3VL-8B-Instruct-F16.gguf` multimodal conditioning), `--multi-angles` (`orbit` for 4 canonical angles or `|`-separated camera cues — opt-in shortcut that enables `--qwen-turbo`, prepends `<mva>`, and applies `qwen21_multiple_angles_v2:0.9` LoRA), `--strength` (img2img denoise, default 0.65 for this workflow), `-l/--lora` (`name:weight`, repeatable), `--lora-dir`, `--qwen-turbo` (8-step distilled turbo checkpoint — see below; `--turbo` itself is taken by `h3_ref2va`).
+* **Inputs**: `prompt`, `-n/--negative-prompt` or `--negative-prompt-file`, `--width/--height` (**multiples of 32**, default 1152×640 = exact 16:9), `--steps` (default 40; 24 in img2img), `--cfg-scale` (default 6.0 — lower silently disables the negative prompt), `--seed`, `-i/--input` (init image → img2img compositing mode, or reference image when `--multi-angles` is set), `--ref-image` (repeatable, maps to `-r` + `--llm_vision mmproj-Qwen3VL-8B-Instruct-F16.gguf` multimodal conditioning), `--ref-lib <query>` (resolves an AI-allowed reference image from `C:\GIT\web-assets` into `--ref-image`), `--multi-angles` (`orbit` for 4 canonical angles or `|`-separated camera cues — opt-in shortcut that enables `--qwen-turbo`, prepends `<mva>`, and applies `qwen21_multiple_angles_v2:0.9` LoRA), `--strength` (img2img denoise, default 0.65 for this workflow), `-l/--lora` (`name:weight`, repeatable), `--lora-dir`, `--qwen-turbo` (8-step distilled turbo checkpoint — see below; `--turbo` itself is taken by `h3_ref2va`).
 * **Turbo mode** (`--qwen-turbo`, USER VALIDATED 2026-10-11 "Atomic très bien"): switches to the official **8-step distilled checkpoint** (`Qwen-Image-2.1-Turbo`, AtomicChat sd.cpp-native Q8_0 quant, same TE + VAE) with its single validated schedule forced (8 steps, CFG 1.0, custom sigma schedule — do not pass `--steps`/`--cfg-scale` with it). Measured **~2 min/image** (123 s at 1152×640) vs ~16 min base — 7.8× faster with the typography quality kept (verified on the night matrix and the workflow smoke render). ⚠️ Avoid the unsloth quant of the same checkpoint: its mixed-precision layout costs 876-1352 s on diffusion step 1 of EVERY run (measured). Compositing (`-i`/`-l`) is mechanically compatible but its 8-step quality is untested. Same RESEARCH license ceiling.
 * **Multi-Angles mode** (`--ref-image` / `--multi-angles`, USER VALIDATED 2026-11-14): feeds reference image(s) through `-r` and `--llm_vision mmproj-Qwen3VL-8B-Instruct-F16.gguf` (`--flash-attn on`). Passing `--multi-angles orbit` runs 4 deterministic camera views (`front-right quarter`, `right side`, `back`, `left side`) in turbo 8-step mode (~41 s @ 512² per view) with `qwen21_multiple_angles_v2:0.9` (`384/384` LoRA tensors) and `<mva>` trigger automatically prepended.
 * **Engine**: sd-cli master-1092+ (`qwen_image21` architecture, PRs #2032/#2035) + dedicated VAE (`qwen_image_2.1_vae_bf16` — NOT interchangeable with Qwen-Image 1.0 / Wan 2.2) + Qwen3-VL vision `mmproj` (`--ref-image`).
 * **⚠️ License**: Qwen **RESEARCH** — renders are for **personal / non-commercial use ONLY** (no monetized channel, no game shipping). Production paths stay on Chroma1-HD / `generate` (Apache-2.0). No model-level NSFW filter; the user is responsible for the content (adults only).
 * **Performance** (measured, RX 6950 XT): ~23.6 s/step at 1152×640 → **~16 min/image at 40 steps** (~8× slower than Chroma1-HD). Use `--steps 30` for ~12 min. Compositing img2img leg (24 steps, strength 0.65 → 16 effective): **~6.8 min/image**.
 * **Outputs**: `output/<name>_qwen21.png` (or `<name>_angle_01..04.png` for multi-view `--multi-angles`).
+
+| Qwen-Image 2.1 Multi-Angles Showcase (`--multi-angles`: Source → 180° Reverse → 90° Top-Down) |
+| :---: |
+| <img src="../docs/exemples/workflows_2d/qwen21_multi_angles_sheet.png" width="760" /> |
+| *Qwen-Image 2.1 + `qwen21_multiple_angles_v2` LoRA + multimodal Qwen3-VL `mmproj` (Research license)* |
 * **Example**:
   ```bash
   # Text-to-image (base, 40 steps)
@@ -645,7 +664,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   2. **AI engine (default, validated 2026-09-09)**: Stable Audio 3 Small SFX via audio.cpp (Vulkan, RTF ~0.2 — fastest audio engine on this machine), 44.1 kHz stereo. Name the *content* of the sound ("dense patter with natural splashes"), not the ambience ("distant thunder rumble" yields a bass-heavy muffled texture). Structural edge fades are auto-trimmed, and level treatment adapts: transient SFX are peak-normalized to −0.9 dBFS; low-loudness textures (< −20 LUFS) get linear gain to −16 LUFS with a peak ceiling limiter that leaves the texture untouched.
   3. **Procedural engine** (`--sfx-engine procedural`): multi-oscillator audio waveforms (sine, saw, noise bursts, resonant low-pass filter sweeps, pitch envelopes), 44.1 kHz 16-bit PCM, dynamic range compression and smooth attack/release envelopes.
   4. Exports both lossless WAV (PCM 16-bit) and compressed OGG Vorbis (via ffmpeg) formats optimized for Godot's `AudioStreamPlayer`.
-* **Inputs**: `prompt` (sound description or category), `--duration` (in seconds), `--seed`, `--sfx-engine` (`ia` default | `procedural`).
+* **Inputs**: `prompt` (sound description or category), `--ref-lib <query>` (resolves & normalizes a curated non-NO_AI audio SFX directly from `C:\GIT\web-assets`), `--duration` (in seconds), `--seed`, `--sfx-engine` (`ia` default | `procedural`).
 * **Engines**: Stable Audio 3 Small SFX GGUF (audio.cpp, `core/sfx_ia.py`) | NumPy synthesizer (legacy).
 * **Outputs**: `_sfx.wav`, `_sfx.ogg`.
 
@@ -866,24 +885,32 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 
 > 🏆 **Validated 2026-10-01** ("très bien"): the distilled LightX2V route (8 steps) renders a 13-frame 832×480 I2V+VACE clip in **~28 min — 4× faster than the plain 14B VACE 20-step recipe, and better judged** (the 20-step render was rejected "nul" the same day).
 
-* **Principle**: VACE variants of Wan follow control frames (skeletons/pose/depth) while the reference image (`-i`) locks the appearance — motion-locked shots without frame-by-frame flicker (upstream PR #819).
-* **Usage**: `uv run python main.py -w video_vace -i <ref.png> --control-video <frames_dir> -p "<motion description>" [-o <name>]`
-  — defaults = validated recipe (13 frames @ 16 fps, 832×480, 8 steps, cfg 1.0, euler, seed 42); `--frames/--fps/--width/--height/--steps/--cfg-scale/--seed` overridable. Models: `Wan2.1_14B_LightX2V_StepCfgDistill_VACE-Q3_K_S` + umt5 Q4_K_M + wan 2.1 VAE (constants `DEFAULT_VACE_*`, env-overridable). Memory placement on 16 GB is baked in: `--offload-to-cpu --vae-on-cpu` (the GPU VAE decode alone requests ~19.4 GB), no temporal tiling, no flow-shift, plain `vulkan` backend. Control frames: preprocessed PNG folder (see MEMORY_BANK §1.28 for the COCO-skeleton recipe).
+* **Principle**: VACE variants of Wan follow control frames (skeletons/pose/depth/Canny edges) while the reference image (`-i`) locks the appearance — motion-locked shots without frame-by-frame flicker (upstream PR #819). When pre-extracted `--control-video` PNGs are omitted, `--source-video <clip.mp4|.webm>` automatically extracts `--control-extract` (`canny` default, `edges_bold`, or `depth_proxy` luma gradients via `core.vace_control.extraire_frames_controle_video`) into a cleaned `<stem>_control_<mode>` directory in `output_dir` (any stale `frame_*.png` files are cleared before extraction).
+* **Usage**: `uv run python main.py -w video_vace -i <ref.png> (--control-video <frames_dir> | --source-video <clip> [--control-extract canny|edges_bold|depth_proxy]) -p "<motion description>" [-o <name>]`
+  — defaults = validated recipe (13 frames @ 16 fps, 832×480, 8 steps, cfg 1.0, euler, seed 42); `--frames/--fps/--width/--height/--steps/--cfg-scale/--seed` overridable. Models: `Wan2.1_14B_LightX2V_StepCfgDistill_VACE-Q3_K_S` + umt5 Q4_K_M + wan 2.1 VAE (constants `DEFAULT_VACE_*`, env-overridable). Memory placement on 16 GB is baked in: `--offload-to-cpu --vae-on-cpu` (the GPU VAE decode alone requests ~19.4 GB), no temporal tiling, no flow-shift, plain `vulkan` backend. Control frames: preprocessed PNG folder (see MEMORY_BANK §1.28 for the COCO-skeleton recipe) or auto-extracted from `--source-video`.
 
 #### 4.9c. `video_multishot` — Multi-Cut Video + Continuous Soundtrack in ONE Generation (LTX-2.5 native multishot)
 
 > 🏆 **Validated 2026-10-02** ("super"): the 65-frame lighthouse two-shot — the named hard cut lands where the prompt asks for it, the keeper's appearance holds across the cut, and the model generates the soundtrack (crashing waves, thunder, cello) as a continuous bed over the cut. This reopens multi-shot sequences, previously rejected in the §1.17 chaining tests (content seams at every I2V cut): the cut is now NATIVE, in one pass.
 
-* **Principle**: LTX-2.5 native multishot — one T2V generation renders several named shots with audio continuity across the cuts. Frame rule: 1 + a multiple of 8 (default 65 @ 24 fps, 832×480 — the validated envelope, resolution not exposed; GPU ceiling ~81 frames, §1.17).
+* **Principle**: LTX-2.5 native multishot — one T2V generation renders several named shots with audio continuity across the cuts. Frame rule: 1 + a multiple of 8 (default 65 @ 24 fps, 832×480 — or pass `--hires` for the validated two-stage LTX Spatial Upscaler ×2 path `608×352` → native `1216×704`, defaulting to `33` frames when `--frames` is omitted; GPU ceiling ~81 frames at 480p, §1.17).
 * **Prompting rules** (docs.ltx.io, adopted 2026-10-01): describe each shot in order, name the cut explicitly ("A hard cut transitions to…"), and include the audio bed — the model generates the soundtrack from that block (4-8 sentences total work well).
-* **Usage**: `uv run python main.py -w video_multishot -p "<shot 1>. A hard cut transitions to <shot 2>. The ambience continues across the cut, with <sound description>" [-o <name>]` — `--frames/--fps/--seed` overridable (defaults 65/24/42).
-* **Engines**: sd-cli vid_gen on the pinned LTX binary (`DEFAULT_SD_CLI_LTX`, master-841 `6b3edaa` — the main build cannot fit LTX-2.5 on 16 GB, #1976): DiT Q4_K_M + video VAE + **audio VAE** + Gemma4 (te/vae on CPU), 8 steps official distilled sigmas, euler_a, cfg 1.0, `--max-vram 10`, **no negative prompt** (as validated). ~10 min for 65 frames.
+* **Usage**: `uv run python main.py -w video_multishot -p "<shot 1>. A hard cut transitions to <shot 2>. The ambience continues across the cut, with <sound description>" [-o <name>]` — `--frames/--fps/--seed/--hires` overridable (defaults `65`/`24`/`42`, or `33` frames under `--hires`).
+* **Engines**: sd-cli vid_gen on `DEFAULT_SD_CLI_LTX` (= main build `sd-cli` master-1092-5d78740): DiT Q4_K_M + video VAE + **audio VAE** + Gemma4 (te/vae on CPU), 8 steps official distilled sigmas, euler_a, cfg 1.0, `--max-vram 10`, **no negative prompt** (as validated); with `--hires` (USER VALIDATED 2026-11-14): adds `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` + 3 refine steps (`0.85,0.725,0.4219,0.0`) for crisper stone/water detail (~14.2 min @ 33f vs ~6.5 min 1-stage, ~16 GB CPU VAE RAM). ~10 min for 65 frames at 832×480.
 * **Outputs**: `.webm` (VP8 + PCM — generated soundtrack included).
+
+| LTX-2.5 Two-Stage `--hires` Sequence (`608×352` 1-Stage vs `1216×704` Spatial Upscaler ×2) | Micro-Detail Zoom Crop (`608×400` ROI) |
+| :---: | :---: |
+| <img src="../docs/exemples/videos/ltx25_1stage_vs_2stage_sheet.png" width="460" /> | <img src="../docs/exemples/videos/ltx25_2stage_crop_zoom.png" width="320" /> |
+| *Consistent multishot/storm composition at 3 timestamps* | *Native Spatial Upscaler ×2 rock/spray clarity over Lanczos ×2* |
 
   ```bash
   uv run python main.py -w video_multishot \
     -p "A weathered lighthouse keeper in a navy wool coat stands on a storm-battered stone pier at dusk, waves exploding against the rocks below as he lifts a battered brass lantern. A hard cut transitions to a close-up of the lantern: the flame trembles in the wind, sea spray drifting past his grey beard as he stares out at the dark water. The storm ambience continues across the cut, with crashing waves, distant thunder and a low mournful cello." \
     -o phare_multishot
+
+  # Two-stage native 1216x704 Spatial Upscaler x2 (defaults to 33 frames):
+  uv run python main.py -w video_multishot -p "Stormy sea cliffs at dusk. A hard cut transitions to waves crashing on a lighthouse." --hires --seed 42 -o phare_hires
   ```
 
 #### 4.9. `h3_ref2va` — Video+Audio Continuation (Ref2VA) & Keyframe Morphing (FL2VA) via MiniMax-H3 (webm with sound)
@@ -892,11 +919,16 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 
 * **Process** (Ref2VA validated 2026-09-09, FL2VA chain validated 2026-11-14, recipe in [`docs/MEMORY_BANK.md`](../docs/MEMORY_BANK.md) §1.16 / §1.61):
   1. **Ref2VA mode** (`-i <video|frame dir>`): extracts the **reference tail** from a source video (last N frames @ 24 fps + paired WAV, via FFmpeg) — or accepts a raw frame directory directly — conditioning the DiT as `<Video 1>` / `<Audio 1>`.
-  2. **FL2VA mode** (`--init-img <start.png>` + optional `--end-img <end.png>`, mutually exclusive with `-i` / `--ref-audio`): uses `minimax_h3_fl2va_pruned-Q4_K_M.gguf` + 8-step turbo LoRA (`624/624` tensors) to interpolate motion and ambient audio between first and last keyframes. Keep `--frames >= 22` (`17k+5` grid; 5f / 0.17 s is too short for full rotation transitions; Wave 2 will benchmark `>= 22f`).
+  2. **FL2VA mode** (`--init-img <start.png>` + optional `--end-img <end.png>`, mutually exclusive with `-i` / `--ref-audio`): uses `minimax_h3_fl2va_pruned-Q4_K_M.gguf` + 8-step turbo LoRA (`624/624` tensors) to interpolate motion and ambient audio between first and last keyframes. Keep `--frames >= 22` (`17k+5` grid; 22f @ `512²` `--turbo` **USER VALIDATED 2026-11-14**, ~15.1 min, clean identity lock — reserve FL2VA for purposeful expressive keyframes/actions rather than simple turnaround rotations).
   3. Mandatory memory placement on 16 GB VRAM / 32 GB RAM: DiT on GPU capped by `--max-vram` (graph-cut), Qwen3-VL 32B and video VAE on CPU.
 * **Inputs**: `-i <source video | frame dir>` (Ref2VA) XOR `--init-img <img1>` (plus optional `--end-img <img2>` for FL2VA), `prompt` (describe the continuation with `<Video 1>`/`<Audio 1>`, or motion for FL2VA), `--ref-frames` (default 12), `--ref-audio`, `--frames` (H3 grid 17k+5 → 22/39/56, default 22), `--steps` (default 20, or 8 with `--turbo`), `--turbo` (distilled LoRA 8 steps — validated 2026-09-09, ~2× faster, quality & reference continuity ≥ baseline), `--max-vram` (default 10), `-o`.
 * **Engines**: sd-cli Vulkan `-M vid_gen` (MiniMax-H3 ref2va / fl2va DiT Q4_K_M + video/audio VAEs + Qwen3-VL 32B Q2, turbo LoRA `lightx2v/Minimax-h3-Turbo` with `--turbo`), FFmpeg.
 * **Outputs**: `.webm` (VP8 + PCM 32 kHz stereo — **generated audio track included**), `<name>_ref/` (extracted reference).
+
+| MiniMax-H3 FL2VA 22f Probe (`--init-img` → `--end-img` Morph Progression @ `512×512`) |
+| :---: |
+| <img src="../docs/exemples/videos/h3_fl2va_22f_sheet.png" width="760" /> |
+| *Validated 22-frame keyframe interpolation (identity locked; pair expressive poses/prompts for dynamic motion)* |
 * ⚠️ **Heavy**: ~70 min for 22 frames @ 864×480 on RX 6950 XT (VAE/Qwen on CPU), **~38 min with `--turbo`**; system-load pre-check refuses to start on a busy machine. Single chunk only — multi-chunk endless looping not validated yet. Experimental chunk-loop scaffolding (unvalidated): `scripts/proto_endless_h3.py` (+ [`docs/proto_endless_h3.md`](../docs/proto_endless_h3.md)), with A/B knobs for the seam-quality levers (`--ref-audio-sec` rolling audio window, `--ref-frames 5` seam-exact reference, `--ref-scale` downscaled reference) — defaults match the validated recipe.
 
   ```bash
@@ -912,14 +944,14 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 #### 4.10. `monoplan_ia` — Single-Take Cinematic Shot from a Still Image (LTX-2.5 + slow-motion + designed zoom) 🏆
 * **Validation utilisateur 2026-09-10** (« c'est parfait résultat magnifique » — intro Château du Vent-Gris, jeu *L'HÉRITIER DU VIDE*).
 * **Process** (the anti-jitter recipe, MEMORY_BANK §1.17 — I2V chaining rejected after v1-v5 iterations: content seams at every cut, tracker-based stabilization injects noise):
-  1. Conforms the source image to 16:9 832×480 (Lanczos crop) as the first frame.
-  2. Generates ONE single LTX-2.5 Distilled I2V shot (65 frames default = stable GPU ceiling, 8 steps euler_a, cfg 1.0, seed) — no cuts by construction.
+  1. Conforms the source image to 16:9 `832×480` (`608×352` under `--hires`) via Lanczos crop as the first frame.
+  2. Generates ONE single LTX-2.5 Distilled I2V shot (65 frames default = stable GPU ceiling, 8 steps euler_a, cfg 1.0, seed; optional `--hires` runs LTX Spatial Upscaler ×2 + 3 refine steps → native `1216×704`, pass `--monoplan-frames 33` for 16 GB CPU VAE headroom) — no cuts by construction.
   3. Slows it to the target duration with motion-compensated interpolation (`minterpolate` mci/aobmc/vsbmc) + 1080p lanczos — slow-motion divides the model's camera breathing by the stretch factor.
   4. Applies a DESIGNED pure zoom ramp (smootherstep 1.10→1.32 around a fixed anchor, `--zoom-debut/--zoom-fin`) — no tracking measurement in the warp, so it mathematically cannot jitter — plus AMD FidelityFX CAS 0.75.
   5. Optional AI sound bed (`--ambiance "EN prompt"`, SA3 Small SFX) muxed to a listening copy.
   6. Optional end title card (`--carton-titre`, VALIDATED 2026-09-10 on the Vent-Gris intro): freezes the last frame, keeps the zoom ramp going (1.32→1.36 by default), and reveals an animated cinematic title — Pillow multi-layer rendering (ivory→gold gradient, chiseled bevel, warm glow, deep drop shadow, contrast scrim, line+diamond ornament in Felix Titling) with fade-in + left-to-right letter stagger + tracking expansion (0.12→0.22 em). Sound bed extends over the card with a 2.5 s fade-out; everything assembled in one ffmpeg pass. `|` splits title lines (`"L'HÉRITIER|DU VIDE"`), `--carton-duree` (default 6 s), `--carton-zoom-fin` (default 1.36).
 * **🏆 Native 4K UHD path (`--4k` / `--upscale-ia`, added 2026-09-12 for the ai-doc2video Hero Hooks broadcast spec: 3840×2160 @ 30 fps, h264_amf ~45 Mbps, FidelityFX CAS 0.75)**: the raw 480p master is super-resolved FIRST — `scripts/upscale_video_ai.py` chain, 4x-UltraSharp frame-by-frame on Vulkan — into a 3328×1920 master (`_brut_4k_ai.mp4`, ~8 min for 65 frames measured 8.0 s/frame on RX 6950 XT); THEN the motion-compensated slow-motion (3328×1920 @ 30 fps) and the pure zoom run on that high-resolution flow, with CAS deferred to the final conform (no double sharpening); the conform (`conformer_master_4k`) scales to 3840×2160 lanczos + CAS 0.75 + AMD AMF. This removes the ~34× pixel-surface stretch of the old 480p→4K Lanczos path: hard details (server racks, metal edges, neons) stay razor sharp, measured on the Halloween hero hook A/B. Title cards work at 4K too (`_BlocTitre` is resolution-aware, metrics ×2, validated on a 4K still). Per the §1.17 lesson: ALWAYS source the AI upscale from the raw 480p frames (65 frames to process), never from an interpolated master (165+ frames = 3× the GPU cost for a softer result).
-* **Inputs**: `prompt` (camera move + scene), `-i` image (required unless `--monoplan-source plan.webm` for resumable runs), `--monoplan-frames` (default 65, max ~81), `--monoplan-duration` (default 10.0 s), `--zoom-debut/--zoom-fin` (1.10/1.32), `--4k`/`--upscale-ia` (4K UHD native path, see above), `--ambiance`, `--carton-titre/--carton-duree/--carton-zoom-fin`, `--seed`, `-o`.
+* **Inputs**: `prompt` (camera move + scene), `-i` image (required unless `--monoplan-source plan.webm` for resumable runs), `--monoplan-frames` (default 65, max ~81; pass `33` with `--hires`), `--monoplan-duration` (default 10.0 s), `--hires` (two-stage LTX Spatial Upscaler ×2 → `1216×704`, isolated `_hires` intermediate filenames so 480p and `--hires` caches never collide, scales cleanly to `3840×2160` without crop when combined with `--4k`, USER VALIDATED 2026-11-14), `--zoom-debut/--zoom-fin` (1.10/1.32), `--4k`/`--upscale-ia` (4K UHD native path, see above), `--ambiance`, `--carton-titre/--carton-duree/--carton-zoom-fin`, `--seed`, `-o`.
 * **Engines**: sd-cli Vulkan LTX-2.5 Distilled (DiT Q4_K_M + video VAE + Gemma4 on CPU), FFmpeg minterpolate, OpenCV warp (WARP_INVERSE_MAP), Pillow title rendering, SA3 Small SFX (audio.cpp).
 * **Outputs**: `<nom>_<durée>s_1080p.mp4` (mute master), `_avec_ambiance.mp4`, `_brut.webm`, `_ralenti.mp4`, `_ambiance.wav`, and with `--carton-titre`: `_derniere_trame.png`, `_carton.mp4`, `_final_titre.mp4` (validated deliverable). With `--4k`: `<nom>_<durée>s_4k.mp4` (3840×2160 @ 30 fps h264_amf master), `_brut_4k_ai.mp4` (3328×1920 UltraSharp master), `_4k_ralenti.mp4`, `_4k_zoom.mp4` (3328×1920 intermediates).
 * **Perf (RX 6950 XT)**: 1080p path — ~15 min generation (65 f, 8 steps) + ~2 min slow-mo + ~1 min zoom. 4K path — adds ~9 min AI upscale (65 × 8.0 s) + ~3 min slow-mo @ 3328×1920 + ~1.5 min zoom + <1 min AMF conform ≈ **~18 min end-to-end for a 5.5 s hook**. ⚠️ LTX GPU ceiling ≈ 81 frames @ 832×480 (internal `ltxav` module eats ~29 MB VRAM/frame); after cascaded Vulkan device-lost errors, reboot before blaming the recipe.
@@ -1010,7 +1042,7 @@ uv run python main.py -w monoplan_ia --monoplan-source output/hero_brut.webm --m
   3. If the engine requires a transcript (qwen3-tts ICL mode, Fish inline cloning), transcribes the reference automatically with **qwen3-asr 0.6B** (cached next to the reference).
   4. Generates the voice-over on **audio.cpp Vulkan**: **qwen3-tts 1.7B** (default with a reference, expression via `--instruct` style/emotion instruction, Apache-2.0, 24 kHz), **VoxCPM2** (default without reference — zero-shot or **transcript-free cloning**, Apache-2.0, 48 kHz), **Fish S2-Pro** (free-form inline expression tags `[whisper]`, `[excited]`, `[pause]`… directly in the text, 44.1 kHz, ⚠️ research license — commercial use requires a Fish Audio license), or **Drama 3** (`--moteur drama3`, Fish Audio Drama 3 MoE — native voice or cloning with transcript, speaker tags `<|speaker:0..15|>` + event tags `[sighs]`/`[laughs]` in the text, 44.1 kHz, 16 GB VRAM profile with 24/40 expert banks on CPU; **Fish Audio Community License: commercial OK below USD 500k/yr revenue** + "Built with Fish Audio" attribution), or **KittenTTS2** (`--moteur kitten2`, KittenTTS2 — **zero-shot only**, the loader's cloning task is untested and refused with `--voix-ref`; USER VALIDATED 2026-10-22 with FR and EN both ASR-round-trip word-perfect, 24 kHz mono, RTF 0.78-1.54, Apache-2.0, model on D:).
   5. Finalizes the track to **−16 LUFS** (YouTube dialogue standard, 2-pass loudnorm, 48 kHz PCM16) + a 192k MP3 listening preview.
-* **Inputs**: `prompt` (text or `.txt` path), `--voix-ref`, `--moteur` (`qwen3`|`voxcpm2`|`fish`|`drama3`|`kitten2`; auto if omitted — qwen3 with a reference, voxcpm2 without), `--instruct` (qwen3 expression instruction), `--lufs-voix` (default −16), `--music-backend` (`vulkan`|`cpu`), `--seed`.
+* **Inputs**: `prompt` (text or `.txt` path), `--voix-ref` (or `--ref-lib <query>` to resolve a 1.5–15 s AI-allowed audio sample from `C:\GIT\web-assets`), `--moteur` (`qwen3`|`voxcpm2`|`fish`|`drama3`|`kitten2`; auto if omitted — qwen3 with a reference, voxcpm2 without), `--instruct` (qwen3 expression instruction), `--lufs-voix` (default −16), `--music-backend` (`vulkan`|`cpu`), `--seed`.
 * **Engines**: audio.cpp v0.9.2-drama3-base-small (`audiocpp_cli`, Vulkan) + Qwen3-TTS-12Hz-1.7B-Base q8_0 (2.51 Gio) / VoxCPM2 q8_0 (2.75 Gio) / Fish-Audio-S2-Pro q8_0 (5.88 Gio) / Drama-3 q4_K_S experts-q8 backbone (22.91 Gio), all in `C:\Modeles_LLM` / KittenTTS2 q8_0 (3.11 Gio, `D:\Modeles_LLM`, env `KITTEN2_MODEL`) + Qwen3-ASR-0.6B q8_0 (1.07 Gio) — ffmpeg 9.
 * **Outputs** (`output/voix_off/<name>/`): `voix_off_brut.wav` (raw engine output), `voix_off_brut_final.wav` (−16 LUFS 48 kHz) + `voix_off_brut_final.mp3` (listening), prepared reference WAV + transcript cache (reused across runs).
 
@@ -1058,7 +1090,7 @@ uv run python main.py -w monoplan_ia --monoplan-source output/hero_brut.webm --m
   1. Analyzes the reference audio (`-i <MP3/WAV>`): BPM by onset-envelope autocorrelation + key by Krumhansl chroma correlation (or force it with `--tonalite`).
   2. Builds a SOBER style description (your `prompt` in English) + the detected numbers, and **imposes BPM + key + a sober instrumental suffix on the ACE-Step 1.5 planner** — bar-aligned by construction.
   3. Optional lyrics via `--lyrics <fichier.txt>` (a chanson instead of an instrumental — the instrumental suffix is then omitted, unlike the legacy script).
-* **Inputs**: `prompt` (EN style description — keep it sober, see pitfalls), `-i` reference audio (required), `--duration` (default 60 s), `--tonalite` (override), `--negatif`, `--lyrics` (.txt), `--variante` (default `xl-turbo`), `--langue`, `--seed`.
+* **Inputs**: `prompt` (EN style description — keep it sober, see pitfalls), `-i` reference audio (or `--ref-lib <query>` resolving a >= 2 s AI-allowed track from `C:\GIT\web-assets`), `--duration` (default 60 s), `--tonalite` (override), `--negatif`, `--lyrics` (.txt), `--variante` (default `xl-turbo`), `--langue`, `--seed`.
 * **Engines**: audio.cpp (Vulkan) + ACE-Step 1.5 xl-turbo (`declick_fichier_wav` applied before MP3 export).
 * **Outputs** (`output/music_chanson/`): `<name>.wav` + `<name>.mp3` (log shows the detected BPM/key).
 * **Example**:
@@ -1300,7 +1332,8 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 * **Process**:
   1. **ESRGAN mode** (`--upscale-mode auto|esrgan`, default for sprites/renders): runs RGB through Real-ESRGAN Vulkan (`4x-UltraSharp` or `RealESRGAN_x4plus_anime_6B`) and cleanly rescales/recombines RGBA alpha transparency with zero white halo.
   2. **SeedVR2 3B diffusion mode** (`--upscale-mode seedvr2`, **Wave 1 user-validated 2026-11-14**, RX 6950 XT Vulkan0 `int dot: 1`, `sd-cli master-1092+`): uses Comfy-Org **`seedvr2_3b_int8_convrot.safetensors`** + **`seedvr2_ema_vae_fp16.safetensors`** (`-M vid_upscale`) for substantially sharper micro-detail on both 2D RGBA images (`~23.7 s` 512→1024) and `.mp4`/`.webm`/`.avi`/`.mov` videos (`--input-frames` PNG extraction, `--vsr-temporal-chunk-size` `1` or `4n+1`, `ffmpeg` audio remux; `34.7 s/frame` 480p→960p @ peak `10.91 GB` VRAM).
-* **Inputs**: `-i, --input` (source image or video), `--factor` (e.g., `2`, `4`), `--upscale-mode` (`auto`, `esrgan`, `seedvr2`, `lanczos`), `--upscale-model` (`ultrasharp`, `anime`, `auto`), `--vsr-temporal-chunk-size` (`1` default for 16 GB VRAM, or `4n+1`), `--seed`.
+  3. **Pre-upscale Video QC gate**: for video inputs, `core.video_qc.auditer_clip_video` automatically rejects broken/black/frozen/truncated (< 2 sampled frames)/zero-duration clips before wasting GPU minutes on super-resolution (pass `--skip-qc` to override explicitly).
+* **Inputs**: `-i, --input` (source image or video), `--factor` (e.g., `2`, `4`), `--upscale-mode` (`auto`, `esrgan`, `seedvr2`, `lanczos`), `--upscale-model` (`ultrasharp`, `anime`, `auto`), `--vsr-temporal-chunk-size` (`1` default for 16 GB VRAM, or `4n+1`), `--skip-qc` (bypass pre-upscale video QC gate), `--seed`.
 * **Engines**: Real-ESRGAN Vulkan (`4x-UltraSharp.pth`, `RealESRGAN_x4plus_anime_6B.pth`), **SeedVR2 3B** (`C:\Modeles_LLM\SeedVR2\seedvr2_3b_int8_convrot.safetensors` + `seedvr2_ema_vae_fp16.safetensors`), FFmpeg.
 * **Outputs**: `_upscaled_<WxH>.png` (image) or `_upscaled_<N>x.mp4` + `_player.tscn` (video).
 
@@ -1434,6 +1467,17 @@ Workflow-Specific Flags:
   --age, --gender           MakeHuman anatomical macro factors (age: 0.0=child, 0.5=adult; gender: 0.0=male, 1.0=female).
   --makeup-only             Only generate MakeUp ink layer texture + manifest without building body.
   --top, --shoes            Materials description for outfit workflow.
+
+Web-Assets & Wave 2 Options:
+  --hires                   (video_multishot, monoplan_ia) Two-stage LTX Spatial Upscaler x2 (608x352 -> 1216x704, USER VALIDATED 2026-11-14).
+  --control-image, --control-type, --control-strength
+                            (generate) ControlNet++ Union SDXL ProMax guidance (canny|tile, auto-SDXL @ 1024x1024, USER VALIDATED 2026-11-14).
+  --ref-lib                 Resolve an AI-allowed audio/image reference from C:\GIT\web-assets (NO_AI excluded).
+  --scan-web-assets         Run or trigger a non-blocking scan on C:\GIT\web-assets (standalone or post-workflow).
+  --delight                 (material3d) Flatten low-frequency lighting gradients/specular hotspots on albedo before PBR map synthesis.
+  --from-lib, --pbr-group   (material3d) Import curated CC0/commercial PBR pack from C:\GIT\web-assets and complete missing channels.
+  --source-video, --control-extract  (video_vace) Auto-extract control frames (canny|edges_bold|depth_proxy) from a source video.
+  --skip-qc                 (upscale) Bypass automatic pre-upscale black/frozen/short video quality check.
 
 Utility Flags:
   --interactive             Launch the interactive console menu (all 36 workflows).
