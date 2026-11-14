@@ -177,7 +177,7 @@ WORKFLOW_META = {
         ],
     },
     "video_s2v": {
-        "primary": ["audio", "flow_shift", "max_vram", "dry_run"],
+        "primary": ["audio", "steps", "flow_shift", "loras", "max_vram", "dry_run"],
         "estimate": "≈24 min (512² 33f @16fps, 4 steps)",
         "presets": [
             {"name": "Validated 512² 33f @16fps (4-step LoRA)", "values": {"width": 512, "height": 512, "frames": 33, "fps": 16, "steps": 4, "cfg_scale": 1.0, "flow_shift": 3.0, "seed": 42}},
