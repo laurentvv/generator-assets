@@ -322,31 +322,32 @@ def test_video_s2v_workflow_maps_cli_defaults_falsy_numbers_and_loras(
     monkeypatch.setattr(wf_mod, "generer_video_s2v_wan", _fake_gen)
     wf = wf_mod.VideoS2VWorkflow(config={"sd_cli": "sd-cli.exe", "threads": 8, "backend": "diffusion=vulkan1"})
 
-    for loras_input in ({"loras": ["none"]}, {"loras": ["off"]}, {"lora": "none"}):
-        recorded.clear()
-        res = wf.run({
-            "input": str(assets["img"]),
-            "audio": str(assets["wav"]),
-            "steps": 25,
-            "cfg_scale": 0.0,
-            "flow_shift": 0.0,
-            "seed": None,
-            "max_vram": 0,
-            **loras_input,
-            "dry_run": True,
-            "output_dir": str(tmp_path),
-        })
-        assert recorded["steps"] == 4
-        assert recorded["loras"] == []
-        assert recorded["cfg_scale"] == 0.0
-        assert recorded["flow_shift"] == 0.0
-        assert recorded["seed"] == 42
-        assert recorded["max_vram"] == 0
-        assert recorded["backend"] == "diffusion=vulkan1"
-        assert recorded["threads"] == 8
-        assert res["steps"] == 4
-        assert res["dry_run"] is True
-        assert res["mp4_path"] is None
+    for steps_input in (25, "25", ""):
+        for loras_input in ({"loras": ["none"]}, {"loras": ["off"]}, {"loras": [], "lora": "extra"}, {"lora": "none"}):
+            recorded.clear()
+            res = wf.run({
+                "input": str(assets["img"]),
+                "audio": str(assets["wav"]),
+                "steps": steps_input,
+                "cfg_scale": 0.0,
+                "flow_shift": 0.0,
+                "seed": None,
+                "max_vram": 0,
+                **loras_input,
+                "dry_run": True,
+                "output_dir": str(tmp_path),
+            })
+            assert recorded["steps"] == 4
+            assert recorded["loras"] == []
+            assert recorded["cfg_scale"] == 0.0
+            assert recorded["flow_shift"] == 0.0
+            assert recorded["seed"] == 42
+            assert recorded["max_vram"] == 0
+            assert recorded["backend"] == "diffusion=vulkan1"
+            assert recorded["threads"] == 8
+            assert res["steps"] == 4
+            assert res["dry_run"] is True
+            assert res["mp4_path"] is None
 
     # Global CLI DEFAULT_BACKEND must map to the validated vae=cpu S2V backend.
     recorded.clear()

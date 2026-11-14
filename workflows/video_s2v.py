@@ -36,6 +36,12 @@ DEFAULT_S2V_PROMPT = (
 )
 
 
+def _opt_num(params: Dict[str, Any], key: str, cast: Any, default: Any) -> Any:
+    """Returns ``cast(params[key])`` when present and non-empty, else ``default``."""
+    val = params.get(key)
+    return cast(val) if val not in (None, "") else default
+
+
 def _remux_mp4_compatible(webm_path: str, mp4_path: str, ffmpeg_bin: str = DEFAULT_FFMPEG) -> str:
     """Transcodes sd-cli WebM (VP8 + pcm_s16le) into desktop-playable H.264/AAC MP4."""
     run_engine(
@@ -93,24 +99,24 @@ class VideoS2VWorkflow(BaseWorkflow):
         webm_output_path = os.path.join(output_dir, f"{stem}.webm")
         mp4_output_path: Optional[str] = None if params.get("no_mp4") else os.path.join(output_dir, f"{stem}.mp4")
 
-        width = int(params.get("width") or 512)
-        height = int(params.get("height") or 512)
-        frames = int(params.get("frames") or 33)
-        fps = int(params.get("fps") or 16)
-        requested_steps = params.get("steps")
-        if requested_steps in (None, 25):
+        width = _opt_num(params, "width", int, 512)
+        height = _opt_num(params, "height", int, 512)
+        frames = _opt_num(params, "frames", int, 33)
+        fps = _opt_num(params, "fps", int, 16)
+        steps_int = _opt_num(params, "steps", int, None)
+        if steps_int in (None, 25):
             steps = 4
-            if requested_steps == 25:
+            if steps_int == 25:
                 self.log("steps=25 (global CLI default) → validated Wan2.2-S2V LoRA recipe = 4 steps.", emoji="ℹ️")
         else:
-            steps = int(requested_steps)
-        cfg_scale = float(params["cfg_scale"]) if params.get("cfg_scale") is not None else 1.0
-        flow_shift = float(params["flow_shift"]) if params.get("flow_shift") is not None else 3.0
-        seed = int(params["seed"]) if params.get("seed") is not None else 42
-        max_vram = int(params["max_vram"]) if params.get("max_vram") is not None else 10
+            steps = steps_int
+        cfg_scale = _opt_num(params, "cfg_scale", float, 1.0)
+        flow_shift = _opt_num(params, "flow_shift", float, 3.0)
+        seed = _opt_num(params, "seed", int, 42)
+        max_vram = _opt_num(params, "max_vram", int, 10)
 
         raw_loras = params.get("loras")
-        if not raw_loras and isinstance(params.get("lora"), str):
+        if raw_loras is None and isinstance(params.get("lora"), str):
             raw_loras = [params["lora"]]
         if raw_loras is not None:
             cleaned_loras = [s.strip() for s in raw_loras if isinstance(s, str) and s.strip()]
