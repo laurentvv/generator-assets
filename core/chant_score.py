@@ -10,6 +10,11 @@ Upstream syntax (docs/models/vocalrender.md @ audio.cpp v0.9.4):
 
 This module compiles plain FR/EN lyrics (or explicit `syl:64:4` tokens and
 already-formatted `<BPM_...>` scores) into clean `VocalRender` token streams.
+
+⚠️ Wave 1 ASR verdict (2026-11-14, Qwen3-ASR 0.6B): `VocalRender-Pro` (`voxcpm2`)
+is **Mandarin (`zh`) only** — FR inputs hum without intelligible lyrics and EN
+inputs hallucinate Chinese phonemes. Keep `chanson` powered by `ACE-Step 1.5`
+for French and English singing; reserve `VocalRender-Pro` strictly for `zh` prose/score experiments.
 """
 
 from __future__ import annotations

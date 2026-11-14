@@ -124,9 +124,9 @@ def construire_parseur() -> argparse.ArgumentParser:
     )
     groupe_ia_ext.add_argument(
         "--upscale-mode",
-        choices=["auto", "esrgan", "lanczos"],
+        choices=["auto", "esrgan", "seedvr2", "lanczos"],
         default="auto",
-        help="Upscale engine selection for the upscale workflow (default: auto = ESRGAN if available, else Lanczos). Independent from the asset_blendkit --mode."
+        help="Upscale engine selection for the upscale workflow (default: auto = ESRGAN if available, else Lanczos; seedvr2 = SeedVR2 3B Vulkan -M vid_upscale). Independent from asset_blendkit --mode."
     )
     groupe_ia_ext.add_argument(
         "--upscale",
