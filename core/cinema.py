@@ -24,7 +24,12 @@ from typing import Callable, Optional, Tuple
 
 from PIL import Image
 
-from core.config import DEFAULT_MODEL_DIR, DEFAULT_SD_CLI_LTX, DEFAULT_FFMPEG as FFMPEG_PATH
+from core.config import (
+    DEFAULT_FFMPEG as FFMPEG_PATH,
+    DEFAULT_LTX_SPATIAL_UPSCALER,
+    DEFAULT_MODEL_DIR,
+    DEFAULT_SD_CLI_LTX,
+)
 from core.process import run_engine
 
 # Validated LTX-2.5 Distilled models (§1.1 / §1.17)
@@ -35,6 +40,13 @@ LTX_LLM = os.path.join(DEFAULT_MODEL_DIR, "gemma4-12b-with-proj-ltx-2.5-Q5_K_M.g
 
 # Official Lightricks distilled sigmas (8 steps, cfg 1.0 = 1 pass/step)
 SIGMAS_LTX = "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0"
+
+# Validated Wave 2 two-stage spatial latent upscaler x2 recipe (2026-11-14:
+# 608x352 stage-1 -> 1216x704 native stage-2, 16.03 GB CPU VAE RAM at 33f)
+LTX_HIRES_SIGMAS = "0.85,0.725,0.4219,0.0"
+LTX_HIRES_STEPS = 3
+LTX_HIRES_STAGE1_SIZE = (608, 352)
+LTX_BASE_SIZE = (832, 480)
 
 NEGATIF_DEFAUT = (
     "text, watermark, logo, subtitles, warm colors, autumn colors, sunny, cartoon, "
@@ -72,6 +84,84 @@ def conformer_amorce_16_9(source: str, destination: str, largeur: int = 832,
     return destination
 
 
+def _executer_ltx_vid_gen(
+    prompt: str,
+    sortie: str,
+    frames: int,
+    fps: int,
+    seed: int,
+    max_vram: int,
+    hires: bool,
+    log_fn: Callable[[str], None],
+    etiquette: str,
+    description_log: str,
+    amorce: Optional[str] = None,
+    negatif: Optional[str] = None,
+    avec_audio: bool = False,
+) -> str:
+    """Shared LTX-2.5 Distilled sd-cli builder and runner for single-take & multishot."""
+    requis = [DEFAULT_SD_CLI_LTX, LTX_DIT, LTX_VAE, LTX_LLM]
+    if avec_audio:
+        requis.append(LTX_AUDIO_VAE)
+    if hires:
+        requis.append(DEFAULT_LTX_SPATIAL_UPSCALER)
+    manquants = [p for p in requis if not os.path.exists(p)]
+    if manquants:
+        raise FileNotFoundError("Missing LTX-2.5 models or sd-cli: " + "; ".join(manquants))
+
+    os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
+    w, h = LTX_HIRES_STAGE1_SIZE if hires else LTX_BASE_SIZE
+    commande = [
+        DEFAULT_SD_CLI_LTX, "-M", "vid_gen",
+        "--diffusion-model", LTX_DIT,
+        "--vae", LTX_VAE,
+    ]
+    if avec_audio:
+        commande.extend(["--audio-vae", LTX_AUDIO_VAE])
+    commande.extend(["--llm", LTX_LLM])
+    if amorce:
+        commande.extend(["-i", amorce])
+    commande.extend(["-p", prompt])
+    if negatif is not None:
+        commande.extend(["-n", negatif])
+    if hires:
+        upscaler_dir = os.path.dirname(DEFAULT_LTX_SPATIAL_UPSCALER)
+        upscaler_name = os.path.splitext(os.path.basename(DEFAULT_LTX_SPATIAL_UPSCALER))[0]
+        commande.extend([
+            "--hires-upscalers-dir", upscaler_dir,
+            "--hires-upscaler", upscaler_name,
+            "--hires",
+            "--hires-steps", str(LTX_HIRES_STEPS),
+            "--hires-sigmas", LTX_HIRES_SIGMAS,
+        ])
+    commande.extend([
+        "-W", str(w), "-H", str(h),
+        "--video-frames", str(frames),
+        "--fps", str(fps),
+        "--steps", "8",
+        "--sigmas", SIGMAS_LTX,
+        "--sampling-method", "euler_a",
+        "--cfg-scale", "1.0",
+        "--diffusion-fa",
+        "--max-vram", str(max_vram),
+        "--backend", "diffusion=vulkan0,te=cpu,vae=cpu",
+        "-s", str(seed),
+        "-o", sortie,
+        "-v",
+    ])
+    log_fn(description_log)
+    # Uncaptured output: sd-cli streams its progress live; 7200 s = MEMORY_BANK
+    # video benchmark (65 frames ~ minutes, ×3 margin for slow days)
+    run_engine(commande, capture=False, check=True, timeout=7200, etiquette=etiquette)
+    if not os.path.exists(sortie):
+        candidat = sortie.replace(".webm", "_0.webm")
+        if os.path.exists(candidat):
+            os.rename(candidat, sortie)
+    if not os.path.exists(sortie):
+        raise RuntimeError(f"LTX-2.5 video not produced: {sortie}")
+    return sortie
+
+
 def generer_monoplan_ltx(
     amorce: str,
     prompt: str,
@@ -81,50 +171,32 @@ def generer_monoplan_ltx(
     seed: int = 42,
     negatif: str = NEGATIF_DEFAUT,
     max_vram: int = 10,
+    hires: bool = False,
     log_fn: Callable[[str], None] = print,
 ) -> str:
     """Single-take LTX-2.5 Distilled I2V shot (recipe §1.17, 8 steps euler_a, cfg 1.0).
 
-    Pinned to the LTX binary (DEFAULT_SD_CLI_LTX): the main build cannot fit LTX
-    on 16 GB (#1976) — before the pin this route silently targeted a binary that
-    could no longer run it."""
-    manquants = [p for p in (DEFAULT_SD_CLI_LTX, LTX_DIT, LTX_VAE, LTX_LLM) if not os.path.exists(p)]
-    if manquants:
-        raise FileNotFoundError("Missing LTX-2.5 models or sd-cli: " + "; ".join(manquants))
-    os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
-    commande = [
-        DEFAULT_SD_CLI_LTX, "-M", "vid_gen",
-        "--diffusion-model", LTX_DIT,
-        "--vae", LTX_VAE,
-        "--llm", LTX_LLM,
-        "-i", amorce,
-        "-p", prompt,
-        "-n", negatif,
-        "-W", "832", "-H", "480",
-        "--video-frames", str(frames),
-        "--fps", str(fps),
-        "--steps", "8",
-        "--sigmas", SIGMAS_LTX,
-        "--sampling-method", "euler_a",
-        "--cfg-scale", "1.0",
-        "--diffusion-fa",
-        "--max-vram", str(max_vram),
-        "--backend", "diffusion=vulkan0,te=cpu,vae=cpu",
-        "-s", str(seed),
-        "-o", sortie,
-        "-v",
-    ]
-    log_fn("[cinema] LTX-2.5 single-take generation ({} frames @ {} fps, seed {})…".format(frames, fps, seed))
-    # Uncaptured output: sd-cli streams its progress live; 7200 s = MEMORY_BANK
-    # video benchmark (65 frames ~ minutes, ×3 margin for slow days)
-    run_engine(commande, capture=False, check=True, timeout=7200, etiquette="sd-cli LTX")
-    if not os.path.exists(sortie):
-        candidat = sortie.replace(".webm", "_0.webm")
-        if os.path.exists(candidat):
-            os.rename(candidat, sortie)
-    if not os.path.exists(sortie):
-        raise RuntimeError(f"Single-take shot not produced: {sortie}")
-    return sortie
+    Optional two-stage spatial latent upscaler x2 (`hires=True`, validated Wave 2):
+    608x352 stage-1 -> native 1216x704 stage-2 (3 refine steps, official sigmas).
+    Pinned to the LTX binary (DEFAULT_SD_CLI_LTX)."""
+    res_msg = "1216x704 two-stage --hires" if hires else "832x480"
+    return _executer_ltx_vid_gen(
+        prompt=prompt,
+        sortie=sortie,
+        frames=frames,
+        fps=fps,
+        seed=seed,
+        max_vram=max_vram,
+        hires=hires,
+        log_fn=log_fn,
+        etiquette="sd-cli LTX",
+        description_log=(
+            f"[cinema] LTX-2.5 single-take generation ({frames} frames @ {fps} fps, {res_msg}, seed {seed})…"
+        ),
+        amorce=amorce,
+        negatif=negatif,
+        avec_audio=False,
+    )
 
 
 def generate_ltx_multishot(
@@ -134,6 +206,7 @@ def generate_ltx_multishot(
     fps: int = 24,
     seed: int = 42,
     max_vram: int = 10,
+    hires: bool = False,
     log_fn: Callable[[str], None] = print,
 ) -> str:
     """Native LTX-2.5 multishot: several named cuts + a continuous soundtrack in
@@ -141,53 +214,32 @@ def generate_ltx_multishot(
 
     Same distilled constants as the single-take shot (§1.17) plus the audio VAE
     (the soundtrack is generated from the prompt's audio block) and WITHOUT a
-    negative prompt (the validated leg ran without one). The prompt must describe
-    each shot in order, name the cut explicitly ("A hard cut transitions to…")
-    and include the audio bed (official LTX prompting rules, adopted 2026-10-01).
-    Resolution is NOT exposed: 832×480 is the validated envelope with --max-vram 10.
+    negative prompt (the validated leg ran without one). Pass `hires=True` to
+    activate the validated Wave 2 two-stage spatial upscaler x2 (608x352 -> 1216x704).
     """
     if frames < 9 or (frames - 1) % 8 != 0 or frames > 81:
         raise ValueError(
             f"frames must be 1 + a multiple of 8 (official LTX-2.5 rule), 9..81 "
             f"(GPU ceiling §1.17) — got {frames}"
         )
-    manquants = [
-        p for p in (DEFAULT_SD_CLI_LTX, LTX_DIT, LTX_VAE, LTX_AUDIO_VAE, LTX_LLM)
-        if not os.path.exists(p)
-    ]
-    if manquants:
-        raise FileNotFoundError("Missing LTX-2.5 models or sd-cli: " + "; ".join(manquants))
-    os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
-    commande = [
-        DEFAULT_SD_CLI_LTX, "-M", "vid_gen",
-        "--diffusion-model", LTX_DIT,
-        "--vae", LTX_VAE,
-        "--audio-vae", LTX_AUDIO_VAE,
-        "--llm", LTX_LLM,
-        "-p", prompt,
-        "-W", "832", "-H", "480",
-        "--video-frames", str(frames),
-        "--fps", str(fps),
-        "--steps", "8",
-        "--sigmas", SIGMAS_LTX,
-        "--sampling-method", "euler_a",
-        "--cfg-scale", "1.0",
-        "--diffusion-fa",
-        "--max-vram", str(max_vram),
-        "--backend", "diffusion=vulkan0,te=cpu,vae=cpu",
-        "-s", str(seed),
-        "-o", sortie,
-        "-v",
-    ]
-    log_fn("[cinema] LTX-2.5 multishot generation ({} frames @ {} fps, seed {})…".format(frames, fps, seed))
-    run_engine(commande, capture=False, check=True, timeout=7200, etiquette="sd-cli LTX multishot")
-    if not os.path.exists(sortie):
-        candidat = sortie.replace(".webm", "_0.webm")
-        if os.path.exists(candidat):
-            os.rename(candidat, sortie)
-    if not os.path.exists(sortie):
-        raise RuntimeError(f"Multishot video not produced: {sortie}")
-    return sortie
+    res_msg = "1216x704 two-stage --hires" if hires else "832x480"
+    return _executer_ltx_vid_gen(
+        prompt=prompt,
+        sortie=sortie,
+        frames=frames,
+        fps=fps,
+        seed=seed,
+        max_vram=max_vram,
+        hires=hires,
+        log_fn=log_fn,
+        etiquette="sd-cli LTX multishot",
+        description_log=(
+            f"[cinema] LTX-2.5 multishot generation ({frames} frames @ {fps} fps, {res_msg}, seed {seed})…"
+        ),
+        amorce=None,
+        negatif=None,
+        avec_audio=True,
+    )
 
 
 def ralentir_interp(webm: str, sortie: str, duree_cible: float, fps: int = 24,

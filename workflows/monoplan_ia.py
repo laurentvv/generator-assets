@@ -97,12 +97,14 @@ class MonoplanIaWorkflow(BaseWorkflow):
         zoom_fin = float(params.get("zoom_fin") or 1.32)
         ambiance = params.get("ambiance")  # EN prompt of the optional sound bed
 
-        # 4K UHD path (--4k): AI upscale at the head of the chain + AMF master 30 fps
+        # 4K UHD path (--4k) and validated LTX two-stage upscaler (--hires)
         mode_4k = bool(params.get("upscale_4k"))
+        hires = bool(params.get("hires", False))
+        w_amorce, h_amorce = (608, 352) if hires else (832, 480)
         fps_sortie = FPS_SORTIE_4K if mode_4k else fps
         suffixe = "4k" if mode_4k else "1080p"
 
-        amorce = os.path.join(output_dir, f"{nom_base}_amorce_832x480.png")
+        amorce = os.path.join(output_dir, f"{nom_base}_amorce_{w_amorce}x{h_amorce}.png")
         webm = params.get("monoplan_source") or os.path.join(output_dir, f"{nom_base}_brut.webm")
         if params.get("monoplan_source") and not os.path.exists(webm):
             raise FileNotFoundError(f"Monoplan source not found: {webm}")
@@ -111,16 +113,22 @@ class MonoplanIaWorkflow(BaseWorkflow):
         master = os.path.join(output_dir, f"{nom_base}_{duree:.1f}s_{suffixe}.mp4")
 
         self.log(f"AI single take \"monoplan\" ({duree:.1f} s @ {fps_sortie} fps"
-                 f"{', 4K UHD path' if mode_4k else ''}, zoom {zoom_debut:.2f}→{zoom_fin:.2f}, seed {seed})…")
+                 f"{', 4K UHD path' if mode_4k else ''}"
+                 f"{', LTX --hires 1216x704' if hires else ''}, zoom {zoom_debut:.2f}→{zoom_fin:.2f}, seed {seed})…")
 
         # 1. 16:9 seed frame (or reuse of an already-generated monoplan — resume)
         if not os.path.exists(webm):
             if not image or not os.path.exists(image):
                 raise FileNotFoundError(f"Seed image not found: {image}")
-            conformer_amorce_16_9(image, amorce)
-            self.log("16:9 seed frame ready (Lanczos recrop 832×480).")
+            if hires and frames > 33:
+                self.log(
+                    f"⚠️ LTX-2.5 --hires at {frames} frames uses >16 GB CPU VAE RAM; pass --monoplan-frames 33 if RAM-constrained.",
+                    emoji="⚠️",
+                )
+            conformer_amorce_16_9(image, amorce, largeur=w_amorce, hauteur=h_amorce)
+            self.log(f"16:9 seed frame ready (Lanczos recrop {w_amorce}×{h_amorce}).")
             generer_monoplan_ltx(amorce, prompt, webm, frames=frames, fps=fps,
-                                 seed=seed, log_fn=lambda m: self.log(m.strip()))
+                                 seed=seed, hires=hires, log_fn=lambda m: self.log(m.strip()))
             self.log("Monoplan generated (LTX-2.5 Distilled, 8 steps euler_a, cfg 1.0).")
         else:
             self.log(f"Monoplan already present, reused: {webm}")
@@ -223,4 +231,4 @@ class MonoplanIaWorkflow(BaseWorkflow):
             self.log(f"  • {cle} : {os.path.basename(chemin)}")
 
         return {"status": "success", **livrables, "duree": duree, "frames": frames,
-                "mode_4k": mode_4k}
+                "mode_4k": mode_4k, "hires": hires}

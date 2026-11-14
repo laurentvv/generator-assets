@@ -408,3 +408,169 @@ def test_generer_image_vulkan_forwards_control_type(tmp_path: Path, monkeypatch:
     )
     assert "--control-type" in cmds[0]
     assert cmds[0][cmds[0].index("--control-type") + 1] == "canny"
+
+
+def test_cinema_ltx_hires_builds_exact_validated_flags(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from core import cinema
+
+    fake_bin = tmp_path / "sd-cli.exe"
+    fake_dit = tmp_path / "ltx.gguf"
+    fake_vae = tmp_path / "ltx_vae.safetensors"
+    fake_avae = tmp_path / "ltx_audio.safetensors"
+    fake_llm = tmp_path / "gemma.gguf"
+    upscalers_dir = tmp_path / "upscalers"
+    upscalers_dir.mkdir()
+    fake_upscaler = upscalers_dir / "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
+    for p in (fake_bin, fake_dit, fake_vae, fake_avae, fake_llm, fake_upscaler):
+        p.write_bytes(b"ok")
+
+    monkeypatch.setattr(cinema, "DEFAULT_SD_CLI_LTX", str(fake_bin))
+    monkeypatch.setattr(cinema, "LTX_DIT", str(fake_dit))
+    monkeypatch.setattr(cinema, "LTX_VAE", str(fake_vae))
+    monkeypatch.setattr(cinema, "LTX_AUDIO_VAE", str(fake_avae))
+    monkeypatch.setattr(cinema, "LTX_LLM", str(fake_llm))
+    monkeypatch.setattr(cinema, "DEFAULT_LTX_SPATIAL_UPSCALER", str(fake_upscaler))
+
+    captured = []
+
+    def fake_run_engine(cmd, **_kw):
+        captured.append(list(cmd))
+        out = cmd[cmd.index("-o") + 1]
+        Path(out).write_bytes(b"webm")
+        return None
+
+    monkeypatch.setattr(cinema, "run_engine", fake_run_engine)
+
+    out_ms = str(tmp_path / "ms_hires.webm")
+    cinema.generate_ltx_multishot("stormy lighthouse", out_ms, frames=33, hires=True, log_fn=lambda _m: None)
+    c_ms = captured[0]
+    assert c_ms[c_ms.index("-W") + 1] == "608"
+    assert c_ms[c_ms.index("-H") + 1] == "352"
+    assert "--hires" in c_ms
+    assert c_ms[c_ms.index("--hires-upscalers-dir") + 1] == str(upscalers_dir)
+    assert c_ms[c_ms.index("--hires-upscaler") + 1] == "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0"
+    assert c_ms[c_ms.index("--hires-steps") + 1] == "3"
+    assert c_ms[c_ms.index("--hires-sigmas") + 1] == "0.85,0.725,0.4219,0.0"
+
+    seed_img = tmp_path / "seed.png"
+    seed_img.write_bytes(b"png")
+    out_mp = str(tmp_path / "mp_base.webm")
+    cinema.generer_monoplan_ltx(str(seed_img), "camera pan", out_mp, frames=65, hires=False, log_fn=lambda _m: None)
+    c_mp = captured[1]
+    assert "--hires" not in c_mp
+    assert c_mp[c_mp.index("-W") + 1] == "832"
+    assert c_mp[c_mp.index("-H") + 1] == "480"
+
+    # Missing spatial upscaler must raise FileNotFoundError before launch
+    fake_upscaler.unlink()
+    with pytest.raises(FileNotFoundError):
+        cinema.generate_ltx_multishot("stormy", str(tmp_path / "fail.webm"), frames=33, hires=True)
+
+
+def test_video_multishot_and_monoplan_hires_workflow_routing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from workflows.monoplan_ia import MonoplanIaWorkflow
+    from workflows.video_multishot import VideoMultishotWorkflow
+
+    ms_calls = []
+    monkeypatch.setattr(
+        "workflows.video_multishot.generate_ltx_multishot",
+        lambda **kw: ms_calls.append(kw) or kw["sortie"],
+    )
+    wf_ms = VideoMultishotWorkflow({})
+    res_hires = wf_ms.run({"prompt": "lighthouse waves", "hires": True, "output_dir": str(tmp_path)})
+    assert ms_calls[0]["frames"] == 33
+    assert ms_calls[0]["hires"] is True
+    assert res_hires["resolution"] == "1216x704"
+    assert res_hires["hires"] is True
+
+    res_std = wf_ms.run({"prompt": "lighthouse waves", "output_dir": str(tmp_path)})
+    assert ms_calls[1]["frames"] == 65
+    assert ms_calls[1]["hires"] is False
+    assert res_std["resolution"] == "832x480"
+
+    seed_img = tmp_path / "init.png"
+    Image.new("RGB", (64, 64), (10, 40, 80)).save(seed_img)
+    mp_calls = []
+
+    def _fake_ltx(amorce, prompt, webm, **kw):
+        mp_calls.append((amorce, kw))
+        Path(webm).write_bytes(b"w")
+        return webm
+
+    def _fake_ralentir(src, dst, *_a, **_kw):
+        Path(dst).write_bytes(b"m")
+        return dst, 2.0
+
+    def _fake_zoom(src, dst, *_a, **_kw):
+        Path(dst).write_bytes(b"z")
+        return dst
+
+    monkeypatch.setattr("workflows.monoplan_ia.generer_monoplan_ltx", _fake_ltx)
+    monkeypatch.setattr("workflows.monoplan_ia.ralentir_interp", _fake_ralentir)
+    monkeypatch.setattr("workflows.monoplan_ia.zoom_pur", _fake_zoom)
+    wf_mp = MonoplanIaWorkflow({})
+    res_mp = wf_mp.run({
+        "prompt": "slow push",
+        "input": str(seed_img),
+        "hires": True,
+        "monoplan_frames": 33,
+        "output_dir": str(tmp_path / "mp"),
+    })
+    assert res_mp["hires"] is True
+    assert mp_calls[0][1]["hires"] is True
+    with Image.open(mp_calls[0][0]) as amorce_im:
+        assert amorce_im.size == (608, 352)
+
+
+def test_generate_workflow_controlnet_union_promax(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from workflows.generate import GenerateWorkflow
+
+    fake_sdxl = tmp_path / "juggernautXL_ragnarok.safetensors"
+    fake_cn = tmp_path / "controlnet_union_sdxl_promax.safetensors"
+    ctrl_img = tmp_path / "canny.png"
+    fake_sdxl.write_bytes(b"sdxl")
+    fake_cn.write_bytes(b"cn")
+    Image.new("RGB", (32, 32), (255, 255, 255)).save(ctrl_img)
+
+    calls = []
+    monkeypatch.setattr(
+        "workflows.generate.generer_image_vulkan",
+        lambda **kw: calls.append(kw) or Image.new("RGB", (kw["width"], kw["height"]), (50, 60, 70)),
+    )
+
+    wf = GenerateWorkflow({
+        "sd_model": "flux1-dev-Q6_K.gguf",
+        "controlnet_sd_model": str(fake_sdxl),
+        "controlnet_union": str(fake_cn),
+        "style_anchor": "game art",
+    })
+
+    # Pair validation
+    with pytest.raises(ValueError, match="control-image"):
+        wf.run({"prompt": "helm", "control_type": "canny"})
+
+    # Canny default strength 0.85, SDXL switch, segmenter none preserves 1024x1024
+    res_canny = wf.run({
+        "prompt": "paladin helm",
+        "control_image": str(ctrl_img),
+        "control_type": "canny",
+        "segmenter": "none",
+        "output_dir": str(tmp_path / "out"),
+    })
+    assert calls[0]["sd_model"] == str(fake_sdxl)
+    assert calls[0]["control_net"] == str(fake_cn)
+    assert calls[0]["control_type"] == "canny"
+    assert calls[0]["control_strength"] == pytest.approx(0.85)
+    assert res_canny["dimensions"] == (1024, 1024)
+    assert res_canny["control_type"] == "canny"
+
+    # Tile default strength 0.75
+    wf.run({
+        "prompt": "obsidian helm",
+        "control_image": str(ctrl_img),
+        "control_type": "tile",
+        "segmenter": "none",
+        "output_dir": str(tmp_path / "out"),
+    })
+    assert calls[1]["control_type"] == "tile"
+    assert calls[1]["control_strength"] == pytest.approx(0.75)
