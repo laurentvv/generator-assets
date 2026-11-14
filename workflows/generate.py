@@ -85,6 +85,10 @@ class GenerateWorkflow(BaseWorkflow):
                 if params.get("control_strength") is not None
                 else (0.85 if control_type == "canny" else 0.75)
             )
+            if not 0.0 <= control_strength <= 1.0:
+                raise ValueError(
+                    f"--control-strength must be between 0.0 and 1.0 (got {control_strength})."
+                )
             self.log(
                 f"ControlNet++ Union ProMax [{control_type}] strength={control_strength:.2f} "
                 f"({os.path.basename(control_image)}) + SDXL {os.path.basename(sd_model_effectif)}"

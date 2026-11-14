@@ -140,7 +140,7 @@ work.
 | Background music loop (−30 LUFS bed, game or YouTube voice-over) | `music_bg` | `-w music_bg "dark ambient drone, 70 BPM" --bpm 70` |
 | Complete song WITH lyrics (FR/EN via ACE-Step `xl-turbo`; VocalRender-Pro is `zh`-only) | `chanson` | `-w chanson --paroles "..." --style "synthpop"` |
 | New music with the DNA of a reference (imposed BPM/key; `-i` or `--ref-lib`) | `musique_adn` | `-w musique_adn -i track.wav` |
-| Music with the essence of a reference (SA3 init_audio) | `musique_essence` | `-w musique_essence --reference track.wav` |
+| Music with the essence of a reference (SA3 init_audio) | `musique_essence` | `-w musique_essence -i track.wav` |
 | Re-style an existing track (ACE-Step cover, duration locked, CPU) | `acestep_cover` | `-w acestep_cover --audio track.wav -p "<style>" --seed 42` |
 | Surgical time-span repainting (`ACE-Step 1.5` bit-exact MIT or `SA3 Medium` fast Vulkan) | `audio_repaint` | `-w audio_repaint --audio track.wav -p "cello break" --repaint-start 4 --repaint-end 9` |
 | Vocal removal / stem separation (`htdemucs`, `mel_roformer`, `bs_roformer`, optional `--apollo`, or `sam`) | `retrait_voix` | `-w retrait_voix -i track.wav --sep-engine mel_roformer --apollo` |

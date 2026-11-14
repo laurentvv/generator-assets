@@ -85,7 +85,8 @@ def extraire_carte_controle_image(
     """Extracts and saves a structural control map PNG from a source image."""
     if not os.path.exists(source_path):
         raise FileNotFoundError(f"Source image not found for control extraction: {source_path}")
-    img = Image.open(source_path).convert("RGB")
+    with Image.open(source_path) as src_im:
+        img = src_im.convert("RGB")
     if width and height and img.size != (width, height):
         img = img.resize((width, height), Image.Resampling.LANCZOS)
     ctrl_arr = extraire_carte_controle_array(np.asarray(img, dtype=np.uint8), mode=mode)
@@ -107,12 +108,15 @@ def extraire_frames_controle_video(
     """Extracts a synchronized PNG folder of VACE control frames from a source video."""
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Source video not found: {video_path}")
-    if mode not in CONTROL_EXTRACT_MODES:
+    mode_norm = (mode or "canny").strip().lower()
+    if mode_norm not in CONTROL_EXTRACT_MODES:
         raise ValueError(
             f"Unsupported control extract mode '{mode}'; expected one of {CONTROL_EXTRACT_MODES}"
         )
 
     os.makedirs(output_dir, exist_ok=True)
+    for stale_png in glob.glob(os.path.join(output_dir, "frame_*.png")):
+        os.remove(stale_png)
     ff = ffmpeg_bin or DEFAULT_FFMPEG
 
     vf_parts = []
@@ -136,14 +140,15 @@ def extraire_frames_controle_video(
             raise RuntimeError(f"FFmpeg extracted zero frames from '{video_path}'")
 
         for idx, raw_file in enumerate(raw_files, start=1):
-            rgb = np.asarray(Image.open(raw_file).convert("RGB"), dtype=np.uint8)
-            ctrl_arr = extraire_carte_controle_array(rgb, mode=mode)
+            with Image.open(raw_file) as raw_im:
+                rgb = np.asarray(raw_im.convert("RGB"), dtype=np.uint8)
+            ctrl_arr = extraire_carte_controle_array(rgb, mode=mode_norm)
             dst_file = os.path.join(output_dir, f"frame_{idx:05d}.png")
             Image.fromarray(ctrl_arr, mode="RGB").save(dst_file, "PNG")
 
     return {
         "control_dir": output_dir,
         "frame_count": len(raw_files),
-        "mode": mode,
+        "mode": mode_norm,
         "resolution": f"{width}x{height}",
     }

@@ -79,20 +79,27 @@ class Material3DWorkflow(BaseWorkflow):
             for role, meta in pack.items():
                 abs_path = meta.get("abs_path")
                 if abs_path and os.path.exists(abs_path):
-                    curated[role] = Image.open(abs_path)
+                    mode = "RGB" if role in ("albedo", "normal", "orm") else "L"
+                    with Image.open(abs_path) as im:
+                        curated[role] = im.convert(mode)
             if not curated:
                 raise FileNotFoundError(f"No readable PBR maps found for web-assets group '{pbr_group}'.")
+            if "albedo" not in curated:
+                raise ValueError(
+                    f"Curated PBR group '{pbr_group}' has no albedo map ({sorted(curated.keys())}); "
+                    "pass -i <albedo> explicitly."
+                )
             if "roughness" not in curated and "gloss" in curated:
                 curated["roughness"] = ImageOps.invert(curated["gloss"].convert("L"))
-            base_map = curated.get("albedo") or next(iter(curated.values()))
-            base_img = base_map.convert("RGB")
+            base_img = curated["albedo"].convert("RGB")
             nom = params.get("output") or f"{slugifier_texte(pbr_group)}_pbr"
             self.log(f"Loaded web-assets PBR pack '{pbr_group}' ({sorted(curated.keys())}).")
             return base_img, curated, nom, pbr_group
 
         if from_lib:
             hit = resoudre_reference_web_assets(from_lib, asset_type="image")
-            base_img = Image.open(hit["abs_path"]).convert("RGB")
+            with Image.open(hit["abs_path"]) as im:
+                base_img = im.convert("RGB")
             nom = params.get("output") or f"{Path(hit['abs_path']).stem}_pbr"
             self.log(f"Loaded web-assets image '{hit['rel_path']}' ({hit['licence']['licence']}).")
             return base_img, {}, nom, None
@@ -181,9 +188,12 @@ class Material3DWorkflow(BaseWorkflow):
         curated_maps: Dict[str, Image.Image] = {}
         resolved_group: Optional[str] = None
 
-        if input_image and os.path.exists(input_image):
+        if input_image:
+            if not os.path.exists(input_image):
+                raise FileNotFoundError(f"Source texture not found: {input_image}")
             self.log(f"Loading the source texture: {input_image}...")
-            img_albedo = Image.open(input_image).convert("RGB")
+            with Image.open(input_image) as im:
+                img_albedo = im.convert("RGB")
             nom_base = params.get("output") or f"{Path(input_image).stem}_pbr"
         elif from_lib or pbr_group:
             img_albedo, curated_maps, nom_base, resolved_group = self._charger_depuis_bibliotheque(params)
