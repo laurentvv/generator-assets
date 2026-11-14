@@ -73,7 +73,7 @@ Any CLI evolution must preserve this contract.
 | 9-patch frames/buttons | `ui_9slice` | `-w ui_9slice "stone dialog frame"` |
 | 47-tile Wang autotile atlas | `autotile_pack` | `-w autotile_pack "cave walls"` |
 | Clean cutout (transparent background) | `rembg` | `-w rembg -i image.png` |
-| AI upscale (ESRGAN 2x/4x/4K alpha preserved, or SeedVR2 3B image & video `--upscale-mode seedvr2`) | `upscale` | `-w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` |
+| AI upscale (ESRGAN 2x/4x/4K alpha preserved, or SeedVR2 3B image & video `--upscale-mode seedvr2`; pre-upscale black/frozen/short QC gate unless `--skip-qc`) | `upscale` | `-w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` |
 | JSON pack of batch generations | `batch` | `-w batch --recipe recipe.json` |
 | Local OCR on images/screenshots (FR/EN, ~4 s/page) | `ocr_image` | `-w ocr_image -i screenshot.png` |
 
@@ -81,7 +81,7 @@ Any CLI evolution must preserve this contract.
 
 | Need | Workflow | Example |
 | :--- | :--- | :--- |
-| Complete PBR material pack + Godot `.tres` | `material3d` | `-w material3d "ancient gothic stone tile with purple runes" -s 1024` |
+| Complete PBR material pack + Godot `.tres` (`--delight` specular/shadow flattening; `--from-lib`/`--pbr-group` `web-assets` import) | `material3d` | `-w material3d "ancient gothic stone tile with purple runes" -s 1024` |
 | Parametric 3D mesh `.glb` (slab, chest, pillar…) | `mesh3d` | `-w mesh3d "ornate iron chest" --shape cube` |
 | **AI 3D object with real volume** from prompt or image | `mesh_ia` | `-w mesh_ia "obsidian dragon skull" --res 512` or `-i helmet.png` (`--mesh-moteur pixal3d` = one-pass flat colors, VALIDATED 2026-10-02) |
 | 360° equirectangular skybox + IBL | `skybox` | `-w skybox "purple cosmic nebula"` |
@@ -139,12 +139,12 @@ work.
 | :--- | :--- | :--- |
 | Background music loop (−30 LUFS bed, game or YouTube voice-over) | `music_bg` | `-w music_bg "dark ambient drone, 70 BPM" --bpm 70` |
 | Complete song WITH lyrics (FR/EN via ACE-Step `xl-turbo`; VocalRender-Pro is `zh`-only) | `chanson` | `-w chanson --paroles "..." --style "synthpop"` |
-| New music with the DNA of a reference (imposed BPM/key) | `musique_adn` | `-w musique_adn --reference track.wav` |
+| New music with the DNA of a reference (imposed BPM/key; `-i` or `--ref-lib`) | `musique_adn` | `-w musique_adn -i track.wav` |
 | Music with the essence of a reference (SA3 init_audio) | `musique_essence` | `-w musique_essence --reference track.wav` |
 | Re-style an existing track (ACE-Step cover, duration locked, CPU) | `acestep_cover` | `-w acestep_cover --audio track.wav -p "<style>" --seed 42` |
 | Surgical time-span repainting (`ACE-Step 1.5` bit-exact MIT or `SA3 Medium` fast Vulkan) | `audio_repaint` | `-w audio_repaint --audio track.wav -p "cello break" --repaint-start 4 --repaint-end 9` |
 | Vocal removal / stem separation (`htdemucs`, `mel_roformer`, `bs_roformer`, optional `--apollo`, or `sam`) | `retrait_voix` | `-w retrait_voix -i track.wav --sep-engine mel_roformer --apollo` |
-| Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish/Drama 3 cloning, kitten2 zero-shot) | `voix_off` | `-w voix_off --texte "..." --voix narrator_fr` |
+| Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish/Drama 3 cloning, kitten2 zero-shot; `--voix-ref` or `--ref-lib`) | `voix_off` | `-w voix_off "Bonjour"` `--voix-ref voice.wav` |
 | EN character voice (Kokoro preset or Qwen3 VoiceDesign + pitch/whisper/hollow) | `voix_perso` | `-w voix_perso "..." --kokoro-voice am_onyx` |
 | Fast local voice synthesis, faster than real time (LFM3-Audio-2B, llama.cpp Vulkan, FR default) | `lfm3_tts` | `-w lfm3_tts "Bienvenue, voyageur." --tts-langue fr --tts-voix female` |
 | Re-voice a recording in another voice (Chatterbox VC, 24 kHz) | `voix_conversion` | `-w voix_conversion --audio take.wav --voice-ref target_voice.wav` |
@@ -152,7 +152,7 @@ work.
 | Audio super-resolution → 48 kHz (16k voice / 24k music) | `audio_upscale` | `-w audio_upscale -i voice_16k.wav --upsr-variante speech` |
 | Audio restoration — speech repair (`RE-USE` OpenMDW) or 44.1 kHz music (`--restore-engine apollo`, `-1 dBTP` guard, MIT) | `audio_restaure` | `-w audio_restaure -i track.wav --restore-engine apollo` |
 | Emotional character voice + Godot lip-sync | `tts_dialogue` | `-w tts_dialogue --texte "..." --emotion angry` |
-| SFX sound effect (procedural or AI) | `sfx` | `-w sfx "sword swing whoosh"` |
+| SFX sound effect (procedural or AI; optional `--ref-lib` `web-assets` sample) | `sfx` | `-w sfx "sword swing whoosh"` |
 | Seamless loopable sound ambiance | `audio_ambience` | `-w audio_ambience "forest night, wind"` |
 
 **Validated audio recipes**: `music_bg` → `[Instrumental]` (no vocals) for instrumental beds; the
@@ -171,7 +171,7 @@ within a binary version (ggml arithmetic changes across audio.cpp versions alter
 | :--- | :--- | :--- |
 | Cinematic shot from a still image (slow-mo, designed zoom) | `monoplan_ia` | `-w monoplan_ia -i frame.png --prompt "camera slowly pans..."` |
 | Video from prompt or image (Wan/LTX, .webm) | `video` | `-w video "cyberpunk street, neon rain"` |
-| **Motion-locked video** (ref image + skeleton/pose control frames, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
+| **Motion-locked video** (ref image + `--control-video` frames or auto-extracted `--source-video`, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
 | **Multi-cut video + soundtrack** (several named cuts in ONE LTX-2.5 T2V generation, audio continuity across cuts — VALIDATED 2026-10-02) | `video_multishot` | `-w video_multishot -p "wide shot of a keeper on a pier. A hard cut transitions to a lantern close-up. The storm ambience continues across the cut, with waves and distant thunder"` |
 | **Continue an existing video (`-i`) or morph keyframes (`--init-img`/`--end-img`) + SOUND** (MiniMax-H3) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
 | 60 fps interpolation (RIFE) | `rife_interp` | `-w rife_interp -i clip.webm` |

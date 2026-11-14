@@ -117,6 +117,8 @@ DEFAULT_T5XXL = os.getenv("SD_T5XXL_PATH", os.path.join(DEFAULT_MODEL_DIR, "t5xx
 DEFAULT_VAE = os.getenv("SD_VAE_PATH", os.path.join(DEFAULT_MODEL_DIR, "ae.safetensors"))
 # ControlNet OpenPose SDXL (validated recipe 2026-09-26, MEMORY_BANK §1.29: juggernautXL + xinsir)
 DEFAULT_CONTROLNET_POSE = os.getenv("SD_CONTROLNET_POSE_PATH", os.path.join(DEFAULT_MODEL_DIR, "controlnet_openpose_sdxl_xinsir.safetensors"))
+# ControlNet++ Union SDXL ProMax (Apache-2.0, openpose/depth/scribble/canny/normal/segment/tile/repaint)
+DEFAULT_CONTROLNET_UNION = os.getenv("SD_CONTROLNET_UNION_PATH", os.path.join(DEFAULT_MODEL_DIR, "controlnet_union_sdxl_promax.safetensors"))
 DEFAULT_SDXL_MODEL = os.getenv("SD_XL_MODEL_PATH", os.path.join(DEFAULT_MODEL_DIR, "juggernautXL_ragnarok.safetensors"))
 
 # Qwen-Image-2.1 (7B DiT GGUF, Vulkan — support sd-cli #2032/#2035, master-908+).
@@ -292,6 +294,10 @@ DEFAULT_SEEDVR2_MODEL = os.getenv(
 DEFAULT_SEEDVR2_VAE = os.getenv(
     "SEEDVR2_VAE_PATH",
     chercher_fichier_modele(os.path.join("SeedVR2", "seedvr2_ema_vae_fp16.safetensors")),
+)
+DEFAULT_LTX_SPATIAL_UPSCALER = os.getenv(
+    "LTX_SPATIAL_UPSCALER_PATH",
+    os.path.join(DEFAULT_MODEL_DIR, "upscalers", "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"),
 )
 
 # Specialized ONNX models (Segmentation, PBR, Animation)

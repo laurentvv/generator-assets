@@ -213,6 +213,21 @@ def construire_parseur() -> argparse.ArgumentParser:
         help="Manages the complete update of the whole Vulkan AI Suite (stable-diffusion.cpp + llama.cpp)."
     )
 
+    # Web-Assets local library integration
+    groupe_web = parser.add_argument_group("Web-Assets Library (C:\\GIT\\web-assets)")
+    groupe_web.add_argument(
+        "--ref-lib",
+        dest="ref_lib",
+        default=None,
+        help="Resolve an audio/image reference from C:\\GIT\\web-assets (NO_AI excluded) for sfx, musique_adn, voix_off or qwen_image.",
+    )
+    groupe_web.add_argument(
+        "--scan-web-assets",
+        dest="scan_web_assets",
+        action="store_true",
+        help="Trigger POST /api/scan on the local web-assets indexer after running (or standalone).",
+    )
+
     # Paths
     groupe_chemins = parser.add_argument_group("Paths & Executables")
     groupe_chemins.add_argument("--llama-cli", default=DEFAULT_LLAMA_CLI, help="Path to llama-cli.exe")
@@ -276,7 +291,7 @@ def construire_params(args: argparse.Namespace, prompt_texte: str) -> dict:
         "list_loras", "list_upscalers",
         "update_sd", "sd_install_dir", "sd_source_dir",
         "update_llama", "llama_install_dir", "llama_source_dir",
-        "update_vulkan",
+        "update_vulkan", "scan_web_assets",
         "llama_cli", "llm_model", "sd_cli", "sd_model", "clip_l", "t5xxl",
         "vae", "backend", "threads", "style", "no_preview",
     ):

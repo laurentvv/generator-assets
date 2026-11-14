@@ -47,8 +47,19 @@ class MusiqueAdnWorkflow(BaseWorkflow):
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         reference = params.get("input")
+        ref_lib = (params.get("ref_lib") or "").strip()
+        if (not reference or not os.path.exists(reference)) and ref_lib:
+            from core.web_assets import resoudre_reference_web_assets
+
+            lib_hit = resoudre_reference_web_assets(ref_lib, asset_type="audio", min_duration_ms=2000)
+            reference = lib_hit["abs_path"]
+            self.log(
+                f"Audio DNA reference resolved from web-assets: {lib_hit['rel_path']} "
+                f"({lib_hit['licence']['licence']})",
+                "📚",
+            )
         if not reference or not os.path.exists(reference):
-            raise ValueError("Audio reference not found: pass it via -i <audio> (MP3/WAV).")
+            raise ValueError("Audio reference not found: pass -i <audio> (MP3/WAV) or --ref-lib <query>.")
         style = (params.get("prompt") or "").strip()
         if not style:
             raise ValueError("Provide the EN style description (positional parameter).")

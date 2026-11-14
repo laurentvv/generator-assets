@@ -87,6 +87,7 @@ def generer_image_vulkan(
     control_image: Optional[str] = None,
     control_net: Optional[str] = None,
     control_strength: float = 0.9,
+    control_type: Optional[str] = None,
     ip_adapter: Optional[str] = None,
     ip_adapter_image: Optional[str] = None,
     ip_adapter_strength: float = 1.0,
@@ -196,6 +197,8 @@ def generer_image_vulkan(
             "--control-net", control_net,
             "--control-strength", str(control_strength)
         ])
+        if control_type:
+            commande.extend(["--control-type", control_type])
 
     if ip_adapter and ip_adapter_image and clip_vision:
         commande.extend([
