@@ -112,6 +112,7 @@ For uncompromising cinematic visual quality, the suite integrates the SOTA flags
   * DiT sampling (8 distilled Lightricks steps): **1 min 24s flat** on the Vulkan GPU (~10.5s/step)!
   * **3.5× faster than Wan 2.1** thanks to CFG 1.0 (a single pass per step).
   * Render validated in superior production (fangs, horns, wings and gold scales).
+  * **Wave 2 Two-Stage `--hires` mode (USER VALIDATED 2026-11-14)**: `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` (`608×352` stage-1 → `1216×704` native + 3 refine steps, `--hires` on `video_multishot` and `monoplan_ia`).
 * **Dedicated Script** (`scripts/generate_ltx25_8steps.py`) :
   ```bash
   python scripts/generate_ltx25_8steps.py
