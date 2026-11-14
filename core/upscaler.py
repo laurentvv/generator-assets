@@ -15,10 +15,40 @@ from PIL import Image, ImageFilter
 from core.config import (
     DEFAULT_BACKEND,
     DEFAULT_ESRGAN_MODEL,
+    DEFAULT_FFMPEG,
     DEFAULT_SD_CLI,
-    resoudre_upscaler
+    DEFAULT_SEEDVR2_MODEL,
+    DEFAULT_SEEDVR2_VAE,
+    resoudre_upscaler,
 )
 from core.process import run_engine
+
+
+_VALID_UPSCALE_MODES = ("auto", "esrgan", "seedvr2", "lanczos")
+
+
+def resoudre_options_upscale(params: dict) -> tuple[str, int, int]:
+    """Resolves upscale mode, SeedVR2 temporal chunk size, and seed from CLI/UI params."""
+    # Upscale owns its own mode key: global --mode belongs to asset_blendkit ("prop"/"plate").
+    mode = (
+        params.get("upscale_mode")
+        or (params.get("mode") if params.get("mode") in _VALID_UPSCALE_MODES else None)
+        or "auto"
+    )
+    raw_chunk = params.get("vsr_temporal_chunk_size")
+    temporal_chunk = 1 if raw_chunk is None else int(raw_chunk)
+    seed = int(params.get("seed", 42))
+    return mode, temporal_chunk, seed
+
+
+def _reinjecter_alpha(image_source: Image.Image, img_upscaled_rgb: Image.Image) -> Image.Image:
+    """Restores the source alpha channel resized cleanly onto an upscaled RGB image."""
+    if image_source.mode != "RGBA":
+        return img_upscaled_rgb
+    alpha_orig = image_source.split()[-1]
+    alpha_upscaled = alpha_orig.resize(img_upscaled_rgb.size, Image.Resampling.LANCZOS)
+    r, g, b = img_upscaled_rgb.split()
+    return Image.merge("RGBA", (r, g, b, alpha_upscaled))
 
 
 def upscale_esrgan(
@@ -33,8 +63,6 @@ def upscale_esrgan(
     """
     if not os.path.exists(esrgan_model_path):
         raise FileNotFoundError(f"ESRGAN model not found: {esrgan_model_path}")
-
-    a_alpha = image_entree.mode == "RGBA"
 
     # Unique temp files (tempfile): compatible with parallel runs,
     # and no leftover from a previous call can be read back.
@@ -62,14 +90,57 @@ def upscale_esrgan(
         run_engine(commande, timeout=600, capture=False, check=True, etiquette="sd-cli ESRGAN")
         img_upscaled_rgb = Image.open(temp_out).convert("RGB")
 
-    # If the source image had transparency, re-inject the upscaled Alpha
-    if a_alpha:
-        alpha_orig = image_entree.split()[-1]
-        alpha_upscaled = alpha_orig.resize(img_upscaled_rgb.size, Image.Resampling.LANCZOS)
-        r, g, b = img_upscaled_rgb.split()
-        return Image.merge("RGBA", (r, g, b, alpha_upscaled))
-    else:
-        return img_upscaled_rgb
+    return _reinjecter_alpha(image_entree, img_upscaled_rgb)
+
+
+def upscale_seedvr2(
+    image_entree: Image.Image,
+    facteur: int = 2,
+    seedvr2_model_path: str = DEFAULT_SEEDVR2_MODEL,
+    seedvr2_vae_path: str = DEFAULT_SEEDVR2_VAE,
+    sd_cli: str = DEFAULT_SD_CLI,
+    backend: Optional[str] = None,
+    seed: int = 42,
+) -> Image.Image:
+    """Single-image AI super-resolution via SeedVR2 3B int8_convrot (sd-cli -M vid_upscale).
+
+    Wave 1 user-validated (2026-11-14) on RX 6950 XT Vulkan0 (``int dot: 1``,
+    sd-cli ``master-1092``+): preserves RGBA transparency and requires the official
+    Comfy-Org ``seedvr2_3b_int8_convrot.safetensors`` + ``seedvr2_ema_vae_fp16.safetensors``.
+    """
+    if not os.path.exists(seedvr2_model_path):
+        raise FileNotFoundError(f"SeedVR2 model not found: {seedvr2_model_path}")
+    if not os.path.exists(seedvr2_vae_path):
+        raise FileNotFoundError(f"SeedVR2 VAE not found: {seedvr2_vae_path}")
+    sd_cli = sd_cli or DEFAULT_SD_CLI
+    factor_int = max(1, int(facteur))
+
+    with tempfile.TemporaryDirectory(prefix="ga_seedvr2_") as dossier_temp:
+        temp_in = os.path.join(dossier_temp, "entree.png")
+        temp_out = os.path.join(dossier_temp, "sortie.png")
+        image_entree.convert("RGB").save(temp_in, "PNG")
+
+        print(f"[SeedVR2 Vulkan] Diffusion upscaling {factor_int}x ({Path(seedvr2_model_path).name})...")
+        commande = [
+            sd_cli,
+            "-M", "vid_upscale",
+            "--diffusion-model", seedvr2_model_path,
+            "--vae", seedvr2_vae_path,
+            "-i", temp_in,
+            "-o", temp_out,
+            "--upscale-factor", str(factor_int),
+            "-s", str(int(seed)),
+            "-v",
+        ]
+        if backend:
+            commande.extend(["--backend", backend])
+
+        run_engine(commande, timeout=1800, capture=False, check=True, etiquette="sd-cli SeedVR2 image")
+        if not os.path.exists(temp_out):
+            raise FileNotFoundError(f"SeedVR2 did not produce output image: {temp_out}")
+        img_upscaled_rgb = Image.open(temp_out).convert("RGB")
+
+    return _reinjecter_alpha(image_entree, img_upscaled_rgb)
 
 
 def upscale_smart_lanczos(
@@ -113,12 +184,13 @@ def upscaler_asset(
     mode: str = "auto",
     upscale_model: Optional[str] = None,
     sd_cli: str = DEFAULT_SD_CLI,
-    backend: str = DEFAULT_BACKEND
+    backend: str = DEFAULT_BACKEND,
+    seed: int = 42,
 ) -> Image.Image:
     """
     Unified entry point for 2D asset upscaling.
-    First tries the AI super-resolution model (ESRGAN) on Vulkan GPU,
-    with automatic fallback to Smart Lanczos if no model is provided.
+    Supports ``auto``/``esrgan`` (RealESRGAN/UltraSharp), ``seedvr2``
+    (SeedVR2 3B int8_convrot via ``-M vid_upscale``), and ``lanczos``.
     """
     largeur_init, hauteur_init = image_entree.size
 
@@ -128,6 +200,19 @@ def upscaler_asset(
     else:
         largeur_cible = int(largeur_init * facteur)
         hauteur_cible = int(hauteur_init * facteur)
+
+    if mode == "seedvr2":
+        import math
+        seedvr_factor = max(2, math.ceil(largeur_cible / max(1, largeur_init)))
+        img_ia = upscale_seedvr2(
+            image_entree=image_entree,
+            facteur=seedvr_factor,
+            sd_cli=sd_cli,
+            seed=seed,
+        )
+        if img_ia.size != (largeur_cible, hauteur_cible):
+            img_ia = img_ia.resize((largeur_cible, hauteur_cible), Image.Resampling.LANCZOS)
+        return img_ia
 
     modele_resolu = resoudre_upscaler(upscale_model)
 
@@ -152,6 +237,141 @@ def upscaler_asset(
     return upscale_smart_lanczos(image_entree, largeur_cible, hauteur_cible)
 
 
+def _video_possede_audio(ffmpeg: str, video_path: str) -> bool:
+    """Returns True if the video container exposes an audio stream via ffprobe."""
+    ffprobe = os.path.join(os.path.dirname(ffmpeg), "ffprobe.exe") if os.name == "nt" else os.path.join(os.path.dirname(ffmpeg), "ffprobe")
+    if not os.path.exists(ffprobe):
+        ffprobe = "ffprobe"
+    try:
+        res = run_engine(
+            [ffprobe, "-v", "error", "-select_streams", "a:0",
+             "-show_entries", "stream=codec_type", "-of", "csv=p=0", video_path],
+            capture=True, check=False, timeout=60, etiquette="ffprobe audio check",
+        )
+        return bool((res.stdout or "").strip())
+    except Exception:
+        return False
+
+
+def upscale_video_seedvr2(
+    video_input_path: str,
+    output_path: str,
+    *,
+    facteur: float = 2.0,
+    taille_cible: Optional[int] = None,
+    temporal_chunk_size: int = 1,
+    seedvr2_model_path: str = DEFAULT_SEEDVR2_MODEL,
+    seedvr2_vae_path: str = DEFAULT_SEEDVR2_VAE,
+    sd_cli: str = DEFAULT_SD_CLI,
+    ffmpeg: str = DEFAULT_FFMPEG,
+    seed: int = 42,
+    log_fn=print,
+) -> str:
+    """Temporally coherent video upscaling via SeedVR2 ``-M vid_upscale --input-frames``.
+
+    Extracts PNG frames, runs SeedVR2 in Vulkan0, and remuxes with the source
+    audio stream (``-M vid_upscale`` drops audio) into ``output_path``.
+    """
+    import math
+    import cv2
+
+    if not os.path.exists(video_input_path):
+        raise FileNotFoundError(f"Source video not found: {video_input_path}")
+    if not os.path.exists(seedvr2_model_path):
+        raise FileNotFoundError(f"SeedVR2 model not found: {seedvr2_model_path}")
+    if not os.path.exists(seedvr2_vae_path):
+        raise FileNotFoundError(f"SeedVR2 VAE not found: {seedvr2_vae_path}")
+    if temporal_chunk_size < 1 or (temporal_chunk_size > 1 and (temporal_chunk_size - 1) % 4 != 0):
+        raise ValueError(
+            f"--vsr-temporal-chunk-size must be 1 or 4n+1 (got {temporal_chunk_size})."
+        )
+    sd_cli = sd_cli or DEFAULT_SD_CLI
+    ffmpeg = ffmpeg or DEFAULT_FFMPEG
+
+    cap = cv2.VideoCapture(video_input_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Cannot open the source video: {video_input_path}")
+    try:
+        fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
+        largeur_init = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        hauteur_init = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    finally:
+        cap.release()
+
+    if taille_cible and taille_cible > 0:
+        largeur_cible = int(taille_cible)
+        hauteur_cible = int(hauteur_init * (taille_cible / max(1, largeur_init)))
+    else:
+        largeur_cible = int(largeur_init * facteur)
+        hauteur_cible = int(hauteur_init * facteur)
+    largeur_cible = (largeur_cible // 2) * 2
+    hauteur_cible = (hauteur_cible // 2) * 2
+
+    seedvr_factor = max(2, math.ceil(largeur_cible / max(1, largeur_init)))
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    ext = os.path.splitext(output_path)[1].lower()
+    if ext not in (".webm", ".mp4"):
+        output_path = os.path.splitext(output_path)[0] + ".mp4"
+        ext = ".mp4"
+
+    has_audio = _video_possede_audio(ffmpeg, video_input_path)
+    log_fn(
+        f"[SeedVR2 Video] {largeur_init}x{hauteur_init} -> {largeur_cible}x{hauteur_cible} "
+        f"(factor={seedvr_factor}x, chunk={temporal_chunk_size}, audio={'yes' if has_audio else 'no'})..."
+    )
+
+    with tempfile.TemporaryDirectory(prefix="ga_seedvr2_vid_") as dossier_temp:
+        frames_dir = os.path.join(dossier_temp, "frames_in")
+        os.makedirs(frames_dir, exist_ok=True)
+        run_engine(
+            [ffmpeg, "-y", "-v", "error", "-i", video_input_path,
+             os.path.join(frames_dir, "%06d.png")],
+            check=True, timeout=600, etiquette="ffmpeg extract seedvr2 frames",
+        )
+        raw_video = os.path.join(dossier_temp, "seedvr2_raw.webm")
+        run_engine(
+            [
+                sd_cli,
+                "-M", "vid_upscale",
+                "--diffusion-model", seedvr2_model_path,
+                "--vae", seedvr2_vae_path,
+                "--input-frames", frames_dir,
+                "-o", raw_video,
+                "--upscale-factor", str(seedvr_factor),
+                "--vsr-temporal-chunk-size", str(temporal_chunk_size),
+                "--fps", str(max(1, int(round(fps)))),
+                "-s", str(int(seed)),
+                "-v",
+            ],
+            capture=False, check=True, timeout=7200, etiquette="sd-cli SeedVR2 video",
+        )
+        if not os.path.exists(raw_video):
+            raise FileNotFoundError(f"SeedVR2 video output not produced: {raw_video}")
+
+        # Remux with original audio stream and guarantee exact even target dimensions.
+        cmd_remux = [ffmpeg, "-y", "-v", "error", "-i", raw_video]
+        if has_audio:
+            cmd_remux.extend(["-i", video_input_path, "-map", "0:v:0", "-map", "1:a:0"])
+        else:
+            cmd_remux.extend(["-map", "0:v:0"])
+        cmd_remux.extend(["-vf", f"scale={largeur_cible}:{hauteur_cible}:flags=lanczos"])
+        if ext == ".webm":
+            cmd_remux.extend(["-c:v", "libvpx-vp9", "-crf", "18", "-b:v", "0"])
+            if has_audio:
+                cmd_remux.extend(["-c:a", "libopus", "-b:a", "192k"])
+        else:
+            cmd_remux.extend(["-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p"])
+            if has_audio:
+                cmd_remux.extend(["-c:a", "aac", "-b:a", "192k"])
+        if has_audio:
+            cmd_remux.append("-shortest")
+        cmd_remux.append(output_path)
+        run_engine(cmd_remux, check=True, timeout=1800, etiquette="ffmpeg seedvr2 remux")
+
+    log_fn(f"✅ SeedVR2 video upscaled: {output_path} ({largeur_cible}x{hauteur_cible})")
+    return output_path
+
+
 def upscale_video(
     video_input_path: str,
     output_path: str,
@@ -161,12 +381,26 @@ def upscale_video(
     upscale_model: Optional[str] = None,
     sd_cli: str = DEFAULT_SD_CLI,
     backend: str = DEFAULT_BACKEND,
-    log_fn=print
+    log_fn=print,
+    temporal_chunk_size: int = 1,
+    seed: int = 42,
 ) -> str:
     """
-    Upscales a video (.webm, .mp4, .avi) frame by frame with AI super-resolution (ESRGAN Vulkan or Smart Lanczos).
-    Allows quick low-resolution validation (480p preview) then upscaling to HD / 4K.
+    Upscales a video (.webm, .mp4, .avi) with SeedVR2 (``mode="seedvr2"``),
+    ESRGAN Vulkan, or Smart Lanczos.
     """
+    if mode == "seedvr2":
+        return upscale_video_seedvr2(
+            video_input_path=video_input_path,
+            output_path=output_path,
+            facteur=facteur,
+            taille_cible=taille_cible,
+            temporal_chunk_size=temporal_chunk_size,
+            sd_cli=sd_cli,
+            seed=seed,
+            log_fn=log_fn,
+        )
+
     import cv2
     import numpy as np
 

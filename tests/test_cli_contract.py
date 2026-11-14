@@ -335,7 +335,7 @@ def test_famille_video_3d_migree_en_declarations():
     from workflows import h3_ref2va, mesh_ia, video
     assert len(mesh_ia.MeshIaWorkflow.PARAMETRES) == 4        # --res --faces-cible --mesh-moteur --fov
     assert len(video.VideoWorkflow.PARAMETRES) == 3           # --end-img --control-video --flow-shift
-    assert len(h3_ref2va.H3Ref2VAWorkflow.PARAMETRES) == 5    # --ref-frames --ref-audio --max-vram --turbo --dry-run
+    assert len(h3_ref2va.H3Ref2VAWorkflow.PARAMETRES) == 6    # --init-img --ref-frames --ref-audio --max-vram --turbo --dry-run
     from workflows import animal_godot
     assert len(animal_godot.AnimalGodotWorkflow.PARAMETRES) == 2
     from workflows import open_water

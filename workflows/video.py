@@ -16,7 +16,7 @@ from typing import Any, Dict
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_video_vulkan
-from core.upscaler import upscale_video
+from core.upscaler import resoudre_options_upscale, upscale_video
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
@@ -123,18 +123,21 @@ expand = true
         upscaled_video_path = None
         if params.get("upscale"):
             facteur_up = float(params.get("factor", 2.0))
-            self.log(f"🚀 [Post-Processing] AI upscaling of the video ({facteur_up}x) via ESRGAN / Lanczos...")
+            mode_up, temporal_chunk, seed_up = resoudre_options_upscale(params)
+            kw_extra = {"temporal_chunk_size": temporal_chunk, "seed": seed_up} if mode_up == "seedvr2" else {}
+            self.log(f"🚀 [Post-Processing] AI upscaling of the video ({facteur_up}x, mode={mode_up})...")
             upscale_out = os.path.splitext(video_output_path)[0] + f"_upscaled_{int(facteur_up)}x.mp4"
             try:
                 upscaled_video_path = upscale_video(
                     video_input_path=video_output_path,
                     output_path=upscale_out,
                     facteur=facteur_up,
-                    mode=params.get("mode", "auto"),
+                    mode=mode_up,
                     upscale_model=params.get("upscale_model"),
                     sd_cli=self.config.get("sd_cli"),
                     backend=self.config.get("backend", "diffusion=vulkan0,te=cpu"),
-                    log_fn=self.log
+                    log_fn=self.log,
+                    **kw_extra,
                 )
             except Exception as e:
                 self.log(f"Warning during post-generation video upscaling: {e}", emoji="⚠️")

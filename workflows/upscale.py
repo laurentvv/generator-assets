@@ -11,16 +11,27 @@ from typing import Any, Dict
 from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
-from core.upscaler import upscaler_asset, upscale_video
+from core.upscaler import resoudre_options_upscale, upscaler_asset, upscale_video
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
 @WorkflowRegistry.register
 class UpscaleWorkflow(BaseWorkflow):
     name = "upscale"
-    description = "AI super-resolution (ESRGAN Vulkan / Lanczos) for Images and Videos (.webm / .mp4)"
+    description = "AI super-resolution (ESRGAN Vulkan / SeedVR2 3B -M vid_upscale / Lanczos) for Images and Videos (.webm / .mp4)"
 
     emoji = "🔍"
+
+    PARAMETRES = [
+        dict(
+            flags=("--vsr-temporal-chunk-size",),
+            dest="vsr_temporal_chunk_size",
+            type=int,
+            default=1,
+            help="upscale (SeedVR2 video): input frames per temporal chunk (1 or 4n+1; default 1 for 16 GB RX 6950 XT).",
+        ),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         input_path = params.get("input")
         if not input_path or not os.path.exists(input_path):
@@ -28,14 +39,7 @@ class UpscaleWorkflow(BaseWorkflow):
 
         facteur = float(params.get("factor", 2.0))
         taille_cible = params.get("size")
-        # Upscale owns its own mode key: the global CLI --mode belongs to
-        # asset_blendkit ("prop"/"plate") and must not silently disable ESRGAN.
-        # Legacy batch recipes using mode="auto"/"esrgan"/"lanczos" still work.
-        mode = (
-            params.get("upscale_mode")
-            or (params.get("mode") if params.get("mode") in ("auto", "esrgan", "lanczos") else None)
-            or "auto"
-        )
+        mode, temporal_chunk, seed = resoudre_options_upscale(params)
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         nom_sortie = params.get("output")
         modele_demande = params.get("upscale_model") or self.config.get("esrgan_model")
@@ -52,6 +56,7 @@ class UpscaleWorkflow(BaseWorkflow):
                 nom_final += ".mp4"
             chemin_sortie = os.path.join(output_dir, nom_final)
 
+            kw_extra = {"temporal_chunk_size": temporal_chunk, "seed": seed} if mode == "seedvr2" else {}
             video_upscaled = upscale_video(
                 video_input_path=input_path,
                 output_path=chemin_sortie,
@@ -61,7 +66,8 @@ class UpscaleWorkflow(BaseWorkflow):
                 upscale_model=modele_demande,
                 sd_cli=self.config.get("sd_cli"),
                 backend=self.config.get("backend", "diffusion=vulkan0,te=cpu"),
-                log_fn=self.log
+                log_fn=self.log,
+                **kw_extra,
             )
 
             # Associated Godot 4 VideoStreamPlayer scene
@@ -95,6 +101,7 @@ expand = true
         img_source = Image.open(input_path)
         self.log(f"Loading the source image: {input_path} ({img_source.size[0]}x{img_source.size[1]} {img_source.mode})")
 
+        kw_img = {"seed": seed} if mode == "seedvr2" else {}
         img_upscaled = upscaler_asset(
             image_entree=img_source,
             facteur=facteur,
@@ -102,7 +109,8 @@ expand = true
             mode=mode,
             upscale_model=modele_demande,
             sd_cli=self.config.get("sd_cli"),
-            backend=self.config.get("backend", "diffusion=vulkan0,te=cpu")
+            backend=self.config.get("backend", "diffusion=vulkan0,te=cpu"),
+            **kw_img,
         )
 
         stem_source = Path(input_path).stem

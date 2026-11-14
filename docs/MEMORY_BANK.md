@@ -577,6 +577,37 @@ First identity-preserving IMAGE EDIT path on the stack (fills the MOSS-Image-Cha
 
 **Étape 2 vidéo (même session, workflow VALIDATED réutilisé — `monoplan_ia` LTX-2.5 I2V)** : clip danse identity-locked VALIDÉ au 3ᵉ essai (65 f → 4-6 s 1080p, 8 steps euler_a cfg 1.0, seed 42, zoom 1.0→1.0 plan fixe, ~10 min/run). **Recette amorce (décisive)** : seed **native 832×480 paysage**, figure centrée ~460 px, **SANS bordures de panneau** (crop inset — les lignes de grille héritées reviennent DANS la vidéo) ; prompt avec ancrage identité explicite (« the same man from the image… keeps exactly the same face/suit »). **Échecs formateurs** : v1 = seed portrait paddée en noir par le workflow (recrop 832×480) → LTX a halluciné un « triptyque » avec danseur central INVENTÉ (autre visage + tulle skirt) ; v2 = bordures de panneau héritées + figure trop petite + slow-mo ×2,25 = flou mci. V3 (inset 10 px, figure 466 px, `--monoplan-duration 4` = ×1,5) = identité tenue start-to-end, danse naturelle connectée. **Routes chorégraphie-follow non disponibles** : FLF2V wan = checkpoint dédié absent (le t2v 14B refuse `--end-img`, sampling fail 15,7 s) ; `video_vace` (VALIDATED 01-10) = nécessite des control frames squelettes/depth — pas d'extracteur de pose dans la stack ; h3_ref2va = extension d'une vidéo existante (chaînage possible SUR le clip danse). Deliverables vidéo : `output/dance_v3_monoplan_4.0s_1080p.mp4` (master) + v2 secours. Licence Qwen RESEARCH (comme §1.39) = personal/non-commercial ONLY. Evidence : `output/test_dance_sheet/` (probe + 9 logs runs + prompts + seeds) et `output/` (upscales + 3 clips danse). **Re-test trigger : fix mémoire #2321 dans une release sd-cli ; checkpoint wan FLF2V ou extracteur de pose pour la chorégraphie verrouillée.**
 
+### 🛠️ 1.56. sd-cli `master-1092-5d78740` — PINNED & VALIDATED 2026-11-14 (6/6 arch legs PASS + `#2341` multimodal interleaved)
+
+- **Install & pin**: `scripts/engines_manifest.json` pinned `master-1092-5d78740` across `windows` (`sha256:5f901766…`), `linux` (`9b62d91d…`), and `macos-arm64` (`8afaa1c8…`), backup `C:\SD\backups\backup_20261113_201612` (= `1078`). `ggml-vulkan` reports `int dot: 1` on RX 6950 XT.
+- **6/6 arch legs PASS** (gate green): `H3 Ref2VA` `--turbo` (16.87 min, `66.56-66.83 s/it`, `624/624` LoRA, 54 segments healthy, 0 OOM) · `SDXL` (11.84 s) · `Flux` `--vae-tiling` (37.70 s, sampling 26.60 s) · `Qwen-Image-2.1 Turbo` (109.98 s, typography word-perfect) · `LTX-2.5 33f` (`--max-vram 10 --backend diffusion=vulkan0,te=cpu,vae=cpu`, 241.20 s) · `#2341` `<image:...>` (`Qwen-Image-Edit-2511` + `--llm_vision`, 72.50 s, `519/519` vision + `2160/2160` LoRA; note `<image:...>` feeds VLM tokens and does NOT replace `-r` pixel locking).
+
+### 🎧 1.57. Mel/BS-RoFormer + Apollo 44.1 kHz (`audio.cpp` Vulkan) — VALIDATED 2026-11-14
+
+- **Source separation (`-w retrait_voix --sep-engine`)**: both RoFormer GGUF packages (`C:\Modeles_LLM\Mel-Band-RoFormer-GGUF\mel-band-roformer-q8_0.gguf`, `C:\Modeles_LLM\BS-RoFormer-ep368-GGUF\bs-roformer-ep368-q8_0.gguf`) run cleanly on Vulkan `--task sep` and outperform HTDemucs vocal rejection cleanly. **`mel_roformer` runs ~7.2x faster** on Vulkan (`RTF ~0.20` vs `bs_roformer` `RTF ~1.44`) and is recommended whenever rapid clean 2-stem vocal/instrumental extraction is needed.
+- **Music/bandwidth restoration (`-w audio_restaure --restore-engine apollo` & `-w retrait_voix --apollo`)**: **`apollo-orig.gguf`** (`C:\Modeles_LLM\Apollo-GGUF\`, MIT, 44.1 kHz stereo `--task s2s --family apollo`, `RTF ~0.074` on Vulkan = 1.47 s for 20 s). **Critical invariant enforced in code (`core/audio_restore.py::restaurer_apollo`)**: raw Apollo output hits full-scale `1.0000` peak (hot clipping hazard on dense stems), so mandatory `normaliser_pic(..., pic_dbfs=-1.0)` headroom normalization is applied before PCM16 WAV write. Speech-only repairs stay on `RE-USE` NemotronLabs OpenMDW-1.1 (`--restore-engine reuse` default).
+
+### 🎤 1.58. VoxCPM2 VocalRender-Pro — ASR VERDICT 2026-11-14: `zh`-ONLY (keep `chanson` FR/EN on ACE-Step 1.5)
+
+- Probe via Qwen3-ASR 0.6B (`core/chant_score.py` token compiler `<BPM_...><syllable><P_n><NOTE_d>`): **Mandarin (`zh`) only**. French inputs hum melodies without intelligible words, and English inputs hallucinate Chinese phonemes.
+- **Production decision (USER VALIDATED 2026-11-14)**: keep `-w chanson` powered by `ACE-Step 1.5` (`xl-turbo`) for French and English sung songs; document `VocalRender-Pro` strictly as experimental `zh`-only (`core/chant_score.py` docstring warning preserved).
+
+### 🩹 1.59. Audio Repaint & Inpaint (`-w audio_repaint`) — VALIDATED 2026-11-14
+
+Two complementary regimes wired under `-w audio_repaint --repaint-start S --repaint-end E`:
+- **`--repaint-engine acestep` (default, MIT, CPU 20t)**: `ACE-Step 1.5` (`acestep-v15-xl-turbo` + `mem_saver=true`, `--task-route repaint`, presets `balanced`/`conservative`/`aggressive`). Guaranteed **bit-exact PCM16 preservation outside `[start, end]`** (verified max diff `3.05e-05` = 1 LSB; no full-clip post declick applied so unmasked audio stays untouched). Use whenever unmasked bars/mix must stay mathematically intact.
+- **`--repaint-engine sa3` (Stability AI Community License, Vulkan)**: `Stable Audio 3 Medium` (`stable_audio.audio_input_kind=inpaint_audio` + `inpaint_mask_start_sec`/`end_sec` + `init_noise_level`). Runs **~27x faster on GPU** (`RTF ~1.48`), at the cost of full-mix VAE re-encoding (subtle non-masked boundary diffs).
+
+### 📐 1.60. Qwen-Image-2.1 Multi-Angles v2 & Multimodal `-r` (`-w qwen_image`) — VALIDATED 2026-11-14
+
+- **`--ref-image <img.png>` (`-r`, repeatable) + `--llm_vision mmproj-Qwen3VL-8B-Instruct-F16.gguf`** (`core/diffusion.py::generer_image_qwen21` switched `--fa` -> `--flash-attn on`).
+- **`--multi-angles orbit` or `"cue1 | cue2"`** (`workflows/qwen_image.py`): opt-in workflow shortcut that auto-enables `--qwen-turbo` (8 steps, CFG 1.0), prepends `<mva>`, injects `qwen21_multiple_angles_v2:0.9` LoRA (`384/384` tensors), and maps `-i` into `-r` reference conditioning (~41.17 s @ 512² on RX 6950 XT). Subject to Qwen **RESEARCH** license (personal/non-commercial only).
+
+### 🔍 1.61. SeedVR2 3B `int8_convrot` (`-w upscale --upscale-mode seedvr2`) & MiniMax-H3 FL2VA (`-w h3_ref2va --init-img`) — VALIDATED 2026-11-14
+
+- **SeedVR2 3B (`-M vid_upscale`, `C:\Modeles_LLM\SeedVR2\`)**: official Comfy-Org weights **`seedvr2_3b_int8_convrot.safetensors` + `seedvr2_ema_vae_fp16.safetensors`** run natively on Vulkan0 (`int dot: 1`, `sd-cli master-1092+`) and clearly beat `4x-UltraSharp`/Lanczos on crispness (**`cmeka/SeedVR2-GGUF` FAILS** with `unsupported video upscale model architecture`). Wired in `core/upscaler.py` (`upscale_seedvr2` image with RGBA alpha preservation + `upscale_video_seedvr2` PNG extraction + `--vsr-temporal-chunk-size` `1` or `4n+1` + `ffmpeg` audio remux) and `-w upscale --upscale-mode seedvr2` (512->1024 image `23.66 s`; 5f 480p->960p video `34.7 s/f`, peak `10.91 GB` VRAM).
+- **MiniMax-H3 FL2VA (`--init-img` + optional `--end-img` on `-w h3_ref2va`)**: `minimax_h3_fl2va_pruned-Q4_K_M.gguf` + `minimax_h3_ref2v_turbo_8step` (`624/624` LoRA) chain verified PASS (`5f` 512² = `703.50 s`, mutually exclusive with Ref2VA `-i`/`--ref-audio`). ⚠️ Frame grid `< 22` (`0.17 s`) is too short for full rotation transitions — benchmark `>= 22` frames (`17k+5`) queued for Wave 2.
+
 ## 🎬 2. Validated Masters and Production Files
 
 

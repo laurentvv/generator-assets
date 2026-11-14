@@ -1,6 +1,6 @@
 # 📦 Complete Workflow Technical Reference
 
-> Exhaustive reference manual for all 64 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
+> Exhaustive reference manual for all 70 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
 > Back to main: [README.md](../README.md)
 
 ---
@@ -11,7 +11,7 @@
   • Game-Ready Animals (Godot)     : animal_godot
   • Humanoid 3D Characters & Outfits: character3d, character_makeup, makehuman_clothes, outfit, pose_control, rpg_portrait
   • 2D Sprites, Tiles & UI         : generate, qwen_image, moss_image, spritesheet, autotile_pack, tileable, pixelart, variations, ui_9slice, rembg
-  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, lfm3_tts, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, retrait_voix, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia, open_water
+  • Audio, Voice, VFX & Video      : sfx, audio_ambience, music_bg, voix_off, voix_perso, lfm3_tts, voix_conversion, chanson, musique_adn, musique_essence, acestep_cover, audio_repaint, retrait_voix, audio_upscale, audio_restaure, tts_dialogue, vfx_flipbook, anim_loop, rife_interp, video, video_vace, video_multishot, h3_ref2va, monoplan_ia, open_water
   • Style Consistency & Utilities  : ip_adapter, ocr_image, upscale, batch
   • Craft Suite (headless Rust apps): miniature, carte_fin, icone_jeu, titre_anime, prepa_i2v, filigrane_batch, doc_texte, classeur_donnees, rapport_deck, planche_pdf, maquette_ui, photo_develop, son_convertir, ocr_pdf, projet_montage
 ```
@@ -597,18 +597,21 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   2. System-load pre-check runs automatically before the launch (busy machine = aborted).
   3. Text encoder (Qwen3-VL-8B Q4_K_M) runs from system RAM, diffusion from VRAM (`--offload-to-cpu`).
   4. **Compositing mode** (`-i` + `-l`, validated 2026-10-05 night A/B): a product CUTOUT pasted onto a background photo gets consistent lighting, specular highlights and a natural contact shadow via the RunningHubAI compositing LoRA (`Qwenimag21_c2-st2000`, sd-cli applies 448/448 tensors). The paste MUST be a white-keyed cutout — a pasted WHITE BOX survives img2img even at strength 0.90. Start the prompt with the LoRA trigger word `pengyu`, keep `--strength 0.65` (validated; steps snap 40→24 in img2img). Recipe: white-key threshold ~18 + 1 px feather, PIL alpha paste.
-* **Inputs**: `prompt`, `-n/--negative-prompt` or `--negative-prompt-file`, `--width/--height` (**multiples of 32**, default 1152×640 = exact 16:9), `--steps` (default 40; 24 in img2img), `--cfg-scale` (default 6.0 — lower silently disables the negative prompt), `--seed`, `-i/--input` (init image → img2img compositing mode), `--strength` (img2img denoise, default 0.65 for this workflow), `-l/--lora` (`name:weight`, repeatable), `--lora-dir`, `--qwen-turbo` (8-step distilled turbo checkpoint — see below; `--turbo` itself is taken by `h3_ref2va`).
+* **Inputs**: `prompt`, `-n/--negative-prompt` or `--negative-prompt-file`, `--width/--height` (**multiples of 32**, default 1152×640 = exact 16:9), `--steps` (default 40; 24 in img2img), `--cfg-scale` (default 6.0 — lower silently disables the negative prompt), `--seed`, `-i/--input` (init image → img2img compositing mode, or reference image when `--multi-angles` is set), `--ref-image` (repeatable, maps to `-r` + `--llm_vision mmproj-Qwen3VL-8B-Instruct-F16.gguf` multimodal conditioning), `--multi-angles` (`orbit` for 4 canonical angles or `|`-separated camera cues — opt-in shortcut that enables `--qwen-turbo`, prepends `<mva>`, and applies `qwen21_multiple_angles_v2:0.9` LoRA), `--strength` (img2img denoise, default 0.65 for this workflow), `-l/--lora` (`name:weight`, repeatable), `--lora-dir`, `--qwen-turbo` (8-step distilled turbo checkpoint — see below; `--turbo` itself is taken by `h3_ref2va`).
 * **Turbo mode** (`--qwen-turbo`, USER VALIDATED 2026-10-11 "Atomic très bien"): switches to the official **8-step distilled checkpoint** (`Qwen-Image-2.1-Turbo`, AtomicChat sd.cpp-native Q8_0 quant, same TE + VAE) with its single validated schedule forced (8 steps, CFG 1.0, custom sigma schedule — do not pass `--steps`/`--cfg-scale` with it). Measured **~2 min/image** (123 s at 1152×640) vs ~16 min base — 7.8× faster with the typography quality kept (verified on the night matrix and the workflow smoke render). ⚠️ Avoid the unsloth quant of the same checkpoint: its mixed-precision layout costs 876-1352 s on diffusion step 1 of EVERY run (measured). Compositing (`-i`/`-l`) is mechanically compatible but its 8-step quality is untested. Same RESEARCH license ceiling.
-* **Engine**: sd-cli master-908+ (`qwen_image21` architecture, PRs #2032/#2035) + dedicated VAE (`qwen_image_2.1_vae_bf16` — NOT interchangeable with Qwen-Image 1.0 / Wan 2.2).
+* **Multi-Angles mode** (`--ref-image` / `--multi-angles`, USER VALIDATED 2026-11-14): feeds reference image(s) through `-r` and `--llm_vision mmproj-Qwen3VL-8B-Instruct-F16.gguf` (`--flash-attn on`). Passing `--multi-angles orbit` runs 4 deterministic camera views (`front-right quarter`, `right side`, `back`, `left side`) in turbo 8-step mode (~41 s @ 512² per view) with `qwen21_multiple_angles_v2:0.9` (`384/384` LoRA tensors) and `<mva>` trigger automatically prepended.
+* **Engine**: sd-cli master-1092+ (`qwen_image21` architecture, PRs #2032/#2035) + dedicated VAE (`qwen_image_2.1_vae_bf16` — NOT interchangeable with Qwen-Image 1.0 / Wan 2.2) + Qwen3-VL vision `mmproj` (`--ref-image`).
 * **⚠️ License**: Qwen **RESEARCH** — renders are for **personal / non-commercial use ONLY** (no monetized channel, no game shipping). Production paths stay on Chroma1-HD / `generate` (Apache-2.0). No model-level NSFW filter; the user is responsible for the content (adults only).
 * **Performance** (measured, RX 6950 XT): ~23.6 s/step at 1152×640 → **~16 min/image at 40 steps** (~8× slower than Chroma1-HD). Use `--steps 30` for ~12 min. Compositing img2img leg (24 steps, strength 0.65 → 16 effective): **~6.8 min/image**.
-* **Outputs**: `output/<name>_qwen21.png`.
+* **Outputs**: `output/<name>_qwen21.png` (or `<name>_angle_01..04.png` for multi-view `--multi-angles`).
 * **Example**:
   ```bash
   # Text-to-image (base, 40 steps)
   uv run python main.py -w qwen_image "a vintage tavern sign that reads 'The Sleeping Dragon', night, lantern light" --seed 42
   # Text-to-image TURBO (8-step distilled, ~2 min, same typography quality)
   uv run python main.py -w qwen_image "a vintage tavern sign that reads 'The Sleeping Dragon', night, lantern light" --qwen-turbo --seed 42
+  # 4-angle character/object orbit via qwen21_multiple_angles_v2 (opt-in RESEARCH)
+  uv run python main.py -w qwen_image "ceramic dragon teapot on dark table" -i ref.png --multi-angles orbit --width 512 --height 512 --seed 42
   # Compositing: blend a product cutout into a backdrop (RESEARCH license)
   uv run python main.py -w qwen_image "pengyu Apply consistent lighting to the product or object, enhance specular highlights, front-back spatial relationship, add natural contact shadow, and blend it seamlessly into the background"     -i composite_cutout.png -l "Qwenimag21_c2-st2000:1.0" --seed 42
   ```
@@ -879,16 +882,16 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
     -o phare_multishot
   ```
 
-#### 4.9. `h3_ref2va` — Video+Audio Continuation via MiniMax-H3 Ref2VA (webm with sound)
+#### 4.9. `h3_ref2va` — Video+Audio Continuation (Ref2VA) & Keyframe Morphing (FL2VA) via MiniMax-H3 (webm with sound)
 
 > 🏆 **Jackpot speed (validated 2026-09-09)**: the turbo distilled LoRA (`--turbo`) renders a 22-frame chunk in **~38 min instead of ~70 min** (sampling −64 %), with reference continuity and audio quality **≥ the validated baseline** — judged "très bonne qualité, son très bien" by the user. Same seed + same recipe otherwise, so A/B is trivial.
 
-* **Process** (validated 2026-09-09, recipe in [`docs/MEMORY_BANK.md`](../docs/MEMORY_BANK.md) §1.16 — CLI counterpart of ComfyUI's *HR Endless Sampler* chunk mechanism):
-  1. Extracts the **reference tail** from a source video (last N frames @ 24 fps + paired WAV, via FFmpeg) — or accepts a raw frame directory directly.
-  2. Runs MiniMax-H3 **Ref2VA** through sd-cli Vulkan: the reference conditions the DiT as `<Video 1>` / `<Audio 1>` (mention them in the prompt), producing a new chunk that continues character, scene **and sound**.
+* **Process** (Ref2VA validated 2026-09-09, FL2VA chain validated 2026-11-14, recipe in [`docs/MEMORY_BANK.md`](../docs/MEMORY_BANK.md) §1.16 / §1.61):
+  1. **Ref2VA mode** (`-i <video|frame dir>`): extracts the **reference tail** from a source video (last N frames @ 24 fps + paired WAV, via FFmpeg) — or accepts a raw frame directory directly — conditioning the DiT as `<Video 1>` / `<Audio 1>`.
+  2. **FL2VA mode** (`--init-img <start.png>` + optional `--end-img <end.png>`, mutually exclusive with `-i` / `--ref-audio`): uses `minimax_h3_fl2va_pruned-Q4_K_M.gguf` + 8-step turbo LoRA (`624/624` tensors) to interpolate motion and ambient audio between first and last keyframes. Keep `--frames >= 22` (`17k+5` grid; 5f / 0.17 s is too short for full rotation transitions; Wave 2 will benchmark `>= 22f`).
   3. Mandatory memory placement on 16 GB VRAM / 32 GB RAM: DiT on GPU capped by `--max-vram` (graph-cut), Qwen3-VL 32B and video VAE on CPU.
-* **Inputs**: `-i <source video | frame dir>` (required), `prompt` (describe the continuation), `--ref-frames` (default 12), `--ref-audio`, `--frames` (H3 grid 17k+5 → 22/39/56, default 22), `--steps` (default 20, or 8 with `--turbo`), `--turbo` (distilled LoRA 8 steps — validated 2026-09-09, ~2× faster, quality & reference continuity ≥ baseline), `--max-vram` (default 10), `-o`.
-* **Engines**: sd-cli Vulkan `-M vid_gen` (MiniMax-H3 ref2va DiT Q4_K_M + video/audio VAEs + Qwen3-VL 32B Q2, turbo LoRA `lightx2v/Minimax-h3-Turbo` with `--turbo`), FFmpeg.
+* **Inputs**: `-i <source video | frame dir>` (Ref2VA) XOR `--init-img <img1>` (plus optional `--end-img <img2>` for FL2VA), `prompt` (describe the continuation with `<Video 1>`/`<Audio 1>`, or motion for FL2VA), `--ref-frames` (default 12), `--ref-audio`, `--frames` (H3 grid 17k+5 → 22/39/56, default 22), `--steps` (default 20, or 8 with `--turbo`), `--turbo` (distilled LoRA 8 steps — validated 2026-09-09, ~2× faster, quality & reference continuity ≥ baseline), `--max-vram` (default 10), `-o`.
+* **Engines**: sd-cli Vulkan `-M vid_gen` (MiniMax-H3 ref2va / fl2va DiT Q4_K_M + video/audio VAEs + Qwen3-VL 32B Q2, turbo LoRA `lightx2v/Minimax-h3-Turbo` with `--turbo`), FFmpeg.
 * **Outputs**: `.webm` (VP8 + PCM 32 kHz stereo — **generated audio track included**), `<name>_ref/` (extracted reference).
 * ⚠️ **Heavy**: ~70 min for 22 frames @ 864×480 on RX 6950 XT (VAE/Qwen on CPU), **~38 min with `--turbo`**; system-load pre-check refuses to start on a busy machine. Single chunk only — multi-chunk endless looping not validated yet. Experimental chunk-loop scaffolding (unvalidated): `scripts/proto_endless_h3.py` (+ [`docs/proto_endless_h3.md`](../docs/proto_endless_h3.md)), with A/B knobs for the seam-quality levers (`--ref-audio-sec` rolling audio window, `--ref-frames 5` seam-exact reference, `--ref-scale` downscaled reference) — defaults match the validated recipe.
 
@@ -1060,20 +1063,24 @@ uv run python main.py -w monoplan_ia --monoplan-source output/hero_brut.webm --m
 * **Status (2026-09-06)**: ✅ User-validated recipe (`llb_xl_adn.mp3` — rendered BPM 83.3 vs 83.3 source). ⚠️ Honest card in `docs/MEMORY_BANK.md` §1.11: every "improvement" attempted beyond the sober recipe was rejected (major key → pop feel, "dominant bass" → 73% bass, punk push → 163 BPM). Rules: always check/impose MINOR for dark rock, sober descriptions, no superlatives.
 * **Update (2026-09-09)**: SA3 `init_audio` essence mode is now **user-validated on SA3 Medium** → dedicated workflow `musique_essence` (§4.13). The ACE-Step `cover` route remains rejected (tested once, never listening-validated).
 
-#### 4.12. `retrait_voix` — Vocal Removal & Stem Separation (HTDemucs GGUF Vulkan)
+#### 4.12. `retrait_voix` — Vocal Removal & Stem Separation (HTDemucs / Mel-Band & BS-RoFormer GGUF Vulkan + optional Apollo polish)
 * **Process**:
-  1. Takes any song (`-i <MP3/WAV>`, any sample rate) and auto-resamples to **44.1 kHz stereo** (HTDemucs requirement).
-  2. Separates it into 4 stems on **audio.cpp Vulkan** (drums, bass, other, vocals) — ~1 min for a 4-minute track.
-  3. Builds the **vocal-free instrumental** by summing drums+bass+other (`amix normalize=0` — levels preserved, no compression).
-  4. Exports instrumental WAV + MP3, and keeps all 4 stems (including the isolated `vocals.wav` — useful for vocal-timeline mapping and future dubbing experiments).
-* **Inputs**: `-i` song (required), `-o` output name, `--music-backend` (default `vulkan`).
-* **Engines**: audio.cpp v0.9.2 (family `htdemucs`) + `htdemucs-f16.gguf` (only **84 Mo**, `C:\Modeles_LLM\HTDemucs-GGUF`).
-* **Outputs** (`output/retrait_voix/<name>/`): `instrumental.wav` + `instrumental.mp3` (vocal-free), `stems/` (drums, bass, other, vocals), `source_44k.wav`.
+  1. Takes any song (`-i <MP3/WAV>`, any sample rate) and auto-resamples to **44.1 kHz stereo**.
+  2. Separates stems on **audio.cpp Vulkan** using the selected `--sep-engine`:
+     - `htdemucs` (default, 4 stems: drums, bass, other, vocals; summed via `amix normalize=0`);
+     - `mel_roformer` (Mel-Band RoFormer 2-stem, **Wave 1 validated 2026-11-14**: **~7.2× faster** than BS-RoFormer at `RTF ~0.20`, cleaner vocal rejection than HTDemucs);
+     - `bs_roformer` (BS-RoFormer ep368 2-stem, `RTF ~1.44`, marginally finer vocal mask);
+     - `sam` (text-prompted SAM Audio on CPU — see 4.12b).
+  3. Optional `--apollo`: passes the separated instrumental through **Apollo 44.1 kHz restoration** (`apollo-orig.gguf`, Vulkan `RTF ~0.074`) with mandatory `-1.0 dBTP` headroom normalization (`normaliser_pic()`).
+  4. Exports instrumental WAV + MP3, and keeps all extracted stems (`vocals.wav`, etc.).
+* **Inputs**: `-i` song (required), `-o` output name, `--sep-engine` (`htdemucs`, `mel_roformer`, `bs_roformer`, `sam`), `--apollo` (`bool`), `--music-backend` (default `vulkan`; `sam` still accepted as legacy alias).
+* **Engines**: audio.cpp (`htdemucs-f16.gguf` 84 Mo, `mel-band-roformer-q8_0.gguf`, `bs-roformer-ep368-q8_0.gguf`, `apollo-orig.gguf`).
+* **Outputs** (`output/retrait_voix/<name>[_<engine>][_apollo]/`): `instrumental.wav` + `instrumental.mp3` (vocal-free), `stems/` (`vocals.wav`, etc.), `source_44k.wav`.
 * **Example**:
   ```bash
-  uv run python main.py -w retrait_voix -i "C:\musique\morceau.mp3" -o mon_instrumental
+  uv run python main.py -w retrait_voix -i "C:\musique\morceau.mp3" --sep-engine mel_roformer --apollo -o mon_instrumental
   ```
-* **Status (2026-09-06)**: ✅ **User-validated** (*« retrait de la voix : OK validé »*) on a full 4:07 track. Known pitfalls baked in: HTDemucs requires 44.1 kHz (auto-handled) and stem writing requires `--out-dir` (multi-output). Note: the related "cover" route (AI reinterpretation of a track) was **tested and definitively rejected** by the user — see `docs/MEMORY_BANK.md` §1.11.
+* **Status (2026-09-06 / 2026-11-14)**: ✅ **User-validated** (*« retrait de la voix : OK validé »* on HTDemucs; **Mel/BS-RoFormer + Apollo 44.1 kHz validated Wave 1** — MEMORY_BANK §1.57). Note: the related "cover" route lives in `acestep_cover` (§4.18) and surgical masked spans in `audio_repaint` (§4.24).
 
 #### 4.12b. `retrait_voix --music-backend sam` — Text-Prompted Separation (SAM Audio, CPU)
 * **Process** (alternative engine, same workflow): SAM Audio (Meta) separates **any sound described in English text** (default `"the singing voice"`) from the track → `target.wav` (the described sound) + `residual.wav` (the rest). The source is fed **as-is** (SAM Audio has no input-rate requirement — it resamples itself to 48 kHz mono, unlike HTDemucs) and the output contract mirrors HTDemucs (`instrumental.wav/.mp3` = residual, `voix.wav` = target), engine outputs kept in `sam/`.
@@ -1164,7 +1171,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   ```bash
   uv run python main.py -w acestep_cover --audio loop_gothique.wav -p "German gothic rock 1990, dark wave, hypnotic tribal groove, deep pulsing bass, chiming chorus guitars, 83 BPM, C# minor" --seed 42
   ```
-* **Status (2026-10-02)**: ✅ **User-validated** (*« correct »* on 3 covers of the validated gothic reference `llb_xl_adn.mp3`) — first validated ACE-Step edit route (lego/extract rejected, repaint unjudged but same hard-preservation contract re-confirmed: 0.01 %FS outside the window, deterministic).
+* **Status (2026-10-02)**: ✅ **User-validated** (*« correct »* on 3 covers of the validated gothic reference `llb_xl_adn.mp3`) — first validated ACE-Step edit route; surgical time-span repaint (`repaint` route) is wired separately in **`audio_repaint`** (§4.24).
 
 #### 4.19. `voix_conversion` — Re-Voice a Recording (Chatterbox voice conversion)
 * **Process** (validated 2026-10-02): chatterbox `vc` task (audio.cpp, Vulkan, fast) renders an existing recording (speech/singing) in the voice of a reference sample — prosody and timing preserved. Successor of the rejected VeVo2 singing path for character voices. ⚠️ Output = **24 kHz mono** (dialogue-grade, not musical beds). ⚠️ The Turbo variant is TTS-only — the workflow pins the standard package.
@@ -1236,6 +1243,29 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 
 ---
 
+#### 4.23. `audio_restaure` — Audio Restoration (`RE-USE` Speech / `Apollo` 44.1 kHz Music)
+* **Process** (`RE-USE` validated 2026-11-05 §1.53; `Apollo` validated 2026-11-14 §1.57):
+  - `--restore-engine reuse` (default, OpenMDW-1.1, Vulkan `RTF ~0.46`): repairs noisy/muffled speech (8–48 kHz mono/stereo, F32 GGUF mandatory on Vulkan; optional `--restore-chunk` / `--restore-overlap`; streaming/realtime non-commercial RE-USE variant deliberately not wired).
+  - `--restore-engine apollo` (MIT, Vulkan `RTF ~0.074`): resamples to 44.1 kHz stereo and restores high-frequency music bandwidth / compressed tracks (`apollo-orig.gguf`), followed by mandatory **`-1.0 dBTP` peak guard** (`normaliser_pic()`) because raw Apollo output hits `1.0000` full scale.
+* **Inputs**: `-i <audio>`, `--restore-engine` (`reuse` default | `apollo`), `--restore-chunk` (default `0`), `--restore-overlap` (default `1.0`), `-o`.
+* **Outputs**: `output/audio_restaure/<name>/<name>_restaure.wav` (or `_apollo.wav`) + `.mp3`.
+
+#### 4.24. `audio_repaint` — Surgical Time-Span Audio Repainting (`ACE-Step 1.5` / `SA3 Medium`)
+* **Process** (Wave 1 user-validated 2026-11-14, MEMORY_BANK §1.59):
+  - `--repaint-engine acestep` (default, **MIT**, CPU `20` threads, `xl-turbo` + `mem_saver=true`): uses `audio.cpp` `--task-route repaint` to regenerate strictly inside `[--repaint-start, --repaint-end]` while preserving outside audio **bit-exact in PCM16** (`diff max = 3.05e-05` = 1 LSB; no full-clip post declick applied).
+  - `--repaint-engine sa3` (**Stability AI Community License**, Vulkan `RTF ~1.48`, **~27× faster** than CPU ACE-Step): uses `Stable Audio 3 Medium` (`inpaint_audio` + `init_noise_level`) for coherent creative variations when full-mix VAE re-encoding across boundaries is acceptable.
+* **Inputs**: `--audio <source>` (or `-i`), `-p <prompt>` (EN), `--repaint-start <sec>` (required), `--repaint-end <sec>` (required), `--repaint-engine` (`acestep` | `sa3`), `--repaint-mode` (`balanced` | `conservative` | `aggressive`, acestep), `--repaint-strength` (`0..1`), `--seed`, `-o`.
+* **Outputs**: `output/audio_repaint/<name>.wav` + `.mp3` (`224k`).
+* **Example**:
+  ```bash
+  # Bit-exact outer mix preservation (MIT)
+  uv run python main.py -w audio_repaint --audio track.wav -p "dark cello solo break" --repaint-start 4.0 --repaint-end 9.0 --seed 42
+  # Fast Vulkan creative variation (SA3 Medium)
+  uv run python main.py -w audio_repaint --audio track.wav -p "punchy drum fill" --repaint-engine sa3 --repaint-start 4.0 --repaint-end 9.0 --repaint-strength 0.8 --seed 42
+  ```
+
+---
+
 ### 🛠️ 5. Style Consistency, Upscaling & Batching
 
 #### 5.1. `ip_adapter` — Art Style Locking & Godot Palettes
@@ -1260,14 +1290,13 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   uv run python main.py -w ip_adapter -i godot_assets/potion_diablo.png --items "sword,shield,ring,helmet" -o diablo_set
   ```
 
-#### 5.2. `upscale` — 4K AI Super-Resolution (ESRGAN Vulkan)
+#### 5.2. `upscale` — AI Super-Resolution (ESRGAN / SeedVR2 3B Vulkan) for Images & Video
 * **Process**:
-  1. Loads any 2D sprite, texture, or render.
-  2. Passes the RGB channels through Real-ESRGAN Vulkan neural network (4x-UltraSharp or RealESRGAN Anime 6B) for super-sharp edge reconstruction.
-  3. Separately processes and bilinearly scales the Alpha transparency channel, merging it back to guarantee zero alpha halos or border corruption.
-* **Inputs**: `-i, --input` (source image), `--factor` (e.g., 2, 4), `--upscale-model` (`ultrasharp`, `anime`, `auto`).
-* **Engines**: Real-ESRGAN Vulkan (`4x-UltraSharp.pth`, `RealESRGAN_x4plus_anime_6B.pth`).
-* **Outputs**: `_upscaled_<WxH>.png`.
+  1. **ESRGAN mode** (`--upscale-mode auto|esrgan`, default for sprites/renders): runs RGB through Real-ESRGAN Vulkan (`4x-UltraSharp` or `RealESRGAN_x4plus_anime_6B`) and cleanly rescales/recombines RGBA alpha transparency with zero white halo.
+  2. **SeedVR2 3B diffusion mode** (`--upscale-mode seedvr2`, **Wave 1 user-validated 2026-11-14**, RX 6950 XT Vulkan0 `int dot: 1`, `sd-cli master-1092+`): uses Comfy-Org **`seedvr2_3b_int8_convrot.safetensors`** + **`seedvr2_ema_vae_fp16.safetensors`** (`-M vid_upscale`) for substantially sharper micro-detail on both 2D RGBA images (`~23.7 s` 512→1024) and `.mp4`/`.webm`/`.avi`/`.mov` videos (`--input-frames` PNG extraction, `--vsr-temporal-chunk-size` `1` or `4n+1`, `ffmpeg` audio remux; `34.7 s/frame` 480p→960p @ peak `10.91 GB` VRAM).
+* **Inputs**: `-i, --input` (source image or video), `--factor` (e.g., `2`, `4`), `--upscale-mode` (`auto`, `esrgan`, `seedvr2`, `lanczos`), `--upscale-model` (`ultrasharp`, `anime`, `auto`), `--vsr-temporal-chunk-size` (`1` default for 16 GB VRAM, or `4n+1`), `--seed`.
+* **Engines**: Real-ESRGAN Vulkan (`4x-UltraSharp.pth`, `RealESRGAN_x4plus_anime_6B.pth`), **SeedVR2 3B** (`C:\Modeles_LLM\SeedVR2\seedvr2_3b_int8_convrot.safetensors` + `seedvr2_ema_vae_fp16.safetensors`), FFmpeg.
+* **Outputs**: `_upscaled_<WxH>.png` (image) or `_upscaled_<N>x.mp4` + `_player.tscn` (video).
 
 ##### 🖼️ 4× Super-Resolution without Alpha Halo (Micro-Detail Zoom)
 | Pixelized Original (×4 nearest zoom) vs 4x-UltraSharp Vulkan (`_upscaled_4096x4096.png`) |
@@ -1275,9 +1304,10 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 | <img src="../docs/exemples/workflows_2d/upscale_comparatif_zoom.png" width="480" /> |
 | *Sharp reconstruction of the helmet engravings — alpha channel processed separately then recombined (zero edge corrosion)* |
 
-* **Example**:
+* **Examples**:
   ```bash
   uv run python main.py -w upscale -i godot_assets/casque.png --factor 4 --upscale-model ultrasharp
+  uv run python main.py -w upscale -i output/clip.mp4 --upscale-mode seedvr2 --factor 2 --vsr-temporal-chunk-size 1 --seed 42
   ```
 
 #### 5.3. `batch` — Automated Batch Recipe Execution

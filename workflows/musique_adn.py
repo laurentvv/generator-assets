@@ -19,6 +19,7 @@ from core.config import ACESTEP15_VARIANTES, slugifier_texte
 from core.music_ai import (
     charger_audio,
     convertir_mp3,
+    declick_fichier_wav,
     estimer_bpm,
     generer_musique_acestep,
 )
@@ -107,6 +108,7 @@ class MusiqueAdnWorkflow(BaseWorkflow):
             negatif=negatif,
             log=lambda m: self.log(m, "🎵"),
         )
+        declick_fichier_wav(chemin)
         mp3 = convertir_mp3(chemin, chemin.replace(".wav", ".mp3"), 224)
         self.log(f"Music ready: {mp3} (backend {backend}) — DNA: {bpm} BPM / {tonalite}", "🎧")
         return {"wav": chemin, "mp3": mp3, "bpm": bpm, "tonalite": tonalite, "backend": backend}

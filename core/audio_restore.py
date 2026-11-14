@@ -28,9 +28,13 @@ output can differ from the whole-recording render.
 """
 
 import os
-from typing import Any, Dict, List
+import tempfile
+from typing import Any, Dict, List, Optional
 
-from core.music_ai import resoudre_audiocpp
+import soundfile as sf
+
+from core.config import DEFAULT_APOLLO_MODEL
+from core.music_ai import normaliser_pic, resoudre_audiocpp, resoudre_ffmpeg
 from core.process import run_engine
 
 # NemotronLabs RE-USE GGUF (audio-cpp org, 38.7 MB — MEMORY_BANK §1.53).
@@ -38,6 +42,9 @@ MODELE_REUSE_NEMOTRONLABS = os.getenv(
     "REUSE_NEMOTRONLABS_MODEL",
     os.path.join("C:\\Modeles_LLM", "RE-USE-GGUF", "reuse-nemotronlabs-f32.gguf"),
 )
+# Apollo GGUF (44.1 kHz music/bandwidth restoration, MIT, Wave 1 SOTA 2026-11-14).
+MODELE_APOLLO = os.getenv("APOLLO_MODEL", DEFAULT_APOLLO_MODEL)
+SR_APOLLO = 44100
 
 # Default settings (validated recipe — deterministic, no seed involved).
 RECIPE = {
@@ -115,3 +122,102 @@ def restaurer_reuse(
     if not os.path.exists(sortie):
         raise RuntimeError(f"The restoration did not produce {sortie}")
     return {"sortie": sortie, "modele": modele, "chunk": chunk, "overlap": overlap}
+
+
+def construire_cmd_apollo(
+    modele: str,
+    source_44k: str,
+    sortie: str,
+    *,
+    backend: str = RECIPE["backend"],
+    threads: int = 16,
+    chunk: float = 0.0,
+    overlap: float = 1.0,
+    edge_pad: float = 0.0,
+) -> List[str]:
+    """Builds the audio.cpp command line for Apollo 44.1 kHz restoration."""
+    cmd: List[str] = [
+        resoudre_audiocpp(),
+        "--task", "s2s",
+        "--family", "apollo",
+        "--model", modele,
+        "--backend", backend,
+        "--threads", str(threads),
+        "--audio", source_44k,
+        "--out", sortie,
+        "--log",
+        "--metrics",
+    ]
+    if chunk > 0:
+        cmd.extend(["--request-option", f"apollo.audio_chunk_duration_sec={chunk:g}"])
+        cmd.extend(["--request-option", f"apollo.audio_chunk_overlap_sec={overlap:g}"])
+    if edge_pad > 0:
+        cmd.extend(["--request-option", f"apollo.edge_pad_duration_sec={edge_pad:g}"])
+    return cmd
+
+
+def restaurer_apollo(
+    source: str,
+    sortie: str,
+    *,
+    chunk: float = 0.0,
+    overlap: float = 1.0,
+    edge_pad: float = 0.0,
+    backend: str = RECIPE["backend"],
+    threads: int = 16,
+    pic_dbfs: float = -1.0,
+    modele: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Music / compressed audio restoration via Apollo (44.1 kHz stereo, Vulkan, MIT).
+
+    Validates in Wave 1 (2026-11-14): RTF ~0.074 (1.47 s for 20 s). Raw Apollo
+    output hits full-scale 1.0000 peak, so mandatory ``pic_dbfs=-1.0`` headroom
+    normalization is applied before saving PCM16 output.
+    """
+    if not os.path.exists(source):
+        raise FileNotFoundError(f"Source audio not found: {source}")
+    modele_resolu = modele or MODELE_APOLLO
+    if not os.path.exists(modele_resolu):
+        raise FileNotFoundError(
+            f"Apollo GGUF model not found: {modele_resolu} — download "
+            f"Apollo-GGUF/apollo-orig.gguf into C:\\Modeles_LLM."
+        )
+    if chunk < 0:
+        raise ValueError(f"--restore-chunk must be >= 0 (got {chunk}).")
+    if chunk > 0 and overlap >= chunk:
+        raise ValueError(
+            f"--restore-overlap ({overlap} s) must be shorter than "
+            f"--restore-chunk ({chunk} s)."
+        )
+
+    os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
+    ffmpeg = resoudre_ffmpeg()
+    with tempfile.TemporaryDirectory(prefix="ga_apollo_") as tmp:
+        wav_44k = os.path.join(tmp, "apollo_in_44k.wav")
+        raw_out = os.path.join(tmp, "apollo_raw_out.wav")
+        run_engine(
+            [ffmpeg, "-hide_banner", "-y", "-i", source,
+             "-ar", str(SR_APOLLO), "-ac", "2", "-c:a", "pcm_s16le", wav_44k],
+            check=True, timeout=600, etiquette="ffmpeg 44.1k apollo prep",
+        )
+        cmd = construire_cmd_apollo(
+            modele_resolu, wav_44k, raw_out,
+            backend=backend, threads=threads,
+            chunk=chunk, overlap=overlap, edge_pad=edge_pad,
+        )
+        run_engine(cmd, capture=False, check=True, timeout=3600, etiquette="audio.cpp apollo")
+        if not os.path.exists(raw_out):
+            raise RuntimeError(f"Apollo restoration did not produce {raw_out}")
+
+        audio, sr = sf.read(raw_out, always_2d=True)
+        normalized = normaliser_pic(audio, pic_dbfs=pic_dbfs)
+        sf.write(sortie, normalized, sr, subtype="PCM_16")
+
+    return {
+        "sortie": sortie,
+        "modele": modele_resolu,
+        "chunk": chunk,
+        "overlap": overlap,
+        "pic_dbfs": pic_dbfs,
+        "moteur": "apollo",
+    }

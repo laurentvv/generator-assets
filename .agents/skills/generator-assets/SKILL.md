@@ -5,7 +5,7 @@ description: Generates any media with the local generator-assets factory (C++ Vu
 
 # generator-assets — generate media with the local factory
 
-This repository is a **universal local AI media factory**: 55 workflows orchestrated by a single CLI,
+This repository is a **universal local AI media factory**: 70 workflows orchestrated by a single CLI,
 executed by C++/GGUF Vulkan engines (sd-cli, llama.cpp, audio.cpp, trellis.cpp, FFmpeg) — no cloud or
 CUDA dependency. Your mission when this skill triggers: translate a media need into **the right
 workflow command**, respecting the guardrails, then deliver the produced files.
@@ -21,9 +21,9 @@ uv run python main.py -w <workflow> "<prompt or args>" [options]
 - `-o <name>`: base name of the outputs (otherwise derived from the prompt);
 - `--seed <N>`: fixed seed for A/B reproducibility;
 - `uv run python main.py --check`: checks that engines and models are detected;
-- `uv run python main.py --interactive`: interactive console (64-workflow menu) for human exploration;
+- `uv run python main.py --interactive`: interactive console (70-workflow menu) for human exploration;
 - **web console (2026-10-11)**: `uv run python -m server` → http://127.0.0.1:8765 —
-  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 64 workflows: auto-generated forms
+  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 70 workflows: auto-generated forms
   from the live registry, serialized queue (one heavy job at a time), automatic load
   gate, live log/progress (SSE), output library with thumbnails/waveforms, uploads.
   For the HUMAN user; agents keep using the CLI (same subprocess contract);
@@ -63,7 +63,7 @@ Any CLI evolution must preserve this contract.
 | Need | Workflow | Example |
 | :--- | :--- | :--- |
 | Isolated 2D asset (item, monster, scenery, background) | `generate` | `-w generate "healing potion, dark fantasy game icon" -t prop -o potion` |
-| Photorealistic image, in-image text, RGBA via prompt (PERSONAL use — Qwen RESEARCH license; `--qwen-turbo` = 8-step distilled, ~2 min, typography kept) | `qwen_image` | `-w qwen_image "tavern sign that reads 'The Sleeping Dragon'" --qwen-turbo --seed 42` |
+| Photorealistic image, in-image text, multimodal ref (`--ref-image`), multi-angle orbit (`--multi-angles orbit`), RGBA via prompt (PERSONAL use — Qwen RESEARCH license; `--qwen-turbo` = 8-step distilled, ~2 min) | `qwen_image` | `-w qwen_image "ceramic teapot" -i ref.png --multi-angles orbit --width 512 --height 512 --seed 42` |
 | In-image text rendering T2I, clean layouts (COMMERCIAL OK — Apache-2.0; ~36 min @1024², arch young on Vulkan; small secondary text garbles) | `moss_image` | `-w moss_image "storefront sign that says 'MOSS'" --seed 42` |
 | Product compositing blend into a backdrop — contact shadow + consistent lighting (PERSONAL use — Qwen RESEARCH license, ~7 min; input = WHITE-KEYED cutout paste, trigger `pengyu` first) | `qwen_image` + `-i` + `-l` | `-w qwen_image "pengyu Apply consistent lighting to the product, ..." -i composite_cutout.png -l "Qwenimag21_c2-st2000:1.0" --seed 42` |
 | Multi-angle sprite sheet of a character | `spritesheet` | `-w spritesheet "goblin scout" -o goblin` |
@@ -73,7 +73,7 @@ Any CLI evolution must preserve this contract.
 | 9-patch frames/buttons | `ui_9slice` | `-w ui_9slice "stone dialog frame"` |
 | 47-tile Wang autotile atlas | `autotile_pack` | `-w autotile_pack "cave walls"` |
 | Clean cutout (transparent background) | `rembg` | `-w rembg -i image.png` |
-| 2x/4x/4K ESRGAN upscale | `upscale` | `-w upscale -i image.png --scale 4` |
+| AI upscale (ESRGAN 2x/4x/4K alpha preserved, or SeedVR2 3B image & video `--upscale-mode seedvr2`) | `upscale` | `-w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` |
 | JSON pack of batch generations | `batch` | `-w batch --recipe recipe.json` |
 | Local OCR on images/screenshots (FR/EN, ~4 s/page) | `ocr_image` | `-w ocr_image -i screenshot.png` |
 
@@ -138,18 +138,19 @@ work.
 | Need | Workflow | Example |
 | :--- | :--- | :--- |
 | Background music loop (−30 LUFS bed, game or YouTube voice-over) | `music_bg` | `-w music_bg "dark ambient drone, 70 BPM" --bpm 70` |
-| Complete song WITH lyrics | `chanson` | `-w chanson --paroles "..." --style "synthpop"` |
+| Complete song WITH lyrics (FR/EN via ACE-Step `xl-turbo`; VocalRender-Pro is `zh`-only) | `chanson` | `-w chanson --paroles "..." --style "synthpop"` |
 | New music with the DNA of a reference (imposed BPM/key) | `musique_adn` | `-w musique_adn --reference track.wav` |
 | Music with the essence of a reference (SA3 init_audio) | `musique_essence` | `-w musique_essence --reference track.wav` |
 | Re-style an existing track (ACE-Step cover, duration locked, CPU) | `acestep_cover` | `-w acestep_cover --audio track.wav -p "<style>" --seed 42` |
-| Vocal removal / stem separation (HTDemucs) or text-prompted SAM Audio | `retrait_voix` | `-w retrait_voix -i track.wav` (`--music-backend sam` = SAM Audio, CPU) |
+| Surgical time-span repainting (`ACE-Step 1.5` bit-exact MIT or `SA3 Medium` fast Vulkan) | `audio_repaint` | `-w audio_repaint --audio track.wav -p "cello break" --repaint-start 4 --repaint-end 9` |
+| Vocal removal / stem separation (`htdemucs`, `mel_roformer`, `bs_roformer`, optional `--apollo`, or `sam`) | `retrait_voix` | `-w retrait_voix -i track.wav --sep-engine mel_roformer --apollo` |
 | Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish/Drama 3 cloning, kitten2 zero-shot) | `voix_off` | `-w voix_off --texte "..." --voix narrator_fr` |
 | EN character voice (Kokoro preset or Qwen3 VoiceDesign + pitch/whisper/hollow) | `voix_perso` | `-w voix_perso "..." --kokoro-voice am_onyx` |
 | Fast local voice synthesis, faster than real time (LFM3-Audio-2B, llama.cpp Vulkan, FR default) | `lfm3_tts` | `-w lfm3_tts "Bienvenue, voyageur." --tts-langue fr --tts-voix female` |
 | Re-voice a recording in another voice (Chatterbox VC, 24 kHz) | `voix_conversion` | `-w voix_conversion --audio take.wav --voice-ref target_voice.wav` |
 | EN robot voice (validated kokoro + ringmod recipe) | `voix_robot` | `-w voix_robot --texte "..."` |
 | Audio super-resolution → 48 kHz (16k voice / 24k music) | `audio_upscale` | `-w audio_upscale -i voice_16k.wav --upsr-variante speech` |
-| Speech restoration — degraded/noisy voice repair (RE-USE, Vulkan) | `audio_restaure` | `-w audio_restaure -i degraded_take.wav` |
+| Audio restoration — speech repair (`RE-USE` OpenMDW) or 44.1 kHz music (`--restore-engine apollo`, `-1 dBTP` guard, MIT) | `audio_restaure` | `-w audio_restaure -i track.wav --restore-engine apollo` |
 | Emotional character voice + Godot lip-sync | `tts_dialogue` | `-w tts_dialogue --texte "..." --emotion angry` |
 | SFX sound effect (procedural or AI) | `sfx` | `-w sfx "sword swing whoosh"` |
 | Seamless loopable sound ambiance | `audio_ambience` | `-w audio_ambience "forest night, wind"` |
@@ -162,7 +163,7 @@ music ("very good") — Vulkan first + CPU fallback (v0.9.4: Vulkan bit-equivale
 ~14 s of input, longer falls back to CPU RTF ~41-50), **MONO output**, refuse inputs > 24 kHz
 (already full band); `audio_restaure` = RE-USE NemotronLabs F32 Vulkan validated on degraded voice ("OK") —
 output = input rate/channels/length, F32 package MANDATORY on Vulkan (F16/Q8 broken), deterministic
-within a binary version (ggml arithmetic changes across audio.cpp versions alter the floats).
+within a binary version (ggml arithmetic changes across audio.cpp versions alter the floats); **Apollo** (`--restore-engine apollo` / `--apollo` on `retrait_voix`) validates 44.1 kHz Vulkan restoration (`RTF ~0.074`) with mandatory `-1.0 dBTP` peak normalization; **`retrait_voix --sep-engine mel_roformer`** runs ~7.2x faster than `bs_roformer`; **`audio_repaint`** gives bit-exact outside-mask preservation via `acestep` (MIT CPU) or ~27x faster coherent variations via `sa3` (Vulkan, Community License); **VocalRender-Pro** (`core/chant_score.py`) is `zh`-only (keep FR/EN singing on `chanson` ACE-Step 1.5).
 
 ### 🎬 AI video (Wan 2.1/2.2, LTX-2.5, MiniMax-H3 — sd-cli Vulkan)
 
@@ -172,7 +173,7 @@ within a binary version (ggml arithmetic changes across audio.cpp versions alter
 | Video from prompt or image (Wan/LTX, .webm) | `video` | `-w video "cyberpunk street, neon rain"` |
 | **Motion-locked video** (ref image + skeleton/pose control frames, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
 | **Multi-cut video + soundtrack** (several named cuts in ONE LTX-2.5 T2V generation, audio continuity across cuts — VALIDATED 2026-10-02) | `video_multishot` | `-w video_multishot -p "wide shot of a keeper on a pier. A hard cut transitions to a lantern close-up. The storm ambience continues across the cut, with waves and distant thunder"` |
-| **Continue an existing video, image + SOUND** (MiniMax-H3 Ref2VA) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
+| **Continue an existing video (`-i`) or morph keyframes (`--init-img`/`--end-img`) + SOUND** (MiniMax-H3) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
 | 60 fps interpolation (RIFE) | `rife_interp` | `-w rife_interp -i clip.webm` |
 | 4×4 VFX particle sheet | `vfx_flipbook` | `-w vfx_flipbook "fire explosion"` |
 | Animated texture/shader loop | `anim_loop` | `-w anim_loop -i texture.png` |

@@ -141,6 +141,10 @@ DEFAULT_QWEN_IMAGE21_VAE = os.getenv(
 DEFAULT_QWEN_IMAGE21_TURBO_MODEL = os.getenv(
     "QWEN_IMAGE21_TURBO_MODEL_PATH", r"C:\Modeles_LLM\Qwen-Image-2.1-Turbo-Q8_0.gguf"
 )
+DEFAULT_QWEN_IMAGE21_LLM_VISION = os.getenv(
+    "QWEN_IMAGE21_LLM_VISION_PATH",
+    chercher_fichier_modele("mmproj-Qwen3VL-8B-Instruct-F16.gguf"),
+)
 QWEN_IMAGE21_TURBO_SIGMAS = "1.0,0.978453,0.95418,0.926626,0.89508,0.845148,0.704534,0.414568,0.0"
 
 # MOSS-Image-SFT (OpenMOSS, 5.1B DiT flow-matching, Apache-2.0) — pipeline
@@ -218,6 +222,10 @@ DEFAULT_H3_LLM = os.getenv(
 DEFAULT_H3_REF2VA_TURBO_LORA = os.getenv(
     "H3_REF2VA_TURBO_LORA", "minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16"
 )
+DEFAULT_H3_FL2VA_MODEL = os.getenv(
+    "H3_FL2VA_MODEL_PATH",
+    chercher_fichier_modele("minimax_h3_fl2va_pruned-Q4_K_M.gguf"),
+)
 
 # Wan 2.1 VACE (control-video guidance: pose/depth/skeleton frames lock the motion).
 # VALIDATED 2026-10-01 by the user ("très bien") on the distilled LightX2V route:
@@ -237,6 +245,22 @@ DEFAULT_MUSIC3_LM = os.getenv("MUSIC3_LM_PATH", os.path.join(DEFAULT_MUSIC3_DIR,
 # ACE-Step 1.5 Turbo GGUF (bf16) via audio.cpp — monolithic package, MIT licence.
 # ⚠️ q8_0 unsupported for this family (planner sampling failure).
 DEFAULT_ACESTEP15_DIR = os.getenv("ACESTEP15_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "ACE-Step1.5-GGUF"))
+DEFAULT_SA3_MEDIUM_MODEL = os.getenv(
+    "SA3_MEDIUM_MODEL_PATH",
+    chercher_fichier_modele(os.path.join("Stable-Audio-3-Medium-GGUF", "stable-audio-3-medium-f16.gguf")),
+)
+DEFAULT_MEL_ROFORMER_MODEL = os.getenv(
+    "MEL_ROFORMER_MODEL",
+    chercher_fichier_modele(os.path.join("Mel-Band-RoFormer-GGUF", "mel-band-roformer-q8_0.gguf")),
+)
+DEFAULT_BS_ROFORMER_MODEL = os.getenv(
+    "BS_ROFORMER_MODEL",
+    chercher_fichier_modele(os.path.join("BS-RoFormer-ep368-GGUF", "bs-roformer-ep368-q8_0.gguf")),
+)
+DEFAULT_APOLLO_MODEL = os.getenv(
+    "APOLLO_MODEL",
+    chercher_fichier_modele(os.path.join("Apollo-GGUF", "apollo-orig.gguf")),
+)
 DEFAULT_MUSIC_FLAMINGO_DIR = os.getenv("MUSIC_FLAMINGO_DIR", os.path.join(DEFAULT_MODEL_DIR, "music-flamingo"))
 DEFAULT_MUSIC_FLAMINGO_LM = os.getenv(
     "MUSIC_FLAMINGO_LM_PATH", os.path.join(DEFAULT_MUSIC_FLAMINGO_DIR, "music-flamingo-hf.Q4_K_M.gguf")
@@ -260,6 +284,14 @@ DEFAULT_UPSCALER_DIRS = [
 DEFAULT_ESRGAN_MODEL = os.getenv(
     "SD_ESRGAN_PATH",
     os.path.join(DEFAULT_MODEL_DIR, "upscalers", "RealESRGAN_x4plus_anime_6B.pth")
+)
+DEFAULT_SEEDVR2_MODEL = os.getenv(
+    "SEEDVR2_MODEL_PATH",
+    chercher_fichier_modele(os.path.join("SeedVR2", "seedvr2_3b_int8_convrot.safetensors")),
+)
+DEFAULT_SEEDVR2_VAE = os.getenv(
+    "SEEDVR2_VAE_PATH",
+    chercher_fichier_modele(os.path.join("SeedVR2", "seedvr2_ema_vae_fp16.safetensors")),
 )
 
 # Specialized ONNX models (Segmentation, PBR, Animation)
@@ -683,3 +715,262 @@ def verifier_prerequis(config: dict) -> bool:
             print(f"   - {m}")
         return False
     return True
+
+
+# ---------------------------------------------------------------------------
+# Local Web-Assets library (read-only SQLite + CLIP/CLAP index & HTTP UI)
+# ---------------------------------------------------------------------------
+
+DEFAULT_ASSET_LIBRARY_DIR = os.getenv("ASSET_LIBRARY_DIR", r"C:\AssetLibrary")
+DEFAULT_WEB_ASSETS_DB = os.getenv("WEB_ASSETS_DB", r"C:\GIT\web-assets\data\app.db")
+DEFAULT_WEB_ASSETS_URL = os.getenv("WEB_ASSETS_URL", "http://127.0.0.1:8787")
+
+
+# ---------------------------------------------------------------------------
+# License classification matrix (Commercial-safe default vs Non-commercial opt-in)
+# ---------------------------------------------------------------------------
+
+LICENCE_COMMERCIAL = "commercial"
+LICENCE_CONDITIONNELLE = "conditional"
+LICENCE_NON_COMMERCIAL = "non_commercial"
+
+_IMAGE_FLUX_DEFAULT_WORKFLOWS = {
+    "generate",
+    "autotile_pack",
+    "tileable",
+    "material3d",
+    "outfit",
+    "skybox",
+    "turnaround3d",
+    "variations",
+    "spritesheet",
+    "rpg_portrait",
+    "icone_jeu",
+    "ui_9slice",
+    "vfx_flipbook",
+    "voxel3d",
+    "ip_adapter",
+    "makehuman_clothes",
+    "maquette_ui",
+    "miniature",
+    "pixelart",
+    "mesh_ia",
+}
+
+_WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
+    "moss_image": (LICENCE_COMMERCIAL, "Apache-2.0 (OpenMOSS 5.1B + Qwen3.5 + Flux2 VAE)", None),
+    "qwen_image": (
+        LICENCE_NON_COMMERCIAL,
+        "Qwen Research License (personal / non-commercial use only)",
+        "Use --workflow moss_image (Apache-2.0) or Chroma1-HD for commercial output",
+    ),
+    "pose_control": (LICENCE_COMMERCIAL, "SDXL OpenRAIL++ + xinsir ControlNet", None),
+    "chanson": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5)", None),
+    "musique_adn": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5)", None),
+    "musique_essence": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5)", None),
+    "acestep_cover": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5)", None),
+    "audio_upscale": (
+        LICENCE_CONDITIONNELLE,
+        "CC-BY-4.0 (UniverSR weights; attribution required)",
+        "Use FFmpeg soxr resample or --workflow audio_restaure (OpenMDW-1.1 / MIT) if attribution-free required",
+    ),
+    "voix_conversion": (LICENCE_COMMERCIAL, "MIT (ResembleAI Chatterbox)", None),
+    "retrait_voix": (LICENCE_COMMERCIAL, "MIT / Apache-2.0 (HTDemucs / RoFormer / SAM Audio)", None),
+    "animal_godot": (LICENCE_COMMERCIAL, "Permissive Blender GLB export (inherits source pack license, e.g. CC0 Quaternius)", None),
+    "asset_blendkit": (LICENCE_COMMERCIAL, "CC0 by default via Blendkit (cc_zero; Blender headless)", None),
+    "character_makeup": (LICENCE_COMMERCIAL, "CC0 / MIT (MakeHuman MPFB2 assets / OpenCV YuNet)", None),
+    "character3d": (LICENCE_COMMERCIAL, "CC0 / MIT (MakeHuman MPFB2 assets / OpenCV YuNet)", None),
+    "voix_perso": (LICENCE_COMMERCIAL, "Apache-2.0 (Kokoro / Qwen3-TTS)", None),
+    "lfm3_tts": (
+        LICENCE_CONDITIONNELLE,
+        "LFM Open License v1.0",
+        "Use --workflow voix_off --moteur qwen3|voxcpm2 (Apache-2.0)",
+    ),
+    "video_vace": (LICENCE_COMMERCIAL, "Apache-2.0 (Wan 2.1 + LightX2V)", None),
+    "monoplan_ia": (
+        LICENCE_CONDITIONNELLE,
+        "LTX-2 Community License (commercial thresholds apply)",
+        "Use Wan 2.1/2.2 via --workflow video (Apache-2.0) if strict permissive required",
+    ),
+    "video_multishot": (
+        LICENCE_CONDITIONNELLE,
+        "LTX-2 Community License (commercial thresholds apply)",
+        "Use Wan 2.1/2.2 via --workflow video (Apache-2.0) if strict permissive required",
+    ),
+    "h3_ref2va": (
+        LICENCE_CONDITIONNELLE,
+        "MiniMax Community License (commercial thresholds + disclosure)",
+        "Use Wan 2.2 I2V via --workflow video (Apache-2.0) if strict permissive required",
+    ),
+    "sfx": (
+        LICENCE_CONDITIONNELLE,
+        "Stability AI Community License (Stable Audio Open; procedural engine = MIT)",
+        "Use --sfx-engine procedural or curated CC0/commercial packs in web-assets",
+    ),
+    "audio_ambience": (
+        LICENCE_CONDITIONNELLE,
+        "Stability AI Community License (procedural layers = MIT)",
+        "Use procedural engine or curated CC0/commercial packs in web-assets",
+    ),
+    "open_water": (LICENCE_COMMERCIAL, "MIT (open-water WebGL2 procedural)", None),
+    "ocr_image": (LICENCE_COMMERCIAL, "Apache-2.0 (MiniCPM-OCR-1.0)", None),
+    "ocr_pdf": (LICENCE_COMMERCIAL, "Apache-2.0 (MiniCPM-OCR-1.0)", None),
+    "mesh3d": (LICENCE_COMMERCIAL, "Permissive procedural Blender generation", None),
+    "upscale": (LICENCE_COMMERCIAL, "BSD-3 / MIT / Apache-2.0 (RealESRGAN / 4x-UltraSharp / SeedVR2 / Lanczos)", None),
+    "rife_interp": (LICENCE_COMMERCIAL, "MIT (RIFE ncnn-vulkan)", None),
+    "rembg": (LICENCE_COMMERCIAL, "MIT / Apache-2.0 (BiRefNet / U2Net / OpenCV)", None),
+    "flowmap": (LICENCE_COMMERCIAL, "Permissive procedural math", None),
+    "anim_loop": (LICENCE_COMMERCIAL, "Permissive GLSL / Godot shader generation", None),
+    "prepa_i2v": (LICENCE_COMMERCIAL, "Permissive image preprocessing", None),
+    "photo_develop": (LICENCE_COMMERCIAL, "Permissive OpenCV / Pillow processing", None),
+    "son_convertir": (LICENCE_COMMERCIAL, "LGPL/GPL FFmpeg local transcode", None),
+    "batch": (LICENCE_COMMERCIAL, "Permissive batch runner (inherits target workflow license)", None),
+    "carte_fin": (LICENCE_COMMERCIAL, "Permissive FFmpeg/Pillow composition", None),
+    "titre_anime": (LICENCE_COMMERCIAL, "Permissive FFmpeg/Pillow composition", None),
+    "planche_pdf": (LICENCE_COMMERCIAL, "Permissive PDF layout", None),
+    "filigrane_batch": (LICENCE_COMMERCIAL, "Permissive watermarking", None),
+    "classeur_donnees": (LICENCE_COMMERCIAL, "Permissive data export", None),
+    "doc_texte": (LICENCE_COMMERCIAL, "Permissive document generation", None),
+    "rapport_deck": (LICENCE_COMMERCIAL, "Permissive deck generation", None),
+    "projet_montage": (LICENCE_COMMERCIAL, "Permissive montage export", None),
+    "tts_dialogue": (LICENCE_COMMERCIAL, "Apache-2.0 / MIT (Piper / Qwen3-TTS)", None),
+    "voix_robot": (LICENCE_COMMERCIAL, "MIT / FFmpeg DSP", None),
+}
+
+
+def classifier_licence_workflow(
+    workflow: str,
+    moteur: Optional[str] = None,
+    sd_model: Optional[str] = None,
+) -> dict:
+    """Returns commercial clearance metadata for a workflow and optional engine/model."""
+    wf = (workflow or "").strip().lower()
+    mot = (moteur or "").strip().lower()
+    sd = (sd_model or "").strip().lower()
+
+    if wf in _IMAGE_FLUX_DEFAULT_WORKFLOWS:
+        if "chroma" in sd:
+            return {
+                "tier": LICENCE_COMMERCIAL,
+                "licence": "Apache-2.0 (Chroma1-HD)",
+                "commercial_ok": True,
+                "alternative_commerciale": None,
+            }
+        if any(tok in sd for tok in ("juggernaut", "sdxl", "realvis")):
+            return {
+                "tier": LICENCE_COMMERCIAL,
+                "licence": "CreativeML OpenRAIL++ (SDXL)",
+                "commercial_ok": True,
+                "alternative_commerciale": None,
+            }
+        return {
+            "tier": LICENCE_NON_COMMERCIAL,
+            "licence": "FLUX.1-dev Non-Commercial License (default checkpoint)",
+            "commercial_ok": False,
+            "alternative_commerciale": "Pass --sd-model chroma (Apache-2.0) or sdxl (OpenRAIL++)",
+        }
+
+    if wf == "music_bg":
+        if mot == "music3":
+            return {
+                "tier": LICENCE_CONDITIONNELLE,
+                "licence": "MiniMax Community License (commercial thresholds + disclosure)",
+                "commercial_ok": True,
+                "alternative_commerciale": "Use default --moteur acestep (MIT)",
+            }
+        return {
+            "tier": LICENCE_COMMERCIAL,
+            "licence": "MIT (ACE-Step 1.5)",
+            "commercial_ok": True,
+            "alternative_commerciale": None,
+        }
+
+    if wf == "voix_off":
+        if mot == "fish":
+            return {
+                "tier": LICENCE_NON_COMMERCIAL,
+                "licence": "Fish S2-Pro Research License (non-commercial only)",
+                "commercial_ok": False,
+                "alternative_commerciale": "Use --moteur qwen3 or voxcpm2 (Apache-2.0)",
+            }
+        if mot == "drama3":
+            return {
+                "tier": LICENCE_CONDITIONNELLE,
+                "licence": "Fish Audio Drama 3 Community License",
+                "commercial_ok": True,
+                "alternative_commerciale": "Use --moteur qwen3 or voxcpm2 (Apache-2.0)",
+            }
+        return {
+            "tier": LICENCE_COMMERCIAL,
+            "licence": "Apache-2.0 (Qwen3-TTS / VoxCPM2 / KittenTTS2)",
+            "commercial_ok": True,
+            "alternative_commerciale": None,
+        }
+
+    if wf == "video":
+        if "ltx" in mot or "ltx" in sd:
+            return {
+                "tier": LICENCE_CONDITIONNELLE,
+                "licence": "LTX-2 Community License (commercial thresholds apply)",
+                "commercial_ok": True,
+                "alternative_commerciale": "Use Wan 2.1/2.2 (Apache-2.0)",
+            }
+        if any(tok in mot or tok in sd for tok in ("h3", "minimax")):
+            return {
+                "tier": LICENCE_CONDITIONNELLE,
+                "licence": "MiniMax Community License",
+                "commercial_ok": True,
+                "alternative_commerciale": "Use Wan 2.1/2.2 (Apache-2.0)",
+            }
+        return {
+            "tier": LICENCE_COMMERCIAL,
+            "licence": "Apache-2.0 (Wan 2.1 / Wan 2.2)",
+            "commercial_ok": True,
+            "alternative_commerciale": None,
+        }
+
+    if wf == "audio_restaure":
+        if mot == "apollo":
+            return {
+                "tier": LICENCE_COMMERCIAL,
+                "licence": "MIT (Apollo 44.1 kHz music/bandwidth restoration)",
+                "commercial_ok": True,
+                "alternative_commerciale": None,
+            }
+        return {
+            "tier": LICENCE_COMMERCIAL,
+            "licence": "OpenMDW-1.1 (RE-USE NemotronLabs speech restoration)",
+            "commercial_ok": True,
+            "alternative_commerciale": None,
+        }
+
+    if wf == "audio_repaint":
+        if mot == "sa3":
+            return {
+                "tier": LICENCE_CONDITIONNELLE,
+                "licence": "Stability AI Community License (Stable Audio 3 Medium inpaint)",
+                "commercial_ok": True,
+                "alternative_commerciale": "Use default --repaint-engine acestep (MIT, bit-exact outside mask)",
+            }
+        return {
+            "tier": LICENCE_COMMERCIAL,
+            "licence": "MIT (ACE-Step 1.5 repaint)",
+            "commercial_ok": True,
+            "alternative_commerciale": None,
+        }
+
+    if wf in _WORKFLOW_LICENCE_MAP:
+        tier, lic, alt = _WORKFLOW_LICENCE_MAP[wf]
+        return {
+            "tier": tier,
+            "licence": lic,
+            "commercial_ok": tier != LICENCE_NON_COMMERCIAL,
+            "alternative_commerciale": alt,
+        }
+
+    return {
+        "tier": LICENCE_CONDITIONNELLE,
+        "licence": "Verify upstream model weight license before commercial publishing",
+        "commercial_ok": True,
+        "alternative_commerciale": None,
+    }
