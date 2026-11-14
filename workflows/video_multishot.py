@@ -44,8 +44,9 @@ class VideoMultishotWorkflow(BaseWorkflow):
             action="store_true",
             default=False,
             help=(
-                "LTX-2.5 two-stage spatial latent upscaler x2 (608x352 -> native 1216x704, "
-                "USER VALIDATED 2026-11-14; ~14.2 min and ~16 GB CPU VAE RAM @ 33 frames)."
+                "video_multishot & monoplan_ia: LTX-2.5 two-stage spatial latent upscaler x2 "
+                "(608x352 -> native 1216x704, USER VALIDATED 2026-11-14; video_multishot defaults "
+                "to 33 frames, monoplan_ia recommends --monoplan-frames 33 for ~16 GB CPU VAE RAM)."
             ),
         ),
     ]

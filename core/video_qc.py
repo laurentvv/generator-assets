@@ -27,13 +27,17 @@ _RE_DURATION = re.compile(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)")
 def duree_video(video_path: str, ffmpeg_bin: Optional[str] = None) -> float:
     """Returns video duration in seconds by parsing FFmpeg stream metadata."""
     ff = ffmpeg_bin or DEFAULT_FFMPEG
-    proc = subprocess.run(
-        [ff, "-hide_banner", "-i", video_path],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    try:
+        proc = subprocess.run(
+            [ff, "-hide_banner", "-i", video_path],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        return 0.0
     match = _RE_DURATION.search(proc.stderr or "")
     if not match:
         return 0.0
@@ -43,19 +47,23 @@ def duree_video(video_path: str, ffmpeg_bin: Optional[str] = None) -> float:
 
 def _extraire_trame(video_path: str, timestamp_s: float, dst_png: str, ff: str) -> bool:
     """Extracts a single decoded RGB frame at `timestamp_s` into `dst_png`."""
-    proc = subprocess.run(
-        [
-            ff, "-y", "-hide_banner", "-loglevel", "error",
-            "-ss", f"{max(0.0, timestamp_s):.3f}",
-            "-i", video_path,
-            "-frames:v", "1",
-            dst_png,
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    try:
+        proc = subprocess.run(
+            [
+                ff, "-y", "-hide_banner", "-loglevel", "error",
+                "-ss", f"{max(0.0, timestamp_s):.3f}",
+                "-i", video_path,
+                "-frames:v", "1",
+                dst_png,
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        return False
     return proc.returncode == 0 and os.path.exists(dst_png) and os.path.getsize(dst_png) > 0
 
 
@@ -118,7 +126,8 @@ def auditer_clip_video(
             ts = min(max(0.0, duration_s - 0.05), duration_s * frac)
             png_path = os.path.join(tmp_dir, f"qc_{idx}.png")
             if _extraire_trame(video_path, ts, png_path, ff):
-                arr = np.asarray(Image.open(png_path).convert("RGB"), dtype=np.uint8)
+                with Image.open(png_path) as im:
+                    arr = np.asarray(im.convert("RGB"), dtype=np.uint8)
                 frames.append(arr)
 
     if not frames:
@@ -129,6 +138,10 @@ def auditer_clip_video(
             "warnings": warnings,
             "metrics": {"duration_s": round(duration_s, 3), "sampled_frames": 0},
         }
+    if len(fracs) >= 2 and len(frames) < 2:
+        issues.append(
+            f"incomplete or truncated video stream (decoded {len(frames)}/{len(fracs)} sampled frames)"
+        )
 
     luma_stds = [float(f.astype(np.float32).std()) for f in frames]
     luma_means = [float(f.astype(np.float32).mean()) for f in frames]

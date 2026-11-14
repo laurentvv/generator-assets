@@ -51,7 +51,7 @@ class SFXWorkflow(BaseWorkflow):
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         duree = float(params.get("duration", 1.5))
         graine = int(params.get("seed", 42))
-        moteur = params.get("sfx_engine") or "ia"
+        engine = params.get("sfx_engine") or "ia"
         nom_base = params.get("output") or f"{slugifier_texte(prompt)}_sfx"
 
         os.makedirs(output_dir, exist_ok=True)
@@ -60,18 +60,24 @@ class SFXWorkflow(BaseWorkflow):
         if ref_lib:
             from scripts.generer_depuis_reference import convertir_en_wav
 
-            lib_hit = resoudre_reference_web_assets(ref_lib, asset_type="audio")
+            lib_hit = resoudre_reference_web_assets(
+                ref_lib, asset_type="audio", max_duration_ms=30000
+            )
             self.log(
                 f"Curated SFX resolved from web-assets: {lib_hit['rel_path']} "
                 f"({lib_hit['licence']['licence']})"
             )
             wav_src = convertir_en_wav(lib_hit["abs_path"])
-            audio_raw, sr_in = charger_audio(wav_src)
+            try:
+                audio_raw, sr_in = charger_audio(wav_src)
+            finally:
+                if wav_src != lib_hit["abs_path"] and os.path.exists(wav_src):
+                    os.remove(wav_src)
             audio_res, sr = ressampler(audio_raw, sr_in, 44100)
             audio_data = normaliser_pic(audio_res, pic_dbfs=-1.0)
             duree = round(len(audio_data) / float(sr), 3)
-            moteur = "web_assets"
-        elif moteur == "ia":
+            engine = "web_assets"
+        elif engine == "ia":
             self.log(f"AI synthesis (SA3 small SFX, seed {graine}) for '{prompt}' (Duration: {duree:.1f}s, 44.1kHz stereo)...")
             res = generer_sfx_ia(prompt, duree=duree, seed=graine)
             audio_data, sr = res["audio"], res["sr"]
@@ -96,7 +102,7 @@ class SFXWorkflow(BaseWorkflow):
             "wav": chemin_wav,
             "ogg": chemin_ogg,
             "duration": duree,
-            "engine": moteur,
+            "engine": engine,
             "ref_lib_asset": lib_hit["rel_path"] if lib_hit else None,
             "files": [chemin_wav, chemin_ogg]
         }

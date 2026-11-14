@@ -296,6 +296,23 @@ def test_video_qc_detects_solid_frozen_and_black_band(tmp_path: Path, monkeypatc
     assert res_ok["ok"] is True
     assert res_ok["metrics"]["interframe_mean_diff"] > 5.0
 
+    # Case 4: truncated decode returning < 2 sampled frames -> rejected
+    partial = {"n": 0}
+
+    def write_one(_vid, _ts, dst, _ff):
+        partial["n"] += 1
+        if partial["n"] > 1:
+            return False
+        arr = np.full((64, 64, 3), 120, dtype=np.uint8)
+        arr[8:32, 8:32] = 240
+        Image.fromarray(arr).save(dst)
+        return True
+
+    monkeypatch.setattr(video_qc, "_extraire_trame", write_one)
+    res_partial = video_qc.auditer_clip_video(str(fake_mp4))
+    assert res_partial["ok"] is False
+    assert any("incomplete" in msg for msg in res_partial["issues"])
+
 
 def test_upscale_workflow_blocks_failed_qc_unless_skip_qc(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     from workflows.upscale import UpscaleWorkflow
@@ -461,6 +478,13 @@ def test_cinema_ltx_hires_builds_exact_validated_flags(tmp_path: Path, monkeypat
     assert c_mp[c_mp.index("-W") + 1] == "832"
     assert c_mp[c_mp.index("-H") + 1] == "480"
 
+    out_mp_hi = str(tmp_path / "mp_hi.webm")
+    cinema.generer_monoplan_ltx(str(seed_img), "camera pan", out_mp_hi, frames=33, hires=True, log_fn=lambda _m: None)
+    c_mp_hi = captured[2]
+    assert "--hires" in c_mp_hi
+    assert c_mp_hi[c_mp_hi.index("-W") + 1] == "608"
+    assert c_mp_hi[c_mp_hi.index("-H") + 1] == "352"
+
     # Missing spatial upscaler must raise FileNotFoundError before launch
     fake_upscaler.unlink()
     with pytest.raises(FileNotFoundError):
@@ -574,3 +598,138 @@ def test_generate_workflow_controlnet_union_promax(tmp_path: Path, monkeypatch: 
     })
     assert calls[1]["control_type"] == "tile"
     assert calls[1]["control_strength"] == pytest.approx(0.75)
+
+    with pytest.raises(ValueError, match="--control-strength"):
+        wf.run({
+            "prompt": "bad strength",
+            "control_image": str(ctrl_img),
+            "control_type": "canny",
+            "control_strength": 1.5,
+            "output_dir": str(tmp_path / "out"),
+        })
+
+
+def test_monoplan_hires_plus_4k_cache_isolation_and_no_crop(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from core.cinema import TAILLE_MASTER_4K
+    from workflows.monoplan_ia import MonoplanIaWorkflow
+
+    out_dir = tmp_path / "mp4k"
+    out_dir.mkdir()
+    # Pre-existing non-hires raw shot must not be reused when --hires is set
+    (out_dir / "shot_brut.webm").write_bytes(b"old480p")
+
+    seed_img = tmp_path / "init.png"
+    Image.new("RGB", (64, 64), (20, 40, 60)).save(seed_img)
+
+    seen: dict[str, object] = {}
+
+    def _fake_ltx(_amorce, _prompt, webm, **kw):
+        seen["webm"] = webm
+        Path(webm).write_bytes(b"hires_webm")
+        return webm
+
+    def _fake_4k(webm, dst, **_kw):
+        seen["brut_4k_in"] = webm
+        Path(dst).write_bytes(b"4k")
+        return dst
+
+    def _fake_ralentir(src, dst, _dur, **kw):
+        seen["ralentir_taille"] = kw.get("taille")
+        Path(dst).write_bytes(b"slow")
+        return dst, 2.0
+
+    def _fake_zoom(src, dst, **kw):
+        seen["zoom_taille"] = kw.get("taille")
+        Path(dst).write_bytes(b"zoom")
+        return dst
+
+    def _fake_conform(src, dst, **_kw):
+        Path(dst).write_bytes(b"final4k")
+        return dst
+
+    monkeypatch.setattr("workflows.monoplan_ia.generer_monoplan_ltx", _fake_ltx)
+    monkeypatch.setattr("workflows.monoplan_ia.master_brut_4k", _fake_4k)
+    monkeypatch.setattr("workflows.monoplan_ia.ralentir_interp", _fake_ralentir)
+    monkeypatch.setattr("workflows.monoplan_ia.zoom_pur", _fake_zoom)
+    monkeypatch.setattr("workflows.monoplan_ia.conformer_master_4k", _fake_conform)
+
+    res = MonoplanIaWorkflow({}).run({
+        "prompt": "fortress sweep",
+        "output": "shot",
+        "input": str(seed_img),
+        "hires": True,
+        "monoplan_frames": 33,
+        "upscale_4k": True,
+        "output_dir": str(out_dir),
+    })
+    assert Path(res["monoplan_brut"]).name == "shot_hires_brut.webm"
+    assert seen["brut_4k_in"] == res["monoplan_brut"]
+    assert seen["ralentir_taille"] == TAILLE_MASTER_4K
+    assert seen["zoom_taille"] == TAILLE_MASTER_4K
+
+
+def test_vace_extract_video_removes_stale_frames_and_normalizes_mode(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from core import vace_control
+
+    src_vid = tmp_path / "src.mp4"
+    src_vid.write_bytes(b"mp4")
+    ctrl_dir = tmp_path / "ctrl"
+    ctrl_dir.mkdir()
+    # Stale frame from an earlier longer run
+    (ctrl_dir / "frame_00004.png").write_bytes(b"stale")
+
+    def fake_run_engine(cmd, **_kw):
+        raw_dir = Path(cmd[-1]).parent
+        for i in (1, 2):
+            arr = np.zeros((32, 32, 3), dtype=np.uint8)
+            arr[8:24, 8:24] = 200
+            Image.fromarray(arr).save(raw_dir / f"raw_{i:05d}.png")
+        return None
+
+    monkeypatch.setattr(vace_control, "run_engine", fake_run_engine)
+    meta = vace_control.extraire_frames_controle_video(
+        str(src_vid), str(ctrl_dir), mode=" Canny ", width=32, height=32, max_frames=2
+    )
+    assert meta["mode"] == "canny"
+    assert meta["frame_count"] == 2
+    assert sorted(p.name for p in ctrl_dir.glob("frame_*.png")) == ["frame_00001.png", "frame_00002.png"]
+
+
+def test_web_assets_traversal_guard_and_stale_row_fallback(tmp_path: Path):
+    from core.web_assets import _resoudre_chemin_absolu, resoudre_reference_web_assets
+
+    db_path, lib_dir = _creer_fausse_db_web_assets(tmp_path)
+    with pytest.raises(ValueError, match="Unsafe"):
+        _resoudre_chemin_absolu("../outside.wav", library_dir=str(lib_dir))
+
+    # Add a higher-priority missing SFX row so resolver skips stale rank #1 and picks sword_clang.wav
+    con = sqlite3.connect(db_path)
+    con.execute(
+        """
+        INSERT INTO assets (id, rel_path, ext, type, size_bytes, category, title, description, keywords, duration_ms)
+        VALUES (0, 'kenney/sfx/missing_top.wav', '.wav', 'audio', 1000, 'sfx', 'sword top', 'sword top', 'sword', 1200)
+        """
+    )
+    con.execute(
+        "INSERT INTO assets_fts(rowid, title, description, keywords, path) VALUES (0, 'sword top', 'sword top', 'sword', 'kenney/sfx/missing_top.wav')"
+    )
+    con.commit()
+    con.close()
+
+    hit = resoudre_reference_web_assets(
+        "sword", asset_type="audio", db_path=str(db_path), library_dir=str(lib_dir)
+    )
+    assert hit["rel_path"] == "kenney/sfx/sword_clang.wav"
+
+
+def test_explicit_missing_inputs_do_not_fallback_to_library(tmp_path: Path):
+    from workflows.material3d import Material3DWorkflow
+    from workflows.musique_adn import MusiqueAdnWorkflow
+
+    db_path, lib_dir = _creer_fausse_db_web_assets(tmp_path)
+    missing = str(tmp_path / "does_not_exist.bin")
+
+    with pytest.raises(FileNotFoundError):
+        Material3DWorkflow({}).run({"input": missing, "from_lib": "mossy"})
+    with pytest.raises(FileNotFoundError):
+        MusiqueAdnWorkflow({}).run({"input": missing, "ref_lib": "sword", "prompt": "metal"})

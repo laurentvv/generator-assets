@@ -148,9 +148,16 @@ def _resoudre_library_dir(library_dir: Optional[str] = None) -> str:
 
 
 def _resoudre_chemin_absolu(rel_path: str, library_dir: Optional[str] = None) -> str:
-    racine = _resoudre_library_dir(library_dir)
+    racine = Path(_resoudre_library_dir(library_dir)).resolve()
     parts = [p for p in normaliser_rel_path(rel_path).split("/") if p]
-    return os.path.join(racine, *parts)
+    if not parts:
+        return ""
+    if any(p in (".", "..") or ":" in p for p in parts):
+        raise ValueError(f"Unsafe web-assets relative path: {rel_path!r}")
+    cible = (racine / Path(*parts)).resolve()
+    if not cible.is_relative_to(racine):
+        raise ValueError(f"Web-assets path escapes library root: {rel_path!r}")
+    return str(cible)
 
 
 def _connecter_ro(db_path: Optional[str] = None) -> sqlite3.Connection:
@@ -620,7 +627,22 @@ def resoudre_reference_web_assets(
     if not q:
         raise ValueError("Empty --ref-lib query.")
 
-    if asset_type == "audio" and min_duration_ms is not None and max_duration_ms is not None:
+    hits = rechercher_assets(
+        q,
+        asset_type=asset_type,
+        min_duration_ms=min_duration_ms,
+        max_duration_ms=max_duration_ms,
+        exclude_no_ai=True,
+        commercial_only=commercial_only,
+        limit=12,
+        db_path=db_path,
+        library_dir=library_dir,
+    )
+    existing_hits = [
+        h for h in hits
+        if h.get("abs_path") and os.path.exists(h["abs_path"])
+    ]
+    if asset_type == "audio" and min_duration_ms is not None and max_duration_ms is not None and existing_hits:
         hit = choisir_reference_audio(
             q,
             min_duration_ms=min_duration_ms,
@@ -629,27 +651,14 @@ def resoudre_reference_web_assets(
             db_path=db_path,
             library_dir=library_dir,
         )
+    elif asset_type == "image" and existing_hits:
+        visual_hits = [
+            h for h in existing_hits
+            if h.get("pbr_role") in (None, "", "albedo")
+        ]
+        hit = visual_hits[0] if visual_hits else existing_hits[0]
     else:
-        hits = rechercher_assets(
-            q,
-            asset_type=asset_type,
-            min_duration_ms=min_duration_ms,
-            max_duration_ms=max_duration_ms,
-            exclude_no_ai=True,
-            commercial_only=commercial_only,
-            limit=5 if asset_type == "image" else 1,
-            db_path=db_path,
-            library_dir=library_dir,
-        )
-        if asset_type == "image" and hits:
-            visual_hits = [
-                h for h in hits
-                if h.get("pbr_role") in (None, "", "albedo")
-                and h.get("abs_path") and os.path.exists(h["abs_path"])
-            ]
-            hit = visual_hits[0] if visual_hits else hits[0]
-        else:
-            hit = hits[0] if hits else None
+        hit = existing_hits[0] if existing_hits else None
 
     if not hit or not hit.get("abs_path") or not os.path.exists(hit["abs_path"]):
         raise FileNotFoundError(

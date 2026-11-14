@@ -48,7 +48,9 @@ class MusiqueAdnWorkflow(BaseWorkflow):
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         reference = params.get("input")
         ref_lib = (params.get("ref_lib") or "").strip()
-        if (not reference or not os.path.exists(reference)) and ref_lib:
+        if reference and not os.path.exists(reference):
+            raise FileNotFoundError(f"Audio reference not found: {reference}")
+        if not reference and ref_lib:
             from core.web_assets import resoudre_reference_web_assets
 
             lib_hit = resoudre_reference_web_assets(ref_lib, asset_type="audio", min_duration_ms=2000)

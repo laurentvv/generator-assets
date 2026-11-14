@@ -100,14 +100,14 @@ def _executer_ltx_vid_gen(
     avec_audio: bool = False,
 ) -> str:
     """Shared LTX-2.5 Distilled sd-cli builder and runner for single-take & multishot."""
-    requis = [DEFAULT_SD_CLI_LTX, LTX_DIT, LTX_VAE, LTX_LLM]
+    required_paths = [DEFAULT_SD_CLI_LTX, LTX_DIT, LTX_VAE, LTX_LLM]
     if avec_audio:
-        requis.append(LTX_AUDIO_VAE)
+        required_paths.append(LTX_AUDIO_VAE)
     if hires:
-        requis.append(DEFAULT_LTX_SPATIAL_UPSCALER)
-    manquants = [p for p in requis if not os.path.exists(p)]
-    if manquants:
-        raise FileNotFoundError("Missing LTX-2.5 models or sd-cli: " + "; ".join(manquants))
+        required_paths.append(DEFAULT_LTX_SPATIAL_UPSCALER)
+    missing_paths = [p for p in required_paths if not os.path.exists(p)]
+    if missing_paths:
+        raise FileNotFoundError("Missing LTX-2.5 models or sd-cli: " + "; ".join(missing_paths))
 
     os.makedirs(os.path.dirname(os.path.abspath(sortie)), exist_ok=True)
     w, h = LTX_HIRES_STAGE1_SIZE if hires else LTX_BASE_SIZE
@@ -305,7 +305,13 @@ def zoom_pur(video: str, sortie: str, zoom_debut: float = 1.10,
         u = np.linspace(0.0, 1.0, n)
         ease = u * u * u * (u * (u * 6.0 - 15.0) + 10.0)  # smootherstep
         for i, nom in enumerate(pngs):
-            img = cv2.imread(os.path.join(tmp, nom))
+            img_path = os.path.join(tmp, nom)
+            img = cv2.imread(img_path)
+            if img is None:
+                raise RuntimeError(f"Failed to read extracted frame for zoom: {img_path}")
+            if img.shape[1] != W or img.shape[0] != H:
+                interp = cv2.INTER_AREA if img.shape[1] > W else cv2.INTER_LANCZOS4
+                img = cv2.resize(img, (W, H), interpolation=interp)
             k = 1.0 / (zoom_debut + (zoom_fin - zoom_debut) * ease[i])
             tx = centre[0] * (1.0 - k)
             ty = centre[1] * (1.0 - k)
