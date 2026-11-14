@@ -241,6 +241,22 @@ DEFAULT_VACE_T5XXL = os.getenv(
     "VACE_T5XXL_PATH", chercher_fichier_modele("umt5-xxl-encoder-Q4_K_M.gguf")
 )  # VACE validated recipe uses the Q4_K_M umt5 (the plain-Wan default is Q8_0)
 
+# Wan 2.2 S2V (Speech-to-Video: 14B Q4_K_M + wav2vec2_large_english_fp16 + LightX2V 4-step LoRA).
+# USER VALIDATED 2026-11-14 at 512x512, 33f @ 16 fps, 4 steps (~24.1 min on NVMe C:).
+# Stored on D:\Modeles_LLM when idle — generer_video_s2v_wan temporarily stages D: files onto C: NVMe.
+DEFAULT_WAN_S2V_MODEL = os.getenv(
+    "WAN_S2V_MODEL_PATH",
+    chercher_fichier_modele("Wan2.2-S2V-14B-Q4_K_M.gguf"),
+)
+DEFAULT_WAN_S2V_AUDIO_ENCODER = os.getenv(
+    "WAN_S2V_AUDIO_ENCODER_PATH",
+    chercher_fichier_modele("wav2vec2_large_english_fp16.safetensors"),
+)
+DEFAULT_WAN_S2V_TURBO_LORA = os.getenv(
+    "WAN_S2V_TURBO_LORA",
+    "lightx2v-Wan2.2-T2V-A14B-4steps-lora-rank64-Seko-V2.0-low_noise",
+)
+
 # Music models (MiniMax-Music3 GGUF via audio.cpp + Music Flamingo via llama.cpp)
 DEFAULT_MUSIC3_DIR = os.getenv("MUSIC3_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "MiniMax-Music3-GGUF"))
 DEFAULT_MUSIC3_LM = os.getenv("MUSIC3_LM_PATH", os.path.join(DEFAULT_MUSIC3_DIR, "language_model_q4_0.gguf"))
@@ -793,6 +809,7 @@ _WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
         "Use --workflow voix_off --moteur qwen3|voxcpm2 (Apache-2.0)",
     ),
     "video_vace": (LICENCE_COMMERCIAL, "Apache-2.0 (Wan 2.1 + LightX2V)", None),
+    "video_s2v": (LICENCE_COMMERCIAL, "Apache-2.0 (Wan 2.2 S2V + wav2vec2 + LightX2V)", None),
     "monoplan_ia": (
         LICENCE_CONDITIONNELLE,
         "LTX-2 Community License (commercial thresholds apply)",

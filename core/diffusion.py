@@ -6,18 +6,24 @@ Supports Txt2Img, Img2Img, High-Res Fix, Circular Seamless, and LoRA injection.
 Automatically detects Flux.1 models (GGUF + Encoders) and SDXL / SD 1.5 (Safetensors Checkpoints).
 """
 
+from contextlib import contextmanager
 import os
+import shutil
 import tempfile
-from typing import List, Optional, Tuple, Union
+import time
+import uuid
+from typing import Dict, List, Optional, Tuple, Union
 from PIL import Image
 from core.config import (
     DEFAULT_CLIP_L,
+    DEFAULT_FFMPEG,
     DEFAULT_H3_AUDIO_VAE,
     DEFAULT_H3_FL2VA_MODEL,
     DEFAULT_H3_LLM,
     DEFAULT_H3_REF2VA_MODEL,
     DEFAULT_H3_VIDEO_VAE,
     DEFAULT_LORA_DIRS,
+    DEFAULT_MODEL_DIR,
     DEFAULT_MOSS_IMAGE_LLM,
     DEFAULT_MOSS_IMAGE_MODEL,
     DEFAULT_MOSS_IMAGE_TOKENIZER,
@@ -30,6 +36,11 @@ from core.config import (
     DEFAULT_SD_MODEL,
     DEFAULT_T5XXL,
     DEFAULT_VAE,
+    DEFAULT_VACE_T5XXL,
+    DEFAULT_WAN_S2V_AUDIO_ENCODER,
+    DEFAULT_WAN_S2V_MODEL,
+    DEFAULT_WAN_S2V_TURBO_LORA,
+    DEFAULT_WAN_VAE,
     DEFAULT_BACKEND,
     DEFAULT_THREADS,
     resoudre_modele_video,
@@ -803,4 +814,266 @@ def generer_video_fl2va_h3(
         dry_run=dry_run,
         log_fn=log_fn,
     )
+
+
+@contextmanager
+def _stager_vers_nvme_temporaire(
+    chemins: Dict[str, str],
+    nvme_root: str = DEFAULT_MODEL_DIR,
+    enabled: bool = True,
+    slow_drives: Tuple[str, ...] = ("D:",),
+    min_free_margin_bytes: int = 5 * 1024**3,
+    log_fn=print,
+):
+    """Temporarily copies cold-stored model files from slow drives onto NVMe.
+
+    Per project process (AGENTS.md §7, 2026-11-14): D: is an external USB 3.0 HDD
+    (2.8-30 MB/s on segmented re-reads). Files whose drive matches ``slow_drives``
+    are staged into a unique subfolder under ``nvme_root``, verified by byte size,
+    and always deleted in ``finally`` once execution completes or fails.
+    """
+    if not enabled:
+        yield dict(chemins)
+        return
+
+    nvme_abs = os.path.abspath(nvme_root)
+    nvme_drive = os.path.splitdrive(nvme_abs)[0].upper()
+    slow_norm = {d.upper() for d in slow_drives}
+
+    a_stager: Dict[str, str] = {}
+    for cle, chemin in chemins.items():
+        if not chemin or not os.path.exists(chemin):
+            continue
+        src_abs = os.path.abspath(chemin)
+        src_drive = os.path.splitdrive(src_abs)[0].upper()
+        if src_drive in slow_norm and src_drive != nvme_drive:
+            a_stager[cle] = src_abs
+
+    if not a_stager:
+        yield dict(chemins)
+        return
+
+    total_bytes = sum(os.path.getsize(p) for p in a_stager.values())
+    probe_dir = nvme_abs if os.path.exists(nvme_abs) else os.path.dirname(nvme_abs) or nvme_abs
+    free_bytes = shutil.disk_usage(probe_dir).free
+    if free_bytes < total_bytes + min_free_margin_bytes:
+        raise OSError(
+            f"Insufficient free space on '{nvme_root}' for temporary NVMe staging: "
+            f"need {(total_bytes + min_free_margin_bytes) / (1024**3):.1f} GiB free, "
+            f"have {free_bytes / (1024**3):.1f} GiB."
+        )
+
+    tmp_dir = os.path.join(nvme_abs, f"_tmp_s2v_{os.getpid()}_{uuid.uuid4().hex[:8]}")
+    staged_map = dict(chemins)
+    try:
+        os.makedirs(tmp_dir, exist_ok=True)
+        t0 = time.monotonic()
+        copied_by_src: Dict[str, str] = {}
+        for cle, src_abs in a_stager.items():
+            if src_abs in copied_by_src:
+                staged_map[cle] = copied_by_src[src_abs]
+                continue
+            dst_abs = os.path.join(tmp_dir, os.path.basename(src_abs))
+            t_file = time.monotonic()
+            shutil.copy2(src_abs, dst_abs)
+            if os.path.getsize(dst_abs) != os.path.getsize(src_abs):
+                raise RuntimeError(f"NVMe staging size mismatch for {os.path.basename(src_abs)}")
+            copied_by_src[src_abs] = dst_abs
+            staged_map[cle] = dst_abs
+            size_gib = os.path.getsize(dst_abs) / (1024**3)
+            log_fn(f"[NVMe stage] {os.path.basename(src_abs)} ({size_gib:.2f} GiB in {time.monotonic() - t_file:.1f}s)")
+        dt_total = time.monotonic() - t0
+        mb_s = (total_bytes / (1024**2)) / max(dt_total, 1e-6)
+        log_fn(f"[NVMe stage] Total {total_bytes / (1024**3):.2f} GiB staged in {dt_total:.1f}s ({mb_s:.1f} MB/s)")
+        yield staged_map
+    finally:
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            log_fn(f"[NVMe stage] Temporary copy cleaned: {tmp_dir}")
+
+
+@contextmanager
+def _preparer_wav_s2v(audio_path: str, ffmpeg_bin: str = DEFAULT_FFMPEG):
+    """Ensures Wan2.2-S2V receives a WAV PCM16 mono track, converting non-WAV inputs temporarily."""
+    if audio_path.lower().endswith(".wav"):
+        yield audio_path
+        return
+
+    fd, tmp_wav = tempfile.mkstemp(suffix=".wav", prefix="ga_s2v_audio_")
+    os.close(fd)
+    try:
+        run_engine(
+            [
+                ffmpeg_bin, "-y", "-v", "error",
+                "-i", audio_path,
+                "-ac", "1", "-ar", "24000", "-acodec", "pcm_s16le",
+                tmp_wav,
+            ],
+            capture=True, check=True, timeout=300, etiquette="ffmpeg s2v audio",
+        )
+        yield tmp_wav
+    finally:
+        if os.path.exists(tmp_wav):
+            try:
+                os.remove(tmp_wav)
+            except OSError:
+                pass
+
+
+def generer_video_s2v_wan(
+    prompt: str,
+    init_image: str,
+    audio_path: str,
+    sd_cli: str = DEFAULT_SD_CLI,
+    model_path: Optional[str] = None,
+    t5xxl_path: Optional[str] = None,
+    vae_path: Optional[str] = None,
+    audio_encoder_path: Optional[str] = None,
+    video_frames: int = 33,
+    fps: int = 16,
+    width: int = 512,
+    height: int = 512,
+    steps: int = 4,
+    cfg_scale: float = 1.0,
+    flow_shift: float = 3.0,
+    seed: int = 42,
+    max_vram: int = 10,
+    loras: Optional[List[Union[str, Tuple[str, float]]]] = None,
+    lora_dir: Optional[str] = None,
+    flash_attn: str = "off,diffusion=on",
+    backend: str = "diffusion=vulkan0,te=cpu,vae=cpu",
+    threads: int = DEFAULT_THREADS,
+    output_path: str = "output/wan_s2v.webm",
+    stage_to_nvme: bool = True,
+    nvme_dir: str = DEFAULT_MODEL_DIR,
+    dry_run: bool = False,
+    log_fn=print,
+) -> str:
+    """Generates a speech-driven talking portrait video (.webm) via Wan2.2-S2V 14B on Vulkan.
+
+    USER VALIDATED 2026-11-14 (`s2v_probe_512_33f_4step.mp4` "c'est ok"):
+    512x512, 33 frames @ 16 fps, 4 steps LightX2V Seko V2.0 low_noise LoRA, cfg 1.0,
+    euler, flow-shift 3.0, `--max-vram 10 --offload-to-cpu --vae-tiling --rng cpu`,
+    `--flash-attn off,diffusion=on`, `diffusion=vulkan0,te=cpu,vae=cpu` (~24.1 min compute).
+    """
+    if not init_image or not os.path.exists(init_image):
+        raise FileNotFoundError(f"Portrait image (-i/--input) not found: {init_image}")
+    if not audio_path or not os.path.exists(audio_path):
+        raise FileNotFoundError(f"Driving audio (--audio) not found: {audio_path}")
+
+    modele = model_path or DEFAULT_WAN_S2V_MODEL
+    t5xxl = t5xxl_path or DEFAULT_VACE_T5XXL
+    vae = vae_path or DEFAULT_WAN_VAE
+    audio_encoder = audio_encoder_path or DEFAULT_WAN_S2V_AUDIO_ENCODER
+    manquants = [p for p in (modele, t5xxl, vae, audio_encoder) if not os.path.exists(p)]
+    if manquants:
+        raise FileNotFoundError(
+            "Missing Wan2.2-S2V models: " + "; ".join(manquants)
+            + " — check C:\\Modeles_LLM / D:\\Modeles_LLM (QuantStack/Wan2.2-S2V-14B-GGUF + wav2vec2_large_english_fp16.safetensors)."
+        )
+
+    w_aligne = max(16, (int(width) + 15) // 16 * 16)
+    h_aligne = max(16, (int(height) + 15) // 16 * 16)
+    frames_val = max(5, int(video_frames))
+    tokens = (w_aligne // 16) * (h_aligne // 16) * max(1, (frames_val - 1) // 4 + 1)
+    if tokens > 9216:
+        log_fn(
+            f"⚠️ Wan2.2-S2V latent token budget ({w_aligne}x{h_aligne}x{frames_val} = {tokens} tokens) "
+            "exceeds the RX 6950 XT validated ceiling (512x512x33 = 9,216 tokens; 832x480x33 = 14,040 fails "
+            "with ErrorDeviceLost or 53 GiB Commit thrash). Use 512x512 + downstream upscale if HD is needed."
+        )
+
+    loras_effectifs = list(loras) if loras is not None else ([DEFAULT_WAN_S2V_TURBO_LORA] if int(steps) <= 8 else [])
+    dossier_lora_effectif: Optional[str] = None
+    if loras_effectifs:
+        dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
+        if not os.path.isdir(dossier_lora_effectif):
+            raise FileNotFoundError(f"LoRA folder not found: {dossier_lora_effectif}")
+    prompt_final = formater_prompt_avec_loras(prompt, loras_effectifs) if loras_effectifs else prompt
+
+    # sd-cli -M vid_gen only supports .webm, .avi, and animated .webp (not .mp4).
+    if output_path.lower().endswith(".mp4"):
+        sd_output_path = os.path.splitext(output_path)[0] + ".webm"
+    else:
+        sd_output_path = output_path
+    os.makedirs(os.path.dirname(os.path.abspath(sd_output_path)), exist_ok=True)
+
+    sd_cli = sd_cli or DEFAULT_SD_CLI
+
+    def _construire_commande(chemins: Dict[str, str], wav_in: str) -> List[str]:
+        cmd = [
+            sd_cli,
+            "-M", "vid_gen",
+            "--diffusion-model", chemins["model"],
+            "--t5xxl", chemins["t5xxl"],
+            "--vae", chemins["vae"],
+            "--audio-encoder", chemins["audio_encoder"],
+            "-i", init_image,
+            "--audio", wav_in,
+            "-p", prompt_final,
+            "-W", str(w_aligne),
+            "-H", str(h_aligne),
+            "--video-frames", str(frames_val),
+            "--fps", str(int(fps)),
+            "--steps", str(int(steps)),
+            "--cfg-scale", str(cfg_scale),
+            "--sampling-method", "euler",
+            "--flow-shift", str(flow_shift),
+            "-s", str(seed),
+            "-t", str(threads),
+            "--backend", backend,
+            "--max-vram", str(max_vram),
+            "--offload-to-cpu",
+            "--vae-tiling",
+            "--flash-attn", flash_attn,
+            "--rng", "cpu",
+            "-v",
+            "-o", sd_output_path,
+        ]
+        if dossier_lora_effectif:
+            cmd.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
+        return cmd
+
+    log_fn(
+        f"[Wan2.2-S2V] {w_aligne}x{h_aligne}, {frames_val} frames @ {fps} fps ({tokens} tokens), "
+        f"steps={steps}, cfg={cfg_scale}, shift={flow_shift}, seed={seed}, "
+        f"img={os.path.basename(init_image)}, audio={os.path.basename(audio_path)}"
+        + (f", LoRA={loras_effectifs}" if loras_effectifs else "")
+    )
+
+    if dry_run:
+        cmd_preview = _construire_commande(
+            {"model": modele, "t5xxl": t5xxl, "vae": vae, "audio_encoder": audio_encoder},
+            audio_path,
+        )
+        log_fn("[Wan2.2-S2V] DRY-RUN — command built, NVMe staging and execution skipped:")
+        log_fn("  " + " ".join(f'"{c}"' if " " in c else c for c in cmd_preview))
+        return sd_output_path
+
+    modele_chemins = {
+        "model": modele,
+        "t5xxl": t5xxl,
+        "vae": vae,
+        "audio_encoder": audio_encoder,
+    }
+    try:
+        with (
+            _stager_vers_nvme_temporaire(
+                modele_chemins,
+                nvme_root=nvme_dir,
+                enabled=stage_to_nvme,
+                log_fn=log_fn,
+            ) as chemins_nvme,
+            _preparer_wav_s2v(audio_path) as wav_effectif,
+        ):
+            commande = _construire_commande(chemins_nvme, wav_effectif)
+            run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli Wan2.2-S2V")
+        if not os.path.exists(sd_output_path):
+            raise FileNotFoundError(f"The output video {sd_output_path} was not produced.")
+        log_fn(f"✅ Wan2.2-S2V video generated: {sd_output_path}")
+        return sd_output_path
+    except Exception as e:
+        log_fn(f"❌ Error during Wan2.2-S2V generation via sd-cli: {e}")
+        raise
+
 

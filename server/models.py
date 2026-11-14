@@ -35,6 +35,8 @@ MODEL_CONSTANTS = [
     ("", "DEFAULT_WAN_T5XXL", "UMT5-XXL encoder"),
     ("Video — VACE", "DEFAULT_VACE_MODEL", "Wan VACE distilled GGUF"),
     ("", "DEFAULT_VACE_T5XXL", "VACE T5-XXL encoder"),
+    ("Video — Wan 2.2 S2V", "DEFAULT_WAN_S2V_MODEL", "Wan 2.2 S2V 14B Q4_K_M GGUF (cold D: / staged NVMe)"),
+    ("", "DEFAULT_WAN_S2V_AUDIO_ENCODER", "wav2vec2 Large English fp16 audio encoder"),
     ("Video — MiniMax-H3", "DEFAULT_H3_REF2VA_MODEL", "H3 Ref2VA DiT GGUF"),
     ("", "DEFAULT_H3_FL2VA_MODEL", "H3 FL2VA (first/last-frame) DiT GGUF"),
     ("", "DEFAULT_H3_VIDEO_VAE", "H3 video VAE"),
@@ -77,6 +79,10 @@ WORKFLOW_MODEL_MAP = {
     "upscale": ["DEFAULT_ESRGAN_MODEL", "DEFAULT_SEEDVR2_MODEL", "DEFAULT_SEEDVR2_VAE"],
     "video": ["DEFAULT_WAN_MODEL", "DEFAULT_WAN_VAE", "DEFAULT_WAN_T5XXL"],
     "video_vace": ["DEFAULT_VACE_MODEL", "DEFAULT_VACE_T5XXL"],
+    "video_s2v": [
+        "DEFAULT_WAN_S2V_MODEL", "DEFAULT_WAN_S2V_AUDIO_ENCODER",
+        "DEFAULT_VACE_T5XXL", "DEFAULT_WAN_VAE",
+    ],
     "h3_ref2va": [
         "DEFAULT_H3_REF2VA_MODEL", "DEFAULT_H3_FL2VA_MODEL",
         "DEFAULT_H3_VIDEO_VAE", "DEFAULT_H3_AUDIO_VAE", "DEFAULT_H3_LLM",
