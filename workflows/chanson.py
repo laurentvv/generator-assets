@@ -15,7 +15,7 @@ import os
 from typing import Any, Dict
 
 from core.config import ACESTEP15_VARIANTES, slugifier_texte
-from core.music_ai import convertir_mp3, generer_musique_acestep
+from core.music_ai import convertir_mp3, declick_fichier_wav, generer_musique_acestep
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 # Default style: validated musical direction for the Vent-Gris universe
@@ -93,6 +93,7 @@ class ChansonWorkflow(BaseWorkflow):
             graine=graine,
             log=lambda m: self.log(m, "🎵"),
         )
+        declick_fichier_wav(chemin)
         mp3 = convertir_mp3(chemin, chemin.replace(".wav", ".mp3"), 224)
         self.log(f"Song ready: {mp3} (backend {backend})", "🎧")
         return {"wav": chemin, "mp3": mp3, "backend": backend, "duree": duree}

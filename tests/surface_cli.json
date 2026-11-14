@@ -85,6 +85,17 @@
  ],
  [
   [
+   "--apollo"
+  ],
+  "apollo",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
    "--asset-type"
   ],
   "asset_type",
@@ -779,6 +790,17 @@
  ],
  [
   [
+   "--init-img"
+  ],
+  "init_img",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--input",
    "-i"
   ],
@@ -1219,6 +1241,17 @@
  ],
  [
   [
+   "--multi-angles"
+  ],
+  "multi_angles",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--music-backend"
   ],
   "music_backend",
@@ -1641,6 +1674,17 @@
  ],
  [
   [
+   "--ref-image"
+  ],
+  "ref_images",
+  "_AppendAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--render-modes"
   ],
   "render_modes",
@@ -1649,6 +1693,68 @@
   null,
   null,
   null
+ ],
+ [
+  [
+   "--repaint-end"
+  ],
+  "repaint_end",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
+   "--repaint-engine"
+  ],
+  "repaint_engine",
+  "_StoreAction",
+  "'acestep'",
+  [
+   "acestep",
+   "sa3"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--repaint-mode"
+  ],
+  "repaint_mode",
+  "_StoreAction",
+  "'balanced'",
+  [
+   "aggressive",
+   "balanced",
+   "conservative"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--repaint-start"
+  ],
+  "repaint_start",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
+   "--repaint-strength"
+  ],
+  "repaint_strength",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
  ],
  [
   [
@@ -1693,6 +1799,20 @@
   null,
   null,
   "float"
+ ],
+ [
+  [
+   "--restore-engine"
+  ],
+  "restore_engine",
+  "_StoreAction",
+  "'reuse'",
+  [
+   "apollo",
+   "reuse"
+  ],
+  null,
+  null
  ],
  [
   [
@@ -1850,6 +1970,22 @@
    "floodfill",
    "none",
    "rmbg"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--sep-engine"
+  ],
+  "sep_engine",
+  "_StoreAction",
+  "'htdemucs'",
+  [
+   "bs_roformer",
+   "htdemucs",
+   "mel_roformer",
+   "sam"
   ],
   null,
   null
@@ -2333,7 +2469,8 @@
   [
    "auto",
    "esrgan",
-   "lanczos"
+   "lanczos",
+   "seedvr2"
   ],
   null,
   null
@@ -2494,6 +2631,17 @@
   null,
   null,
   "float"
+ ],
+ [
+  [
+   "--vsr-temporal-chunk-size"
+  ],
+  "vsr_temporal_chunk_size",
+  "_StoreAction",
+  "1",
+  null,
+  null,
+  "int"
  ],
  [
   [

@@ -33,6 +33,7 @@ from core.config import (
     DEFAULT_LLAMA_CLI,
     DEFAULT_MUSIC_FLAMINGO_LM,
     DEFAULT_MUSIC_FLAMINGO_MMPROJ,
+    DEFAULT_SA3_MEDIUM_MODEL,
     resoudre_gguf_acestep15,
     resoudre_modele_musique,
 )
@@ -295,6 +296,53 @@ def generer_musique_acestep(
     raise RuntimeError(f"ACE-Step 1.5 generation failed. Last error: {derniere_erreur}")
 
 
+def _preparer_wav_temp(
+    chemin_source: str,
+    sr: int = SR_CIBLE,
+    etiquette: str = "ffmpeg audio source",
+) -> str:
+    """Resamples any input track to a temporary stereo PCM16 WAV at ``sr`` Hz."""
+    fd, wav_source = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    try:
+        run_engine(
+            [resoudre_ffmpeg(), "-y", "-v", "error", "-i", chemin_source,
+             "-ar", str(int(sr)), "-ac", "2", "-c:a", "pcm_s16le", wav_source],
+            check=True, capture=True, timeout=300, etiquette=etiquette,
+        )
+    except Exception:
+        if os.path.exists(wav_source):
+            os.remove(wav_source)
+        raise
+    return wav_source
+
+
+def _verifier_sortie_audiocpp(
+    resultat,
+    chemin_sortie: str,
+    label: str,
+    log: Callable[[str], None] = print,
+) -> None:
+    """Validates non-empty, non-silent audio.cpp output and logs RTF metrics."""
+    erreurs = (resultat.stderr or "") + (resultat.stdout or "")
+    if (
+        resultat.returncode != 0
+        or not os.path.exists(chemin_sortie)
+        or os.path.getsize(chemin_sortie) <= 4096
+    ):
+        raise RuntimeError(
+            f"{label} failed (code {resultat.returncode}): {erreurs.strip()[-600:]}"
+        )
+    audio, _sr = soundfile.read(chemin_sortie, always_2d=True)
+    if float(np.sqrt((audio ** 2).mean())) < SEUIL_SILENCE_RMS:
+        os.remove(chemin_sortie)
+        raise RuntimeError(f"{label} produced a near-silent output (model collapse)")
+
+    for ligne in (resultat.stdout or "").splitlines():
+        if "RTF" in ligne or "wall" in ligne.lower() or "metrics.rtf=" in ligne:
+            log(f"⏱️  {ligne.strip()}")
+
+
 def generer_cover_acestep(
     chemin_source: str,
     description: str,
@@ -339,20 +387,9 @@ def generer_cover_acestep(
     os.makedirs(os.path.dirname(os.path.abspath(chemin_sortie)), exist_ok=True)
 
     # Source → 48 kHz stereo PCM16 WAV (CLI input contract + diff-safe layout).
-    fd, wav_source = tempfile.mkstemp(suffix=".wav")
-    os.close(fd)
-    try:
-        conv = run_engine(
-            [resoudre_ffmpeg(), "-y", "-v", "error", "-i", chemin_source,
-             "-ar", str(SR_CIBLE), "-ac", "2", "-c:a", "pcm_s16le", wav_source],
-            check=True, capture=True, timeout=300, etiquette="ffmpeg cover source",
-        )
-        del conv  # run_engine raises on failure; nothing to inspect on success
-    except Exception:
-        if os.path.exists(wav_source):
-            os.remove(wav_source)
-        raise
+    wav_source = _preparer_wav_temp(chemin_source, sr=SR_CIBLE, etiquette="ffmpeg cover source")
 
+    _, dit_model_path = ACESTEP15_VARIANTES[variante]
     cmd = [
         exe, "--task", "gen", "--family", "ace_step",
         "--model", gguf, "--backend", backend,
@@ -363,6 +400,8 @@ def generer_cover_acestep(
         "--session-option", "ace_step.mem_saver=true",
         "--out", chemin_sortie,
     ]
+    if dit_model_path:
+        cmd.extend(["--load-option", f"ace_step.dit_model_path={dit_model_path}"])
     if graine >= 0:
         cmd += ["--seed", str(int(graine))]
 
@@ -375,19 +414,199 @@ def generer_cover_acestep(
         if os.path.exists(wav_source):
             os.remove(wav_source)
 
-    erreurs = (resultat.stderr or "") + (resultat.stdout or "")
-    if resultat.returncode != 0 or not os.path.exists(chemin_sortie) or os.path.getsize(chemin_sortie) <= 4096:
-        raise RuntimeError(
-            f"ACE-Step 1.5 cover failed (code {resultat.returncode}): {erreurs.strip()[-600:]}"
-        )
-    audio, _sr = soundfile.read(chemin_sortie, always_2d=True)
-    if float(np.sqrt((audio ** 2).mean())) < SEUIL_SILENCE_RMS:
-        os.remove(chemin_sortie)
-        raise RuntimeError("ACE-Step 1.5 cover produced a near-silent output (model collapse)")
+    _verifier_sortie_audiocpp(resultat, chemin_sortie, "ACE-Step 1.5 cover", log=log)
+    return chemin_sortie, backend
 
-    for ligne in (resultat.stdout or "").splitlines():
-        if "RTF" in ligne or "wall" in ligne.lower():
-            log(f"⏱️  {ligne.strip()}")
+
+def repaint_acestep(
+    chemin_source: str,
+    description: str,
+    chemin_sortie: str,
+    *,
+    start_sec: float,
+    end_sec: float,
+    variante: str = "xl-turbo",
+    repaint_mode: str = "balanced",
+    repaint_strength: Optional[float] = None,
+    lyrics: Optional[str] = None,
+    langue: Optional[str] = None,
+    steps: Optional[int] = None,
+    graine: int = 42,
+    backend: str = "cpu",
+    threads: int = 20,
+    log: Callable[[str], None] = print,
+    timeout_s: int = 3600,
+) -> Tuple[str, str]:
+    """ACE-Step 1.5 ``repaint`` route: surgical time-span audio regeneration (MIT).
+
+    Wave 1 user-validated (2026-11-14) on ``acestep-v15-xl-turbo`` CPU: bit-exact
+    PCM16 preservation outside ``[start_sec, end_sec]`` (max diff 3.05e-05 = 1 LSB).
+    CPU backend is mandatory on AMD RX 6950 XT (VAE encoder > 4 GiB Vulkan limit).
+    """
+    if not os.path.exists(chemin_source):
+        raise FileNotFoundError(f"Source track not found: {chemin_source}")
+    if start_sec < 0 or end_sec <= start_sec:
+        raise ValueError(
+            f"Invalid repaint span [{start_sec}, {end_sec}]: require 0 <= start < end."
+        )
+    if repaint_mode not in ("balanced", "conservative", "aggressive"):
+        raise ValueError(
+            f"Unknown repaint_mode '{repaint_mode}' (choices: balanced, conservative, aggressive)."
+        )
+
+    exe = resoudre_audiocpp()
+    gguf = resoudre_gguf_acestep15(variante)
+    if not os.path.exists(gguf):
+        raise FileNotFoundError(
+            f"ACE-Step 1.5 GGUF ({variante}) not found: {gguf}\n"
+            "→ Run: uv run python scripts/download_acestep15_gguf.py"
+        )
+    os.makedirs(os.path.dirname(os.path.abspath(chemin_sortie)), exist_ok=True)
+    _, dit_model_path = ACESTEP15_VARIANTES[variante]
+
+    wav_source = _preparer_wav_temp(chemin_source, sr=SR_CIBLE, etiquette="ffmpeg repaint source")
+    try:
+        info = soundfile.info(wav_source)
+        duration_sec = float(info.duration)
+        if duration_sec <= 0:
+            raise ValueError(f"Source audio has non-positive duration: {chemin_source}")
+        if start_sec >= duration_sec or end_sec > duration_sec:
+            raise ValueError(
+                f"Repaint span [{start_sec:g}, {end_sec:g}] exceeds source duration {duration_sec:.3f}s."
+            )
+
+        cmd = [
+            exe, "--task", "gen", "--family", "ace_step",
+            "--model", gguf, "--backend", backend,
+            "--task-route", "repaint",
+            "--threads", str(int(threads)), "--log", "--metrics",
+            "--audio", wav_source,
+            "--text", description,
+            "--request-option", f"ace_step.repainting_start={start_sec:g}",
+            "--request-option", f"ace_step.repainting_end={end_sec:g}",
+            "--request-option", f"ace_step.repaint_mode={repaint_mode}",
+            "--session-option", "ace_step.mem_saver=true",
+            "--out", chemin_sortie,
+        ]
+        if dit_model_path:
+            cmd.extend(["--load-option", f"ace_step.dit_model_path={dit_model_path}"])
+        if repaint_strength is not None:
+            val = max(0.0, min(1.0, float(repaint_strength)))
+            cmd.extend(["--request-option", f"ace_step.repaint_strength={val:g}"])
+        if lyrics:
+            cmd.extend(["--request-option", f"ace_step.lyrics={lyrics}"])
+        if langue:
+            cmd.extend(["--request-option", f"ace_step.language={langue}"])
+        if steps is not None and steps > 0:
+            cmd.extend(["--request-option", f"ace_step.num_inference_steps={int(steps)}"])
+        if graine >= 0:
+            cmd.extend(["--seed", str(int(graine))])
+
+        backend_lbl = backend.upper() if backend.lower() == "cpu" else backend
+        log(
+            f"⏱️  ACE-Step {variante} repaint [{start_sec:g}s..{end_sec:g}s] on {backend_lbl} "
+            f"(bit-exact outside mask; slow ~28x RT on xl-turbo)..."
+        )
+        resultat = run_engine(
+            cmd, check=False, capture=True, timeout=timeout_s,
+            etiquette="audio.cpp acestep repaint",
+        )
+    finally:
+        if os.path.exists(wav_source):
+            os.remove(wav_source)
+
+    _verifier_sortie_audiocpp(resultat, chemin_sortie, "ACE-Step 1.5 repaint", log=log)
+    return chemin_sortie, backend
+
+
+def inpaint_stable_audio(
+    chemin_source: str,
+    description: str,
+    chemin_sortie: str,
+    *,
+    start_sec: float,
+    end_sec: float,
+    strength: float = 1.0,
+    steps: int = 8,
+    guidance: float = 1.0,
+    sampler: Optional[str] = None,
+    negative_prompt: Optional[str] = None,
+    graine: int = 42,
+    backend: str = "vulkan",
+    threads: int = 16,
+    modele: Optional[str] = None,
+    log: Callable[[str], None] = print,
+    timeout_s: int = 1800,
+) -> Tuple[str, str]:
+    """Stable Audio 3 Medium ``inpaint_audio`` route on Vulkan (fast, RTF ~1.48).
+
+    Wave 1 user-validated (2026-11-14): 27x faster than CPU ACE-Step xl-turbo,
+    subject to Stability AI Community License and full-mix VAE re-encoding
+    (non-masked boundary diffs exist; use ``repaint_acestep`` when bit-exact
+    outside-mask preservation is mandatory).
+    """
+    if not os.path.exists(chemin_source):
+        raise FileNotFoundError(f"Source track not found: {chemin_source}")
+    if start_sec < 0 or end_sec <= start_sec:
+        raise ValueError(
+            f"Invalid inpaint span [{start_sec}, {end_sec}]: require 0 <= start < end."
+        )
+    modele_resolu = modele or DEFAULT_SA3_MEDIUM_MODEL
+    if not os.path.exists(modele_resolu):
+        raise FileNotFoundError(
+            f"Stable Audio 3 Medium GGUF not found: {modele_resolu} — download "
+            f"Stable-Audio-3-Medium-GGUF/stable-audio-3-medium-f16.gguf."
+        )
+    os.makedirs(os.path.dirname(os.path.abspath(chemin_sortie)), exist_ok=True)
+    noise_level = max(0.0, min(1.0, float(strength)))
+
+    wav_source = _preparer_wav_temp(chemin_source, sr=44100, etiquette="ffmpeg sa3 source")
+    try:
+        info = soundfile.info(wav_source)
+        duration_sec = float(info.duration)
+        if duration_sec <= 0:
+            raise ValueError(f"Source audio has non-positive duration: {chemin_source}")
+        if start_sec >= duration_sec or end_sec > duration_sec:
+            raise ValueError(
+                f"Inpaint span [{start_sec:g}, {end_sec:g}] exceeds source duration {duration_sec:.3f}s."
+            )
+
+        cmd = [
+            resoudre_audiocpp(),
+            "--task", "gen",
+            "--family", "stable_audio",
+            "--model", modele_resolu,
+            "--backend", backend,
+            "--threads", str(int(threads)),
+            "--audio", wav_source,
+            "--text", description,
+            "--request-option", f"stable_audio.duration_sec={duration_sec:.3f}",
+            "--request-option", "stable_audio.audio_input_kind=inpaint_audio",
+            "--request-option", f"stable_audio.inpaint_mask_start_sec={start_sec:g}",
+            "--request-option", f"stable_audio.inpaint_mask_end_sec={end_sec:g}",
+            "--request-option", f"stable_audio.init_noise_level={noise_level:g}",
+            "--request-option", f"stable_audio.num_inference_steps={int(steps)}",
+            "--request-option", f"stable_audio.guidance_scale={guidance:g}",
+            "--out", chemin_sortie,
+            "--log",
+            "--metrics",
+        ]
+        if negative_prompt:
+            cmd.extend(["--request-option", f"stable_audio.negative_prompt={negative_prompt}"])
+        if sampler in ("pingpong", "euler"):
+            cmd.extend(["--request-option", f"stable_audio.sampler_mode={sampler}"])
+        if graine >= 0:
+            cmd.extend(["--request-option", f"stable_audio.seed={int(graine)}"])
+
+        resultat = run_engine(
+            cmd, check=False, capture=True, timeout=timeout_s,
+            etiquette="audio.cpp stable_audio inpaint",
+        )
+    finally:
+        if os.path.exists(wav_source):
+            os.remove(wav_source)
+
+    _verifier_sortie_audiocpp(resultat, chemin_sortie, "Stable Audio 3 inpaint_audio", log=log)
     return chemin_sortie, backend
 
 
@@ -768,6 +987,14 @@ def apply_output_declick(audio: np.ndarray, sr: int, fade_ms: float = 10.0) -> n
         envelope = envelope.reshape(-1, 1)
     out[:n_fade] *= envelope
     return out
+
+
+def declick_fichier_wav(chemin_wav: str, fade_ms: float = 10.0) -> str:
+    """Applies start-of-file declick in place on an existing PCM16 WAV file."""
+    audio, sr = charger_audio(chemin_wav)
+    nettoye = apply_output_declick(audio, sr, fade_ms=fade_ms)
+    soundfile.write(chemin_wav, nettoye, sr, subtype="PCM_16")
+    return chemin_wav
 
 
 def verifier_boucle(chemin: str) -> Dict:

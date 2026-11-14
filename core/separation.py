@@ -18,6 +18,7 @@ import os
 import shutil
 from typing import Any, Dict
 
+from core.config import DEFAULT_BS_ROFORMER_MODEL, DEFAULT_MEL_ROFORMER_MODEL
 from core.music_ai import convertir_mp3, resoudre_audiocpp, resoudre_ffmpeg
 from core.process import run_engine
 
@@ -25,8 +26,16 @@ MODELE_HTDEMUCS = os.getenv(
     "HTDEMUCS_MODEL",
     os.path.join("C:\\Modeles_LLM", "HTDemucs-GGUF", "htdemucs-f16.gguf"),
 )
+MODELE_MEL_ROFORMER = os.getenv("MEL_ROFORMER_MODEL", DEFAULT_MEL_ROFORMER_MODEL)
+MODELE_BS_ROFORMER = os.getenv("BS_ROFORMER_MODEL", DEFAULT_BS_ROFORMER_MODEL)
 SR_HDEMUCS = 44100
 STEMS_INSTRUMENTAL = ("drums", "bass", "other")
+
+# RoFormer separation families validated in Wave 1 (2026-11-14).
+_ROFORMER_SPECS = {
+    "mel_roformer": ("mel_band_roformer", lambda: MODELE_MEL_ROFORMER, "Mel-Band RoFormer"),
+    "bs_roformer": ("bs_roformer", lambda: MODELE_BS_ROFORMER, "BS-RoFormer"),
+}
 
 # SAM Audio (text-prompted separation) — engine support = upstream PR #711, shipped in
 # the production audio.cpp v0.9.0 (installed 2026-09-30). Validated on the scratch build
@@ -95,60 +104,108 @@ def separate_sam_audio(chemin_audio: str, dossier_travail: str, texte: str = "th
     }
 
 
-def retirer_voix(chemin_audio: str, dossier_travail: str, backend: str = "vulkan") -> Dict[str, Any]:
-    """
-    Separates audio into HTDemucs stems and builds the instrumental without vocals.
-    Returns the paths {instrumental_wav, instrumental_mp3, stems_dir, voix_wav}.
-    """
-    if not os.path.exists(MODELE_HTDEMUCS):
-        raise FileNotFoundError(
-            f"HTDemucs package not found: {MODELE_HTDEMUCS} — download it from "
-            f"audio-cpp/audio.cpp-gguf (HTDemucs-GGUF/htdemucs-f16.gguf, 84 MB)."
-        )
+def _preparer_audio_44k(chemin_audio: str, wav_dest: str) -> str:
+    """Resamples any audio input to 44.1 kHz stereo PCM16 WAV (separation contract)."""
     ffmpeg = resoudre_ffmpeg()
-    os.makedirs(dossier_travail, exist_ok=True)
-
-    # 1) 44.1 kHz stereo resampling (required by HTDemucs)
-    wav44 = os.path.join(dossier_travail, "source_44k.wav")
     run_engine(
         [ffmpeg, "-hide_banner", "-y", "-i", chemin_audio,
-         "-ar", str(SR_HDEMUCS), "-ac", "2", "-c:a", "pcm_s16le", wav44],
+         "-ar", str(SR_HDEMUCS), "-ac", "2", "-c:a", "pcm_s16le", wav_dest],
         check=True, timeout=600, etiquette="ffmpeg 44k resampling",
     )
+    return wav_dest
 
-    # 2) Stem separation (multi-output => --out-dir mandatory)
+
+def retirer_voix(
+    chemin_audio: str,
+    dossier_travail: str,
+    backend: str = "vulkan",
+    moteur: str = "htdemucs",
+    apollo: bool = False,
+) -> Dict[str, Any]:
+    """
+    Separates audio into stems and builds the vocal-free instrumental.
+
+    Engines supported:
+    - ``htdemucs`` (default, 4 stems: drums/bass/other/vocals)
+    - ``mel_roformer`` (Mel-Band RoFormer 2-stem, RTF ~0.20 Vulkan, Wave 1 validated)
+    - ``bs_roformer`` (BS-RoFormer ep368 2-stem, RTF ~1.44 Vulkan, Wave 1 validated)
+
+    When ``apollo=True``, polishes the separated instrumental via Apollo 44.1 kHz
+    (-1 dBTP peak guard). Returns {instrumental_wav, instrumental_mp3, stems_dir, voix_wav}.
+    """
+    engine = (moteur or "htdemucs").lower()
+    if engine in _ROFORMER_SPECS:
+        family, get_model, display_name = _ROFORMER_SPECS[engine]
+        modele = get_model()
+        if not os.path.exists(modele):
+            raise FileNotFoundError(f"{display_name} package not found: {modele}")
+    elif engine == "htdemucs":
+        modele = MODELE_HTDEMUCS
+        if not os.path.exists(modele):
+            raise FileNotFoundError(
+                f"HTDemucs package not found: {modele} — download it from "
+                f"audio-cpp/audio.cpp-gguf (HTDemucs-GGUF/htdemucs-f16.gguf, 84 MB)."
+            )
+    else:
+        raise ValueError(
+            f"Unknown separation engine '{moteur}' (choices: htdemucs, mel_roformer, bs_roformer)."
+        )
+
+    ffmpeg = resoudre_ffmpeg()
+    os.makedirs(dossier_travail, exist_ok=True)
+    wav44 = _preparer_audio_44k(chemin_audio, os.path.join(dossier_travail, "source_44k.wav"))
     stems_dir = os.path.join(dossier_travail, "stems")
     os.makedirs(stems_dir, exist_ok=True)
-    # Live HTDemucs progress (separation = minutes)
-    run_engine(
-        [resoudre_audiocpp(), "--task", "sep", "--family", "htdemucs",
-         "--model", MODELE_HTDEMUCS, "--backend", backend, "--threads", "16",
-         "--audio", wav44, "--out-dir", stems_dir],
-        capture=False, check=True, timeout=3600, etiquette="audio.cpp htdemucs",
-    )
-    manquants = [s for s in STEMS_INSTRUMENTAL + ("vocals",)
-                 if not os.path.exists(os.path.join(stems_dir, f"{s}.wav"))]
-    if manquants:
-        raise RuntimeError(f"Missing HTDemucs stems: {', '.join(manquants)}")
-
-    # 3) Instrumental = drums + bass + other (sum without vocals, levels preserved)
+    instrumental_raw = os.path.join(dossier_travail, "instrumental_raw.wav")
     instrumental = os.path.join(dossier_travail, "instrumental.wav")
-    entrees: list = []
-    for s in STEMS_INSTRUMENTAL:
-        entrees += ["-i", os.path.join(stems_dir, f"{s}.wav")]
-    filtre = "".join(f"[{i}:a]" for i in range(len(STEMS_INSTRUMENTAL)))
-    filtre += f"amix=inputs={len(STEMS_INSTRUMENTAL)}:normalize=0"
-    run_engine(
-        [ffmpeg, "-hide_banner", "-y", *entrees, "-filter_complex", filtre,
-         "-c:a", "pcm_s16le", instrumental],
-        check=True, timeout=600, etiquette="ffmpeg amix instrumental",
-    )
 
-    # 4) Listening MP3
+    if engine in _ROFORMER_SPECS:
+        run_engine(
+            [resoudre_audiocpp(), "--task", "sep", "--family", family,
+             "--model", modele, "--backend", backend, "--threads", "16",
+             "--audio", wav44, "--out-dir", stems_dir, "--log", "--metrics"],
+            capture=False, check=True, timeout=3600, etiquette=f"audio.cpp {family}",
+        )
+        manquants = [s for s in ("vocals", "instrumental")
+                     if not os.path.exists(os.path.join(stems_dir, f"{s}.wav"))]
+        if manquants:
+            raise RuntimeError(f"Missing {display_name} stems: {', '.join(manquants)}")
+        src_inst = os.path.join(stems_dir, "instrumental.wav")
+        shutil.copy2(src_inst, instrumental_raw if apollo else instrumental)
+    else:
+        run_engine(
+            [resoudre_audiocpp(), "--task", "sep", "--family", "htdemucs",
+             "--model", modele, "--backend", backend, "--threads", "16",
+             "--audio", wav44, "--out-dir", stems_dir],
+            capture=False, check=True, timeout=3600, etiquette="audio.cpp htdemucs",
+        )
+        manquants = [s for s in STEMS_INSTRUMENTAL + ("vocals",)
+                     if not os.path.exists(os.path.join(stems_dir, f"{s}.wav"))]
+        if manquants:
+            raise RuntimeError(f"Missing HTDemucs stems: {', '.join(manquants)}")
+
+        entrees: list = []
+        for s in STEMS_INSTRUMENTAL:
+            entrees += ["-i", os.path.join(stems_dir, f"{s}.wav")]
+        filtre = "".join(f"[{i}:a]" for i in range(len(STEMS_INSTRUMENTAL)))
+        filtre += f"amix=inputs={len(STEMS_INSTRUMENTAL)}:normalize=0"
+        cible_mix = instrumental_raw if apollo else instrumental
+        run_engine(
+            [ffmpeg, "-hide_banner", "-y", *entrees, "-filter_complex", filtre,
+             "-c:a", "pcm_s16le", cible_mix],
+            check=True, timeout=600, etiquette="ffmpeg amix instrumental",
+        )
+
+    if apollo:
+        from core.audio_restore import restaurer_apollo
+        restaurer_apollo(instrumental_raw, instrumental, backend=backend)
+
     mp3 = convertir_mp3(instrumental, instrumental.replace(".wav", ".mp3"), 192)
     return {
         "instrumental_wav": instrumental,
         "instrumental_mp3": mp3,
         "stems_dir": stems_dir,
         "voix_wav": os.path.join(stems_dir, "vocals.wav"),
+        "moteur": engine,
+        "apollo": apollo,
     }

@@ -46,8 +46,8 @@ WORKFLOW_FAMILY = {
     "audio_restaure": "voice",
     "lfm3_tts": "voice",
     "music_bg": "music", "chanson": "music", "musique_adn": "music",
-    "musique_essence": "music", "acestep_cover": "music", "retrait_voix": "music",
-    "sfx": "music", "audio_ambience": "music",
+    "musique_essence": "music", "acestep_cover": "music", "audio_repaint": "music",
+    "retrait_voix": "music", "sfx": "music", "audio_ambience": "music",
     "upscale": "utils", "batch": "utils",
 }
 
@@ -68,7 +68,7 @@ SHARED_BY_FAMILY = {
 HIDDEN_DESTS = {
     "llama_cli", "llm_model", "sd_cli", "sd_model", "clip_l", "t5xxl", "vae",
     "backend", "threads", "style", "tolerance", "use_llm", "no_llm",
-    "output_dir", "lora_dir", "upscale_model", "upscale", "upscale_mode",
+    "output_dir", "lora_dir", "upscale_model", "upscale",
     "verbose", "interactive", "workflow", "prompt_flag", "list_workflows",
     "list_loras", "list_upscalers", "check", "update_sd", "update_llama",
     "update_vulkan", "sd_install_dir", "sd_source_dir", "llama_install_dir",
@@ -87,7 +87,8 @@ WIDGET_OVERRIDES = {
 
 # Dest groups that act as an input media path (picker + upload widget).
 INPUT_PATH_DESTS = {
-    "input": "image", "end_img": "image", "control_video": "folder",
+    "input": "image", "init_img": "image", "end_img": "image", "ref_images": "image",
+    "control_video": "folder",
     "portrait": "image", "audio": "audio", "voix_ref": "audio",
     "voice_ref": "audio", "ref_audio": "audio", "monoplan_source": "video",
     "negative_prompt_file": "file", "file": "file", "recipe": "file",
@@ -108,7 +109,7 @@ WORKFLOW_META = {
         ],
     },
     "qwen_image": {
-        "primary": ["qwen_turbo", "negative_prompt", "width", "height"],
+        "primary": ["qwen_turbo", "ref_images", "multi_angles", "negative_prompt", "width", "height"],
         "estimate": "≈2 min turbo · ≈16 min base",
         "presets": [
             {"name": "Turbo validated 2026-10-11 (~123 s)", "values": {"qwen_turbo": True, "seed": 42}},
@@ -117,6 +118,7 @@ WORKFLOW_META = {
         "warnings": [
             "RESEARCH license — personal / non-commercial use only.",
             "turbo: steps/CFG are forced (8 / 1.0) — leave them unset.",
+            "multi_angles (opt-in LoRA) auto-enables turbo + <mva>; requires --ref-image / input.",
         ],
     },
     "moss_image": {
@@ -180,10 +182,10 @@ WORKFLOW_META = {
         "warnings": ["LTX-2.5: frames = 1 + multiple of 8, max 81; CFG ≤ 1.5; no negative prompt."],
     },
     "h3_ref2va": {
-        "primary": ["turbo", "ref_frames", "ref_audio", "max_vram", "dry_run"],
+        "primary": ["turbo", "init_img", "end_img", "ref_frames", "ref_audio", "max_vram", "dry_run"],
         "estimate": "≈38 min turbo · ≈70 min base (22 frames)",
         "presets": [{"name": "Turbo (mandatory, validated §1.16)", "values": {"turbo": True}}],
-        "warnings": ["Always --turbo (validated 2026-09-09, ~2× faster)."],
+        "warnings": ["Always --turbo (validated 2026-09-09, ~2× faster).", "FL2VA (--init-img + optional --end-img) chains cleanly; keep >=22 frames."],
     },
     "monoplan_ia": {
         "primary": ["monoplan_frames", "monoplan_duration", "zoom_debut", "zoom_fin", "ambiance", "monoplan_source", "carton_titre", "upscale_4k"],
@@ -205,7 +207,7 @@ WORKFLOW_META = {
     "lfm3_tts": {"primary": ["tts_langue", "tts_voix"], "estimate": "seconds (faster than real time, GPU)"},
     "ocr_image": {"primary": ["input", "ocr_consigne"], "estimate": "≈5 s/page (GPU, ~2 GB VRAM)", "heavy": False},
     "audio_upscale": {"primary": ["upsr_variante", "upsr_rate"], "estimate": "CPU RTF ~13 (minutes)", "warnings": ["Mono output; refuses input > 24 kHz (§1.27)."]},
-    "audio_restaure": {"primary": ["restore_chunk", "restore_overlap"], "estimate": "≈seconds (Vulkan RTF ~0.5)", "warnings": ["Speech only (RE-USE); output = input rate/channels/length (§1.53)."]},
+    "audio_restaure": {"primary": ["restore_engine", "restore_chunk", "restore_overlap"], "estimate": "≈seconds (Vulkan RTF ~0.5)", "warnings": ["RE-USE: speech only; Apollo: 44.1 kHz general polish with -1.0 dBTP guard."]},
     "music_bg": {
         "primary": ["moteur", "variante", "lufs", "loop_mode", "candidats", "force_bpm", "tonalite", "mesure", "lyrics", "analyse"],
         "estimate": "≈5–15 min (× candidates)",
@@ -218,10 +220,15 @@ WORKFLOW_META = {
     "musique_adn": {"primary": ["langue", "negatif"], "estimate": "≈5–15 min"},
     "musique_essence": {"primary": ["scale", "keep_vocals"], "estimate": "≈10 min", "warnings": ["scale plateau 0.40–0.45 (validated)."]},
     "acestep_cover": {"primary": ["audio", "cover_threads"], "estimate": "CPU RTF ~2.6"},
-    "retrait_voix": {"primary": ["music_backend"], "estimate": "≈2–5 min"},
+    "audio_repaint": {
+        "primary": ["audio", "repaint_engine", "repaint_start", "repaint_end", "repaint_mode", "repaint_strength"],
+        "estimate": "≈seconds (SA3 Vulkan) · ≈1–2 min (ACE-Step CPU)",
+        "warnings": ["ACE-Step repaint is bit-exact outside [start, end]; SA3 inpaint_audio is faster on Vulkan."],
+    },
+    "retrait_voix": {"primary": ["sep_engine", "apollo", "music_backend"], "estimate": "≈1–5 min"},
     "sfx": {"primary": ["sfx_engine", "duration"], "estimate": "ia ≈1 min · procedural seconds"},
     "audio_ambience": {"primary": ["ambience_type", "duration"], "estimate": "seconds (CPU)", "heavy": False},
-    "upscale": {"primary": ["factor"], "estimate": "≈1–4 min"},
+    "upscale": {"primary": ["factor", "upscale_mode", "vsr_temporal_chunk_size"], "estimate": "≈1–4 min (image) · multi-min (SeedVR2 video)"},
     "batch": {"primary": ["file", "continue_on_error"], "estimate": "depends on recipe"},
     "open_water": {
         "primary": ["ow_params", "ow_duration", "ow_loop"],
@@ -268,7 +275,8 @@ ESTIMATE_SECONDS = {
     "mesh3d": 180, "skybox": 360, "turnaround3d": 240, "upscale": 120,
     "qwen_image": 130, "makehuman_clothes": 300, "outfit": 600, "pose_control": 180,
     "animal_godot": 420, "vfx_flipbook": 300, "music_bg": 600, "musique_adn": 600,
-    "musique_essence": 600, "retrait_voix": 180, "acestep_cover": 480,
+    "musique_essence": 600, "retrait_voix": 180, "acestep_cover": 480, "audio_repaint": 180,
+    "audio_restaure": 60,
     "character_makeup": 600, "character3d": 900, "asset_blendkit": 600,
     "video_multishot": 600, "monoplan_ia": 900, "video": 1500, "video_vace": 1680,
     "h3_ref2va": 2280, "mesh_ia": 700, "batch": 600, "audio_upscale": 600,

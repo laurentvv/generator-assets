@@ -13,6 +13,7 @@ from PIL import Image
 from core.config import (
     DEFAULT_CLIP_L,
     DEFAULT_H3_AUDIO_VAE,
+    DEFAULT_H3_FL2VA_MODEL,
     DEFAULT_H3_LLM,
     DEFAULT_H3_REF2VA_MODEL,
     DEFAULT_H3_VIDEO_VAE,
@@ -22,6 +23,7 @@ from core.config import (
     DEFAULT_MOSS_IMAGE_TOKENIZER,
     DEFAULT_MOSS_IMAGE_VAE,
     DEFAULT_QWEN_IMAGE21_LLM,
+    DEFAULT_QWEN_IMAGE21_LLM_VISION,
     DEFAULT_QWEN_IMAGE21_MODEL,
     DEFAULT_QWEN_IMAGE21_VAE,
     DEFAULT_SD_CLI,
@@ -247,7 +249,9 @@ def generer_image_qwen21(
     strength: float = 0.65,
     loras: Optional[List[Union[str, Tuple[str, float]]]] = None,
     lora_dir: Optional[str] = None,
-    sigmas: Optional[str] = None
+    sigmas: Optional[str] = None,
+    ref_images: Optional[List[str]] = None,
+    llm_vision: Optional[str] = None,
 ) -> Image.Image:
     """
     Renders an image with Qwen-Image-2.1 (7B DiT GGUF, Vulkan).
@@ -256,20 +260,16 @@ def generer_image_qwen21(
     Q8_0 diffusion + Qwen3-VL-8B Q4_K_M text encoder (offloaded to CPU, encoded
     once per prompt) + dedicated VAE. Dimensions MUST be multiples of 32
     (sd-cli requirement for this architecture). Measured ~23.6 s/step at
-    1152x640 (40 steps ≈ 16 min/image) — --fa shows no speedup on RDNA2 but
-    stays in the validated command. Text encoder/VAE run from RAM, diffusion
-    from VRAM.
+    1152x640 (40 steps ≈ 16 min/image) — Text encoder/VAE run from RAM,
+    diffusion from VRAM.
 
-    Compositing mode (img2img + LoRA), user-VALIDATED 2026-10-05 night A/B
-    (journal 2026-10-05): init_image = CUTOUT paste of the product onto the
-    background (white-key the product first — a pasted WHITE BOX survives
-    img2img even at strength 0.90), prompt starts with the LoRA trigger word
-    "pengyu", strength 0.65 + 24 steps = natural contact shadow + consistent
-    lighting (RunningHubAI rh-qwen-image-2.1-lora: sd-cli applies 448/448
-    tensors, zero unmapped keys; file in DEFAULT_LORA_DIRS[0]). ⚠️ Model under
-    Qwen RESEARCH license: personal / non-commercial use ONLY. Without
-    output_path, goes through a unique temporary file like
-    generer_image_vulkan.
+    Compositing / Multi-Reference modes:
+    - ``init_image`` (-i + --strength): pixel-blend img2img compositing (user-VALIDATED
+      2026-10-05 with RunningHubAI LoRA).
+    - ``ref_images`` (-r + ``--llm_vision``): multimodal reference conditioning via
+      ``mmproj-Qwen3VL-8B-Instruct-F16.gguf`` (user-VALIDATED 2026-11-14 with
+      ``qwen21_multiple_angles_v2`` LoRA and ``<mva>`` trigger).
+    ⚠️ Model under Qwen RESEARCH license: personal / non-commercial use ONLY.
     """
     if width % 32 != 0 or height % 32 != 0:
         raise ValueError(
@@ -277,6 +277,17 @@ def generer_image_qwen21(
         )
     if init_image and not os.path.exists(init_image):
         raise FileNotFoundError(f"Init image not found: {init_image}")
+    refs = list(ref_images or [])
+    for ref in refs:
+        if not os.path.exists(ref):
+            raise FileNotFoundError(f"Reference image not found: {ref}")
+    vision_path: Optional[str] = None
+    if refs:
+        vision_path = llm_vision or DEFAULT_QWEN_IMAGE21_LLM_VISION
+        if not os.path.exists(vision_path):
+            raise FileNotFoundError(
+                f"Qwen3-VL vision projector (--llm_vision) not found: {vision_path}"
+            )
 
     prompt_final = formater_prompt_avec_loras(prompt, loras)
 
@@ -286,10 +297,11 @@ def generer_image_qwen21(
         os.close(descripteur)
         os.remove(output_path)
 
-    mode_str = "img2img" if init_image else "t2i"
+    mode_str = "ref" if refs else ("img2img" if init_image else "t2i")
     if loras:
         mode_str += f" + {len(loras)} LoRA(s)"
     print(f"[Qwen-Image-2.1 - {mode_str}] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
+    sd_cli = sd_cli or DEFAULT_SD_CLI
     commande = [
         sd_cli,
         "--diffusion-model", model,
@@ -302,7 +314,7 @@ def generer_image_qwen21(
         "-W", str(width),
         "-H", str(height),
         "-s", str(seed),
-        "--fa",
+        "--flash-attn", "on",
         "--offload-to-cpu",
         "-o", output_path,
     ]
@@ -310,6 +322,10 @@ def generer_image_qwen21(
         commande.extend(["--sigmas", sigmas])
     if negative_prompt:
         commande.extend(["-n", negative_prompt])
+    if vision_path:
+        commande.extend(["--llm_vision", vision_path])
+    for ref in refs:
+        commande.extend(["-r", ref])
     if init_image:
         commande.extend(["-i", init_image, "--strength", str(strength)])
     dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
@@ -377,6 +393,7 @@ def generer_image_moss(
         os.remove(output_path)
 
     print(f"[MOSS-Image-SFT - t2i] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
+    sd_cli = sd_cli or DEFAULT_SD_CLI
     commande = [
         sd_cli,
         "--diffusion-model", model,
@@ -459,6 +476,7 @@ def generer_video_vulkan(
 
     print(f"[Vulkan Video - {mode_str}] Generating ({width}x{height}, {video_frames} frames @ {fps} fps, steps={steps})...")
 
+    sd_cli = sd_cli or DEFAULT_SD_CLI
     commande = [
         sd_cli,
         "-M", "vid_gen",
@@ -537,6 +555,95 @@ def arrondir_grille_h3(video_frames: int) -> int:
     return 5 + 17 * ((video_frames - 5 + 16) // 17)
 
 
+def _executer_vid_gen_h3(
+    *,
+    tag: str,
+    prompt: str,
+    sd_cli: str,
+    modele: str,
+    vae: str,
+    audio_vae: str,
+    llm: str,
+    extra_args: List[str],
+    video_frames: int,
+    fps: int,
+    width: int,
+    height: int,
+    steps: int,
+    cfg_scale: float,
+    seed: int,
+    max_vram: int,
+    lora: Optional[str],
+    lora_dir: Optional[str],
+    backend: str,
+    threads: int,
+    output_path: str,
+    dry_run: bool,
+    log_fn,
+) -> str:
+    """Shared MiniMax-H3 vid_gen execution helper for Ref2VA and FL2VA routes."""
+    manquants = [p for p in (modele, vae, audio_vae, llm) if not os.path.exists(p)]
+    if manquants:
+        raise FileNotFoundError(
+            f"Missing MiniMax-H3 ({tag}) models: " + "; ".join(manquants)
+            + " — check C:\\Modeles_LLM / D:\\Modeles_LLM (HF leejet/MiniMax-H3-GGUF and Comfy-Org/MiniMax-H3)."
+        )
+
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    frames_grille = arrondir_grille_h3(video_frames)
+    w_aligne = max(32, (width + 31) // 32 * 32)
+    h_aligne = max(32, (height + 31) // 32 * 32)
+    prompt_final = formater_prompt_avec_loras(prompt, [lora]) if lora else prompt
+
+    sd_cli = sd_cli or DEFAULT_SD_CLI
+    commande = [
+        sd_cli,
+        "-M", "vid_gen",
+        "--diffusion-model", modele,
+        "--vae", vae,
+        "--audio-vae", audio_vae,
+        "--llm", llm,
+        "-p", prompt_final,
+        *extra_args,
+        "-W", str(w_aligne),
+        "-H", str(h_aligne),
+        "--video-frames", str(frames_grille),
+        "--fps", str(fps),
+        "--steps", str(steps),
+        "--cfg-scale", str(cfg_scale),
+        "--sampling-method", "euler",
+        "--diffusion-fa",
+        "--offload-to-cpu",
+        "--rng", "cpu",
+        "--max-vram", str(max_vram),
+        "-s", str(seed),
+        "-o", output_path,
+        "-t", str(threads),
+        "--backend", backend,
+        "-v",
+    ]
+    if lora:
+        dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
+        if not os.path.isdir(dossier_lora_effectif):
+            raise FileNotFoundError(f"LoRA folder not found: {dossier_lora_effectif}")
+        commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
+
+    if dry_run:
+        log_fn(f"[{tag}] DRY-RUN — command built ({len(commande)} args), not executed:")
+        log_fn("  " + " ".join(f'"{c}"' if " " in c else c for c in commande))
+        return output_path
+
+    try:
+        run_engine(commande, timeout=7200, capture=False, check=True, etiquette=f"sd-cli {tag}")
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"The output video {output_path} was not produced.")
+        log_fn(f"✅ {tag} video generated: {output_path}")
+        return output_path
+    except Exception as e:
+        log_fn(f"❌ Error during {tag} generation via sd-cli: {e}")
+        raise
+
+
 def generer_video_ref2va_h3(
     prompt: str,
     sd_cli: str = DEFAULT_SD_CLI,
@@ -566,39 +673,16 @@ def generer_video_ref2va_h3(
     Generates a video WITH audio via MiniMax-H3 Ref2VA: a reference video
     (folder of frames at 24 fps) + its paired WAV condition the DiT (tags
     <Video 1> / <Audio 1> in the prompt). Recipe validated on 2026-09-09
-    (RX 6950 XT 16 GB / 31.8 GB RAM) — see MEMORY_BANK §1.16:
-      • mandatory memory placement: DiT on GPU with a cap (--max-vram, else
-        device lost), Qwen3-VL 32B and video VAE on CPU (else VRAM OOM);
-      • frame grid "5 + 17k" (22/39/56…), 24 fps imposed by the model;
-      • Ref2VA incompatible with --init-img/--end-img (the reference carries
-        the continuity); flow-shift handled internally by H3 (do not impose it).
-      • `lora` = LoRA to load as at_runtime (format "name[:weight]", resolved in
-        lora_dir or DEFAULT_LORA_DIRS) — e.g. the validated 8-step distilled turbo
-        (sampling −64%, total −46%, quality/match ≥ baseline, §1.16).
+    (RX 6950 XT 16 GB / 31.8 GB RAM) — see MEMORY_BANK §1.16.
     """
-    modele = model_path or DEFAULT_H3_REF2VA_MODEL
-    vae = vae_path or DEFAULT_H3_VIDEO_VAE
-    audio_vae = audio_vae_path or DEFAULT_H3_AUDIO_VAE
-    llm = llm_path or DEFAULT_H3_LLM
-
-    manquants = [p for p in (modele, vae, audio_vae, llm) if not os.path.exists(p)]
-    if manquants:
-        raise FileNotFoundError(
-            "Missing MiniMax-H3 Ref2VA models: " + "; ".join(manquants)
-            + " — download: HF repo leejet/MiniMax-H3-GGUF (ref2va DiT) and Comfy-Org/MiniMax-H3 (VAEs)"
-        )
     if not ref_video_dir or not os.path.isdir(ref_video_dir):
         raise ValueError(f"Invalid reference frame folder: {ref_video_dir}")
     if ref_audio_path and not os.path.exists(ref_audio_path):
         raise FileNotFoundError(f"Reference WAV not found: {ref_audio_path}")
 
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-
-    # 5+17k grid and 32 px-aligned canvas (otherwise H3 rounds up)
     frames_grille = arrondir_grille_h3(video_frames)
     w_aligne = max(32, (width + 31) // 32 * 32)
     h_aligne = max(32, (height + 31) // 32 * 32)
-
     n_ref = len([f for f in os.listdir(ref_video_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))])
     log_fn(
         f"[H3 Ref2VA] {w_aligne}x{h_aligne}, {frames_grille} frames @ 24 fps, "
@@ -606,56 +690,114 @@ def generer_video_ref2va_h3(
         + (f" + audio {os.path.basename(ref_audio_path)}" if ref_audio_path else "")
         + (f" + LoRA {lora}" if lora else "")
     )
-
-    prompt_final = formater_prompt_avec_loras(prompt, [lora]) if lora else prompt
-
-    commande = [
-        sd_cli,
-        "-M", "vid_gen",
-        "--diffusion-model", modele,
-        "--vae", vae,
-        "--audio-vae", audio_vae,
-        "--llm", llm,
-        "-p", prompt_final,
-        "--ref-video", ref_video_dir,
-        "-W", str(w_aligne),
-        "-H", str(h_aligne),
-        "--video-frames", str(frames_grille),
-        "--fps", str(fps),
-        "--steps", str(steps),
-        "--cfg-scale", str(cfg_scale),
-        "--sampling-method", "euler",
-        "--diffusion-fa",
-        "--offload-to-cpu",
-        "--rng", "cpu",
-        "--max-vram", str(max_vram),
-        "-s", str(seed),
-        "-o", output_path,
-        "-t", str(threads),
-        "--backend", backend,
-        "-v"
-    ]
+    extra_args = ["--ref-video", ref_video_dir]
     if ref_audio_path:
-        commande.extend(["--ref-video-audio", ref_audio_path])
+        extra_args.extend(["--ref-video-audio", ref_audio_path])
 
-    if lora:
-        dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
-        if not os.path.isdir(dossier_lora_effectif):
-            raise FileNotFoundError(f"LoRA folder not found: {dossier_lora_effectif}")
-        commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
+    return _executer_vid_gen_h3(
+        tag="H3 Ref2VA",
+        prompt=prompt,
+        sd_cli=sd_cli,
+        modele=model_path or DEFAULT_H3_REF2VA_MODEL,
+        vae=vae_path or DEFAULT_H3_VIDEO_VAE,
+        audio_vae=audio_vae_path or DEFAULT_H3_AUDIO_VAE,
+        llm=llm_path or DEFAULT_H3_LLM,
+        extra_args=extra_args,
+        video_frames=video_frames,
+        fps=fps,
+        width=width,
+        height=height,
+        steps=steps,
+        cfg_scale=cfg_scale,
+        seed=seed,
+        max_vram=max_vram,
+        lora=lora,
+        lora_dir=lora_dir,
+        backend=backend,
+        threads=threads,
+        output_path=output_path,
+        dry_run=dry_run,
+        log_fn=log_fn,
+    )
 
-    if dry_run:
-        log_fn(f"[H3 Ref2VA] DRY-RUN — command built ({len(commande)} args), not executed:")
-        log_fn("  " + " ".join(f'"{c}"' if " " in c else c for c in commande))
-        return output_path
 
-    try:
-        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli H3 Ref2VA")
-        if not os.path.exists(output_path):
-            raise FileNotFoundError(f"The output video {output_path} was not produced.")
-        log_fn(f"✅ H3 Ref2VA video generated: {output_path}")
-        return output_path
-    except Exception as e:
-        log_fn(f"❌ Error during H3 Ref2VA generation via sd-cli: {e}")
-        raise
+def generer_video_fl2va_h3(
+    prompt: str,
+    init_image: str,
+    end_image: Optional[str] = None,
+    sd_cli: str = DEFAULT_SD_CLI,
+    model_path: Optional[str] = None,
+    vae_path: Optional[str] = None,
+    audio_vae_path: Optional[str] = None,
+    llm_path: Optional[str] = None,
+    video_frames: int = 22,
+    fps: int = 24,
+    width: int = 864,
+    height: int = 480,
+    steps: int = 8,
+    cfg_scale: float = 1.0,
+    seed: int = 42,
+    max_vram: int = 10,
+    lora: Optional[str] = None,
+    lora_dir: Optional[str] = None,
+    backend: str = "diffusion=vulkan0,te=cpu,vae=cpu",
+    threads: int = DEFAULT_THREADS,
+    output_path: str = "output/h3_fl2va.webm",
+    dry_run: bool = False,
+    log_fn=print,
+) -> str:
+    """First/Last-Frame-to-Video+Audio generation via MiniMax-H3 FL2VA.
+
+    Wave 1 chain verified (2026-11-14): accepts ``--init-img`` and optional
+    ``--end-img`` with ``minimax_h3_fl2va_pruned-Q4_K_M.gguf`` + optional
+    8-step turbo LoRA (624/624 tensors). Mutually exclusive with ``--ref-video``.
+    """
+    if not init_image or not os.path.exists(init_image):
+        raise FileNotFoundError(f"Start keyframe (--init-img) not found: {init_image}")
+    if end_image and not os.path.exists(end_image):
+        raise FileNotFoundError(f"End keyframe (--end-img) not found: {end_image}")
+
+    frames_grille = arrondir_grille_h3(video_frames)
+    w_aligne = max(32, (width + 31) // 32 * 32)
+    h_aligne = max(32, (height + 31) // 32 * 32)
+    if frames_grille < 22:
+        log_fn(
+            f"⚠️ H3 FL2VA with {frames_grille} frames (0.17 s) is too short for full "
+            "transitions; use --frames >= 22 (17k+5 grid).",
+        )
+    log_fn(
+        f"[H3 FL2VA] {w_aligne}x{h_aligne}, {frames_grille} frames @ 24 fps, "
+        f"steps={steps}, cfg={cfg_scale}, seed={seed}, init={os.path.basename(init_image)}"
+        + (f" -> end={os.path.basename(end_image)}" if end_image else "")
+        + (f" + LoRA {lora}" if lora else "")
+    )
+    extra_args = ["--init-img", init_image]
+    if end_image:
+        extra_args.extend(["--end-img", end_image])
+
+    return _executer_vid_gen_h3(
+        tag="H3 FL2VA",
+        prompt=prompt,
+        sd_cli=sd_cli,
+        modele=model_path or DEFAULT_H3_FL2VA_MODEL,
+        vae=vae_path or DEFAULT_H3_VIDEO_VAE,
+        audio_vae=audio_vae_path or DEFAULT_H3_AUDIO_VAE,
+        llm=llm_path or DEFAULT_H3_LLM,
+        extra_args=extra_args,
+        video_frames=video_frames,
+        fps=fps,
+        width=width,
+        height=height,
+        steps=steps,
+        cfg_scale=cfg_scale,
+        seed=seed,
+        max_vram=max_vram,
+        lora=lora,
+        lora_dir=lora_dir,
+        backend=backend,
+        threads=threads,
+        output_path=output_path,
+        dry_run=dry_run,
+        log_fn=log_fn,
+    )
 

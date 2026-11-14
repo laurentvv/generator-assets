@@ -67,6 +67,13 @@ class QwenImageWorkflow(BaseWorkflow):
                   "and the checkpoint's custom sigma schedule (the only schedule evaluated upstream); "
                   "do not pass --steps/--cfg-scale with it. Compositing (-i/-l) is mechanically "
                   "compatible but its 8-step quality is untested. (--turbo is taken by h3_ref2va.)"),
+        dict(flags=("--ref-image",), dest="ref_images", action="append", default=None,
+             help="qwen_image: multimodal reference image(s) (-r) with Qwen3-VL --llm_vision "
+                  "(repeatable; Wave 1 validated 2026-11-14)."),
+        dict(flags=("--multi-angles",), dest="multi_angles", default=None,
+             help="qwen_image: qwen21_multiple_angles_v2 view synthesis ('orbit' for 4 views, "
+                  "a camera cue like 'front-right quarter view, elevated shot', or '|'-separated cues). "
+                  "Auto-enables 8-step turbo + <mva> trigger + LoRA (RESEARCH non-commercial)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -95,11 +102,12 @@ class QwenImageWorkflow(BaseWorkflow):
         # Turbo mode: the distilled checkpoint ships ONE validated schedule
         # (8 steps, CFG 1). Explicit steps/cfg alongside it would silently
         # desync the sigma schedule — refuse instead of guessing.
-        turbo = bool(params.get("qwen_turbo"))
+        multi_angles = (params.get("multi_angles") or "").strip()
+        turbo = bool(params.get("qwen_turbo")) or bool(multi_angles)
         sigmas = None
         qwen_model = DEFAULT_QWEN_IMAGE21_MODEL
         if turbo:
-            if raw_steps not in (None, 25, 8) or raw_cfg not in (None, 1.0):
+            if not multi_angles and (raw_steps not in (None, 25, 8) or raw_cfg not in (None, 1.0)):
                 raise ValueError(
                     "--turbo locks the distilled schedule (8 steps, CFG 1.0); "
                     "drop --steps/--cfg-scale."
@@ -108,16 +116,38 @@ class QwenImageWorkflow(BaseWorkflow):
             sigmas = QWEN_IMAGE21_TURBO_SIGMAS
             qwen_model = DEFAULT_QWEN_IMAGE21_TURBO_MODEL
 
-        # Compositing mode (flat flags -i/-l/--lora-dir/--strength, shared with
-        # the other families). Sentinel snapping to the validated recipe:
-        # strength 0.65; 24 steps in img2img (40 stays the t2i recipe).
+        # Compositing / Reference mode (-i pixel blend vs -r VLM reference).
         init_image = params.get("input")
-        loras = params.get("loras")
+        ref_images = list(params.get("ref_images") or [])
+        loras = list(params.get("loras") or [])
         lora_dir = params.get("lora_dir")
         strength = params.get("strength")
         strength = 0.65 if strength in (None, 0.55) else float(strength)
-        if init_image and steps == 40:
+        if init_image and not multi_angles and steps == 40:
             steps = 24
+
+        vues: list[str] = []
+        if multi_angles:
+            if not ref_images:
+                if not init_image:
+                    raise ValueError(
+                        "--multi-angles requires a reference image via -i <path> or --ref-image <path>."
+                    )
+                ref_images = [init_image]
+                init_image = None
+            if multi_angles.lower() == "orbit":
+                vues = [
+                    "front-right quarter view, elevated shot",
+                    "right side view, eye-level shot",
+                    "back view, eye-level shot",
+                    "left side view, elevated shot",
+                ]
+            else:
+                vues = [v.strip() for v in multi_angles.split("|") if v.strip()]
+            if not vues:
+                raise ValueError("--multi-angles must provide 'orbit' or at least one camera cue.")
+            if not any("qwen21_multiple_angles_v2" in str(item).lower() for item in loras):
+                loras.append("qwen21_multiple_angles_v2:0.9")
 
         negative_prompt = params.get("negative_prompt")
         fichier_negatif = params.get("negative_prompt_file")
@@ -139,12 +169,38 @@ class QwenImageWorkflow(BaseWorkflow):
             if retour.returncode == 1:
                 raise RuntimeError("Busy machine (check_charge_systeme exit 1) — wait for a free slot before relaunching.")
 
-        mode_str = "img2img" if init_image else "t2i"
+        mode_str = "multi-angles" if multi_angles else ("ref" if ref_images else ("img2img" if init_image else "t2i"))
         if loras:
             mode_str += f" + {len(loras)} LoRA(s)"
         if turbo:
             mode_str += " [turbo 8-step]"
         self.log(f"Qwen-Image-2.1 rendering ({mode_str}, {width}x{height}, steps={steps}, cfg={cfg_scale}, strength={strength}) — RESEARCH license: personal/non-commercial use only.")
+
+        if vues:
+            outputs = []
+            for idx, vue in enumerate(vues, 1):
+                cible = output_path if len(vues) == 1 else os.path.join(output_dir, f"{nom_sortie}_angle_{idx:02d}.png")
+                prefixe = "" if "<mva>" in prompt else "<mva> "
+                prompt_angle = f"{prefixe}{vue}, {prompt}"
+                generer_image_qwen21(
+                    prompt=prompt_angle,
+                    negative_prompt=negative_prompt,
+                    model=qwen_model,
+                    width=width,
+                    height=height,
+                    steps=steps,
+                    cfg_scale=cfg_scale,
+                    seed=seed,
+                    output_path=cible,
+                    ref_images=ref_images,
+                    loras=loras or None,
+                    lora_dir=lora_dir,
+                    sigmas=sigmas,
+                )
+                outputs.append(cible)
+            self.log(f"Multi-angle image(s) saved: {', '.join(outputs)}", emoji="✅")
+            return {"image": outputs[0], "images": outputs} if len(outputs) > 1 else {"image": outputs[0]}
+
         generer_image_qwen21(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -157,7 +213,8 @@ class QwenImageWorkflow(BaseWorkflow):
             output_path=output_path,
             init_image=init_image,
             strength=strength,
-            loras=loras,
+            ref_images=ref_images or None,
+            loras=loras or None,
             lora_dir=lora_dir,
             sigmas=sigmas,
         )
