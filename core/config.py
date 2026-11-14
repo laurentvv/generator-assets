@@ -141,6 +141,10 @@ DEFAULT_QWEN_IMAGE21_VAE = os.getenv(
 DEFAULT_QWEN_IMAGE21_TURBO_MODEL = os.getenv(
     "QWEN_IMAGE21_TURBO_MODEL_PATH", r"C:\Modeles_LLM\Qwen-Image-2.1-Turbo-Q8_0.gguf"
 )
+DEFAULT_QWEN_IMAGE21_LLM_VISION = os.getenv(
+    "QWEN_IMAGE21_LLM_VISION_PATH",
+    chercher_fichier_modele("mmproj-Qwen3VL-8B-Instruct-F16.gguf"),
+)
 QWEN_IMAGE21_TURBO_SIGMAS = "1.0,0.978453,0.95418,0.926626,0.89508,0.845148,0.704534,0.414568,0.0"
 
 # MOSS-Image-SFT (OpenMOSS, 5.1B DiT flow-matching, Apache-2.0) — pipeline
@@ -218,6 +222,10 @@ DEFAULT_H3_LLM = os.getenv(
 DEFAULT_H3_REF2VA_TURBO_LORA = os.getenv(
     "H3_REF2VA_TURBO_LORA", "minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16"
 )
+DEFAULT_H3_FL2VA_MODEL = os.getenv(
+    "H3_FL2VA_MODEL_PATH",
+    chercher_fichier_modele("minimax_h3_fl2va_pruned-Q4_K_M.gguf"),
+)
 
 # Wan 2.1 VACE (control-video guidance: pose/depth/skeleton frames lock the motion).
 # VALIDATED 2026-10-01 by the user ("très bien") on the distilled LightX2V route:
@@ -237,6 +245,22 @@ DEFAULT_MUSIC3_LM = os.getenv("MUSIC3_LM_PATH", os.path.join(DEFAULT_MUSIC3_DIR,
 # ACE-Step 1.5 Turbo GGUF (bf16) via audio.cpp — monolithic package, MIT licence.
 # ⚠️ q8_0 unsupported for this family (planner sampling failure).
 DEFAULT_ACESTEP15_DIR = os.getenv("ACESTEP15_MODEL_DIR", os.path.join(DEFAULT_MODEL_DIR, "ACE-Step1.5-GGUF"))
+DEFAULT_SA3_MEDIUM_MODEL = os.getenv(
+    "SA3_MEDIUM_MODEL_PATH",
+    chercher_fichier_modele(os.path.join("Stable-Audio-3-Medium-GGUF", "stable-audio-3-medium-f16.gguf")),
+)
+DEFAULT_MEL_ROFORMER_MODEL = os.getenv(
+    "MEL_ROFORMER_MODEL",
+    chercher_fichier_modele(os.path.join("Mel-Band-RoFormer-GGUF", "mel-band-roformer-q8_0.gguf")),
+)
+DEFAULT_BS_ROFORMER_MODEL = os.getenv(
+    "BS_ROFORMER_MODEL",
+    chercher_fichier_modele(os.path.join("BS-RoFormer-ep368-GGUF", "bs-roformer-ep368-q8_0.gguf")),
+)
+DEFAULT_APOLLO_MODEL = os.getenv(
+    "APOLLO_MODEL",
+    chercher_fichier_modele(os.path.join("Apollo-GGUF", "apollo-orig.gguf")),
+)
 DEFAULT_MUSIC_FLAMINGO_DIR = os.getenv("MUSIC_FLAMINGO_DIR", os.path.join(DEFAULT_MODEL_DIR, "music-flamingo"))
 DEFAULT_MUSIC_FLAMINGO_LM = os.getenv(
     "MUSIC_FLAMINGO_LM_PATH", os.path.join(DEFAULT_MUSIC_FLAMINGO_DIR, "music-flamingo-hf.Q4_K_M.gguf")
@@ -260,6 +284,14 @@ DEFAULT_UPSCALER_DIRS = [
 DEFAULT_ESRGAN_MODEL = os.getenv(
     "SD_ESRGAN_PATH",
     os.path.join(DEFAULT_MODEL_DIR, "upscalers", "RealESRGAN_x4plus_anime_6B.pth")
+)
+DEFAULT_SEEDVR2_MODEL = os.getenv(
+    "SEEDVR2_MODEL_PATH",
+    chercher_fichier_modele(os.path.join("SeedVR2", "seedvr2_3b_int8_convrot.safetensors")),
+)
+DEFAULT_SEEDVR2_VAE = os.getenv(
+    "SEEDVR2_VAE_PATH",
+    chercher_fichier_modele(os.path.join("SeedVR2", "seedvr2_ema_vae_fp16.safetensors")),
 )
 
 # Specialized ONNX models (Segmentation, PBR, Animation)
@@ -741,7 +773,9 @@ _WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
     "musique_adn": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5)", None),
     "musique_essence": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5)", None),
     "acestep_cover": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5)", None),
-    "retrait_voix": (LICENCE_COMMERCIAL, "MIT / Apache-2.0 (HTDemucs / SAM Audio)", None),
+    "audio_repaint": (LICENCE_COMMERCIAL, "MIT (ACE-Step 1.5 repaint)", None),
+    "audio_restaure": (LICENCE_COMMERCIAL, "OpenMDW-1.1 / MIT (RE-USE / Apollo)", None),
+    "retrait_voix": (LICENCE_COMMERCIAL, "MIT / Apache-2.0 (HTDemucs / RoFormer / SAM Audio)", None),
     "voix_perso": (LICENCE_COMMERCIAL, "Apache-2.0 (Kokoro / Qwen3-TTS)", None),
     "lfm3_tts": (
         LICENCE_CONDITIONNELLE,
@@ -778,7 +812,7 @@ _WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
     "ocr_image": (LICENCE_COMMERCIAL, "Apache-2.0 (MiniCPM-OCR-1.0)", None),
     "ocr_pdf": (LICENCE_COMMERCIAL, "Apache-2.0 (MiniCPM-OCR-1.0)", None),
     "mesh3d": (LICENCE_COMMERCIAL, "Permissive procedural Blender generation", None),
-    "upscale": (LICENCE_COMMERCIAL, "BSD-3 / MIT (RealESRGAN / 4x-UltraSharp / Lanczos)", None),
+    "upscale": (LICENCE_COMMERCIAL, "BSD-3 / MIT / Apache-2.0 (RealESRGAN / 4x-UltraSharp / SeedVR2 / Lanczos)", None),
     "rife_interp": (LICENCE_COMMERCIAL, "MIT (RIFE ncnn-vulkan)", None),
     "rembg": (LICENCE_COMMERCIAL, "MIT / Apache-2.0 (BiRefNet / U2Net / OpenCV)", None),
     "flowmap": (LICENCE_COMMERCIAL, "Permissive procedural math", None),
@@ -887,6 +921,36 @@ def classifier_licence_workflow(
         return {
             "tier": LICENCE_COMMERCIAL,
             "licence": "Apache-2.0 (Wan 2.1 / Wan 2.2)",
+            "commercial_ok": True,
+            "alternative_commerciale": None,
+        }
+
+    if wf == "audio_restaure":
+        if mot == "apollo":
+            return {
+                "tier": LICENCE_COMMERCIAL,
+                "licence": "MIT (Apollo 44.1 kHz music/bandwidth restoration)",
+                "commercial_ok": True,
+                "alternative_commerciale": None,
+            }
+        return {
+            "tier": LICENCE_COMMERCIAL,
+            "licence": "OpenMDW-1.1 (RE-USE NemotronLabs speech restoration)",
+            "commercial_ok": True,
+            "alternative_commerciale": None,
+        }
+
+    if wf == "audio_repaint":
+        if mot == "sa3":
+            return {
+                "tier": LICENCE_CONDITIONNELLE,
+                "licence": "Stability AI Community License (Stable Audio 3 Medium inpaint)",
+                "commercial_ok": True,
+                "alternative_commerciale": "Use default --repaint-engine acestep (MIT, bit-exact outside mask)",
+            }
+        return {
+            "tier": LICENCE_COMMERCIAL,
+            "licence": "MIT (ACE-Step 1.5 repaint)",
             "commercial_ok": True,
             "alternative_commerciale": None,
         }

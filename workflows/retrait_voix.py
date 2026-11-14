@@ -19,15 +19,25 @@ from workflows.base import BaseWorkflow, WorkflowRegistry
 
 @WorkflowRegistry.register
 class RetraitVoixWorkflow(BaseWorkflow):
-    """Vocal removal from a track: HTDemucs (audio.cpp Vulkan, validated 2026-09-06)
-    or SAM Audio text-prompted separation (--music-backend sam, CPU, validated 2026-09-28)."""
+    """Vocal removal: HTDemucs, Mel-Band/BS-RoFormer + optional Apollo polish, or SAM Audio."""
 
     name = "retrait_voix"
-    description = ("Removes the vocals from a track: HTDemucs (default, audio.cpp Vulkan: "
-                   "instrumental + 4 stems drums/bass/other/vocals) or SAM Audio "
-                   "(--music-backend sam: text-prompted separation, CPU). Automatic 44.1 kHz resampling.")
+    description = ("Removes vocals from a track: HTDemucs (default, 4 stems), "
+                   "Mel-Band/BS-RoFormer (--sep-engine mel_roformer|bs_roformer, SOTA 2-stem, "
+                   "optional --apollo 44.1 kHz polish), or SAM Audio (--sep-engine sam).")
 
     emoji = "🎧"
+
+    PARAMETRES = [
+        dict(flags=("--sep-engine",), dest="sep_engine",
+             choices=["htdemucs", "mel_roformer", "bs_roformer", "sam"], default="htdemucs",
+             help="Separation engine for retrait_voix: htdemucs (4 stems, default) | "
+                  "mel_roformer (7.2x faster SOTA 2-stem, Wave 1 validated) | bs_roformer "
+                  "(band-split 2-stem) | sam (text-prompted SAM Audio, CPU)."),
+        dict(flags=("--apollo",), action="store_true", default=False,
+             help="Polish the extracted instrumental via Apollo 44.1 kHz restoration (-1 dBTP peak guard)."),
+    ]
+
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         source = params.get("input")
         if not source or not os.path.exists(source):
@@ -35,9 +45,11 @@ class RetraitVoixWorkflow(BaseWorkflow):
         backend = params.get("music_backend") or "vulkan"
         if backend == "auto":
             backend = "vulkan"
+        sep_engine = (params.get("sep_engine") or "htdemucs").lower()
+        apollo = bool(params.get("apollo"))
 
         nom = slugifier_texte(params.get("output") or os.path.splitext(os.path.basename(source))[0])[:60]
-        if backend == "sam":
+        if sep_engine == "sam" or (sep_engine == "htdemucs" and backend == "sam"):
             dossier = os.path.join("output", "retrait_voix", f"{nom}_sam")
             self.log(f"SAM Audio separation of {source} (CPU — Vulkan impossible on RDNA2)", "🎧")
             res = separate_sam_audio(source, dossier)
@@ -45,9 +57,16 @@ class RetraitVoixWorkflow(BaseWorkflow):
             self.log(f"Raw outputs kept: {res['stems_dir']} (target.wav/residual.wav)", "📦")
             return res
 
-        dossier = os.path.join("output", "retrait_voix", nom)
-        self.log(f"HTDemucs separation of {source} (backend {backend})", "🎧")
-        res = retirer_voix(source, dossier, backend=backend)
+        suffixe = f"_{sep_engine}" if sep_engine != "htdemucs" else ""
+        if apollo:
+            suffixe += "_apollo"
+        dossier = os.path.join("output", "retrait_voix", f"{nom}{suffixe}")
+        self.log(
+            f"{sep_engine} separation of {source} (backend {backend}"
+            + (", +Apollo 44.1kHz" if apollo else "") + ")",
+            "🎧",
+        )
+        res = retirer_voix(source, dossier, backend=backend, moteur=sep_engine, apollo=apollo)
         self.log(f"Instrumental ready: {res['instrumental_mp3']} — listen to validate", "✅")
         self.log(f"Stems kept: {res['stems_dir']} (isolated vocals: vocals.wav)", "📦")
         return res
