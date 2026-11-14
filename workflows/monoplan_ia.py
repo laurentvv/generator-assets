@@ -21,6 +21,7 @@ from typing import Any, Dict
 
 from core.cinema import (
     FPS_SORTIE_4K,
+    TAILLE_MASTER_4K,
     TAILLE_UPSCALE_4X,
     assembler_finale,
     conformer_amorce_16_9,
@@ -97,54 +98,66 @@ class MonoplanIaWorkflow(BaseWorkflow):
         zoom_fin = float(params.get("zoom_fin") or 1.32)
         ambiance = params.get("ambiance")  # EN prompt of the optional sound bed
 
-        # 4K UHD path (--4k): AI upscale at the head of the chain + AMF master 30 fps
+        # 4K UHD path (--4k) and validated LTX two-stage upscaler (--hires)
         mode_4k = bool(params.get("upscale_4k"))
+        hires = bool(params.get("hires", False))
+        w_amorce, h_amorce = (608, 352) if hires else (832, 480)
         fps_sortie = FPS_SORTIE_4K if mode_4k else fps
         suffixe = "4k" if mode_4k else "1080p"
+        hires_tag = "_hires" if hires else ""
 
-        amorce = os.path.join(output_dir, f"{nom_base}_amorce_832x480.png")
-        webm = params.get("monoplan_source") or os.path.join(output_dir, f"{nom_base}_brut.webm")
+        amorce = os.path.join(output_dir, f"{nom_base}_amorce_{w_amorce}x{h_amorce}.png")
+        webm = params.get("monoplan_source") or os.path.join(output_dir, f"{nom_base}{hires_tag}_brut.webm")
         if params.get("monoplan_source") and not os.path.exists(webm):
             raise FileNotFoundError(f"Monoplan source not found: {webm}")
-        brut_4k = os.path.join(output_dir, f"{nom_base}_brut_4k_ai.mp4")
-        ralenti = os.path.join(output_dir, f"{nom_base}_{duree:.1f}s_{suffixe}_ralenti.mp4")
-        master = os.path.join(output_dir, f"{nom_base}_{duree:.1f}s_{suffixe}.mp4")
+        brut_4k = os.path.join(output_dir, f"{nom_base}{hires_tag}_brut_4k_ai.mp4")
+        ralenti = os.path.join(output_dir, f"{nom_base}{hires_tag}_{duree:.1f}s_{suffixe}_ralenti.mp4")
+        master = os.path.join(output_dir, f"{nom_base}{hires_tag}_{duree:.1f}s_{suffixe}.mp4")
 
         self.log(f"AI single take \"monoplan\" ({duree:.1f} s @ {fps_sortie} fps"
-                 f"{', 4K UHD path' if mode_4k else ''}, zoom {zoom_debut:.2f}→{zoom_fin:.2f}, seed {seed})…")
+                 f"{', 4K UHD path' if mode_4k else ''}"
+                 f"{', LTX --hires 1216x704' if hires else ''}, zoom {zoom_debut:.2f}→{zoom_fin:.2f}, seed {seed})…")
 
         # 1. 16:9 seed frame (or reuse of an already-generated monoplan — resume)
         if not os.path.exists(webm):
             if not image or not os.path.exists(image):
                 raise FileNotFoundError(f"Seed image not found: {image}")
-            conformer_amorce_16_9(image, amorce)
-            self.log("16:9 seed frame ready (Lanczos recrop 832×480).")
+            if hires and frames > 33:
+                self.log(
+                    f"⚠️ LTX-2.5 --hires at {frames} frames uses >16 GB CPU VAE RAM; pass --monoplan-frames 33 if RAM-constrained.",
+                    emoji="⚠️",
+                )
+            conformer_amorce_16_9(image, amorce, largeur=w_amorce, hauteur=h_amorce)
+            self.log(f"16:9 seed frame ready (Lanczos recrop {w_amorce}×{h_amorce}).")
             generer_monoplan_ltx(amorce, prompt, webm, frames=frames, fps=fps,
-                                 seed=seed, log_fn=lambda m: self.log(m.strip()))
+                                 seed=seed, hires=hires, log_fn=lambda m: self.log(m.strip()))
             self.log("Monoplan generated (LTX-2.5 Distilled, 8 steps euler_a, cfg 1.0).")
         else:
             self.log(f"Monoplan already present, reused: {webm}")
 
         # 1bis. 4K path: AI super-resolution of the raw frames (§1.17 —
-        # ALWAYS from the 480p, never from an interpolated master)
+        # ALWAYS from the raw shot, never from an interpolated master)
         source_ralenti = webm
+        w_4k, h_4k = (4864, 2816) if hires else TAILLE_UPSCALE_4X
+        taille_4k_travail = TAILLE_MASTER_4K if hires else TAILLE_UPSCALE_4X
         if mode_4k:
             if not os.path.exists(brut_4k):
                 self.log(f"4x-UltraSharp AI super-resolution of the raw frames "
                          f"(sd-cli Vulkan, ~7 min for {frames} frames)…")
                 master_brut_4k(webm, brut_4k, log_fn=lambda m: self.log(m.strip()))
-                self.log("Raw 3328×1920 master ready (480p pixelation rebuilt at the source).")
+                self.log(f"Raw {w_4k}×{h_4k} master ready (low-res pixelation rebuilt at the source).")
             else:
                 self.log(f"Raw 4K master already present: {brut_4k}")
             source_ralenti = brut_4k
 
         # 2. Slow-down + motion-compensated interpolation to the target duration
         if not os.path.exists(ralenti):
+            taille_interp = TAILLE_MASTER_4K if (mode_4k and hires) else (None if mode_4k else (1920, 1080))
             _, facteur = ralentir_interp(
                 source_ralenti, ralenti, duree, fps=fps_sortie,
-                taille=None if mode_4k else (1920, 1080))
-            self.log(f"Slow-down ×{facteur:.2f} applied (mci/aobmc/vsbmc interpolation, "
-                     + ("3328×1920 @ 30 fps" if mode_4k else "1080p") + ").")
+                taille=taille_interp)
+            res_log = f"{taille_4k_travail[0]}×{taille_4k_travail[1]} @ {fps_sortie} fps" if mode_4k else "1080p"
+            self.log(f"Slow-down ×{facteur:.2f} applied (mci/aobmc/vsbmc interpolation, {res_log}).")
         else:
             self.log(f"Slow-down already present: {ralenti}")
 
@@ -152,11 +165,14 @@ class MonoplanIaWorkflow(BaseWorkflow):
         zoom_4k = None
         if not os.path.exists(master):
             if mode_4k:
-                zoom_4k = os.path.join(output_dir, f"{nom_base}_{duree:.1f}s_4k_zoom.mp4")
+                zoom_4k = os.path.join(output_dir, f"{nom_base}{hires_tag}_{duree:.1f}s_4k_zoom.mp4")
                 if not os.path.exists(zoom_4k):
                     zoom_pur(ralenti, zoom_4k, zoom_debut=zoom_debut, zoom_fin=zoom_fin,
-                             taille=TAILLE_UPSCALE_4X, fps=fps_sortie, cas=0.0)
-                    self.log("Pure zoom applied at 3328×1920 (smootherstep ramp, CAS deferred to the conform).")
+                             taille=taille_4k_travail, fps=fps_sortie, cas=0.0)
+                    self.log(
+                        f"Pure zoom applied at {taille_4k_travail[0]}×{taille_4k_travail[1]} "
+                        "(smootherstep ramp, CAS deferred to the conform)."
+                    )
                 conformer_master_4k(zoom_4k, master, fps=fps_sortie)
                 self.log(f"4K UHD master conform (3840×2160 lanczos + CAS, h264_amf {fps_sortie} fps).")
             else:
@@ -223,4 +239,4 @@ class MonoplanIaWorkflow(BaseWorkflow):
             self.log(f"  • {cle} : {os.path.basename(chemin)}")
 
         return {"status": "success", **livrables, "duree": duree, "frames": frames,
-                "mode_4k": mode_4k}
+                "mode_4k": mode_4k, "hires": hires}

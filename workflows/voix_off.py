@@ -68,6 +68,22 @@ class VoixOffWorkflow(BaseWorkflow):
         if moteur not in MOTEURS:
             moteur = None
         voix_ref = params.get("voix_ref") or None
+        ref_lib = (params.get("ref_lib") or "").strip()
+        if not voix_ref and ref_lib:
+            from core.web_assets import resoudre_reference_web_assets
+
+            lib_hit = resoudre_reference_web_assets(
+                ref_lib,
+                asset_type="audio",
+                min_duration_ms=1500,
+                max_duration_ms=15000,
+            )
+            voix_ref = lib_hit["abs_path"]
+            self.log(
+                f"Voice reference resolved from web-assets: {lib_hit['rel_path']} "
+                f"({lib_hit['licence']['licence']})",
+                "📚",
+            )
         if not moteur:
             moteur = "qwen3" if voix_ref else "voxcpm2"
             self.log(f"Automatic engine: {moteur}", "🎚️")

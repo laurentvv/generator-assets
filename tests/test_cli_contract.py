@@ -404,8 +404,8 @@ def test_famille_2d_migree_en_declarations():
         asset_blendkit, batch, flowmap, generate, ip_adapter, material3d,
         pixelart, pose_control, tileable, variations, voxel3d, vfx_flipbook,
     )
-    assert len(generate.GenerateWorkflow.PARAMETRES) == 1          # --segmenter
-    assert len(material3d.Material3DWorkflow.PARAMETRES) == 2      # --normal-strength --pbr-engine
+    assert len(generate.GenerateWorkflow.PARAMETRES) == 4          # --segmenter --control-image --control-type --control-strength
+    assert len(material3d.Material3DWorkflow.PARAMETRES) == 5      # --normal-strength --pbr-engine --delight --from-lib --pbr-group
     assert len(pixelart.PixelArtWorkflow.PARAMETRES) == 2          # --palette --grid-size
     assert len(asset_blendkit.AssetBlendkitWorkflow.PARAMETRES) == 11
     assert len(variations.VariationsWorkflow.PARAMETRES) == 1      # --themes

@@ -194,3 +194,35 @@ def estimer_pbr_complet(
         "metallic": metallic,
         "orm": orm
     }
+
+
+def delight_albedo(image: Image.Image, strength: float = 0.75) -> Image.Image:
+    """Removes baked directional lighting gradients and bright specular hotspots
+    from a texture while preserving underlying hue and chrominance."""
+    import cv2
+
+    s = float(np.clip(strength, 0.0, 1.0))
+    if s <= 0.0:
+        return image.convert("RGB")
+
+    rgb = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
+    h, w, _ = rgb.shape
+
+    luma = 0.2126 * rgb[:, :, 0] + 0.7152 * rgb[:, :, 1] + 0.0722 * rgb[:, :, 2]
+    sigma = max(16.0, float(min(h, w)) / 10.0)
+    luma_low = cv2.GaussianBlur(luma, (0, 0), sigmaX=sigma, borderType=cv2.BORDER_REFLECT)
+    target_luma = float(np.median(luma_low))
+    ratio_flat = (target_luma / np.maximum(luma_low, 1e-4)) ** s
+    luma_flat = np.clip(luma * ratio_flat, 0.0, 1.2)
+
+    # Dampen low-saturation clipped specular highlights softly without washing colored areas
+    max_c = rgb.max(axis=2)
+    min_c = rgb.min(axis=2)
+    sat = (max_c - min_c) / (max_c + 1e-4)
+    p90 = float(np.percentile(luma_flat, 90.0))
+    spec_mask = np.clip((luma_flat - p90) / max(0.08, 1.0 - p90), 0.0, 1.0) * (1.0 - np.clip(sat * 2.0, 0.0, 1.0))
+    luma_delighted = luma_flat * (1.0 - 0.35 * s * spec_mask)
+
+    scale = np.clip(luma_delighted / np.maximum(luma, 1e-4), 0.2, 2.5)[:, :, None]
+    out = np.clip(rgb * scale, 0.0, 1.0)
+    return Image.fromarray((out * 255.0).round().astype(np.uint8), mode="RGB")

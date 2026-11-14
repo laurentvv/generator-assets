@@ -117,7 +117,19 @@ def main():
     prompt_texte = args.prompt_flag or args.prompt
 
     # Launch interactive mode if explicitly requested or if no parameter was provided
-    a_des_entrees = bool(prompt_texte or args.input or args.file or args.biome_a)
+    a_des_entrees = bool(
+        prompt_texte or args.input or args.file or args.biome_a
+        or getattr(args, "ref_lib", None)
+        or getattr(args, "from_lib", None)
+        or getattr(args, "pbr_group", None)
+        or getattr(args, "source_video", None)
+    )
+    if getattr(args, "scan_web_assets", False) and not a_des_entrees and args.workflow == "generate":
+        from core.web_assets import notifier_scan_web_assets
+        scan_res = notifier_scan_web_assets()
+        print(f"Web-Assets scan: {scan_res}")
+        sys.exit(0 if scan_res.get("ok") else 1)
+
     if args.interactive or (not a_des_entrees and args.workflow == "generate"):
         lancer_mode_interactif(config)
         return
@@ -138,6 +150,13 @@ def main():
             for echec in resultat["echecs"]:
                 print(f"   • '{echec['prompt']}' (workflow {echec['workflow']}): {echec['erreur']}")
             sys.exit(1)
+        if getattr(args, "scan_web_assets", False):
+            from core.web_assets import notifier_scan_web_assets
+            scan_res = notifier_scan_web_assets()
+            if scan_res.get("ok"):
+                print("📚 web-assets re-index scan triggered.")
+            else:
+                print(f"⚠️ web-assets scan skipped ({scan_res.get('error', 'unavailable')}).")
     except Exception as e:
         # Full traceback available in DEBUG (--verbose); short message to the user.
         logger.debug("Full traceback of workflow '%s' failure:", wf_cible, exc_info=True)

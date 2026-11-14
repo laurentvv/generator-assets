@@ -12,6 +12,7 @@ from PIL import Image
 
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.upscaler import resoudre_options_upscale, upscaler_asset, upscale_video
+from core.video_qc import auditer_clip_video
 from workflows.base import BaseWorkflow, WorkflowRegistry
 
 
@@ -29,6 +30,13 @@ class UpscaleWorkflow(BaseWorkflow):
             type=int,
             default=1,
             help="upscale (SeedVR2 video): input frames per temporal chunk (1 or 4n+1; default 1 for 16 GB RX 6950 XT).",
+        ),
+        dict(
+            flags=("--skip-qc",),
+            dest="skip_qc",
+            action="store_true",
+            default=False,
+            help="upscale: bypass the fast pre-upscale video QC gate (frozen frames, collapsed luma, black bands).",
         ),
     ]
 
@@ -50,6 +58,16 @@ class UpscaleWorkflow(BaseWorkflow):
         ext_in = Path(input_path).suffix.lower()
         if ext_in in [".webm", ".mp4", ".avi", ".mov", ".mkv"]:
             self.log(f"🎬 Video file detected: {input_path}")
+            qc_report = None
+            if not params.get("skip_qc"):
+                qc_report = auditer_clip_video(input_path)
+                for warn in qc_report.get("warnings", []):
+                    self.log(f"QC warning: {warn}", emoji="⚠️")
+                if not qc_report["ok"]:
+                    raise RuntimeError(
+                        "Pre-upscale video QC failed (pass --skip-qc to override): "
+                        + "; ".join(qc_report["issues"])
+                    )
             stem_source = Path(input_path).stem
             nom_final = nom_sortie or f"{stem_source}_upscaled_{int(facteur)}x.mp4"
             if not nom_final.lower().endswith((".mp4", ".webm")):
@@ -94,7 +112,8 @@ expand = true
             return {
                 "output_path": video_upscaled,
                 "godot_scene": godot_scene,
-                "is_video": True
+                "is_video": True,
+                "qc": qc_report,
             }
 
         # 2. Standard processing of 2D Images
