@@ -1,4 +1,4 @@
-# Reference catalog of the 40 workflows
+# Reference catalog of the 70 workflows
 
 Source of truth: `docs/workflows_reference.md` (exhaustive inputs/outputs/options,
 mathematical specifications) and `README.md` (visual showcase). This file is the condensed cheat sheet for choosing and launching — if an option is
@@ -96,7 +96,7 @@ Available LoRAs: `-l "game_icon_diablo_style:0.8"` (auto-switches to SDXL Jugger
 | `musique_adn` | New music with the reference's BPM + key, imposed on the planner | minimal `prompt` (EN), `-i` reference, `--duration`, `--tonalite`, `--lyrics` | `.wav` + `.mp3` |
 | `musique_essence` | Music with the essence of a reference (SA3 Medium `init_audio` + vocal removal) | minimal `prompt` (EN), `-i` reference, `--scale` (0.45 validated), `--seed` (42), `--keep-vocals` | `instrumental.wav/.mp3`, `brut.wav`, `stems/` |
 | `acestep_cover` | Re-style an existing track, duration locked (ACE-Step 1.5 turbo `cover` route, CPU — VALIDATED 2026-10-02 "correct" on the gothic reference; strength knobs proven inert on turbo, source auto-converted 48 kHz stereo) | `-p` style (EN, required), `--audio` source (required, shared flag), `--seed` (42), `--cover-threads` (20), `-o` | `music_cover/<name>.wav` (48 kHz stereo = source duration) + `.mp3` |
-| `audio_repaint` | Surgical time-span audio repainting (**Wave 1 VALIDATED 2026-11-14**): `acestep` (`xl-turbo` CPU, MIT, bit-exact PCM16 outside `[start, end]`) or `sa3` (`Stable Audio 3 Medium` Vulkan `inpaint_audio`, ~27x faster, Stability AI Community License, full-mix re-encode) | `--audio` or `-i` source (required), `-p` (EN, required), `--repaint-start`, `--repaint-end`, `--repaint-engine` (`acestep`/`sa3`), `--repaint-mode`, `--repaint-strength`, `--seed`, `-o` | `audio_repaint/<name>.wav` + `.mp3` |
+| `audio_repaint` | Surgical time-span audio repainting (**Wave 1 VALIDATED 2026-11-14**): `acestep` (`xl-turbo` CPU, MIT, bit-exact PCM16 outside `[start, end]`) or `sa3` (`Stable Audio 3 Medium` Vulkan `inpaint_audio`, ~27x faster, Stability AI Community License, full-mix re-encode) | `--audio` or `-i` source (required), `-p` (EN, required), `--repaint-start`, `--repaint-end`, `--repaint-engine` (`acestep`/`sa3`), `--repaint-mode`, `--repaint-strength`, `--lyrics` (inline/`.txt`), `--cfg-scale`, `--seed`, `-o` | `audio_repaint/<name>.wav` + `.mp3` |
 | `retrait_voix` | Vocal removal / stems: `htdemucs` (4 stems Vulkan), `mel_roformer` (7.2× faster SOTA 2-stem, RTF ~0.20), `bs_roformer` (2-stem, RTF ~1.44), optional `--apollo` 44.1 kHz polish (`-1 dBTP` guard), or `sam` (CPU) | `-i` track, `--sep-engine` (`htdemucs`/`mel_roformer`/`bs_roformer`/`sam`), `--apollo`, `--music-backend` | `instrumental.wav/.mp3`, `stems/` (`vocals.wav`, etc.) |
 | `voix_off` | Expressive FR voice-over, cloned from a reference | text or `.txt`, `--voix-ref`, `--moteur` (qwen3/voxcpm2/fish/drama3/kitten2 zero-shot 24 kHz), `--instruct`, `--lufs-voix` (−16) | `voix_off_brut_final.wav` (−16 LUFS) + `.mp3` |
 | `voix_robot` | EN robot voice — frozen VALIDATED recipe (kokoro `af_heart`, pitch 1.30, ringmod 120 Hz, tempo 0.65, gain −4 dB) | EN text or `.txt`, `--robot-*` (defaults = validated recipe) | `.wav`, `.mp3`, `_brut.wav` |
@@ -111,8 +111,8 @@ Key statuses: ACE-Step = validated default music engine (~42 s / 28 s); song val
 4 min); SA3 essence validated (scale 0.40-0.45, seed 42); voix_off validated on 4 engines
 (production = Apache-2.0: qwen3/voxcpm2 + Drama 3 Community License < USD 500k/yr — the only
 commercially usable Fish engine, 16 GB profile `cpu_expert_layers=24`); voix_robot validated
-(17 trials); audio_upscale
-validated but **CPU-only RTF ~13 + mono output** (refuse > 24 kHz). **Playful/subjective → always
+(17 trials); `audio_upscale`
+validated (v0.9.4+: Vulkan first ≤ 14 s @ RTF 1.5-2.2 + CPU fallback @ RTF ~41-50, mono output, refuse > 24 kHz). **Playful/subjective → always
 have it listened to before industrializing.** Dark rock music: known instrumental realism ceiling
 (MEMORY_BANK §1.11/§1.22) — minimal descriptions, imposed minor key.
 
@@ -120,7 +120,7 @@ have it listened to before industrializing.** Dark rock music: known instrumenta
 
 | Workflow | Use | Key inputs | Outputs |
 | :--- | :--- | :--- | :--- |
-| `video` | T2V / I2V / FLF2V (`--end-img`) / V2V video — Wan 2.1/2.2, LTX-2.5, .webm + Godot scene | `prompt`, `-i`, `--frames` (33), `--fps` (24) | `_vid.webm`, `_player.tscn` |
+| `video` | T2V / I2V / FLF2V (`--end-img`) / V2V video — Wan 2.1/2.2, LTX-2.5 + optional post `--upscale` (`esrgan` / `seedvr2`), .webm + Godot scene | `prompt`, `-i`, `--frames` (33), `--fps` (24), `--upscale`, `--upscale-mode` (`auto`/`esrgan`/`seedvr2`/`lanczos`), `--vsr-temporal-chunk-size` | `_vid.webm`, optional `_upscaled_<N>x.mp4`, `_player.tscn` |
 | `video_vace` | **Motion-locked video**: appearance from ref image (`-i`) + motion from control frames (`--control-video`, skeletons/pose/depth PNGs) — Wan 2.1 14B VACE **LightX2V distilled** (VALIDATED 2026-10-01 "très bien"; plain 20-step recipe REJECTED "nul"). 13 frames @ 16 fps 832×480, 8 steps, cfg 1.0, seed 42, `--offload-to-cpu --vae-on-cpu` baked in (~28 min/clip) | `-i` ref image (required), `--control-video` frames dir (required), `prompt` (motion), `--frames/--fps/--steps/--cfg-scale/--seed` overridable | `_vace.webm` |
 | `video_multishot` | **Native multishot video**: several named cuts + continuous soundtrack in ONE LTX-2.5 T2V generation (VALIDATED 2026-10-02 "super": hard cut lands, appearance held, soundtrack generated). 65 frames @ 24 fps 832×480 (1+8k rule, max 81), 8 steps official sigmas, cfg 1.0, `--max-vram 10`, audio VAE, NO negative prompt, LTX-2.5 binary `DEFAULT_SD_CLI_LTX` (= main build `C:\SD` since 2026-10-23). ~10 min/clip. Prompt = shots in order + named cut + audio bed (docs.ltx.io rules) | `prompt` (required), `--frames` (65), `--fps` (24), `--seed` (42), `-o` | `_multishot.webm` (VP8 + PCM) |
 | `monoplan_ia` | **Single-shot cinematic plan** from image (LTX-2.5 + mci slow-mo + pure zoom) — validated, YouTube hooks | `prompt`, `-i` (or `--monoplan-source`), `--monoplan-frames` (65, max ~81; must be 1 + multiple of 8), `--monoplan-duration` (10 s), `--zoom-debut/--zoom-fin`, `--4k` (3840×2160 AMF master), `--ambiance`, `--carton-titre "LINE1\|LINE2"` | `_1080p.mp4` or `_4k.mp4`, `_avec_ambiance.mp4`, `_final_titre.mp4` |
@@ -137,16 +137,7 @@ native 4K. `h3_ref2va` 22 frames ~38 min turbo (~70 min without). LTX ceiling �
 832×480 (beyond: device-lost → reboot before blaming the recipe). YouTube masters: 4K mandatory
 (VP09/AV01), `scripts/conform_youtube_hd.py`, video upscale `scripts/upscale_video_ai.py`.
 
-**⚠️ sd-cli build pitfall (state 2026-10-23, MEMORY_BANK §1.16-1.19)**: MiniMax-H3 runs on the
-main build again (`C:\SD\`, master-995+) — upstream #1976 (54 segments + OOM at submit, broken
-window 864→990) is fixed by #2181 (ggml small-BAR heap mask), validated on the workflow full
-path 10-23 (36.2 min exit 0; the stock 54-segment plan is expected and survives). **LTX-2.5 runs on the main build too**
-(10-23 evening: BOTH 65 f production routes re-validated — `video_multishot` T2V + `monoplan_ia` I2V full chain;
-the workspace refusal cleared with #2181): `monoplan_ia`, `video_multishot` and `h3_ref2va` all need NO override —
-`DEFAULT_SD_CLI_LTX` resolves to the same `C:\SD\sd-cli.exe` (kept as a per-family re-pin point,
-env `SD_CLI_LTX_PATH`). The `C:\SD-6b3edaa\` parallel build is retired from production. Reliable video on the main build: Wan T2V/I2V ≤ ~20 frames with
-`--vae-on-cpu`. Video ESRGAN upscale (`scripts/upscale_video_ai.py`) remains validated. **Always
-re-check this state in MEMORY_BANK before a video render.**
+**⚠️ sd-cli build state (pinned 2026-11-14: `master-1092-5d78740`, 6/6 legs PASS, MEMORY_BANK §1.56)**: `C:\SD\sd-cli.exe` passes H3 Ref2VA `--turbo`, SDXL, Flux `--vae-tiling`, Qwen-Image 2.1 Turbo, LTX-2.5 (`--max-vram 10 --backend diffusion=vulkan0,te=cpu,vae=cpu`), and `#2341` interleaved `<image:...>` (`--llm_vision`), plus **SeedVR2 3B** `int8_convrot` (`-M vid_upscale` Vulkan0) and **MiniMax-H3 FL2VA** (`--init-img`/`--end-img`). `DEFAULT_SD_CLI_LTX` resolves to the same binary (`env SD_CLI_LTX_PATH`). Reliable Wan T2V/I2V: ≤ ~20 frames with `--vae-on-cpu`. Video ESRGAN upscale (`scripts/upscale_video_ai.py`) remains validated alongside SeedVR2. **Always re-check this state in MEMORY_BANK before a video render.**
 
 ## Maintenance (interactive menu 33-35, outside generation)
 

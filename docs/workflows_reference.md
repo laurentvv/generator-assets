@@ -820,9 +820,10 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   3. Supports state-of-the-art video models: **Wan 2.1 / Wan 2.2** (1.3B, 14B MoE High/Low noise), **LTX-2.3 & LTX-2.5** (Lightricks DiT, Gemma 3/4 text encoders, audio VAE), and **MiniMax-H3**.
   4. Encodes and packages video directly into a single lightweight `.webm` container (VP8 / `libwebm`) without external FFmpeg dependencies.
   5. Automatically writes a ready-to-use Godot 4 `VideoStreamPlayer` scene (`.tscn`) configured with loop and autoplay parameters.
-* **Inputs**: `prompt`, `-i, --input` (init image), `--end-img` (final image), `--control-video` (frame directory), `--frames` (default: 33), `--fps` (default: 24), `--flow-shift` (default: 3.0), `-o, --output`.
-* **Engines**: stable-diffusion.cpp Vulkan (`-M vid_gen`), Wan 2.1 / Wan 2.2 / LTX-2.5 GGUF/Safetensors, libwebm.
-* **Outputs**: `_vid.webm`, `_player.tscn` (Godot 4 VideoStreamPlayer scene).
+  6. Optional post-generation AI super-resolution (`--upscale`) via `resoudre_options_upscale` supporting ESRGAN Vulkan, **SeedVR2 3B** (`--upscale-mode seedvr2 --vsr-temporal-chunk-size`), or Lanczos fallback.
+* **Inputs**: `prompt`, `-i, --input` (init image), `--end-img` (final image), `--control-video` (frame directory), `--frames` (default: 33), `--fps` (default: 24), `--flow-shift` (default: 3.0), `--upscale`, `--factor` (default: 2.0), `--upscale-mode` (`auto`, `esrgan`, `seedvr2`, `lanczos`), `--vsr-temporal-chunk-size` (`1` default or `4n+1`), `--seed`, `-o, --output`.
+* **Engines**: stable-diffusion.cpp Vulkan (`-M vid_gen`, `-M vid_upscale` for SeedVR2), Wan 2.1 / Wan 2.2 / LTX-2.5 GGUF/Safetensors, libwebm.
+* **Outputs**: `_vid.webm`, optional `_upscaled_<N>x.mp4`, `_player.tscn` (Godot 4 VideoStreamPlayer scene).
 
 ##### 🖼️ SOTA Video Generation & 4K Master Rendering
 | LTX-2.5 Distilled Master Render (Native Audio) | Wan 2.2 MoE I2V Animation (Nexus Scene) | CAS 0.75 Sharpness Comparison |
@@ -837,6 +838,9 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 
   # Image-to-Video (I2V)
   uv run python main.py -w video -i godot_assets/heros_portrait.png -p "character breathing and blinking with atmospheric fog" --frames 25 -o heros_idle
+
+  # T2V + post-generation SeedVR2 3B video super-resolution (2x)
+  uv run python main.py -w video "mystical glowing waterfall" --frames 25 --upscale --upscale-mode seedvr2 --factor 2 -o waterfall_hq
   ```
 
 * **📥 SOTA Video Model Download Guide (`C:\Modeles_LLM`)** :
@@ -900,7 +904,9 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   # (--turbo = validated distilled LoRA, 8 steps: ~38 min instead of ~70)
   uv run python main.py -w h3_ref2va -i output/overnight/esrgan_4k/01_ltx25_dragon_4k_ultrasharp.mp4 \
     -p "Use the dragon from <Video 1> and the roar from <Audio 1> as the opening state. The dragon breathes a jet of orange fire toward the camera." \
-    --turbo -o dragon_continuation
+  # Keyframe morphing via H3 FL2VA (start + optional end frame, keep >= 22 frames)
+  uv run python main.py -w h3_ref2va --init-img start.png --end-img end.png \
+    -p "smooth camera push-in with ambient wind and distant chimes" --frames 22 --turbo --seed 42 -o morph_h3
   ```
 
 #### 4.10. `monoplan_ia` — Single-Take Cinematic Shot from a Still Image (LTX-2.5 + slow-motion + designed zoom) 🏆
@@ -1036,7 +1042,7 @@ uv run python main.py -w monoplan_ia --monoplan-source output/hero_brut.webm --m
 * **Process**:
   1. Takes the lyrics — inline or from a `.txt` file — with structure tags (`[Intro]`, `[Verse]`, `[Chorus]`, `[Bridge]`, `[Outro]`) that the LM planner orchestrates.
   2. Generates the complete sung song on **ACE-Step 1.5 xl-turbo** (validated variant for vocal quality), French by default (`--langue`), 8 distilled steps, Vulkan with automatic CPU fallback.
-  3. Exports WAV + MP3 224k. ⚠️ Clean any citation/annotation from the lyrics — otherwise it gets sung.
+  3. Applies an anti-pop entry fade (`declick_fichier_wav`, 10 ms half-cosine fade-in) and exports WAV + MP3 224k. ⚠️ Clean any citation/annotation from the lyrics — otherwise it gets sung. Note: Wave 1 ASR evaluation confirmed VoxCPM2 `VocalRender-Pro` score mode (`core/chant_score.py`) is **`zh`-only**, so FR/EN singing stays exclusively on `ACE-Step 1.5 xl-turbo`.
 * **Inputs**: `prompt` (lyrics text or `.txt` path), `--style-musique` (EN style description, default: the user-validated Vent-Gris dark folk direction), `--duration` (default 180 s), `--variante` (default `xl-turbo`), `--langue` (default `fr`), `--seed`.
 * **Engines**: audio.cpp (Vulkan) + ACE-Step 1.5 xl-turbo bf16 GGUF (14.2 Gio) — ~15 min for a 4-minute song (RTF ~3.5-3.9).
 * **Outputs** (`output/music_chanson/`): `<name>.wav` + `<name>.mp3`.
@@ -1053,7 +1059,7 @@ uv run python main.py -w monoplan_ia --monoplan-source output/hero_brut.webm --m
   2. Builds a SOBER style description (your `prompt` in English) + the detected numbers, and **imposes BPM + key + a sober instrumental suffix on the ACE-Step 1.5 planner** — bar-aligned by construction.
   3. Optional lyrics via `--lyrics <fichier.txt>` (a chanson instead of an instrumental — the instrumental suffix is then omitted, unlike the legacy script).
 * **Inputs**: `prompt` (EN style description — keep it sober, see pitfalls), `-i` reference audio (required), `--duration` (default 60 s), `--tonalite` (override), `--negatif`, `--lyrics` (.txt), `--variante` (default `xl-turbo`), `--langue`, `--seed`.
-* **Engines**: audio.cpp (Vulkan) + ACE-Step 1.5 xl-turbo.
+* **Engines**: audio.cpp (Vulkan) + ACE-Step 1.5 xl-turbo (`declick_fichier_wav` applied before MP3 export).
 * **Outputs** (`output/music_chanson/`): `<name>.wav` + `<name>.mp3` (log shows the detected BPM/key).
 * **Example**:
   ```bash
@@ -1126,13 +1132,13 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 * **Process** (validated recipe, 2026-09-18): declares the input bandwidth (8/12/16/24 kHz, auto-detected via ffprobe or forced with `--upsr-rate`), pre-resamples the file to that rate if needed (FFmpeg), then runs the UniverSR flow-matching ODE (4 steps, seed 42) to reconstruct a 48 kHz signal — genuine high-band extrapolation above the input Nyquist (attenuated: −11 dB @ 16 kHz, −19 dB @ 19.2 kHz on a sweep).
 * **Variants**: `speech` (voice, default — the main use case) / `audio` (music).
 * **Inputs**: `-i` WAV/MP3 at reduced bandwidth; `--upsr-variante {speech,audio}`; `--upsr-rate` (Hz, 0 = auto; entries above 24 kHz are refused as already full-band); `--seed`.
-* **Engines**: UniverSR GGUF (`C:\Modeles_LLM\UniverSR-GGUF`, 229 MB per package) via audio.cpp **CPU only** — the Vulkan path is broken upstream (`unsupported backend op 'MUL_MAT'`), RTF ≈ 13 (28 s → ~6 min; a 3-min voice-off → ~40 min). ⚠️ Output is **mono** (stereo input is downmixed by the model).
+* **Engines**: UniverSR GGUF (`C:\Modeles_LLM\UniverSR-GGUF`, 229 MB per package, **CC-BY-4.0** weights — attribution required) via audio.cpp (`v0.9.4+` partial Vulkan support: **inputs ≤ ~14 s** run bit-equivalently on Vulkan at `RTF ~1.5-2.2`, while ≥ 15 s hit the upstream `MUL_MAT` graph ceiling and auto-fallback to CPU at `RTF ~41-50`). ⚠️ Output is **mono** (stereo input is downmixed by the model).
 * **Outputs** (`output/audio_upscale/<name>/`): `<name>_48k.wav` (48 kHz mono) + `<name>_48k.mp3`.
 * **Example**:
   ```bash
   uv run python main.py -w audio_upscale -i voix_16k.wav --upsr-variante speech
   ```
-* **Status (2026-09-18)**: ✅ **User-validated** — voice 16 kHz→48 kHz (*« copie sans bug, parfait même »*) and music 24 kHz→48 kHz (*« très bien, belle batterie »*). Re-test if audio.cpp ships a Vulkan path for this family (RTF would drop to ~1, opening music-bed upsampling). Apollo (compressed-music restoration, same release) was **rejected** (*« moins bonne qualité »* — no audible improvement); its GGUF stays in place, deletable on request.
+* **Status (2026-09-18 / 2026-11-05)**: ✅ **User-validated** — voice 16 kHz→48 kHz (*« copie sans bug, parfait même »*) and music 24 kHz→48 kHz (*« très bien, belle batterie »*). Vulkan ≤ 14 s mapping documented in `MEMORY_BANK` §1.27. Apollo 44.1 kHz compressed-music restoration was later **validated in Wave 1** (`2026-11-14`, `audio_restaure --restore-engine apollo` & `retrait_voix --apollo` with `-1.0 dBTP` headroom guard — see §4.23).
 
 #### 4.16. `animal_godot` — Game-Ready Animated Animal (Pack Blend → GLB for Godot)
 * **Process** (validated recipe, 2026-09-18): opens a rigged animal pack `.blend` (e.g. Quaternius CC0 packs — mesh + armature + native mocap actions), removes the legacy placeholder objects (Camera/Cube/Light), renames every native action to the `AN_*` clip convention, then exports a single **GLB** with `export_animation_mode='ACTIONS'` (one clip per action, +Y up). The result is **verified by re-import** (bone/clip/mesh counts) before delivery.
@@ -1254,7 +1260,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 * **Process** (Wave 1 user-validated 2026-11-14, MEMORY_BANK §1.59):
   - `--repaint-engine acestep` (default, **MIT**, CPU `20` threads, `xl-turbo` + `mem_saver=true`): uses `audio.cpp` `--task-route repaint` to regenerate strictly inside `[--repaint-start, --repaint-end]` while preserving outside audio **bit-exact in PCM16** (`diff max = 3.05e-05` = 1 LSB; no full-clip post declick applied).
   - `--repaint-engine sa3` (**Stability AI Community License**, Vulkan `RTF ~1.48`, **~27× faster** than CPU ACE-Step): uses `Stable Audio 3 Medium` (`inpaint_audio` + `init_noise_level`) for coherent creative variations when full-mix VAE re-encoding across boundaries is acceptable.
-* **Inputs**: `--audio <source>` (or `-i`), `-p <prompt>` (EN), `--repaint-start <sec>` (required), `--repaint-end <sec>` (required), `--repaint-engine` (`acestep` | `sa3`), `--repaint-mode` (`balanced` | `conservative` | `aggressive`, acestep), `--repaint-strength` (`0..1`), `--seed`, `-o`.
+* **Inputs**: `--audio <source>` (or `-i`), `-p <prompt>` (EN), `--repaint-start <sec>` (required), `--repaint-end <sec>` (required), `--repaint-engine` (`acestep` | `sa3`), `--repaint-mode` (`balanced` | `conservative` | `aggressive`, acestep), `--repaint-strength` (`0..1`), `--lyrics` (inline text or `.txt` file, acestep; `[Instrumental]` ignored), `--cfg-scale` (`sa3` guidance, `0.0` supported), `--seed`, `-o`.
 * **Outputs**: `output/audio_repaint/<name>.wav` + `.mp3` (`224k`).
 * **Example**:
   ```bash

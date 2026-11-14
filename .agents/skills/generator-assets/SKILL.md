@@ -184,17 +184,7 @@ within a binary version (ggml arithmetic changes across audio.cpp versions alter
 ~70 min for 22 frames, quality ≥ baseline). The 20-step mode is only for explicit quality A/B
 requests. 4K YouTube masters go through `scripts/conform_youtube_hd.py`.
 
-**⚠️ Common video pitfall (state as of 2026-10-23 — check `docs/MEMORY_BANK.md` §1.16-1.19 before
-any video render, this evolves with sd-cli updates)**: MiniMax-H3 is BACK on the main build
-(`C:\SD\`) since master-995 — upstream #1976 (54 segments + OOM at submit on 864→990) is fixed by
-#2181 (ggml small-BAR heap mask), validated on the workflow full path 2026-10-23 (36.2 min exit 0;
-the stock 54-segment plan is EXPECTED and survives). **LTX-2.5 is BACK on the main build too** (10-23 evening: BOTH 65 f production
-routes re-validated — `video_multishot` T2V + `monoplan_ia` I2V full chain; the #2181
-small-BAR mask cleared the workspace refusal). `DEFAULT_SD_CLI_LTX` now resolves to the
-same `C:\SD\sd-cli.exe` (kept as a per-family re-pin point, env `SD_CLI_LTX_PATH`);
-the `C:\SD-6b3edaa\` parallel build is retired from production. **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject
-("scarecrow with a glowing carved pumpkin head…") collapses the model to its talking-person prior —
-prompt ignored, photoreal man rendered; use objects/scenes/standard humans as subjects**:
+**⚠️ Common video pitfall (state as of 2026-11-14 — `sd-cli` pinned at `master-1092-5d78740`, 6/6 legs PASS; check `docs/MEMORY_BANK.md` §1.16-1.19 & §1.56 before any video render)**: MiniMax-H3 (Ref2VA + FL2VA `--init-img`) and **LTX-2.5** (`video_multishot` T2V + `monoplan_ia` I2V) both run cleanly on the main build (`C:\SD\sd-cli.exe`, `#2181` small-BAR heap mask; `DEFAULT_SD_CLI_LTX` resolves to the same binary). **SeedVR2 3B** (`-M vid_upscale`) runs natively on Vulkan0 (`--upscale-mode seedvr2`), and `#2341` enables `<image:...>` vision mmproj on Qwen. **LTX prompt pitfall (10-08): an OOD hybrid-humanoid subject ("scarecrow with a glowing carved pumpkin head…") collapses the model to its talking-person prior — prompt ignored, photoreal man rendered; use objects/scenes/standard humans as subjects**:
 ```bash
 # monoplan_ia / video_multishot (LTX routes): run directly — NO override since 2026-10-23:
 uv run python main.py -w monoplan_ia ...
