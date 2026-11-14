@@ -502,3 +502,137 @@ def test_seedvr2_image_alpha_and_video_remux(tmp_path, monkeypatch):
     })
     assert res_wf["dimensions"] == (32, 32)
     assert Path(res_wf["output_path"]).exists()
+
+
+def test_qwen_image_empty_multi_angles_raises_before_load_gate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from workflows.qwen_image import QwenImageWorkflow
+
+    ref_img = tmp_path / "ref.png"
+    ref_img.write_bytes(b"png")
+    wf = QwenImageWorkflow()
+    monkeypatch.setattr(
+        "workflows.qwen_image.run_engine",
+        lambda *_a, **_kw: (_ for _ in ()).throw(AssertionError("load gate should not run for empty multi_angles")),
+    )
+    with pytest.raises(ValueError, match="multi-angles"):
+        wf.run({"prompt": "portrait", "input": str(ref_img), "multi_angles": "|"})
+
+
+def test_audio_repaint_cfg_zero_lyrics_file_and_bounds(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    import core.music_ai as music_ai
+    from workflows.audio_repaint import AudioRepaintWorkflow
+
+    src = tmp_path / "song.wav"
+    src.write_bytes(b"RIFF")
+    lyrics_txt = tmp_path / "verse.txt"
+    lyrics_txt.write_text("Singing from file", encoding="utf-8")
+
+    # SA3 cfg_scale=0.0 must not coerce to 1.0
+    monkeypatch.setattr("workflows.audio_repaint.convertir_mp3", lambda _src, dst, _kbps=224: dst)
+    captured_sa3: dict = {}
+    monkeypatch.setattr(
+        "workflows.audio_repaint.inpaint_stable_audio",
+        lambda *_a, **kw: captured_sa3.update(kw) or (str(tmp_path / "out.wav"), "vulkan"),
+    )
+    wf = AudioRepaintWorkflow()
+    wf.run({
+        "input": str(src),
+        "repaint_engine": "sa3",
+        "repaint_start": 0.0,
+        "repaint_end": 2.0,
+        "cfg_scale": 0.0,
+        "prompt": "clean solo",
+        "output_dir": str(tmp_path),
+    })
+    assert captured_sa3["guidance"] == 0.0
+
+    # ACE-Step .txt lyrics file is loaded
+    captured_ace: dict = {}
+    monkeypatch.setattr(
+        "workflows.audio_repaint.repaint_acestep",
+        lambda *_a, **kw: captured_ace.update(kw) or (str(tmp_path / "out2.wav"), "cpu"),
+    )
+    wf.run({
+        "input": str(src),
+        "repaint_engine": "acestep",
+        "repaint_start": 0.0,
+        "repaint_end": 2.0,
+        "lyrics": str(lyrics_txt),
+        "prompt": "choir verse",
+        "output_dir": str(tmp_path),
+    })
+    assert captured_ace["lyrics"] == "Singing from file"
+
+    # Duration bounds check on both repaint_acestep and inpaint_stable_audio
+    fake_gguf = tmp_path / "ace.gguf"
+    fake_gguf.write_bytes(b"gguf")
+    fake_sa3 = tmp_path / "sa3.gguf"
+    fake_sa3.write_bytes(b"gguf")
+    temp_wav = tmp_path / "tmp_norm.wav"
+    monkeypatch.setattr(music_ai, "resoudre_gguf_acestep15", lambda _v: str(fake_gguf))
+    monkeypatch.setattr(music_ai, "DEFAULT_SA3_MEDIUM_MODEL", str(fake_sa3))
+    monkeypatch.setattr(
+        music_ai,
+        "_preparer_wav_temp",
+        lambda *_a, **_kw: temp_wav.write_bytes(b"wav") and str(temp_wav) or str(temp_wav),
+    )
+    monkeypatch.setattr(music_ai.soundfile, "info", lambda _p: SimpleNamespace(duration=5.0))
+
+    with pytest.raises(ValueError, match="exceeds source duration"):
+        music_ai.repaint_acestep(str(src), "fix", str(tmp_path / "r1.wav"), start_sec=1.0, end_sec=6.0)
+    assert not temp_wav.exists()
+
+    with pytest.raises(ValueError, match="exceeds source duration"):
+        music_ai.inpaint_stable_audio(str(src), "fix", str(tmp_path / "r2.wav"), start_sec=5.0, end_sec=6.0)
+    assert not temp_wav.exists()
+
+
+def test_separation_checks_missing_model_before_ffmpeg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    import core.separation as sep
+
+    src = tmp_path / "mix.wav"
+    src.write_bytes(b"wav")
+    monkeypatch.setattr(sep, "MODELE_MEL_ROFORMER", str(tmp_path / "missing_roformer.gguf"))
+    monkeypatch.setattr(
+        sep,
+        "_preparer_audio_44k",
+        lambda *_a, **_kw: (_ for _ in ()).throw(AssertionError("ffmpeg resample must not run when model is missing")),
+    )
+    with pytest.raises(FileNotFoundError, match="Mel-Band RoFormer"):
+        sep.retirer_voix(str(src), str(tmp_path / "work"), moteur="mel_roformer")
+
+
+def test_upscale_chunk_zero_rejected_and_video_forwards_seedvr2(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from workflows.upscale import UpscaleWorkflow
+    from workflows.video import VideoWorkflow
+
+    mp4 = tmp_path / "clip.mp4"
+    mp4.write_bytes(b"mp4")
+    up_wf = UpscaleWorkflow(config={"sd_cli": "sd-cli"})
+    with pytest.raises(ValueError, match="1 or 4n\\+1"):
+        up_wf.run({
+            "input": str(mp4),
+            "upscale_mode": "seedvr2",
+            "vsr_temporal_chunk_size": 0,
+            "output_dir": str(tmp_path),
+        })
+
+    vid_calls: list[dict] = []
+    out_webm = tmp_path / "gen.webm"
+    out_webm.write_bytes(b"webm")
+    monkeypatch.setattr("workflows.video.generer_video_vulkan", lambda **_kw: str(out_webm))
+    monkeypatch.setattr("workflows.video.upscale_video", lambda **kw: vid_calls.append(kw) or str(tmp_path / "up.mp4"))
+
+    vid_wf = VideoWorkflow()
+    vid_wf.run({
+        "prompt": "stormy castle",
+        "upscale": True,
+        "upscale_mode": "seedvr2",
+        "vsr_temporal_chunk_size": 5,
+        "seed": 77,
+        "output_dir": str(tmp_path),
+    })
+    assert len(vid_calls) == 1
+    assert vid_calls[0]["mode"] == "seedvr2"
+    assert vid_calls[0]["temporal_chunk_size"] == 5
+    assert vid_calls[0]["seed"] == 77

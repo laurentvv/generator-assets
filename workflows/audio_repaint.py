@@ -111,7 +111,8 @@ class AudioRepaintWorkflow(BaseWorkflow):
             strength_val = 1.0 if strength is None else float(strength)
             steps_raw = params.get("steps")
             steps = 8 if steps_raw in (None, 25) else int(steps_raw)
-            guidance = float(params.get("cfg_scale") or 1.0)
+            raw_cfg = params.get("cfg_scale")
+            guidance = 1.0 if raw_cfg is None else float(raw_cfg)
             backend = params.get("music_backend") or "vulkan"
             if backend == "auto":
                 backend = "vulkan"
@@ -140,8 +141,13 @@ class AudioRepaintWorkflow(BaseWorkflow):
             steps_raw = params.get("steps")
             steps = None if steps_raw in (None, 25) else int(steps_raw)
             lyrics = params.get("lyrics")
-            if lyrics == "[Instrumental]":
-                lyrics = None
+            if isinstance(lyrics, str):
+                candidate = lyrics.strip()
+                if os.path.isfile(candidate) and candidate.lower().endswith(".txt"):
+                    with open(candidate, encoding="utf-8") as f:
+                        lyrics = f.read().strip()
+                if not lyrics or lyrics == "[Instrumental]":
+                    lyrics = None
             langue = params.get("langue")
             self.log(
                 f"ACE-Step 1.5 ({variante}) repaint [{start_sec:g}s..{end_sec:g}s] "

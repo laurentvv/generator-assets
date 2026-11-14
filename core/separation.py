@@ -134,10 +134,23 @@ def retirer_voix(
     (-1 dBTP peak guard). Returns {instrumental_wav, instrumental_mp3, stems_dir, voix_wav}.
     """
     engine = (moteur or "htdemucs").lower()
-    if engine not in _ROFORMER_SPECS and engine != "htdemucs":
+    if engine in _ROFORMER_SPECS:
+        family, get_model, display_name = _ROFORMER_SPECS[engine]
+        modele = get_model()
+        if not os.path.exists(modele):
+            raise FileNotFoundError(f"{display_name} package not found: {modele}")
+    elif engine == "htdemucs":
+        modele = MODELE_HTDEMUCS
+        if not os.path.exists(modele):
+            raise FileNotFoundError(
+                f"HTDemucs package not found: {modele} — download it from "
+                f"audio-cpp/audio.cpp-gguf (HTDemucs-GGUF/htdemucs-f16.gguf, 84 MB)."
+            )
+    else:
         raise ValueError(
             f"Unknown separation engine '{moteur}' (choices: htdemucs, mel_roformer, bs_roformer)."
         )
+
     ffmpeg = resoudre_ffmpeg()
     os.makedirs(dossier_travail, exist_ok=True)
     wav44 = _preparer_audio_44k(chemin_audio, os.path.join(dossier_travail, "source_44k.wav"))
@@ -147,10 +160,6 @@ def retirer_voix(
     instrumental = os.path.join(dossier_travail, "instrumental.wav")
 
     if engine in _ROFORMER_SPECS:
-        family, get_model, display_name = _ROFORMER_SPECS[engine]
-        modele = get_model()
-        if not os.path.exists(modele):
-            raise FileNotFoundError(f"{display_name} package not found: {modele}")
         run_engine(
             [resoudre_audiocpp(), "--task", "sep", "--family", family,
              "--model", modele, "--backend", backend, "--threads", "16",
@@ -163,15 +172,10 @@ def retirer_voix(
             raise RuntimeError(f"Missing {display_name} stems: {', '.join(manquants)}")
         src_inst = os.path.join(stems_dir, "instrumental.wav")
         shutil.copy2(src_inst, instrumental_raw if apollo else instrumental)
-    elif engine == "htdemucs":
-        if not os.path.exists(MODELE_HTDEMUCS):
-            raise FileNotFoundError(
-                f"HTDemucs package not found: {MODELE_HTDEMUCS} — download it from "
-                f"audio-cpp/audio.cpp-gguf (HTDemucs-GGUF/htdemucs-f16.gguf, 84 MB)."
-            )
+    else:
         run_engine(
             [resoudre_audiocpp(), "--task", "sep", "--family", "htdemucs",
-             "--model", MODELE_HTDEMUCS, "--backend", backend, "--threads", "16",
+             "--model", modele, "--backend", backend, "--threads", "16",
              "--audio", wav44, "--out-dir", stems_dir],
             capture=False, check=True, timeout=3600, etiquette="audio.cpp htdemucs",
         )
@@ -190,10 +194,6 @@ def retirer_voix(
             [ffmpeg, "-hide_banner", "-y", *entrees, "-filter_complex", filtre,
              "-c:a", "pcm_s16le", cible_mix],
             check=True, timeout=600, etiquette="ffmpeg amix instrumental",
-        )
-    else:
-        raise ValueError(
-            f"Unknown separation engine '{moteur}' (choices: htdemucs, mel_roformer, bs_roformer)."
         )
 
     if apollo:

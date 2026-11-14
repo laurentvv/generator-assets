@@ -126,6 +126,7 @@ class QwenImageWorkflow(BaseWorkflow):
         if init_image and not multi_angles and steps == 40:
             steps = 24
 
+        vues: list[str] = []
         if multi_angles:
             if not ref_images:
                 if not init_image:
@@ -134,6 +135,17 @@ class QwenImageWorkflow(BaseWorkflow):
                     )
                 ref_images = [init_image]
                 init_image = None
+            if multi_angles.lower() == "orbit":
+                vues = [
+                    "front-right quarter view, elevated shot",
+                    "right side view, eye-level shot",
+                    "back view, eye-level shot",
+                    "left side view, elevated shot",
+                ]
+            else:
+                vues = [v.strip() for v in multi_angles.split("|") if v.strip()]
+            if not vues:
+                raise ValueError("--multi-angles must provide 'orbit' or at least one camera cue.")
             if not any("qwen21_multiple_angles_v2" in str(item).lower() for item in loras):
                 loras.append("qwen21_multiple_angles_v2:0.9")
 
@@ -164,16 +176,7 @@ class QwenImageWorkflow(BaseWorkflow):
             mode_str += " [turbo 8-step]"
         self.log(f"Qwen-Image-2.1 rendering ({mode_str}, {width}x{height}, steps={steps}, cfg={cfg_scale}, strength={strength}) — RESEARCH license: personal/non-commercial use only.")
 
-        if multi_angles:
-            if multi_angles.lower() == "orbit":
-                vues = [
-                    "front-right quarter view, elevated shot",
-                    "right side view, eye-level shot",
-                    "back view, eye-level shot",
-                    "left side view, elevated shot",
-                ]
-            else:
-                vues = [v.strip() for v in multi_angles.split("|") if v.strip()]
+        if vues:
             outputs = []
             for idx, vue in enumerate(vues, 1):
                 cible = output_path if len(vues) == 1 else os.path.join(output_dir, f"{nom_sortie}_angle_{idx:02d}.png")

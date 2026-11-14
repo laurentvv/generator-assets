@@ -49,6 +49,8 @@ _EXPLICIT_TOKEN_RE = re.compile(r"^([^:]+):([A-Ga-g][#b]?-?\d|\d{2,3})(?::(\d+))
 
 def note_vers_midi(note: str | int) -> int:
     """Converts a MIDI integer or scientific pitch name (`C4`, `F#3`, `Bb4`) to MIDI."""
+    if isinstance(note, bool):
+        raise ValueError(f"Invalid musical note specification: {note!r}")
     if isinstance(note, int):
         return max(21, min(108, note))
     brut = str(note).strip()
@@ -152,7 +154,7 @@ def compiler_partition_chant(
             for pos, syl in enumerate(syllabes):
                 # Slight arch cadence: step gently through scale, hold phrase-final syllable
                 midi = notes_pool[idx % len(notes_pool)]
-                dur = max(2, dur_def // 2) if (pos == len(syllabes) - 1 and brut.endswith((".", "!", "?", ","))) else dur_def
+                dur = max(1, dur_def // 2) if (pos == len(syllabes) - 1 and brut.endswith((".", "!", "?", ","))) else dur_def
                 dur = normaliser_duree_note(dur)
                 unites.append(f"{syl}<P_{midi}><NOTE_{dur}>")
                 idx += 1

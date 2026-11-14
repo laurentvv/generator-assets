@@ -29,20 +29,26 @@ MODEL_CONSTANTS = [
     ("", "DEFAULT_QWEN_IMAGE21_LLM", "Qwen-Image LLM encoder"),
     ("", "DEFAULT_QWEN_IMAGE21_VAE", "Qwen-Image VAE"),
     ("", "DEFAULT_QWEN_IMAGE21_TURBO_MODEL", "Turbo distilled Q8_0 (validated 2026-10-11)"),
+    ("", "DEFAULT_QWEN_IMAGE21_LLM_VISION", "Qwen-Image multimodal mmproj (VL vision)"),
     ("Video — Wan 2.1", "DEFAULT_WAN_MODEL", "Wan 2.1 T2V 1.3B GGUF"),
     ("", "DEFAULT_WAN_VAE", "Wan VAE"),
     ("", "DEFAULT_WAN_T5XXL", "UMT5-XXL encoder"),
     ("Video — VACE", "DEFAULT_VACE_MODEL", "Wan VACE distilled GGUF"),
     ("", "DEFAULT_VACE_T5XXL", "VACE T5-XXL encoder"),
     ("Video — MiniMax-H3", "DEFAULT_H3_REF2VA_MODEL", "H3 Ref2VA DiT GGUF"),
+    ("", "DEFAULT_H3_FL2VA_MODEL", "H3 FL2VA (first/last-frame) DiT GGUF"),
     ("", "DEFAULT_H3_VIDEO_VAE", "H3 video VAE"),
     ("", "DEFAULT_H3_AUDIO_VAE", "H3 audio VAE"),
     ("", "DEFAULT_H3_LLM", "H3 LLM"),
     # NB: DEFAULT_H3_REF2VA_TURBO_LORA is a LoRA NAME resolved by sd-cli's own
     # lora lookup, not a filesystem path — deliberately not listed here.
-    ("Music — audio.cpp", "DEFAULT_MUSIC3_DIR", "MiniMax Music3 GGUF folder"),
+    ("Music & Audio — audio.cpp", "DEFAULT_MUSIC3_DIR", "MiniMax Music3 GGUF folder"),
     ("", "DEFAULT_MUSIC3_LM", "Music3 language model"),
     ("", "DEFAULT_ACESTEP15_DIR", "ACE-Step 1.5 GGUF folder"),
+    ("", "DEFAULT_SA3_MEDIUM_MODEL", "Stable Audio 3 Medium GGUF (inpaint/SFX)"),
+    ("", "DEFAULT_MEL_ROFORMER_MODEL", "Mel-Band-RoFormer vocal separator GGUF"),
+    ("", "DEFAULT_BS_ROFORMER_MODEL", "BS-RoFormer vocal separator GGUF"),
+    ("", "DEFAULT_APOLLO_MODEL", "Apollo 44.1 kHz music/bandwidth restore GGUF"),
     ("", "DEFAULT_MUSIC_FLAMINGO_DIR", "Music Flamingo folder (QA)"),
     ("", "DEFAULT_MUSIC_FLAMINGO_LM", "Flamingo language model"),
     ("", "DEFAULT_MUSIC_FLAMINGO_MMPROJ", "Flamingo mmproj"),
@@ -51,26 +57,37 @@ MODEL_CONSTANTS = [
     ("", "DEFAULT_RIFE_MODEL", "RIFE frame interpolation"),
     ("", "DEFAULT_YUNET_MODEL", "YuNet face detection (makeup)"),
     ("Upscale", "DEFAULT_ESRGAN_MODEL", "RealESRGAN x4 anime (default)"),
+    ("", "DEFAULT_SEEDVR2_MODEL", "SeedVR2 3B int8_convrot DiT (-M vid_upscale)"),
+    ("", "DEFAULT_SEEDVR2_VAE", "SeedVR2 EMA VAE fp16"),
 ]
 
 # workflow -> core.config constant names it depends on (main ones; the
 # workflow's own docs remain the source of truth for optional branches).
 WORKFLOW_MODEL_MAP = {
     "generate": ["DEFAULT_SD_MODEL", "DEFAULT_CLIP_L", "DEFAULT_T5XXL", "DEFAULT_VAE", "DEFAULT_SDXL_MODEL"],
-    "qwen_image": ["DEFAULT_QWEN_IMAGE21_MODEL", "DEFAULT_QWEN_IMAGE21_LLM", "DEFAULT_QWEN_IMAGE21_VAE", "DEFAULT_QWEN_IMAGE21_TURBO_MODEL"],
+    "qwen_image": [
+        "DEFAULT_QWEN_IMAGE21_MODEL", "DEFAULT_QWEN_IMAGE21_LLM",
+        "DEFAULT_QWEN_IMAGE21_LLM_VISION", "DEFAULT_QWEN_IMAGE21_VAE", "DEFAULT_QWEN_IMAGE21_TURBO_MODEL",
+    ],
     "pose_control": ["DEFAULT_CONTROLNET_POSE"],
     "rembg": ["DEFAULT_RMBG_MODEL"],
     "material3d": ["DEFAULT_DEEPBUMP_MODEL"],
     "rife_interp": ["DEFAULT_RIFE_MODEL"],
     "character_makeup": ["DEFAULT_YUNET_MODEL"],
-    "upscale": ["DEFAULT_ESRGAN_MODEL"],
+    "upscale": ["DEFAULT_ESRGAN_MODEL", "DEFAULT_SEEDVR2_MODEL", "DEFAULT_SEEDVR2_VAE"],
     "video": ["DEFAULT_WAN_MODEL", "DEFAULT_WAN_VAE", "DEFAULT_WAN_T5XXL"],
     "video_vace": ["DEFAULT_VACE_MODEL", "DEFAULT_VACE_T5XXL"],
-    "h3_ref2va": ["DEFAULT_H3_REF2VA_MODEL", "DEFAULT_H3_VIDEO_VAE", "DEFAULT_H3_AUDIO_VAE", "DEFAULT_H3_LLM"],
+    "h3_ref2va": [
+        "DEFAULT_H3_REF2VA_MODEL", "DEFAULT_H3_FL2VA_MODEL",
+        "DEFAULT_H3_VIDEO_VAE", "DEFAULT_H3_AUDIO_VAE", "DEFAULT_H3_LLM",
+    ],
     "music_bg": ["DEFAULT_ACESTEP15_DIR", "DEFAULT_MUSIC3_DIR"],
     "chanson": ["DEFAULT_ACESTEP15_DIR"],
     "musique_adn": ["DEFAULT_ACESTEP15_DIR"],
     "musique_essence": ["DEFAULT_MUSIC3_DIR"],
+    "audio_repaint": ["DEFAULT_ACESTEP15_DIR", "DEFAULT_SA3_MEDIUM_MODEL"],
+    "retrait_voix": ["DEFAULT_MEL_ROFORMER_MODEL", "DEFAULT_BS_ROFORMER_MODEL", "DEFAULT_APOLLO_MODEL"],
+    "audio_restaure": ["DEFAULT_APOLLO_MODEL"],
 }
 
 

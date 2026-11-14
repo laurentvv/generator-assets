@@ -276,6 +276,7 @@ ESTIMATE_SECONDS = {
     "qwen_image": 130, "makehuman_clothes": 300, "outfit": 600, "pose_control": 180,
     "animal_godot": 420, "vfx_flipbook": 300, "music_bg": 600, "musique_adn": 600,
     "musique_essence": 600, "retrait_voix": 180, "acestep_cover": 480, "audio_repaint": 180,
+    "audio_restaure": 60,
     "character_makeup": 600, "character3d": 900, "asset_blendkit": 600,
     "video_multishot": 600, "monoplan_ia": 900, "video": 1500, "video_vace": 1680,
     "h3_ref2va": 2280, "mesh_ia": 700, "batch": 600, "audio_upscale": 600,

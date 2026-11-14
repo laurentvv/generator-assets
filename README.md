@@ -273,7 +273,7 @@ To keep this landing page fast and readable, technical deep-dives have been orga
 ```text
 generator-assets/
 ├── core/                   # Engine core: config, CLI orchestrators, LLM enrichers, PBR generators
-├── workflows/              # 64 autonomous media generation workflow implementations
+├── workflows/              # 70 autonomous media generation workflow implementations
 ├── godot_assets/           # Default output directory for engine-ready game assets
 ├── output/                 # Output directory for video renders, audio tracks, and contact sheets
 ├── scripts/                # Specialized helper utilities, downloaders, and Vulkan builders

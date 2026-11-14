@@ -109,9 +109,9 @@ _REGLES_LICENCE_PACKS: tuple[tuple[str, str, str, bool, bool], ...] = (
 )
 
 
-def normaliser_rel_path(rel_path: str) -> str:
+def normaliser_rel_path(rel_path: Optional[str]) -> str:
     """Normalizes a relative asset path to forward slashes for portable matching."""
-    return rel_path.replace("\\", "/").lstrip("/")
+    return (rel_path or "").replace("\\", "/").lstrip("/")
 
 
 def est_exclu_ia(rel_path: str) -> bool:
@@ -182,7 +182,7 @@ def _row_to_asset(
     score: Optional[float] = None,
 ) -> dict[str, Any]:
     donnees = dict(row)
-    rel_path = normaliser_rel_path(donnees.get("rel_path", ""))
+    rel_path = normaliser_rel_path(donnees.get("rel_path"))
     licence = classifier_licence_asset(rel_path)
     donnees["rel_path"] = rel_path
     donnees["abs_path"] = _resoudre_chemin_absolu(rel_path, library_dir)
@@ -204,7 +204,7 @@ def _filtrer_rows(
 ) -> list[dict[str, Any]]:
     resultats: list[dict[str, Any]] = []
     for row in rows:
-        rel_path = row["rel_path"]
+        rel_path = row["rel_path"] or ""
         licence = classifier_licence_asset(rel_path)
         if exclude_no_ai and not licence["ai_ok"]:
             continue
@@ -230,6 +230,7 @@ def _executer_requete_assets(
     clauses: list[str],
     params: list[Any],
     fetch_limit: int,
+    offset: int = 0,
 ) -> list[sqlite3.Row]:
     fts_expr = _construire_fts_query(query)
     where_sql = " AND ".join(clauses)
@@ -239,10 +240,10 @@ def _executer_requete_assets(
             "JOIN assets_fts f ON f.rowid = a.id "
             f"WHERE {where_sql} AND assets_fts MATCH ? "
             "ORDER BY bm25(assets_fts), a.id "
-            "LIMIT ?"
+            "LIMIT ? OFFSET ?"
         )
         try:
-            return con.execute(sql_fts, [*params, fts_expr, fetch_limit]).fetchall()
+            return con.execute(sql_fts, [*params, fts_expr, fetch_limit, offset]).fetchall()
         except sqlite3.OperationalError:
             pass
 
@@ -252,12 +253,12 @@ def _executer_requete_assets(
         sql_like = (
             "SELECT a.* FROM assets a "
             f"WHERE {where_sql} AND {like_clause} "
-            "ORDER BY a.id LIMIT ?"
+            "ORDER BY a.id LIMIT ? OFFSET ?"
         )
-        return con.execute(sql_like, [*params, like, like, like, like, fetch_limit]).fetchall()
+        return con.execute(sql_like, [*params, like, like, like, like, fetch_limit, offset]).fetchall()
 
-    sql_plain = f"SELECT a.* FROM assets a WHERE {where_sql} ORDER BY a.id LIMIT ?"
-    return con.execute(sql_plain, [*params, fetch_limit]).fetchall()
+    sql_plain = f"SELECT a.* FROM assets a WHERE {where_sql} ORDER BY a.id LIMIT ? OFFSET ?"
+    return con.execute(sql_plain, [*params, fetch_limit, offset]).fetchall()
 
 
 def rechercher_assets(
@@ -300,18 +301,28 @@ def rechercher_assets(
         clauses.append("a.duration_ms <= ?")
         params.append(int(max_duration_ms))
 
-    # Over-fetch slightly so post-filtering excluded packs still yields `limit`.
-    fetch_limit = max(limit * 4, limit + 32)
+    # Page until `limit` survivors or SQL exhaustion so heavy no-AI prefix blocks don't starve results.
+    batch_size = max(limit * 4, limit + 32)
+    offset = 0
+    collected: list[dict[str, Any]] = []
     with _connecter_ro(db_path) as con:
-        rows = _executer_requete_assets(con, query, clauses, params, fetch_limit)
-
-    return _filtrer_rows(
-        rows,
-        exclude_no_ai=exclude_no_ai,
-        commercial_only=commercial_only,
-        library_dir=library_dir,
-        limit=limit,
-    )
+        while len(collected) < limit:
+            rows = _executer_requete_assets(con, query, clauses, params, batch_size, offset=offset)
+            if not rows:
+                break
+            collected.extend(
+                _filtrer_rows(
+                    rows,
+                    exclude_no_ai=exclude_no_ai,
+                    commercial_only=commercial_only,
+                    library_dir=library_dir,
+                    limit=limit - len(collected),
+                )
+            )
+            if len(rows) < batch_size:
+                break
+            offset += len(rows)
+    return collected
 
 
 def lister_groupes_pbr(
@@ -337,26 +348,33 @@ def lister_groupes_pbr(
         "MIN(rel_path) AS sample_path, COUNT(*) AS map_count "
         f"FROM assets WHERE {' AND '.join(clauses)} "
         "GROUP BY pbr_group HAVING COUNT(*) >= ? "
-        "ORDER BY map_count DESC, pbr_group ASC LIMIT ?"
+        "ORDER BY map_count DESC, pbr_group ASC LIMIT ? OFFSET ?"
     )
-    with _connecter_ro(db_path) as con:
-        rows = con.execute(sql, [*params, int(min_maps), max(limit * 3, limit + 20)]).fetchall()
-
+    batch_size = max(limit * 3, limit + 20)
+    offset = 0
     groupes: list[dict[str, Any]] = []
-    for row in rows:
-        if exclude_no_ai and est_exclu_ia(row["sample_path"] or ""):
-            continue
-        roles = sorted(r for r in (row["roles"] or "").split(",") if r)
-        groupes.append(
-            {
-                "pbr_group": row["pbr_group"],
-                "map_count": int(row["map_count"]),
-                "roles": roles,
-                "sample_path": normaliser_rel_path(row["sample_path"] or ""),
-            }
-        )
-        if len(groupes) >= limit:
-            break
+    with _connecter_ro(db_path) as con:
+        while len(groupes) < limit:
+            rows = con.execute(sql, [*params, int(min_maps), batch_size, offset]).fetchall()
+            if not rows:
+                break
+            for row in rows:
+                if exclude_no_ai and est_exclu_ia(row["sample_path"] or ""):
+                    continue
+                roles = sorted(r for r in (row["roles"] or "").split(",") if r)
+                groupes.append(
+                    {
+                        "pbr_group": row["pbr_group"],
+                        "map_count": int(row["map_count"]),
+                        "roles": roles,
+                        "sample_path": normaliser_rel_path(row["sample_path"] or ""),
+                    }
+                )
+                if len(groupes) >= limit:
+                    break
+            if len(rows) < batch_size:
+                break
+            offset += len(rows)
     return groupes
 
 
@@ -419,10 +437,15 @@ def rechercher_similaires(
         if ref_row is None or not ref_row["vec"]:
             return []
 
+        ref_blob = ref_row["vec"]
+        if len(ref_blob) % 4 != 0:
+            return []
         modele_cible = ref_row["model"]
-        ref_vec = np.frombuffer(ref_row["vec"], dtype=np.float32).astype(np.float64)
+        ref_vec = np.frombuffer(ref_blob, dtype=np.float32).astype(np.float64)
+        if not np.all(np.isfinite(ref_vec)):
+            return []
         ref_norm = float(np.linalg.norm(ref_vec))
-        if ref_norm == 0.0:
+        if not np.isfinite(ref_norm) or ref_norm == 0.0:
             return []
         ref_unit = ref_vec / ref_norm
 
@@ -440,7 +463,7 @@ def rechercher_similaires(
         dim = ref_unit.shape[0]
         for row in cands:
             blob = row["vec"]
-            if not blob:
+            if not blob or len(blob) % 4 != 0:
                 continue
             v = np.frombuffer(blob, dtype=np.float32)
             if v.shape[0] != dim:
@@ -453,34 +476,42 @@ def rechercher_similaires(
 
         mat = np.vstack(vecs).astype(np.float64)
         norms = np.linalg.norm(mat, axis=1)
-        valid = norms > 0.0
-        if not np.any(valid):
+        valid = np.isfinite(norms) & (norms > 0.0) & np.all(np.isfinite(mat), axis=1)
+        valid_indices = np.flatnonzero(valid)
+        if valid_indices.size == 0:
             return []
 
         sims = np.full(len(ids), -2.0, dtype=np.float64)
-        sims[valid] = (mat[valid] @ ref_unit) / norms[valid]
+        sims[valid_indices] = (mat[valid_indices] @ ref_unit) / norms[valid_indices]
 
-        top_pool = min(len(ids), max(limit * 4, limit + 24))
-        ordre = np.argsort(-sims)[:top_pool]
-        top_ids = [ids[i] for i in ordre]
-        scores_map = {ids[i]: float(sims[i]) for i in ordre}
-
-        placeholders = ",".join("?" for _ in top_ids)
-        rows = con.execute(
-            f"SELECT * FROM assets WHERE id IN ({placeholders})",
-            top_ids,
-        ).fetchall()
-
-    row_by_id = {row["id"]: row for row in rows}
-    ordered_rows = [row_by_id[aid] for aid in top_ids if aid in row_by_id]
-    return _filtrer_rows(
-        ordered_rows,
-        exclude_no_ai=exclude_no_ai,
-        commercial_only=commercial_only,
-        library_dir=library_dir,
-        limit=limit,
-        scores=scores_map,
-    )
+        # Rank valid candidates descending and page asset rows until `limit` survivors.
+        ordre_valid = valid_indices[np.argsort(-sims[valid_indices])]
+        chunk_size = max(limit * 4, limit + 24)
+        collected: list[dict[str, Any]] = []
+        for start in range(0, len(ordre_valid), chunk_size):
+            batch_idx = ordre_valid[start : start + chunk_size]
+            batch_ids = [ids[i] for i in batch_idx]
+            scores_map = {ids[i]: float(sims[i]) for i in batch_idx}
+            placeholders = ",".join("?" for _ in batch_ids)
+            rows = con.execute(
+                f"SELECT * FROM assets WHERE id IN ({placeholders})",
+                batch_ids,
+            ).fetchall()
+            row_by_id = {row["id"]: row for row in rows}
+            ordered_rows = [row_by_id[aid] for aid in batch_ids if aid in row_by_id]
+            collected.extend(
+                _filtrer_rows(
+                    ordered_rows,
+                    exclude_no_ai=exclude_no_ai,
+                    commercial_only=commercial_only,
+                    library_dir=library_dir,
+                    limit=limit - len(collected),
+                    scores=scores_map,
+                )
+            )
+            if len(collected) >= limit:
+                break
+        return collected
 
 
 def choisir_reference_audio(
@@ -511,7 +542,7 @@ def choisir_reference_audio(
     for item in candidats:
         if os.path.exists(item["abs_path"]):
             return item
-    return candidats[0]
+    return None
 
 
 def statistiques(db_path: Optional[str] = None) -> dict[str, Any]:
