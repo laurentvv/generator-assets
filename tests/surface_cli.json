@@ -335,6 +335,42 @@
  ],
  [
   [
+   "--control-image"
+  ],
+  "control_image",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--control-strength"
+  ],
+  "control_strength",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
+   "--control-type"
+  ],
+  "control_type",
+  "_StoreAction",
+  "None",
+  [
+   "canny",
+   "tile"
+  ],
+  null,
+  null
+ ],
+ [
+  [
    "--control-video"
   ],
   "control_video",
@@ -799,6 +835,17 @@
   "help",
   "_HelpAction",
   "'==SUPPRESS=='",
+  null,
+  0,
+  null
+ ],
+ [
+  [
+   "--hires"
+  ],
+  "hires",
+  "_StoreTrueAction",
+  "False",
   null,
   0,
   null

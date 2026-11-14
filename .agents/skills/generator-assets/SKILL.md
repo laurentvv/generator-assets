@@ -62,7 +62,7 @@ Any CLI evolution must preserve this contract.
 
 | Need | Workflow | Example |
 | :--- | :--- | :--- |
-| Isolated 2D asset (item, monster, scenery, background) | `generate` | `-w generate "healing potion, dark fantasy game icon" -t prop -o potion` |
+| Isolated 2D asset (item, monster, scenery, background, or ControlNet++ Union SDXL ProMax `--control-image` + `--control-type canny\|tile`) | `generate` | `-w generate "healing potion, dark fantasy game icon" -t prop -o potion` |
 | Photorealistic image, in-image text, multimodal ref (`--ref-image`), multi-angle orbit (`--multi-angles orbit`), RGBA via prompt (PERSONAL use — Qwen RESEARCH license; `--qwen-turbo` = 8-step distilled, ~2 min) | `qwen_image` | `-w qwen_image "ceramic teapot" -i ref.png --multi-angles orbit --width 512 --height 512 --seed 42` |
 | In-image text rendering T2I, clean layouts (COMMERCIAL OK — Apache-2.0; ~36 min @1024², arch young on Vulkan; small secondary text garbles) | `moss_image` | `-w moss_image "storefront sign that says 'MOSS'" --seed 42` |
 | Product compositing blend into a backdrop — contact shadow + consistent lighting (PERSONAL use — Qwen RESEARCH license, ~7 min; input = WHITE-KEYED cutout paste, trigger `pengyu` first) | `qwen_image` + `-i` + `-l` | `-w qwen_image "pengyu Apply consistent lighting to the product, ..." -i composite_cutout.png -l "Qwenimag21_c2-st2000:1.0" --seed 42` |
@@ -169,11 +169,11 @@ within a binary version (ggml arithmetic changes across audio.cpp versions alter
 
 | Need | Workflow | Example |
 | :--- | :--- | :--- |
-| Cinematic shot from a still image (slow-mo, designed zoom) | `monoplan_ia` | `-w monoplan_ia -i frame.png --prompt "camera slowly pans..."` |
+| Cinematic shot from a still image (slow-mo, designed zoom, `--hires` native 1216×704) | `monoplan_ia` | `-w monoplan_ia -i frame.png --prompt "camera slowly pans..."` |
 | Video from prompt or image (Wan/LTX, .webm) | `video` | `-w video "cyberpunk street, neon rain"` |
 | **Motion-locked video** (ref image + `--control-video` frames or auto-extracted `--source-video`, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
-| **Multi-cut video + soundtrack** (several named cuts in ONE LTX-2.5 T2V generation, audio continuity across cuts — VALIDATED 2026-10-02) | `video_multishot` | `-w video_multishot -p "wide shot of a keeper on a pier. A hard cut transitions to a lantern close-up. The storm ambience continues across the cut, with waves and distant thunder"` |
-| **Continue an existing video (`-i`) or morph keyframes (`--init-img`/`--end-img`) + SOUND** (MiniMax-H3) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
+| **Multi-cut video + soundtrack** (several named cuts in ONE LTX-2.5 T2V generation, audio continuity across cuts — VALIDATED 2026-10-02; `--hires` 1216×704 @ 33f VALIDATED 2026-11-14) | `video_multishot` | `-w video_multishot -p "wide shot of a keeper on a pier. A hard cut transitions to a lantern close-up. The storm ambience continues across the cut, with waves and distant thunder"` |
+| **Continue an existing video (`-i`) or morph keyframes (`--init-img`/`--end-img`) + SOUND** (MiniMax-H3 — FL2VA 22f VALIDATED 2026-11-14; use expressive keyframes/motion rather than plain turnaround) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
 | 60 fps interpolation (RIFE) | `rife_interp` | `-w rife_interp -i clip.webm` |
 | 4×4 VFX particle sheet | `vfx_flipbook` | `-w vfx_flipbook "fire explosion"` |
 | Animated texture/shader loop | `anim_loop` | `-w anim_loop -i texture.png` |

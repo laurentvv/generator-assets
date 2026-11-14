@@ -36,10 +36,19 @@ class VideoMultishotWorkflow(BaseWorkflow):
 
     emoji = "🎬"
 
-    # Consumes the global CLI surface (--frames/--fps/--seed/-o) — shared flags are
-    # declared ONCE (cli/parser.py + workflows/video.py); redeclaring them here
-    # would raise an argparse conflict (2026-10-01 pitfall).
-    PARAMETRES = []
+    # Consumes the global CLI surface (--frames/--fps/--seed/-o); declares --hires
+    # here (shared with monoplan_ia via the flat registry parser).
+    PARAMETRES = [
+        dict(
+            flags=("--hires",),
+            action="store_true",
+            default=False,
+            help=(
+                "LTX-2.5 two-stage spatial latent upscaler x2 (608x352 -> native 1216x704, "
+                "USER VALIDATED 2026-11-14; ~14.2 min and ~16 GB CPU VAE RAM @ 33 frames)."
+            ),
+        ),
+    ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
         prompt = params.get("prompt")
@@ -60,14 +69,22 @@ class VideoMultishotWorkflow(BaseWorkflow):
         else:
             video_output_path = os.path.join(output_dir, nom_base)
 
-        # Validated envelope (MEMORY_BANK §1.34, 2026-10-02): 65 frames @ 24 fps,
-        # 8 steps official sigmas baked in the core route, seed 42 (A/B convention).
-        frames = int(params.get("frames", 65)) or 65
+        hires = bool(params.get("hires", False))
+        # Validated envelope (MEMORY_BANK §1.34 / §1.62): 65 frames @ 24 fps baseline,
+        # or 33 frames when --hires is active (16.03 GB CPU VAE RAM budget) unless overridden.
+        frames_param = params.get("frames")
+        frames = int(frames_param) if frames_param is not None else (33 if hires else 65)
         fps = int(params.get("fps", 24)) or 24
         seed = int(params.get("seed", 42))
+        if hires and frames > 33:
+            self.log(
+                f"⚠️ LTX-2.5 --hires at {frames} frames exceeds the validated 33-frame CPU VAE RAM envelope (~16 GB).",
+                emoji="⚠️",
+            )
 
+        res_cible = "1216x704" if hires else "832x480"
         self.log(
-            f"LTX multishot generation ({frames} frames @ {fps} fps, seed {seed}) — "
+            f"LTX multishot generation ({frames} frames @ {fps} fps, {res_cible}, seed {seed}) — "
             "cuts + soundtrack in one pass"
         )
 
@@ -77,6 +94,7 @@ class VideoMultishotWorkflow(BaseWorkflow):
             frames=frames,
             fps=fps,
             seed=seed,
+            hires=hires,
             log_fn=lambda m: self.log(m.strip()),
         )
 
@@ -85,7 +103,8 @@ class VideoMultishotWorkflow(BaseWorkflow):
             "video_path": video_path,
             "frames": frames,
             "fps": fps,
-            "resolution": "832x480",
+            "resolution": res_cible,
+            "hires": hires,
             "seed": seed,
             "status": "success",
         }
