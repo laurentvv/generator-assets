@@ -13,7 +13,7 @@
 [![Vulkan Hardware](https://img.shields.io/badge/Vulkan-Hardware%20Accelerated-red.svg?logo=vulkan&logoColor=white)](https://www.vulkan.org/)
 [![Video AI](https://img.shields.io/badge/Video%20AI-Wan%202.1%2F2.2%20•%20LTX--2.5%20•%20H3-8A2BE2.svg)](#-2-ai-video--cinematics)
 [![Music AI](https://img.shields.io/badge/Music%20AI-ACE--Step%201.5%20•%20MiniMax--Music3-1DB954.svg)](#-3-music-voice--audio-design)
-[![Workflows](https://img.shields.io/badge/Workflows-70%20Production%20Pipelines-orange.svg)](#-workflow-catalog-by-domain)
+[![Workflows](https://img.shields.io/badge/Workflows-71%20Production%20Pipelines-orange.svg)](#-workflow-catalog-by-domain)
 [![AI-Ready Skill](https://img.shields.io/badge/AI--Ready-built--in%20agent%20skill-8A2BE2.svg)](#-built-in-ai-agent-skill-agentsskillsgenerator-assets)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -74,6 +74,11 @@ Generate fluid, high-frame-rate cinematic shots natively with **Wan 2.2 MoE**, *
 | <img src="docs/exemples/videos/ltx25_2stage_crop_zoom.png" width="100%" alt="LTX-2.5 Two-Stage Hires Comparison" /> | <img src="docs/exemples/videos/h3_fl2va_22f_sheet.png" width="100%" alt="MiniMax-H3 FL2VA 22 Frames" /> |
 | *Two-stage latent upscaler micro-detail (`608×352 → 1216×704`) — [Full Contact Sheet](docs/exemples/videos/ltx25_1stage_vs_2stage_sheet.png)* | *First+Last Frame morphing (`--init-img` / `--end-img --turbo`)* |
 
+| **`Wan2.2-S2V 14B`** Audio-Driven Talking Portrait (`512×512`, `33f @ 16 fps`, `4 steps` LightX2V) |
+| :---: |
+| <img src="docs/exemples/videos/wan22_s2v_512_sheet.png" width="100%" alt="Wan2.2-S2V 14B Talking Portrait 33 Frames" /> |
+| *Speech-to-Video portrait animation from single image + speech WAV (`--audio`, Q4_K_M Vulkan + CPU VAE, ~24.1 min compute)* |
+
 ---
 
 ### 2. 🧱 3D Game Meshes & PBR Materials
@@ -124,7 +129,7 @@ Isolate game items with zero white halos, quantize to classic retro palettes, an
 <span id="workflow-hub"></span>
 ## 📦 Workflow Catalog by Domain
 
-The engine ships **70 autonomous workflows**. Every workflow accepts natural language, enforces strict VRAM constraints, and outputs production assets:
+The engine ships **71 autonomous workflows**. Every workflow accepts natural language, enforces strict VRAM constraints, and outputs production assets:
 
 ```bash
 uv run python main.py -w <workflow_name> [options]
@@ -153,6 +158,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`video_multishot`** 🏆 | Multi-cut video with continuous audio across cuts in a SINGLE generation pass (`--hires` 1216×704) | `uv run python main.py -w video_multishot -p "Shot 1. A hard cut to Shot 2..."` | [Specs](docs/workflows_reference.md#49c-video_multishot--multi-cut-video--continuous-soundtrack-in-one-generation-ltx-25-native-multishot) |
 | **`h3_ref2va`** ⚡ | Video & sound via MiniMax-H3: **Ref2VA** (`-i` continuation) or **FL2VA** (`--init-img`/`--end-img`), `--turbo` | `uv run python main.py -w h3_ref2va -i intro.mp4 -p "dragon roars" --turbo` | [Specs](docs/workflows_reference.md#49-h3_ref2va--videoaudio-continuation-via-minimax-h3-ref2va-webm-with-sound) |
 | **`video_vace`** | Motion-locked video: reference image + `--control-video` frames or auto-extracted `--source-video` (`--control-extract canny\|edges_bold\|depth_proxy`, Wan 2.1 VACE distilled) | `uv run python main.py -w video_vace -i ref.png --source-video clip.mp4 --control-extract canny` | [Specs](docs/workflows_reference.md#49b-video_vace--motion-locked-video-reference-image--control-frames-wan-21-vace-lightx2v-distilled) |
+| **`video_s2v`** | Speech-to-Video talking portrait: portrait (`-i`) + speech audio (`--audio`), Wan2.2-S2V 14B Q4_K_M (`512×512`, `33f @ 16 fps`, 4 steps LightX2V, auto cold `D:→C:` NVMe staging, `.webm` + `.mp4`) | `uv run python main.py -w video_s2v -i portrait.png --audio speech.wav -p "A person speaking calmly..."` | [Specs](docs/workflows_reference.md#49d-video_s2v--speech-to-video-talking-portrait-wan22-s2v-14b-lightx2v-4-step) |
 | **`rife_interp`** | AI frame rate multiplication up to 60 FPS preserving alpha transparency | `uv run python main.py -w rife_interp -i spritesheet.png --factor 2` | [Specs](docs/workflows_reference.md#47-rife_interp--ai-frame-rate-multiplication-60-fps) |
 
 ---
@@ -257,7 +263,7 @@ uv run python -m server    # → Opens http://127.0.0.1:8765
 ### 🌐 The Full-Python Web Console & `web-assets` Bridge
 Prefer a visual dashboard over the CLI? Run `uv run python -m server`:
 - Built with **FastAPI + Jinja2 + HTMX** (zero Node.js, zero npm, zero React bloat).
-- Automatically inspects all 70 workflows and generates interactive forms.
+- Automatically inspects all 71 workflows and generates interactive forms.
 - Features a **serialized GPU run queue** with automatic system load checks.
 - Live log streaming (SSE), media gallery, and model inventory.
 - **`web-assets` library integration**: resolve AI-eligible audio/image references (`--ref-lib`) or PBR material packs (`--from-lib`, `--pbr-group`) with `NO_AI` strictly excluded, and trigger optional library re-indexing via `--scan-web-assets`.
@@ -276,7 +282,7 @@ This repository is natively understood by AI coding agents (**ZCode, Claude Code
 
 To keep this landing page fast and readable, technical deep-dives have been organized into dedicated documentation modules:
 
-- 📦 **[Complete Workflow Technical Reference](docs/workflows_reference.md)** — Exhaustive processes, inputs/outputs, and mathematical specs for all 70 pipelines.
+- 📦 **[Complete Workflow Technical Reference](docs/workflows_reference.md)** — Exhaustive processes, inputs/outputs, and mathematical specs for all 71 pipelines.
 - ⚡ **[Installation & System Setup Guide](docs/installation.md)** — OS requirements, Vulkan drivers, model pack tables, and environment variables.
 - 🔄 **[Vulkan Engines Update & Build Manual](docs/guide_moteurs_vulkan.md)** — Automated builders, CMake scripts, backups, and rollbacks for `sd-cli` and `llama.cpp`.
 - 🎬 **[Video Generation & 4K Mastering Architecture](docs/architecture_video.md)** — DiT architectures (Wan 2.2, LTX-2.5, H3), AMD AMF hardware encoder, and overnight rendering.
@@ -291,7 +297,7 @@ To keep this landing page fast and readable, technical deep-dives have been orga
 ```text
 generator-assets/
 ├── core/                   # Engine core: config, CLI orchestrators, LLM enrichers, PBR generators
-├── workflows/              # 70 autonomous media generation workflow implementations
+├── workflows/              # 71 autonomous media generation workflow implementations
 ├── godot_assets/           # Default output directory for engine-ready game assets
 ├── output/                 # Output directory for video renders, audio tracks, and contact sheets
 ├── scripts/                # Specialized helper utilities, downloaders, and Vulkan builders

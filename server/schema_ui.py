@@ -38,7 +38,7 @@ WORKFLOW_FAMILY = {
     "character3d": "characters", "character_makeup": "characters",
     "makehuman_clothes": "characters", "outfit": "characters",
     "pose_control": "characters", "animal_godot": "characters",
-    "video": "video", "video_vace": "video", "video_multishot": "video",
+    "video": "video", "video_vace": "video", "video_s2v": "video", "video_multishot": "video",
     "h3_ref2va": "video", "monoplan_ia": "video", "rife_interp": "video",
     "vfx_flipbook": "video", "anim_loop": "video", "open_water": "video",
     "voix_off": "voice", "voix_perso": "voice", "voix_robot": "voice",
@@ -176,6 +176,17 @@ WORKFLOW_META = {
             {"name": "Validated 13f @16fps 832×480", "values": {"frames": 13, "fps": 16, "cfg_scale": 1.0, "seed": 42}},
         ],
     },
+    "video_s2v": {
+        "primary": ["audio", "steps", "flow_shift", "loras", "max_vram", "dry_run"],
+        "estimate": "≈24 min (512² 33f @16fps, 4 steps)",
+        "presets": [
+            {"name": "Validated 512² 33f @16fps (4-step LoRA)", "values": {"width": 512, "height": 512, "frames": 33, "fps": 16, "steps": 4, "cfg_scale": 1.0, "flow_shift": 3.0, "seed": 42}},
+        ],
+        "warnings": [
+            "RX 6950 XT validated sweet spot: 512×512 @ 33f (9,216 tokens, ~24.1 min NVMe compute; 832×480 hits ErrorDeviceLost/commit thrash).",
+            "Cold models on D:\\ are staged automatically to C:\\Modeles_LLM temporarily (~2.9 min) and cleaned after run.",
+        ],
+    },
     "video_multishot": {
         "primary": [],
         "estimate": "≈10 min (65 frames)",
@@ -278,7 +289,7 @@ ESTIMATE_SECONDS = {
     "musique_essence": 600, "retrait_voix": 180, "acestep_cover": 480, "audio_repaint": 180,
     "audio_restaure": 60,
     "character_makeup": 600, "character3d": 900, "asset_blendkit": 600,
-    "video_multishot": 600, "monoplan_ia": 900, "video": 1500, "video_vace": 1680,
+    "video_multishot": 600, "monoplan_ia": 900, "video": 1500, "video_vace": 1680, "video_s2v": 1447,
     "h3_ref2va": 2280, "mesh_ia": 700, "batch": 600, "audio_upscale": 600,
     "chanson": 900,
 }
