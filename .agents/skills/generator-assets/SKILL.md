@@ -5,7 +5,7 @@ description: Generates any media with the local generator-assets factory (C++ Vu
 
 # generator-assets — generate media with the local factory
 
-This repository is a **universal local AI media factory**: 70 workflows orchestrated by a single CLI,
+This repository is a **universal local AI media factory**: 71 workflows orchestrated by a single CLI,
 executed by C++/GGUF Vulkan engines (sd-cli, llama.cpp, audio.cpp, trellis.cpp, FFmpeg) — no cloud or
 CUDA dependency. Your mission when this skill triggers: translate a media need into **the right
 workflow command**, respecting the guardrails, then deliver the produced files.
@@ -21,9 +21,9 @@ uv run python main.py -w <workflow> "<prompt or args>" [options]
 - `-o <name>`: base name of the outputs (otherwise derived from the prompt);
 - `--seed <N>`: fixed seed for A/B reproducibility;
 - `uv run python main.py --check`: checks that engines and models are detected;
-- `uv run python main.py --interactive`: interactive console (70-workflow menu) for human exploration;
+- `uv run python main.py --interactive`: interactive console (71-workflow menu) for human exploration;
 - **web console (2026-10-11)**: `uv run python -m server` → http://127.0.0.1:8765 —
-  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 70 workflows: auto-generated forms
+  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 71 workflows: auto-generated forms
   from the live registry, serialized queue (one heavy job at a time), automatic load
   gate, live log/progress (SSE), output library with thumbnails/waveforms, uploads.
   For the HUMAN user; agents keep using the CLI (same subprocess contract);
@@ -175,6 +175,7 @@ within a binary version (ggml arithmetic changes across audio.cpp versions alter
 | Video from prompt or image (Wan/LTX, .webm) | `video` | `-w video "cyberpunk street, neon rain"` |
 | **Motion-locked video** (ref image + `--control-video` frames or `--source-video` + `--control-extract canny\|edges_bold\|depth_proxy`, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
 | **Multi-cut video + soundtrack** (several named cuts in ONE LTX-2.5 T2V generation, audio continuity across cuts — VALIDATED 2026-10-02; `--hires` 1216×704 @ 33f VALIDATED 2026-11-14) | `video_multishot` | `-w video_multishot -p "wide shot of a keeper on a pier. A hard cut transitions to a lantern close-up. The storm ambience continues across the cut, with waves and distant thunder"` |
+| **Speech-to-Video talking portrait** (portrait `-i` + speech `--audio`, Wan2.2-S2V 14B Q4_K_M + wav2vec2 + LightX2V 4 steps, 512×512 33f@16fps, auto cold `D:→C:` NVMe staging, `.webm`+`.mp4` — VALIDATED 2026-11-14) | `video_s2v` | `-w video_s2v -i portrait.png --audio speech.wav -p "A person speaking calmly and clearly..."` |
 | **Continue an existing video (`-i`) or morph keyframes (`--init-img`/`--end-img`) + SOUND** (MiniMax-H3 — FL2VA 22f VALIDATED 2026-11-14; use expressive keyframes/motion rather than plain turnaround) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
 | 60 fps interpolation (RIFE) | `rife_interp` | `-w rife_interp -i clip.webm` |
 | 4×4 VFX particle sheet | `vfx_flipbook` | `-w vfx_flipbook "fire explosion"` |
@@ -212,6 +213,7 @@ re-identify recurring subjects, and state audio continuity across the cut.
 | `mesh_ia` res 512 / res 1024 | ~11 min / ~55 min |
 | `monoplan_ia` 5 s shot | ~10-30 min |
 | `h3_ref2va` 22 frames turbo | ~38 min |
+| `video_s2v` 33 frames 512×512 (4 steps) | ~24.1 min compute (+2.9 min cold `D:→C:` stage) |
 
 Warn the user about the duration before launching; propose a low-resolution iteration when one
 exists.
