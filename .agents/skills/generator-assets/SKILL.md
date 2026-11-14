@@ -51,7 +51,8 @@ These rules come from `AGENTS.md` and real incidents — they are not decorative
 4. **Always set `--seed`** so you can reproduce/compare.
 5. Never launch a generation while a batch is running, and never kill a running
    `audiocpp_cli.exe` / `ffmpeg.exe` / `sd-cli.exe`.
-6. Optional `web-assets` index integration: `--ref-lib <query>` (`sfx`, `musique_adn`, `voix_off`, `qwen_image`) and `--from-lib`/`--pbr-group` (`material3d`) exclude `NO_AI` licenses; `--scan-web-assets` triggers non-blocking local re-indexing.
+6. **Never test or benchmark cold-stored models directly from `D:\`** (`D:\Modeles_LLM\` is a slow USB 3.0 HDD): temporarily copy the target model(s) onto `C:\Modeles_LLM\` (NVMe) before launching, run the test from `C:`, then remove the temporary `C:` copy once done unless promoted to PROD.
+7. Optional `web-assets` index integration: `--ref-lib <query>` (`sfx`, `musique_adn`, `voix_off`, `qwen_image`) and `--from-lib`/`--pbr-group` (`material3d`) exclude `NO_AI` licenses; `--scan-web-assets` triggers non-blocking local re-indexing.
 
 Contract of the consumer repositories (ai-doc2video, video-analys-ia): they call this CLI as a
 subprocess with `check=True` from this directory, with load checked + English prompt + fixed seed.
