@@ -69,6 +69,11 @@ Generate fluid, high-frame-rate cinematic shots natively with **Wan 2.2 MoE**, *
 | <img src="docs/exemples/videos/video_ltx25_dragon_audio.gif" width="100%" alt="LTX-2.5 Dragon with Audio" /> | <img src="docs/exemples/personnages/boucle_run.gif" width="55%" alt="ControlNet Run Cycle" /> |
 | *8 steps, 22B DiT + native audio synthesis — [Download MP4](docs/exemples/videos/video_ltx25_dragon_audio.mp4)* | *Locked identity + rig skeletal control frame-by-frame* |
 
+| LTX-2.5 `--hires` Spatial Upscaler ×2 (`1216×704` vs Lanczos ×2) | MiniMax-H3 FL2VA (`22f` Keyframe Morph + Native Audio) |
+| :---: | :---: |
+| <img src="docs/exemples/videos/ltx25_2stage_crop_zoom.png" width="100%" alt="LTX-2.5 Two-Stage Hires Comparison" /> | <img src="docs/exemples/videos/h3_fl2va_22f_sheet.png" width="100%" alt="MiniMax-H3 FL2VA 22 Frames" /> |
+| *Two-stage latent upscaler micro-detail (`608×352 → 1216×704`) — [Full Contact Sheet](docs/exemples/videos/ltx25_1stage_vs_2stage_sheet.png)* | *First+Last Frame morphing (`--init-img` / `--end-img --turbo`)* |
+
 ---
 
 ### 2. 🧱 3D Game Meshes & PBR Materials
@@ -83,6 +88,11 @@ Full PBR material channels (Albedo, DeepBump Normal, Roughness, Height, AO) auto
 | :---: | :---: | :---: |
 | <img src="docs/exemples/workflows_3d/casque_1024_planche.png" width="320" alt="TRELLIS.2 3D Mesh" /> | <img src="godot_assets/pilier_runique_3d_albedo.png" width="160" alt="Runic Pillar" /> | <img src="godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.png" width="280" alt="360 Skybox" /> |
 | *Volumetric closed 3D model (.glb) with PBR atlas* | *Blender quad geometry with embedded PBR* | *2:1 spherical sky + Godot IBL environment* |
+
+| PBR Albedo Delighting (`material3d --delight`) — Raw vs Delighted Albedo, Normal & ORM |
+| :---: |
+| <img src="docs/exemples/workflows_3d/pbr_delight_ab_sheet.png" width="100%" alt="PBR Albedo Delighting A/B" /> |
+| *CPU gradient & hotspot flattening reduces baked shadow bleed into DeepBump normal maps* |
 
 ---
 
@@ -103,6 +113,11 @@ Isolate game items with zero white halos, quantize to classic retro palettes, an
 | :---: | :---: | :---: | :---: |
 | <img src="godot_assets/potion_diablo.png" width="150" alt="Diablo Potion" /> | <img src="godot_assets/casque_esrgan_4x.png" width="150" alt="ESRGAN 4x" /> | <img src="godot_assets/casque_pico8.png" width="150" alt="Pico-8 Palette" /> | <img src="docs/exemples/workflows_2d/ui_9slice_demo.png" width="220" alt="9-Patch Stretch" /> |
 | *Neural background removal* | *Sharp 4096px, intact alpha* | *16-color authentic palette* | *Scales with zero corner distortion* |
+
+| ControlNet++ Union SDXL ProMax (`canny` & `tile` @ 1024×1024) | Qwen-Image 2.1 Multi-Angles Orbit (`--multi-angles`) |
+| :---: | :---: |
+| <img src="docs/exemples/workflows_2d/cn_union_promax_sheet.png" width="100%" alt="ControlNet Union ProMax Canny and Tile" /> | <img src="docs/exemples/workflows_2d/qwen21_multi_angles_sheet.png" width="100%" alt="Qwen 2.1 Multi Angles Orbit" /> |
+| *Single unified checkpoint via `--control-image --control-type canny\|tile --control-strength`* | *Multimodal VLM `--ref-image` + `<mva>` LoRA camera viewpoints (Research license)* |
 
 ---
 
@@ -137,7 +152,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`video`** | Hardware-accelerated T2V, I2V, and FLF2V (Wan 2.2, LTX-2.5) + optional `--upscale --upscale-mode seedvr2` | `uv run python main.py -w video "waterfall cascading in jungle" --frames 33` | [Specs](docs/workflows_reference.md#48-video--native-hardware-accelerated-video-generation-webm) |
 | **`video_multishot`** 🏆 | Multi-cut video with continuous audio across cuts in a SINGLE generation pass (`--hires` 1216×704) | `uv run python main.py -w video_multishot -p "Shot 1. A hard cut to Shot 2..."` | [Specs](docs/workflows_reference.md#49c-video_multishot--multi-cut-video--continuous-soundtrack-in-one-generation-ltx-25-native-multishot) |
 | **`h3_ref2va`** ⚡ | Video & sound via MiniMax-H3: **Ref2VA** (`-i` continuation) or **FL2VA** (`--init-img`/`--end-img`), `--turbo` | `uv run python main.py -w h3_ref2va -i intro.mp4 -p "dragon roars" --turbo` | [Specs](docs/workflows_reference.md#49-h3_ref2va--videoaudio-continuation-via-minimax-h3-ref2va-webm-with-sound) |
-| **`video_vace`** | Motion-locked video: reference image + `--control-video` frames or auto-extracted `--source-video` (`canny`/`edges_bold`/`depth_proxy`, Wan 2.1 VACE distilled) | `uv run python main.py -w video_vace -i ref.png --control-video frames_dir/` | [Specs](docs/workflows_reference.md#49b-video_vace--motion-locked-video-reference-image--control-frames-wan-21-vace-lightx2v-distilled) |
+| **`video_vace`** | Motion-locked video: reference image + `--control-video` frames or auto-extracted `--source-video` (`--control-extract canny\|edges_bold\|depth_proxy`, Wan 2.1 VACE distilled) | `uv run python main.py -w video_vace -i ref.png --source-video clip.mp4 --control-extract canny` | [Specs](docs/workflows_reference.md#49b-video_vace--motion-locked-video-reference-image--control-frames-wan-21-vace-lightx2v-distilled) |
 | **`rife_interp`** | AI frame rate multiplication up to 60 FPS preserving alpha transparency | `uv run python main.py -w rife_interp -i spritesheet.png --factor 2` | [Specs](docs/workflows_reference.md#47-rife_interp--ai-frame-rate-multiplication-60-fps) |
 
 ---
@@ -176,7 +191,7 @@ uv run python main.py -w <workflow_name> [options]
 ### 🎨 5. 2D Sprites, Tiles & UI
 | Workflow | What it does | 1-Line Example | Reference |
 | :--- | :--- | :--- | :---: |
-| **`generate`** | Isolated 2D game items with neural background removal, ControlNet++ Union ProMax (`canny`/`tile`), and Godot anchor centering | `uv run python main.py -w generate "gold shield with lion crest" --upscale` | [Specs](docs/workflows_reference.md#31-generate--standard-isolated-2d-game-asset) |
+| **`generate`** | Isolated 2D game items with neural background removal, ControlNet++ Union ProMax (`--control-image`, `--control-type canny\|tile`, `--control-strength`), and Godot anchor centering | `uv run python main.py -w generate "gold shield with lion crest" --upscale` | [Specs](docs/workflows_reference.md#31-generate--standard-isolated-2d-game-asset) |
 | **`qwen_image`** | Photorealistic T2I, compositing, `-r` VLM conditioning & `--multi-angles` orbit (`--qwen-turbo`, Research license) | `uv run python main.py -w qwen_image "ceramic vase" -i ref.png --multi-angles orbit` | [Specs](docs/workflows_reference.md#39-qwen_image--qwen-image-21-photorealistic-text-to-image-and-compositing-research-license) |
 | **`moss_image`** | MOSS-Image-SFT text-to-image, strong in-image text rendering (Apache-2.0, commercial OK) | `uv run python main.py -w moss_image "storefront sign 'MOSS'" --seed 42` | [Specs](docs/workflows_reference.md#310-moss_image--moss-image-sft-text-to-image-apache-20-in-image-text-rendering) |
 | **`spritesheet`** | 4-angle aligned character perspective sheet + Godot JSON frame atlas | `uv run python main.py -w spritesheet "undead skeleton warrior" --columns 4` | [Specs](docs/workflows_reference.md#32-spritesheet--multi-angle-character-sprite-sheet) |
@@ -239,12 +254,13 @@ uv run python -m server    # → Opens http://127.0.0.1:8765
 <span id="web-and-agents"></span>
 ## 🖥️ Web Console & AI Agent Interfaces
 
-### 🌐 The Full-Python Web Console
+### 🌐 The Full-Python Web Console & `web-assets` Bridge
 Prefer a visual dashboard over the CLI? Run `uv run python -m server`:
 - Built with **FastAPI + Jinja2 + HTMX** (zero Node.js, zero npm, zero React bloat).
 - Automatically inspects all 70 workflows and generates interactive forms.
 - Features a **serialized GPU run queue** with automatic system load checks.
 - Live log streaming (SSE), media gallery, and model inventory.
+- **`web-assets` library integration**: resolve AI-eligible audio/image references (`--ref-lib`) or PBR material packs (`--from-lib`, `--pbr-group`) with `NO_AI` strictly excluded, and trigger optional library re-indexing via `--scan-web-assets`.
 
 <span id="skill-ia"></span>
 ### 🤖 Built-in AI Agent Skill (`.agents/skills/generator-assets/`)

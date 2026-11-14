@@ -135,7 +135,7 @@ have it listened to before industrializing.** Dark rock music: known instrumenta
 Video performance (RX 6950 XT): `monoplan_ia` ~15 min (65 f, 8 steps) + ~3 min post; ~18 min in
 native 4K. `h3_ref2va` 22 frames ~38 min turbo (~70 min without). LTX ceiling ≈ 81 frames @
 832×480 (beyond: device-lost → reboot before blaming the recipe). YouTube masters: 4K mandatory
-(VP09/AV01), `scripts/conform_youtube_hd.py`, video upscale `scripts/upscale_video_ai.py`.
+(VP09/AV01), `scripts/conform_youtube_hd.py`, video upscale `scripts/upscale_video_ai.py`. Optional `web-assets` index hooks: `--ref-lib <query>` (strict `NO_AI` exclusion) and `--scan-web-assets` (non-blocking `POST /api/scan`).
 
 **⚠️ sd-cli build state (pinned 2026-11-14: `master-1092-5d78740`, 6/6 legs PASS, MEMORY_BANK §1.56)**: `C:\SD\sd-cli.exe` passes H3 Ref2VA `--turbo`, SDXL, Flux `--vae-tiling`, Qwen-Image 2.1 Turbo, LTX-2.5 (`--max-vram 10 --backend diffusion=vulkan0,te=cpu,vae=cpu`), and `#2341` interleaved `<image:...>` (`--llm_vision`), plus **SeedVR2 3B** `int8_convrot` (`-M vid_upscale` Vulkan0) and **MiniMax-H3 FL2VA** (`--init-img`/`--end-img`). `DEFAULT_SD_CLI_LTX` resolves to the same binary (`env SD_CLI_LTX_PATH`). Reliable Wan T2V/I2V: ≤ ~20 frames with `--vae-on-cpu`. Video ESRGAN upscale (`scripts/upscale_video_ai.py`) remains validated alongside SeedVR2. **Always re-check this state in MEMORY_BANK before a video render.**
 

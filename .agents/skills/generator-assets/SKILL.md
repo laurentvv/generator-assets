@@ -51,6 +51,7 @@ These rules come from `AGENTS.md` and real incidents — they are not decorative
 4. **Always set `--seed`** so you can reproduce/compare.
 5. Never launch a generation while a batch is running, and never kill a running
    `audiocpp_cli.exe` / `ffmpeg.exe` / `sd-cli.exe`.
+6. Optional `web-assets` index integration: `--ref-lib <query>` (`sfx`, `musique_adn`, `voix_off`, `qwen_image`) and `--from-lib`/`--pbr-group` (`material3d`) exclude `NO_AI` licenses; `--scan-web-assets` triggers non-blocking local re-indexing.
 
 Contract of the consumer repositories (ai-doc2video, video-analys-ia): they call this CLI as a
 subprocess with `check=True` from this directory, with load checked + English prompt + fixed seed.
@@ -171,7 +172,7 @@ within a binary version (ggml arithmetic changes across audio.cpp versions alter
 | :--- | :--- | :--- |
 | Cinematic shot from a still image (slow-mo, designed zoom, `--hires` native 1216×704) | `monoplan_ia` | `-w monoplan_ia -i frame.png --prompt "camera slowly pans..."` |
 | Video from prompt or image (Wan/LTX, .webm) | `video` | `-w video "cyberpunk street, neon rain"` |
-| **Motion-locked video** (ref image + `--control-video` frames or auto-extracted `--source-video`, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
+| **Motion-locked video** (ref image + `--control-video` frames or `--source-video` + `--control-extract canny\|edges_bold\|depth_proxy`, Wan 2.1 VACE LightX2V distilled 8 steps — VALIDATED 2026-10-01) | `video_vace` | `-w video_vace -i ref.png --control-video skeletons/ -p "a knight running through a misty forest"` |
 | **Multi-cut video + soundtrack** (several named cuts in ONE LTX-2.5 T2V generation, audio continuity across cuts — VALIDATED 2026-10-02; `--hires` 1216×704 @ 33f VALIDATED 2026-11-14) | `video_multishot` | `-w video_multishot -p "wide shot of a keeper on a pier. A hard cut transitions to a lantern close-up. The storm ambience continues across the cut, with waves and distant thunder"` |
 | **Continue an existing video (`-i`) or morph keyframes (`--init-img`/`--end-img`) + SOUND** (MiniMax-H3 — FL2VA 22f VALIDATED 2026-11-14; use expressive keyframes/motion rather than plain turnaround) | `h3_ref2va` | `-w h3_ref2va -i clip.webm --prompt "..." --turbo` |
 | 60 fps interpolation (RIFE) | `rife_interp` | `-w rife_interp -i clip.webm` |
