@@ -24,7 +24,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from core.config import DEFAULT_FFMPEG, DEFAULT_OUTPUT_DIR, slugifier_texte
+from core.config import DEFAULT_BACKEND, DEFAULT_FFMPEG, DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.diffusion import generer_video_s2v_wan
 from core.process import run_engine
 from core.video_qc import auditer_clip_video
@@ -87,9 +87,9 @@ class VideoS2VWorkflow(BaseWorkflow):
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         os.makedirs(output_dir, exist_ok=True)
 
-        nom_arg = params.get("output")
-        nom_base = nom_arg or f"{slugifier_texte(Path(init_img).stem)[:40]}_s2v"
-        stem = str(Path(nom_base).with_suffix("")) if nom_base.lower().endswith((".webm", ".mp4")) else nom_base
+        out_name = params.get("output")
+        base_name = out_name or f"{slugifier_texte(Path(init_img).stem)[:40]}_s2v"
+        stem = str(Path(base_name).with_suffix("")) if base_name.lower().endswith((".webm", ".mp4")) else base_name
         webm_output_path = os.path.join(output_dir, f"{stem}.webm")
         mp4_output_path: Optional[str] = None if params.get("no_mp4") else os.path.join(output_dir, f"{stem}.mp4")
 
@@ -97,37 +97,48 @@ class VideoS2VWorkflow(BaseWorkflow):
         height = int(params.get("height") or 512)
         frames = int(params.get("frames") or 33)
         fps = int(params.get("fps") or 16)
-        steps_demandes = params.get("steps")
-        if steps_demandes in (None, 25):
+        requested_steps = params.get("steps")
+        if requested_steps in (None, 25):
             steps = 4
-            if steps_demandes == 25:
+            if requested_steps == 25:
                 self.log("steps=25 (global CLI default) → validated Wan2.2-S2V LoRA recipe = 4 steps.", emoji="ℹ️")
         else:
-            steps = int(steps_demandes)
-        cfg_scale = float(params.get("cfg_scale") or 1.0)
+            steps = int(requested_steps)
+        cfg_scale = float(params["cfg_scale"]) if params.get("cfg_scale") is not None else 1.0
         flow_shift = float(params["flow_shift"]) if params.get("flow_shift") is not None else 3.0
-        seed = int(params.get("seed", 42))
-        max_vram = int(params.get("max_vram") or 10)
+        seed = int(params["seed"]) if params.get("seed") is not None else 42
+        max_vram = int(params["max_vram"]) if params.get("max_vram") is not None else 10
 
-        loras_param = params.get("loras")
-        lora_param = params.get("lora")
-        if loras_param:
-            loras_val = list(loras_param)
-        elif isinstance(lora_param, str):
-            loras_val = [] if lora_param.strip().lower() in ("", "none", "off") else [lora_param]
+        raw_loras = params.get("loras")
+        if not raw_loras and isinstance(params.get("lora"), str):
+            raw_loras = [params["lora"]]
+        if raw_loras is not None:
+            cleaned_loras = [s.strip() for s in raw_loras if isinstance(s, str) and s.strip()]
+            loras_val = (
+                []
+                if (not cleaned_loras or all(s.lower() in ("none", "off") for s in cleaned_loras))
+                else cleaned_loras
+            )
         else:
             loras_val = None
 
         if not dry_run and SCRIPT_CHECK_CHARGE.exists():
             self.log("System load pre-check (CPU/GPU/RAM/VRAM)...")
-            retour = run_engine(
+            gate_result = run_engine(
                 [sys.executable, str(SCRIPT_CHECK_CHARGE)],
                 capture=False, check=False, timeout=300, etiquette="load check",
             )
-            if retour.returncode == 1:
+            if gate_result.returncode == 1:
                 raise RuntimeError("Busy machine (check_charge_systeme exit 1) — wait for a free slot before relaunching.")
 
-        debut = time.time()
+        cfg_backend = self.config.get("backend")
+        effective_backend = (
+            params.get("backend")
+            or (cfg_backend if cfg_backend and cfg_backend != DEFAULT_BACKEND else None)
+            or "diffusion=vulkan0,te=cpu,vae=cpu"
+        )
+
+        t_start = time.time()
         webm_path = generer_video_s2v_wan(
             prompt=prompt,
             init_image=init_img,
@@ -149,7 +160,7 @@ class VideoS2VWorkflow(BaseWorkflow):
             loras=loras_val,
             lora_dir=params.get("lora_dir") or self.config.get("lora_dir"),
             flash_attn=params.get("flash_attn") or "off,diffusion=on",
-            backend=params.get("backend") or "diffusion=vulkan0,te=cpu,vae=cpu",
+            backend=effective_backend,
             threads=int(self.config.get("threads", 16)),
             output_path=webm_output_path,
             stage_to_nvme=bool(params.get("stage_to_nvme", True)),
@@ -170,8 +181,8 @@ class VideoS2VWorkflow(BaseWorkflow):
                 if not qc_res.get("ok"):
                     self.log(f"⚠️ Video QC warnings/issues: {qc_res.get('issues')}", emoji="⚠️")
 
-        duree_min = (time.time() - debut) / 60.0
-        resultat = {
+        duration_min = (time.time() - t_start) / 60.0
+        result = {
             "prompt": prompt,
             "video_path": mp4_real or webm_path,
             "webm_path": webm_path,
@@ -186,9 +197,9 @@ class VideoS2VWorkflow(BaseWorkflow):
             "flow_shift": flow_shift,
             "seed": seed,
             "qc": qc_res,
-            "duree_run_min": round(duree_min, 1),
+            "duration_min": round(duration_min, 1),
             "dry_run": dry_run,
             "status": "success",
         }
-        self.log(json.dumps(resultat, ensure_ascii=False, indent=2), emoji="📊")
-        return resultat
+        self.log(json.dumps(result, ensure_ascii=False, indent=2), emoji="📊")
+        return result

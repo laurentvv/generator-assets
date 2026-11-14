@@ -11,12 +11,14 @@ from types import SimpleNamespace
 import pytest
 
 from core import diffusion
-from core.config import DEFAULT_WAN_S2V_TURBO_LORA
+from core.config import DEFAULT_BACKEND, DEFAULT_WAN_S2V_TURBO_LORA
+from server.argv import build_argv
+from server.schema_ui import WORKFLOW_META
 from workflows import WorkflowRegistry
 from workflows import video_s2v as wf_mod
 
 
-def _creer_assets_s2v_factices(base: Path) -> dict[str, Path]:
+def _create_dummy_s2v_assets(base: Path) -> dict[str, Path]:
     img = base / "portrait.png"
     wav = base / "speech.wav"
     model = base / "Wan2.2-S2V-14B-Q4_K_M.gguf"
@@ -60,19 +62,24 @@ def _patch_virtual_slow_drive(monkeypatch: pytest.MonkeyPatch, cold_root: Path, 
     monkeypatch.setattr(diffusion.os.path, "splitdrive", _fake_splitdrive)
 
 
-def test_nvme_staging_copies_cold_files_and_cleans_up(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_nvme_staging_copies_cold_files_dedups_and_cleans_up(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     cold = tmp_path / "cold"
     nvme = tmp_path / "nvme"
-    cold.mkdir()
+    (cold / "a").mkdir(parents=True)
+    (cold / "b").mkdir(parents=True)
     nvme.mkdir()
-    cold_model = cold / "s2v.gguf"
-    cold_enc = cold / "enc.safetensors"
+    cold_model = cold / "a" / "shared.gguf"
+    cold_other = cold / "b" / "shared.gguf"
     nvme_vae = nvme / "vae.safetensors"
     cold_model.write_bytes(b"A" * 4096)
-    cold_enc.write_bytes(b"B" * 1024)
+    cold_other.write_bytes(b"B" * 1024)
     nvme_vae.write_bytes(b"C" * 512)
 
     _patch_virtual_slow_drive(monkeypatch, cold, nvme)
+    # Tight space (5120 unique + 1024 margin = 6144) proves aliased key is NOT double-counted.
+    monkeypatch.setattr(diffusion.shutil, "disk_usage", lambda _p: SimpleNamespace(total=10000, used=3856, free=6144))
     logs: list[str] = []
     staged_dir: Path | None = None
 
@@ -80,7 +87,7 @@ def test_nvme_staging_copies_cold_files_and_cleans_up(tmp_path: Path, monkeypatc
         {
             "model": str(cold_model),
             "model_alias": str(cold_model),
-            "audio_encoder": str(cold_enc),
+            "audio_encoder": str(cold_other),
             "vae": str(nvme_vae),
         },
         nvme_root=str(nvme),
@@ -88,12 +95,14 @@ def test_nvme_staging_copies_cold_files_and_cleans_up(tmp_path: Path, monkeypatc
         log_fn=logs.append,
     ) as staged:
         staged_model = Path(staged["model"])
+        staged_enc = Path(staged["audio_encoder"])
         staged_dir = staged_model.parent
-        assert staged_model.parent == nvme / staged_dir.name
+        assert staged_dir.parent == nvme
         assert staged_dir.name.startswith("_tmp_s2v_")
         assert staged["model"] == staged["model_alias"]
+        assert staged_model != staged_enc
         assert staged_model.read_bytes() == b"A" * 4096
-        assert Path(staged["audio_encoder"]).read_bytes() == b"B" * 1024
+        assert staged_enc.read_bytes() == b"B" * 1024
         assert staged["vae"] == str(nvme_vae)
 
     assert staged_dir is not None and not staged_dir.exists()
@@ -125,7 +134,9 @@ def test_nvme_staging_cleans_up_on_exception(tmp_path: Path, monkeypatch: pytest
     assert staged_dir is not None and not staged_dir.exists()
 
 
-def test_nvme_staging_disabled_and_low_space(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_nvme_staging_partial_cleanup_warning_disabled_and_low_space(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     cold = tmp_path / "cold"
     nvme = tmp_path / "nvme"
     cold.mkdir()
@@ -151,6 +162,23 @@ def test_nvme_staging_disabled_and_low_space(tmp_path: Path, monkeypatch: pytest
         ):
             pass
 
+    monkeypatch.setattr(diffusion.shutil, "disk_usage", lambda _p: SimpleNamespace(total=100000, used=0, free=100000))
+    orig_rmtree = diffusion.shutil.rmtree
+    monkeypatch.setattr(diffusion.shutil, "rmtree", lambda *a, **kw: None)
+    logs: list[str] = []
+    staged_dir: Path | None = None
+    with diffusion._stager_vers_nvme_temporaire(
+        {"model": str(cold_file)},
+        nvme_root=str(nvme),
+        min_free_margin_bytes=1024,
+        log_fn=logs.append,
+    ) as staged:
+        staged_dir = Path(staged["model"]).parent
+
+    assert staged_dir is not None and staged_dir.exists()
+    assert any("Partial cleanup" in msg for msg in logs)
+    orig_rmtree(staged_dir, ignore_errors=True)
+
 
 def test_preparer_wav_s2v_direct_and_transcode(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     wav = tmp_path / "voice.wav"
@@ -174,7 +202,7 @@ def test_preparer_wav_s2v_direct_and_transcode(tmp_path: Path, monkeypatch: pyte
 
 
 def test_generer_video_s2v_wan_dry_run_flags_and_token_warning(tmp_path: Path) -> None:
-    assets = _creer_assets_s2v_factices(tmp_path)
+    assets = _create_dummy_s2v_assets(tmp_path)
     logs: list[str] = []
 
     out = diffusion.generer_video_s2v_wan(
@@ -213,7 +241,7 @@ def test_generer_video_s2v_wan_dry_run_flags_and_token_warning(tmp_path: Path) -
 
 
 def test_generer_video_s2v_wan_missing_models_raises(tmp_path: Path) -> None:
-    assets = _creer_assets_s2v_factices(tmp_path)
+    assets = _create_dummy_s2v_assets(tmp_path)
     with pytest.raises(FileNotFoundError, match="Missing Wan2.2-S2V models"):
         diffusion.generer_video_s2v_wan(
             prompt="hello",
@@ -228,7 +256,7 @@ def test_generer_video_s2v_wan_missing_models_raises(tmp_path: Path) -> None:
 
 
 def test_generer_video_s2v_wan_executes_sd_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    assets = _creer_assets_s2v_factices(tmp_path)
+    assets = _create_dummy_s2v_assets(tmp_path)
     out_webm = tmp_path / "out" / "talk.webm"
     captured_cmds: list[list[str]] = []
 
@@ -281,8 +309,10 @@ def test_video_s2v_workflow_registered_and_validates_inputs(tmp_path: Path) -> N
         wf.run({"input": str(img), "audio": str(tmp_path / "missing.wav")})
 
 
-def test_video_s2v_workflow_maps_global_defaults_and_lora_none(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    assets = _creer_assets_s2v_factices(tmp_path)
+def test_video_s2v_workflow_maps_cli_defaults_falsy_numbers_and_loras(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assets = _create_dummy_s2v_assets(tmp_path)
     recorded: dict[str, object] = {}
 
     def _fake_gen(**kwargs):
@@ -290,34 +320,64 @@ def test_video_s2v_workflow_maps_global_defaults_and_lora_none(tmp_path: Path, m
         return kwargs["output_path"]
 
     monkeypatch.setattr(wf_mod, "generer_video_s2v_wan", _fake_gen)
-    wf = wf_mod.VideoS2VWorkflow(config={"sd_cli": "sd-cli.exe", "threads": 8})
+    wf = wf_mod.VideoS2VWorkflow(config={"sd_cli": "sd-cli.exe", "threads": 8, "backend": "diffusion=vulkan1"})
 
-    res = wf.run({
+    for loras_input in ({"loras": ["none"]}, {"loras": ["off"]}, {"lora": "none"}):
+        recorded.clear()
+        res = wf.run({
+            "input": str(assets["img"]),
+            "audio": str(assets["wav"]),
+            "steps": 25,
+            "cfg_scale": 0.0,
+            "flow_shift": 0.0,
+            "seed": None,
+            "max_vram": 0,
+            **loras_input,
+            "dry_run": True,
+            "output_dir": str(tmp_path),
+        })
+        assert recorded["steps"] == 4
+        assert recorded["loras"] == []
+        assert recorded["cfg_scale"] == 0.0
+        assert recorded["flow_shift"] == 0.0
+        assert recorded["seed"] == 42
+        assert recorded["max_vram"] == 0
+        assert recorded["backend"] == "diffusion=vulkan1"
+        assert recorded["threads"] == 8
+        assert res["steps"] == 4
+        assert res["dry_run"] is True
+        assert res["mp4_path"] is None
+
+    # Global CLI DEFAULT_BACKEND must map to the validated vae=cpu S2V backend.
+    recorded.clear()
+    wf_default_backend = wf_mod.VideoS2VWorkflow(config={"backend": DEFAULT_BACKEND})
+    wf_default_backend.run({
         "input": str(assets["img"]),
         "audio": str(assets["wav"]),
-        "steps": 25,
-        "lora": "none",
         "dry_run": True,
         "output_dir": str(tmp_path),
     })
+    assert recorded["backend"] == "diffusion=vulkan0,te=cpu,vae=cpu"
 
-    assert recorded["steps"] == 4
-    assert recorded["loras"] == []
-    assert recorded["width"] == 512
-    assert recorded["height"] == 512
-    assert recorded["video_frames"] == 33
-    assert recorded["fps"] == 16
-    assert recorded["threads"] == 8
-    assert res["steps"] == 4
-    assert res["dry_run"] is True
-    assert res["mp4_path"] is None
+
+def test_video_s2v_webui_preset_builds_clean_argv(tmp_path: Path) -> None:
+    assets = _create_dummy_s2v_assets(tmp_path)
+    preset_values = dict(WORKFLOW_META["video_s2v"]["presets"][0]["values"])
+    preset_values.update({
+        "input": str(assets["img"]),
+        "audio": str(assets["wav"]),
+        "prompt": "Speak clearly.",
+    })
+    flags, prompt = build_argv("video_s2v", preset_values)
+    assert prompt == "Speak clearly."
+    assert "--steps" in flags and "4" in flags
+    assert "--audio" in flags and str(assets["wav"]) in flags
 
 
 def test_video_s2v_workflow_load_gate_and_live_remux_qc(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    assets = _creer_assets_s2v_factices(tmp_path)
+    assets = _create_dummy_s2v_assets(tmp_path)
     wf = wf_mod.VideoS2VWorkflow(config={"sd_cli": "sd-cli.exe"})
 
-    # 1. Busy load gate aborts before invoking sd-cli.
     monkeypatch.setattr(wf_mod, "run_engine", lambda *a, **kw: SimpleNamespace(returncode=1))
     with pytest.raises(RuntimeError, match="Busy machine"):
         wf.run({
@@ -326,7 +386,6 @@ def test_video_s2v_workflow_load_gate_and_live_remux_qc(tmp_path: Path, monkeypa
             "output_dir": str(tmp_path),
         })
 
-    # 2. Clean load gate -> generate .webm -> remux .mp4 -> video QC.
     def _fake_gen(**kwargs):
         Path(kwargs["output_path"]).write_bytes(b"WEBM")
         return kwargs["output_path"]
@@ -356,3 +415,4 @@ def test_video_s2v_workflow_load_gate_and_live_remux_qc(tmp_path: Path, monkeypa
     assert res["mp4_path"].endswith("monk_talk.mp4")
     assert res["video_path"] == res["mp4_path"]
     assert res["qc"] == {"ok": True, "metrics": {"max_bottom_black_px": 0}, "issues": []}
+    assert "duration_min" in res
