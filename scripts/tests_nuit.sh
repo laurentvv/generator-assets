@@ -385,6 +385,60 @@ leg_heartmula_gothic() {
       --out "$OUT/heartmula_gothic/heartmula_gothic_30s.wav"
 }
 
+# ------------------------------------------------- TTS comparison legs (added 11-15, review-corrected same day)
+# TTS slot campaign (user "ajoute ça au test de nuit"): IndexTTS2.5 = never tested locally
+# (0 MEMORY_BANK verdicts; family index_tts2 supported, v2.5 multilingual spec shipped in
+# 0.9.5, model_specs/index_tts2.json). Engine is zh/en/ja/es/ar-class (NO French) — the FR
+# probe documents the gap; FR production stays qwen3 TTS / qwentts.cpp regardless. Same
+# reference voice (ref_E01_L001, the validated qwen3 clone ref) + seed 42 for a fair A/B
+# against the validated qwen3 render (output/voix_off/ab_e01_l001_qwen_expr/).
+# Model: IndexTTS2.5 q8_0 3.50 GB downloaded 11-15 (exact HF size 3502960096 B,
+# C:/Modeles_LLM/IndexTTS2.5-GGUF/).
+# ⚠️ BreezeTTS 2 is NOT queued and must NOT be re-added without an explicit user request:
+# §1.44 verdict 10-20 = user listening REJECTED the q4_k sample ("vieux micro") AND the
+# BreezeBlue license is NON-Commercial (excluded from the monetized channel) — the GGUFs
+# were deleted the same day (~9.5 GB recovered). Re-download only on explicit user request.
+# NOTE: clone legs pass the reference via --voice-ref (the verified voice-clone input flag:
+# audiocpp --help + production dispatch core/voix_off.py:258); --audio is the generic
+# ASR/s2s source input. If a family-specific flag error still shows on the first run,
+# fix the leg and delete the FAIL marker.
+
+leg_indextts25_en_tts() {
+  run_leg indextts25_en_tts \
+    C:/audio-cpp/audiocpp_cli.exe --task tts --family index_tts2 \
+      --model "$MODELES/IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf" \
+      --backend vulkan --threads 8 \
+      --text "Testing IndexTTS two point five on audio.cpp version 0.9.5 for the voice stack comparison." \
+      --request-option language=en \
+      --request-option seed=42 \
+      --out "$OUT/indextts25_en_tts/indextts25_en_tts.wav"
+}
+
+leg_indextts25_en_clone() {
+  run_leg indextts25_en_clone \
+    C:/audio-cpp/audiocpp_cli.exe --task clon --family index_tts2 \
+      --model "$MODELES/IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf" \
+      --backend vulkan --threads 8 \
+      --voice-ref output/voix_off/ab_e01_l001_qwen_expr/ref_E01_L001.wav \
+      --request-option language=en \
+      --request-option seed=42 \
+      --out "$OUT/indextts25_en_clone/indextts25_en_clone.wav"
+}
+
+leg_indextts25_fr_probe() {
+  # FR gap probe — EXPECTED to refuse or mangle: the spec lists zh/en/ja/es/ar only.
+  # rc=0 with mangled FR = documented limitation; rc!=0 = clean refusal. Either way the
+  # datapoint is recorded; a FAIL marker here is NOT an engine regression.
+  run_leg indextts25_fr_probe \
+    C:/audio-cpp/audiocpp_cli.exe --task tts --family index_tts2 \
+      --model "$MODELES/IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf" \
+      --backend vulkan --threads 8 \
+      --text "Bonjour, ceci est un test de la voix française pour la chaine." \
+      --request-option language=fr \
+      --request-option seed=42 \
+      --out "$OUT/indextts25_fr_probe/indextts25_fr_probe.wav"
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -416,6 +470,9 @@ rapport() {
       [ "$id" = "ltx_upscale_spatial" ]  && [ -f "$OUT/ltx_upscale_spatial/spatial_33f.webm" ] && ev="spatial_33f.webm — vs base (2x latent detail?)"
       [ "$id" = "ltx33_929_paramsdisk" ] && [ -f "$OUT/ltx33_929_paramsdisk/ltx33_paramsdisk.webm" ] && ev="ltx33_paramsdisk.webm — LTX fit on 929 with --params-backend disk (#1976)"
       [ "$id" = "heartmula_gothic" ]     && [ -f "$OUT/heartmula_gothic/heartmula_gothic_30s.wav" ] && ev="heartmula_gothic_30s.wav — USER LISTENING VERDICT (standing gothic recipe)"
+      [ "$id" = "indextts25_en_tts" ]   && [ -f "$OUT/indextts25_en_tts/indextts25_en_tts.wav" ] && ev="indextts25_en_tts.wav — A/B vs qwen3 (same sentence, USER LISTENING)"
+      [ "$id" = "indextts25_en_clone" ] && [ -f "$OUT/indextts25_en_clone/indextts25_en_clone.wav" ] && ev="indextts25_en_clone.wav — A/B vs qwen3 clone (same ref_E01_L001, USER LISTENING)"
+      [ "$id" = "indextts25_fr_probe" ] && [ -f "$OUT/indextts25_fr_probe/run.log" ] && ev="run.log — FR gap datapoint (spec zh/en/ja/es/ar, no fr; FAIL marker expected, not a regression)"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -449,6 +506,9 @@ while read -r id; do
     ltx_upscale_spatial)  leg_ltx_upscale_spatial ;;
     ltx33_929_paramsdisk) leg_ltx33_929_paramsdisk ;;
     heartmula_gothic)     leg_heartmula_gothic ;;
+    indextts25_en_tts)    leg_indextts25_en_tts ;;
+    indextts25_en_clone)  leg_indextts25_en_clone ;;
+    indextts25_fr_probe)  leg_indextts25_fr_probe ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
