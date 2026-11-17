@@ -14,6 +14,7 @@ magnitude, to be adjusted per project.
 | **Blender 4.0→5.2** | `mesh3d`, `voxel3d`, `asset_blendkit` (blocking); `mesh_ia` (optional: decimation + control contact sheet silently skipped if absent); MakeHuman suite (blocking) | Resolution `core/blender_ops.py::trouver_blender()`: env `BLENDER_PATH` → `blender` in the PATH → `C:\Program Files\Blender Foundation\Blender 4.0…5.2\blender.exe`. `uv run python main.py --check` detects it |
 | **MPFB2 addon** | `character3d`, `character_makeup`, `makehuman_clothes`, `outfit` | Extension `bl_ext.user_default.mpfb` installed in Blender; data dir `%APPDATA%\Blender Foundation\Blender\5.2\mpfb\data\data` (env override `MPFB_DATA_DIR`, cf. `core/config.py`) |
 | **BlenderKit addon connected** | `asset_blendkit` | Login done **once in the GUI** (the API key is only readable inside the Blender process, never out of process); the code forces the CC0 license |
+| **Falling Leaves addon** | (GUI only — autumn foliage ambience plates, no workflow) | Extension `bl_ext.user_default.falling_leaves` v1.7.0 (GPL-3.0+, official platform) installed 2026-11-17, smoke-tested (MEMORY_BANK §1.64). **BUG: `add_wind` resets Leaf Count to 25 — apply wind first or re-apply settings after**; wind strength on the `Wind_FallingLeaves` field, not the panel props |
 
 Blender is always invoked as a headless subprocess with generated bpy scripts
 (`--background --python`); success is detected via stdout markers (`SUCCESS:`,
