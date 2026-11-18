@@ -885,6 +885,17 @@
  ],
  [
   [
+   "--icon"
+  ],
+  "icon",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--index"
   ],
   "index",
@@ -1065,6 +1076,17 @@
  ],
  [
   [
+   "--list-icons"
+  ],
+  "list_icons",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
    "--list-loras"
   ],
   "list_loras",
@@ -1183,6 +1205,17 @@
   ],
   "loras",
   "_AppendAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--lottie-color"
+  ],
+  "lottie_color",
+  "_StoreAction",
   "None",
   null,
   null,

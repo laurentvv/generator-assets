@@ -1,6 +1,6 @@
 # 📦 Complete Workflow Technical Reference
 
-> Exhaustive reference manual for all 74 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
+> Exhaustive reference manual for all 75 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
 > Back to main: [README.md](../README.md)
 
 ---
@@ -1326,7 +1326,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 4.25. `beat_sync` — Local Beat Analysis & Beat-Aligned Cut Plan (rms engine, no PyTorch)
-🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: metronome 120 BPM auto-detected → BPM 119 — stable-sort tie quirk inherited from upstream: lags for 119/120/121 all round to the same 50-frame lag; covered by the test tolerance ±3 — offset 0 ms, 16 beats; with `--bpm 120` → BPM 120 and cuts [0, 1000, …] ms; suite 26 tests).
+✅ **Status: VALIDATED (user « go tout » 2026-11-18, MEMORY_BANK §1.65)** (real-path leg PASS 2026-11-18: metronome 120 BPM auto-detected → BPM 119 — stable-sort tie quirk inherited from upstream: lags for 119/120/121 all round to the same 50-frame lag; covered by the test tolerance ±3 — offset 0 ms, 16 beats; with `--bpm 120` → BPM 120 and cuts [0, 1000, …] ms; suite 26 tests).
 
 * **Process** (ported from miles990/video-gif-studio `scripts/music_sync.py` rms engine + `scripts/audio_beat_sync.py`, MIT):
   - FFmpeg (or native `wave` for PCM16) decodes to mono 8 kHz → 10 ms RMS energy envelope → positive onset differences → normalized autocorrelation scanned over 60–200 BPM → beat grid (`offset_ms` + uniform `beats_ms`).
@@ -1419,7 +1419,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 5.4. `gif_export` — Deterministic Transparent GIF / APNG / RGBA Frames (alpha QA gate)
-🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: 30-frame clip → GIF verified 0 alpha-mismatch, contact sheet inspected; suite 26 tests).
+✅ **Status: VALIDATED (user « go tout » 2026-11-18, MEMORY_BANK §1.65)** (real-path leg PASS 2026-11-18: 30-frame clip → GIF verified 0 alpha-mismatch, contact sheet inspected; suite 26 tests).
 
 * **Process** (ported from miles990/video-gif-studio `scripts/gif_pipeline.py`, MIT — CPU-only, Pillow + FFmpeg):
   1. Source = video (FFmpeg-conformed to a PNG sequence first, alpha-capable for VP9/ProRes-4444; OpenCV decode would drop alpha) or PNG-sequence directory (primary path, alpha preserved, `--fps` required).
@@ -1440,7 +1440,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 5.5. `alpha_qa` — Deterministic Alpha QA Gate on Transparent Assets
-🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: healthy sticker → PASS 60% transparent; painted checkerboard → FAIL exit 1 with `fake_transparency`; suite 26 tests).
+✅ **Status: VALIDATED (user « go tout » 2026-11-18, MEMORY_BANK §1.65)** (real-path leg PASS 2026-11-18: healthy sticker → PASS 60% transparent; painted checkerboard → FAIL exit 1 with `fake_transparency`; suite 26 tests).
 
 * **Process** (ported from miles990/video-gif-studio `scripts/image_alpha.py` detection gates, MIT — numpy/OpenCV, no model weights, no LLM judge):
   - Gates: `fake_transparency` (painted checkerboard detector — periodic neutral pattern along ≥3 edges), `transparent_fraction` (0.15–0.90), `clipped_border` (2-px frame ≥99% transparent), `isolated_specks` (>0.001), `interior_holes` (enclosed zero-alpha cores + translucent pockets >0.005), `halo` (ΔE ≤ 20 vs nearest opaque within 5 px, ≥95% + outer-ring luma ≤ 8).
@@ -1451,6 +1451,31 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   ```bash
   # QA a rembg / detourer_fond_blanc sticker before Godot import:
   uv run python main.py -w alpha_qa -i output/rembg/item_rembg.png
+  ```
+
+---
+
+#### 5.6. `icon_lottie` — Animated Icons (useAnimations Lottie) → Transparent GIF / APNG / Frames
+🧪 **Status: tested — validation pending** (real-path legs PASS 2026-11-18: `--list-icons` = 300 icons fetched from the npm tarball; `anchor` 41 frames + `settings` 51 frames GIF-verified 0 alpha-mismatch; `heart` tinted `#22c55e` exact `[34,197,95]`, contact sheet inspected; suite 12 tests).
+
+* **Process** (MIT icons — [useAnimations](https://github.com/useAnimations/react-useanimations) npm package):
+  1. npm tarball cached once under `output/lottie_cache/` (react-useanimations 3.1.1, 300 icons (299×32 px, skipBack 24×24) @ 30 fps, 6-181 frames per icon, single black color).
+  2. **Node.js** extracts the embedded Lottie `animationData` per icon (the modules are JS object literals with unquoted keys — the authoring runtime is the safe parser).
+  3. **python-lottie** (`lottie` 0.7.2, pure Python) loads the dict (`Animation.load`, no temp file) and exports each frame as SVG (dependency-free — the cairosvg/GIF extra is deliberately NOT used: cairo DLL pain on Windows).
+  4. **resvg** (static Rust binary, MIT; `C:\resvg\resvg.exe` or `RESVG_PATH` or PATH; v0.50.0 installed with SHA256 verified against the GitHub release-API digest) rasterizes each SVG to RGBA PNG at `--size` zoom.
+  5. Frames feed the `gif_export` delivery machinery (10 ms-grid timing + 20 ms clamp, 255-color GIF invariant, timeline verify) + contact sheet + alpha QA report (stroke icons legitimately FAIL the sticker-coverage gate — reported honestly, artifacts delivered).
+* **Tinting**: icons ship black; `--lottie-color <hex RGB>` rewrites the Lottie colors at the JSON level (exact, alpha preserved) — measured `#22c55e` → `[34,197,95]` exact.
+* **Inputs**: `--icon <names>` (comma-separated; required unless `--list-icons`), `--list-icons`, `--lottie-color`, `--size` (default 128), `-o` (exact run-dir name for a single icon, prefix for several).
+* **Outputs**: `icon_<name>/` (auto-suffixed): `icon.gif`, `icon.apng`, `frames/NNNNN.png`, `contact.png`, `alpha-qa.json` (+ holes overlay), `manifest.json` (provenance + QC).
+* **Requirements**: `node` on PATH (extraction) + `resvg` 0.50+ (`C:\resvg` / `RESVG_PATH` / PATH).
+* **Example**:
+  ```bash
+  # Discover the catalog:
+  uv run python main.py -w icon_lottie --list-icons
+  # Render two icons at 128 px:
+  uv run python main.py -w icon_lottie --icon anchor,settings --size 128
+  # Tinted single icon (exact name run dir):
+  uv run python main.py -w icon_lottie --icon heart --lottie-color 22c55e --size 128 -o icon_heart_green
   ```
 
 ---
