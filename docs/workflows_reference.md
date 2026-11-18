@@ -1459,15 +1459,15 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 🧪 **Status: tested — validation pending** (real-path legs PASS 2026-11-18: `--list-icons` = 300 icons fetched from the npm tarball; `anchor` 41 frames + `settings` 51 frames GIF-verified 0 alpha-mismatch; `heart` tinted `#22c55e` exact `[34,197,95]`, contact sheet inspected; suite 12 tests).
 
 * **Process** (MIT icons — [useAnimations](https://github.com/useAnimations/react-useanimations) npm package):
-  1. npm tarball cached once under `output/lottie_cache/` (react-useanimations 3.1.1, 300 stroke icons 32×32 @ 30 fps, 40-50 frames ≈ 1.3-1.7 s loops, single black color).
+  1. npm tarball cached once under `output/lottie_cache/` (react-useanimations 3.1.1, 300 icons (299×32 px, skipBack 24×24) @ 30 fps, 6-181 frames per icon, single black color).
   2. **Node.js** extracts the embedded Lottie `animationData` per icon (the modules are JS object literals with unquoted keys — the authoring runtime is the safe parser).
   3. **python-lottie** (`lottie` 0.7.2, pure Python) loads the dict (`Animation.load`, no temp file) and exports each frame as SVG (dependency-free — the cairosvg/GIF extra is deliberately NOT used: cairo DLL pain on Windows).
-  4. **resvg** (static Rust binary, MIT; `C:esvgesvg.exe` or `RESVG_PATH` or PATH; v0.50.0 installed with SHA256 verified against the GitHub release-API digest) rasterizes each SVG to RGBA PNG at `--size` zoom.
+  4. **resvg** (static Rust binary, MIT; `C:\resvg\resvg.exe` or `RESVG_PATH` or PATH; v0.50.0 installed with SHA256 verified against the GitHub release-API digest) rasterizes each SVG to RGBA PNG at `--size` zoom.
   5. Frames feed the `gif_export` delivery machinery (10 ms-grid timing + 20 ms clamp, 255-color GIF invariant, timeline verify) + contact sheet + alpha QA report (stroke icons legitimately FAIL the sticker-coverage gate — reported honestly, artifacts delivered).
 * **Tinting**: icons ship black; `--lottie-color <hex RGB>` rewrites the Lottie colors at the JSON level (exact, alpha preserved) — measured `#22c55e` → `[34,197,95]` exact.
 * **Inputs**: `--icon <names>` (comma-separated; required unless `--list-icons`), `--list-icons`, `--lottie-color`, `--size` (default 128), `-o` (exact run-dir name for a single icon, prefix for several).
 * **Outputs**: `icon_<name>/` (auto-suffixed): `icon.gif`, `icon.apng`, `frames/NNNNN.png`, `contact.png`, `alpha-qa.json` (+ holes overlay), `manifest.json` (provenance + QC).
-* **Requirements**: `node` on PATH (extraction) + `resvg` 0.50+ (`C:esvg` / `RESVG_PATH` / PATH).
+* **Requirements**: `node` on PATH (extraction) + `resvg` 0.50+ (`C:\resvg` / `RESVG_PATH` / PATH).
 * **Example**:
   ```bash
   # Discover the catalog:

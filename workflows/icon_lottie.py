@@ -79,9 +79,9 @@ class IconLottieWorkflow(BaseWorkflow):
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        cache_dir = Path(params.get("output_dir", DEFAULT_OUTPUT_DIR)) / "lottie_cache" \
-            if params.get("output_dir") else DEFAULT_CACHE_DIR
-        lib_dir = fetch_useanimations(cache_dir)
+        # icon cache always lives at output/lottie_cache regardless of -d
+        # (a custom delivery dir must not relocate/re-download the tarball)
+        lib_dir = fetch_useanimations(DEFAULT_CACHE_DIR)
         available = list_icons(lib_dir)
 
         if params.get("list_icons"):
@@ -115,12 +115,16 @@ class IconLottieWorkflow(BaseWorkflow):
             suffix = 0
             while run_dir.exists() and any(run_dir.iterdir()):
                 suffix += 1
-                run_dir = output_dir / f"icon_{icon}_{suffix}"
+                name = base_name if (base_name and len(icons) == 1) else f"{base_name or 'icon'}_{icon}"
+                run_dir = output_dir / f"{name}_{suffix}"
             run_dir.mkdir(parents=True, exist_ok=True)
 
             data = export_icon_data(lib_dir / f"{icon}.js")
             if tint:
-                data = recolor_animation(data, tint)
+                data, skipped_colors = recolor_animation(data, tint)
+                if skipped_colors:
+                    self.log(f"{icon}: {skipped_colors} non-flat color(s) left untinted "
+                             f"(keyframed/gradient) — inspect before delivery", emoji="⚠️")
             animation = load_animation(data)
             frames, fps, frame_count = render_frames(animation, size=size, resvg_path=resvg)
             indices, durations = compute_frame_timing(len(frames), fps)
@@ -159,7 +163,8 @@ class IconLottieWorkflow(BaseWorkflow):
                                                    encoding="utf-8")
             self.log(f"{icon}: {frame_count} frames @ {fps:.0f} fps → GIF verified "
                      f"(0 mismatch: {qc['alpha_mismatch_pixels'] == 0}), alpha QA {qa['status']}",
-                     emoji="✅" if qc["technical_pass"] else "⛔")
+                     emoji="✅" if qc["technical_pass"] and qa["status"] == "PASS" else
+                           ("⚠️" if qc["technical_pass"] else "⛔"))
             results.append({
                 "icon": icon,
                 "run_dir": str(run_dir),

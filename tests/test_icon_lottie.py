@@ -77,8 +77,9 @@ def test_load_animation_round_trip():
 
 def test_recolor_animation_tints_all_colors_keeps_alpha():
     data = _synthetic_lottie_dict()
-    recolored = recolor_animation(data, (224, 224, 224))
+    recolored, skipped = recolor_animation(data, (224, 224, 224))
     assert recolored is not data, "recolor must not mutate the input"
+    assert skipped == 0, "the synthetic corpus only carries flat colors"
     found = []
 
     def find_colors(node):
@@ -107,7 +108,43 @@ def test_fetch_useanimations_extracts_cached_tarball(tmp_path, monkeypatch):
             info = tarfile.TarInfo(name)
             info.size = len(content)
             archive.addfile(info, io.BytesIO(content))
-    buffer.seek(0)
+    payload = buffer.getvalue()
+
+    import base64 as b64
+    import hashlib
+    fake_integrity = "sha512-" + b64.b64encode(hashlib.sha512(payload).digest()).decode()
+    monkeypatch.setattr("core.lottie_raster.USEANIMATIONS_INTEGRITY", fake_integrity)
+
+    class FakeResponse(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    monkeypatch.setattr("core.lottie_raster.urllib.request.urlopen",
+                        lambda url, timeout: FakeResponse(payload))
+    lib_dir = fetch_useanimations(tmp_path / "cache")
+    assert list_icons(lib_dir) == ["anchor", "settings"], "README.md must not leak into icons"
+    # second call reuses the cache (no network)
+    monkeypatch.setattr("core.lottie_raster.urllib.request.urlopen",
+                        lambda url, timeout: (_ for _ in ()).throw(AssertionError("no network")))
+    assert fetch_useanimations(tmp_path / "cache") == lib_dir
+
+
+def test_fetch_useanimations_rejects_integrity_mismatch(tmp_path, monkeypatch):
+    """A tampered tarball is refused before hitting the cache (sha512 gate)."""
+    import base64 as b64
+    import hashlib
+
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+        content = b"x"
+        info = tarfile.TarInfo("package/lib/anchor.js")
+        info.size = len(content)
+        archive.addfile(info, io.BytesIO(content))
+    other_digest = "sha512-" + b64.b64encode(hashlib.sha512(b"not-the-tarball").digest()).decode()
+    monkeypatch.setattr("core.lottie_raster.USEANIMATIONS_INTEGRITY", other_digest)
 
     class FakeResponse(io.BytesIO):
         def __enter__(self):
@@ -118,12 +155,9 @@ def test_fetch_useanimations_extracts_cached_tarball(tmp_path, monkeypatch):
 
     monkeypatch.setattr("core.lottie_raster.urllib.request.urlopen",
                         lambda url, timeout: FakeResponse(buffer.getvalue()))
-    lib_dir = fetch_useanimations(tmp_path / "cache")
-    assert list_icons(lib_dir) == ["anchor", "settings"], "README.md must not leak into icons"
-    # second call reuses the cache (no network)
-    monkeypatch.setattr("core.lottie_raster.urllib.request.urlopen",
-                        lambda url, timeout: (_ for _ in ()).throw(AssertionError("no network")))
-    assert fetch_useanimations(tmp_path / "cache") == lib_dir
+    with pytest.raises(ValueError, match="integrity mismatch"):
+        fetch_useanimations(tmp_path / "cache")
+    assert not (tmp_path / "cache" / "pkg-3.1.1").exists(), "no cache entry on integrity failure"
 
 
 def test_render_frames_uses_resvg_per_frame(monkeypatch, tmp_path):
