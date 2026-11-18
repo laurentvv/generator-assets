@@ -1326,7 +1326,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 4.25. `beat_sync` — Local Beat Analysis & Beat-Aligned Cut Plan (rms engine, no PyTorch)
-🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: metronome 120 BPM auto-detected → BPM 119 — stable-sort tie quirk inherited from upstream: lags for 119/120/121 all round to the same 50-frame lag; covered by the test tolerance ±3 — offset 0 ms, 16 beats; with `--bpm 120` → BPM 120 and cuts [0, 1000, …] ms; suite 26 tests).
+✅ **Status: VALIDATED (user « go tout » 2026-11-18, MEMORY_BANK §1.65)** (real-path leg PASS 2026-11-18: metronome 120 BPM auto-detected → BPM 119 — stable-sort tie quirk inherited from upstream: lags for 119/120/121 all round to the same 50-frame lag; covered by the test tolerance ±3 — offset 0 ms, 16 beats; with `--bpm 120` → BPM 120 and cuts [0, 1000, …] ms; suite 26 tests).
 
 * **Process** (ported from miles990/video-gif-studio `scripts/music_sync.py` rms engine + `scripts/audio_beat_sync.py`, MIT):
   - FFmpeg (or native `wave` for PCM16) decodes to mono 8 kHz → 10 ms RMS energy envelope → positive onset differences → normalized autocorrelation scanned over 60–200 BPM → beat grid (`offset_ms` + uniform `beats_ms`).
@@ -1419,7 +1419,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 5.4. `gif_export` — Deterministic Transparent GIF / APNG / RGBA Frames (alpha QA gate)
-🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: 30-frame clip → GIF verified 0 alpha-mismatch, contact sheet inspected; suite 26 tests).
+✅ **Status: VALIDATED (user « go tout » 2026-11-18, MEMORY_BANK §1.65)** (real-path leg PASS 2026-11-18: 30-frame clip → GIF verified 0 alpha-mismatch, contact sheet inspected; suite 26 tests).
 
 * **Process** (ported from miles990/video-gif-studio `scripts/gif_pipeline.py`, MIT — CPU-only, Pillow + FFmpeg):
   1. Source = video (FFmpeg-conformed to a PNG sequence first, alpha-capable for VP9/ProRes-4444; OpenCV decode would drop alpha) or PNG-sequence directory (primary path, alpha preserved, `--fps` required).
@@ -1440,7 +1440,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 5.5. `alpha_qa` — Deterministic Alpha QA Gate on Transparent Assets
-🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: healthy sticker → PASS 60% transparent; painted checkerboard → FAIL exit 1 with `fake_transparency`; suite 26 tests).
+✅ **Status: VALIDATED (user « go tout » 2026-11-18, MEMORY_BANK §1.65)** (real-path leg PASS 2026-11-18: healthy sticker → PASS 60% transparent; painted checkerboard → FAIL exit 1 with `fake_transparency`; suite 26 tests).
 
 * **Process** (ported from miles990/video-gif-studio `scripts/image_alpha.py` detection gates, MIT — numpy/OpenCV, no model weights, no LLM judge):
   - Gates: `fake_transparency` (painted checkerboard detector — periodic neutral pattern along ≥3 edges), `transparent_fraction` (0.15–0.90), `clipped_border` (2-px frame ≥99% transparent), `isolated_specks` (>0.001), `interior_holes` (enclosed zero-alpha cores + translucent pockets >0.005), `halo` (ΔE ≤ 20 vs nearest opaque within 5 px, ≥95% + outer-ring luma ≤ 8).
