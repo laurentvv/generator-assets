@@ -1326,7 +1326,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 4.25. `beat_sync` — Local Beat Analysis & Beat-Aligned Cut Plan (rms engine, no PyTorch)
-🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: metronome 120 BPM → BPM 120, offset 0 ms, 16 beats, cuts [0, 1000, …] ms; suite 26 tests).
+🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: metronome 120 BPM auto-detected → BPM 119 — stable-sort tie quirk inherited from upstream: lags for 119/120/121 all round to the same 50-frame lag; covered by the test tolerance ±3 — offset 0 ms, 16 beats; with `--bpm 120` → BPM 120 and cuts [0, 1000, …] ms; suite 26 tests).
 
 * **Process** (ported from miles990/video-gif-studio `scripts/music_sync.py` rms engine + `scripts/audio_beat_sync.py`, MIT):
   - FFmpeg (or native `wave` for PCM16) decodes to mono 8 kHz → 10 ms RMS energy envelope → positive onset differences → normalized autocorrelation scanned over 60–200 BPM → beat grid (`offset_ms` + uniform `beats_ms`).
@@ -1452,8 +1452,6 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   # QA a rembg / detourer_fond_blanc sticker before Godot import:
   uv run python main.py -w alpha_qa -i output/rembg/item_rembg.png
   ```
-
----
 
 ---
 

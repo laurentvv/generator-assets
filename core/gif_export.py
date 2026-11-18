@@ -32,7 +32,7 @@ TRANSPARENCY_INDEX = 255
 ALPHA_CUTOFF = 128
 
 
-def _sha256(path: Path) -> str:
+def sha256_file(path: Path) -> str:
     """SHA-256 of a file (streamed, provenance manifests)."""
     digest = hashlib.sha256()
     with open(path, "rb") as stream:
@@ -96,11 +96,10 @@ def load_png_frames(directory: Path, resize_width: Optional[int] = None,
 
 def _probe_fps(video: Path) -> float:
     """Native FPS of a video via ffprobe (r_frame_rate of stream 0)."""
-    ffprobe = Path(ffmpeg()).with_name("ffprobe.exe")
-    if not ffprobe.exists():
-        raise FileNotFoundError(f"ffprobe not found next to ffmpeg ({ffmpeg()})")
+    beside = Path(ffmpeg()).with_name("ffprobe.exe")
+    ffprobe = str(beside) if beside.exists() else "ffprobe"  # PATH fallback (core/upscaler pattern)
     result = run_engine(
-        [str(ffprobe), "-v", "error", "-select_streams", "v:0",
+        [ffprobe, "-v", "error", "-select_streams", "v:0",
          "-show_entries", "stream=r_frame_rate", "-of", "json", str(video)],
         timeout=60, etiquette="ffprobe",
     )

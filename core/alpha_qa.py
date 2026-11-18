@@ -38,8 +38,50 @@ def _lab(rgb: np.ndarray) -> np.ndarray:
 
 
 def _delta_e(lab_a: np.ndarray, lab_b: np.ndarray) -> np.ndarray:
-    """Euclidean CIELAB color difference."""
-    return np.linalg.norm(lab_a - lab_b, axis=-1)
+    """CIEDE2000 color difference (Sharma et al. 2005), vectorized.
+
+    Same metric as upstream (`shot_match.delta_e`) so the halo threshold of
+    20 keeps its upstream semantics (plain CIELAB Euclidean distance would
+    over-report chroma fringes and make the gate stricter than intended).
+    """
+    l1, a1, b1 = lab_a[..., 0], lab_a[..., 1], lab_a[..., 2]
+    l2, a2, b2 = lab_b[..., 0], lab_b[..., 1], lab_b[..., 2]
+    c1 = np.hypot(a1, b1)
+    c2 = np.hypot(a2, b2)
+    c_bar = (c1 + c2) / 2
+    c_bar7 = c_bar ** 7
+    g = 0.5 * (1 - np.sqrt(c_bar7 / (c_bar7 + 25.0 ** 7)))
+    a1p = (1 + g) * a1
+    a2p = (1 + g) * a2
+    c1p = np.hypot(a1p, b1)
+    c2p = np.hypot(a2p, b2)
+    h1p = np.where((a1p == 0) & (b1 == 0), 0.0, np.degrees(np.arctan2(b1, a1p)) % 360)
+    h2p = np.where((a2p == 0) & (b2 == 0), 0.0, np.degrees(np.arctan2(b2, a2p)) % 360)
+    delta_lp = l2 - l1
+    delta_cp = c2p - c1p
+    dh = h2p - h1p
+    dh = np.where(c1p * c2p == 0, 0.0, dh)
+    dh = np.where((c1p * c2p != 0) & (np.abs(dh) > 180), dh - 360 * np.sign(dh), dh)
+    delta_hp = 2 * np.sqrt(c1p * c2p) * np.sin(np.radians(dh) / 2)
+    l_bar = (l1 + l2) / 2
+    cp_bar = (c1p + c2p) / 2
+    h_sum = h1p + h2p
+    h_bar = np.where(c1p * c2p == 0, h_sum,
+                     np.where(np.abs(h1p - h2p) <= 180, h_sum / 2,
+                              np.where(h_sum < 360, (h_sum + 360) / 2, (h_sum - 360) / 2)))
+    t = (1 - 0.17 * np.cos(np.radians(h_bar - 30))
+         + 0.24 * np.cos(np.radians(2 * h_bar))
+         + 0.32 * np.cos(np.radians(3 * h_bar + 6))
+         - 0.20 * np.cos(np.radians(4 * h_bar - 63)))
+    d_theta = 30 * np.exp(-(((h_bar - 275) / 25) ** 2))
+    cp_bar7 = cp_bar ** 7
+    rc = 2 * np.sqrt(cp_bar7 / (cp_bar7 + 25.0 ** 7))
+    sl = 1 + 0.015 * (l_bar - 50) ** 2 / np.sqrt(20 + (l_bar - 50) ** 2)
+    sc = 1 + 0.045 * cp_bar
+    sh = 1 + 0.015 * cp_bar * t
+    rt = -np.sin(np.radians(2 * d_theta)) * rc
+    return np.sqrt((delta_lp / sl) ** 2 + (delta_cp / sc) ** 2
+                   + (delta_hp / sh) ** 2 + rt * (delta_cp / sc) * (delta_hp / sh))
 
 
 def clear_haze(arr: np.ndarray) -> Any:

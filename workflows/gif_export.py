@@ -22,13 +22,13 @@ from typing import Any, Dict, Optional, Tuple
 from core.alpha_qa import alpha_qa_report
 from core.config import DEFAULT_OUTPUT_DIR, slugifier_texte
 from core.gif_export import (
-    _sha256,
     build_contact_sheet,
     compute_frame_timing,
     encode_apng,
     encode_gif,
     extract_video_frames,
     load_png_frames,
+    sha256_file,
     verify_gif,
 )
 from core.image_ops import assembler_spritesheet
@@ -68,6 +68,8 @@ class GifExportWorkflow(BaseWorkflow):
              help="gif_export chroma-key: chroma distance over which alpha ramps 0→1 (default: 0.12)."),
         dict(flags=("--sprite-sheet",), action="store_true",
              help="gif_export: also pack the selected frames into a sprite sheet + Godot 4 atlas JSON (--columns sets the grid)."),
+        dict(flags=("--phases",), default=None,
+             help="gif_export: JSON array of speed ramps in source seconds, e.g. '[{\"start\":1.0,\"end\":2.0,\"speed\":2.0,\"ramp\":0.25}]' (deterministic retiming; ramp optional cosine blend seconds)."),
     ]
 
     def run(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -110,7 +112,12 @@ class GifExportWorkflow(BaseWorkflow):
                 resize_width=resize_width, key=key,
                 tolerance=tolerance, softness=softness)
 
-        indices, durations = compute_frame_timing(len(frames), fps)
+        phases = []
+        if params.get("phases"):
+            phases = json.loads(params["phases"])
+            if not isinstance(phases, list):
+                raise ValueError("--phases must be a JSON array of {start, end, speed[, ramp]} objects")
+        indices, durations = compute_frame_timing(len(frames), fps, phases=phases)
         selected = [frames[i] for i in indices]
         self.log(f"{len(frames)} source frames @ {fps:.3f} fps → {len(selected)} GIF frames "
                  f"(total {sum(durations)} ms)", emoji="⏱️")
@@ -170,17 +177,18 @@ class GifExportWorkflow(BaseWorkflow):
         else:
             parent_files = [source_path]
         manifest = {
-            "parents": [{"file": str(f.resolve()), "sha256": _sha256(f)} for f in parent_files],
+            "parents": [{"file": str(f.resolve()), "sha256": sha256_file(f)} for f in parent_files],
             "source_fps": fps,
             "source_frames": len(frames),
             "selected_indices": indices,
             "durations_ms": durations,
             "key_rgb": list(key) if key else None,
             "key_tolerance": tolerance, "key_softness": softness,
+            "phases": phases,
             "size": list(selected[0].size),
             "transparency_index": 255,
             "script": "core/gif_export.py (ported from miles990/video-gif-studio, MIT)",
-            "gif_sha256": _sha256(gif_path),
+            "gif_sha256": sha256_file(gif_path),
             "qc": qc,
         }
         (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

@@ -17,6 +17,8 @@ a reviewable candidate grid (editable via `bpm`/`offset_ms` overrides).
 import hashlib
 import json
 import math
+import os
+import tempfile
 import wave
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -38,25 +40,28 @@ def _sha256(path: Path) -> str:
 
 
 def decode_mono(source: Path, rate: int = 8000) -> np.ndarray:
-    """Decodes any audio to mono float32 at `rate` (FFmpeg via run_engine).
+    """Decodes any audio to mono float32 at `rate`.
 
-    PCM16 WAV is decoded natively by the stdlib `wave` module (offline,
-    no subprocess); every other format goes through FFmpeg, written to a
-    temp raw f32 file (run_engine captures text, so the binary payload
-    must land on disk, not in stdout).
+    A PCM16 WAV already at `rate` is decoded natively by the stdlib `wave`
+    module (offline, no subprocess); anything else — other rates (e.g. the
+    48 kHz stereo beds of music_bg), other bit depths, compressed formats —
+    goes through FFmpeg, written to a temp raw f32 file in the system temp
+    directory (run_engine captures text, so the binary payload must land on
+    disk, not in stdout; tempfile avoids read-only library folders and
+    concurrent-run collisions).
     """
     source = Path(source)
     if source.suffix.lower() == ".wav":
-        with wave.open(str(source), "rb") as wav:
-            if wav.getsampwidth() != 2:
-                raise ValueError("Native WAV analysis requires PCM16; convert with FFmpeg")
-            native_rate = wav.getframerate()
-            x = np.frombuffer(wav.readframes(wav.getnframes()), "<i2").astype(np.float32)
-            x = x.reshape(-1, wav.getnchannels()).mean(axis=1) / 32768
-        if native_rate != rate:
-            raise ValueError(f"Native WAV path expects {rate} Hz input; got {native_rate} Hz")
-        return x
-    raw_path = source.with_suffix(".f32.tmp")
+        try:
+            with wave.open(str(source), "rb") as wav:
+                if wav.getsampwidth() == 2 and wav.getframerate() == rate:
+                    x = np.frombuffer(wav.readframes(wav.getnframes()), "<i2").astype(np.float32)
+                    return x.reshape(-1, wav.getnchannels()).mean(axis=1) / 32768
+        except wave.Error:
+            pass  # not PCM16 / unreadable header — FFmpeg path below handles it
+    fd, raw_name = tempfile.mkstemp(suffix=".f32")
+    os.close(fd)
+    raw_path = Path(raw_name)
     try:
         run_engine(
             [ffmpeg(), "-v", "error", "-i", str(source), "-vn", "-ac", "1",
@@ -130,7 +135,7 @@ def analyze_beats(source: Path, bpm: Optional[float] = None,
     return {"source": str(source), "source_sha256": _sha256(source),
             "duration_ms": total_ms, "bpm": chosen, "offset_ms": offset,
             "beats_ms": beats, "onsets_ms": peaks, "waveform": waveform,
-            "tempo_candidates": candidates[:5],
+            "tempo_candidates": candidates[:5], "envelopes": envelope_arrays(x, 8000),
             "method": "Manual BPM" if bpm is not None else "10ms RMS-onset periodicity heuristic",
             "review": "Unreviewed candidates. Not downbeat/chord/phrase detection; half/double-tempo "
                       "and variable-tempo errors possible. Edit beats_ms or override BPM/offset.",
