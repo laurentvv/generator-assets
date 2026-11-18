@@ -1456,7 +1456,7 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 ---
 
 #### 5.6. `icon_lottie` — Animated Icons (useAnimations Lottie) → Transparent GIF / APNG / Frames
-🧪 **Status: tested — validation pending** (real-path legs PASS 2026-11-18: `--list-icons` = 300 icons fetched from the npm tarball; `anchor` 41 frames + `settings` 51 frames GIF-verified 0 alpha-mismatch; `heart` tinted `#22c55e` exact `[34,197,95]`, contact sheet inspected; suite 12 tests).
+✅ **Status: VALIDATED (user « go merge pr » 2026-11-18, MEMORY_BANK §1.66)** (real-path legs PASS 2026-11-18: `--list-icons` = 300 icons fetched from the npm tarball; `anchor` 41 frames + `settings` 51 frames GIF-verified 0 alpha-mismatch; `heart` tinted `#22c55e` exact `[34,197,95]`, contact sheet inspected; suite 12 tests).
 
 * **Process** (MIT icons — [useAnimations](https://github.com/useAnimations/react-useanimations) npm package):
   1. npm tarball cached once under `output/lottie_cache/` (react-useanimations 3.1.1, 300 icons (299×32 px, skipBack 24×24) @ 30 fps, 6-181 frames per icon, single black color).
