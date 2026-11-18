@@ -40,14 +40,15 @@ WORKFLOW_FAMILY = {
     "pose_control": "characters", "animal_godot": "characters",
     "video": "video", "video_vace": "video", "video_s2v": "video", "video_multishot": "video",
     "h3_ref2va": "video", "monoplan_ia": "video", "rife_interp": "video",
-    "vfx_flipbook": "video", "anim_loop": "video", "open_water": "video",
+    "vfx_flipbook": "video", "anim_loop": "video", "open_water": "video", "gif_export": "video",
     "voix_off": "voice", "voix_perso": "voice", "voix_robot": "voice",
     "voix_conversion": "voice", "tts_dialogue": "voice", "audio_upscale": "voice",
     "audio_restaure": "voice",
     "lfm3_tts": "voice",
     "music_bg": "music", "chanson": "music", "musique_adn": "music",
     "musique_essence": "music", "acestep_cover": "music", "audio_repaint": "music",
-    "retrait_voix": "music", "sfx": "music", "audio_ambience": "music",
+    "retrait_voix": "music", "sfx": "music", "audio_ambience": "music", "beat_sync": "music",
+    "alpha_qa": "images",
     "upscale": "utils", "batch": "utils",
 }
 

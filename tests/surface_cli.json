@@ -155,6 +155,17 @@
  ],
  [
   [
+   "--beats-per-cycle"
+  ],
+  "beats_per_cycle",
+  "_StoreAction",
+  "2",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
    "--biome-a"
   ],
   "biome_a",
@@ -185,6 +196,17 @@
   null,
   null,
   null
+ ],
+ [
+  [
+   "--bpm"
+  ],
+  "bpm",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
  ],
  [
   [
@@ -941,6 +963,39 @@
  ],
  [
   [
+   "--key"
+  ],
+  "key",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--key-softness"
+  ],
+  "key_softness",
+  "_StoreAction",
+  "0.12",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
+   "--key-tolerance"
+  ],
+  "key_tolerance",
+  "_StoreAction",
+  "0.15",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
    "--kokoro-voice"
   ],
   "kokoro_voice",
@@ -1451,6 +1506,17 @@
  ],
  [
   [
+   "--offset-ms"
+  ],
+  "offset_ms",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  "float"
+ ],
+ [
+  [
    "--output",
    "-o"
   ],
@@ -1601,6 +1667,17 @@
   null,
   null,
   "int"
+ ],
+ [
+  [
+   "--phases"
+  ],
+  "phases",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
  ],
  [
   [
@@ -2205,6 +2282,17 @@
   "None",
   null,
   null,
+  null
+ ],
+ [
+  [
+   "--sprite-sheet"
+  ],
+  "sprite_sheet",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
   null
  ],
  [
