@@ -129,7 +129,7 @@ Isolate game items with zero white halos, quantize to classic retro palettes, an
 <span id="workflow-hub"></span>
 ## 📦 Workflow Catalog by Domain
 
-The engine ships **74 autonomous workflows**. Every workflow accepts natural language, enforces strict VRAM constraints, and outputs production assets:
+The engine ships **75 autonomous workflows**. Every workflow accepts natural language, enforces strict VRAM constraints, and outputs production assets:
 
 ```bash
 uv run python main.py -w <workflow_name> [options]
@@ -208,6 +208,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`ui_9slice`** | Generates expandable UI frames/dialog boxes + Godot 4 `StyleBoxTexture.tres` | `uv run python main.py -w ui_9slice "golden fantasy dialog frame" --margin 32` | [Specs](docs/workflows_reference.md#37-ui_9slice--expandable-9-patch-frames--buttons) |
 | **`rembg`** | Neural background removal (RMBG / BiRefNet ONNX) with zero white fringes | `uv run python main.py -w rembg -i sprite.png -o sprite_clean` | [Specs](docs/workflows_reference.md#38-rembg--high-precision-neural-background-removal) |
 | **`alpha_qa`** | Alpha QA gate on a transparent PNG (fake checkerboard, coverage, border, specks, holes, halo — deterministic PASS/FAIL, exit 1 on FAIL) | `uv run python main.py -w alpha_qa -i sticker.png` | [Specs](docs/workflows_reference.md#55-alpha_qa--deterministic-alpha-qa-gate-on-transparent-assets) |
+| **`icon_lottie`** 🧪 | Animated icons (useAnimations 300 MIT Lottie icons) → transparent GIF / APNG / RGBA frames via node + python-lottie + resvg (exact tint `--lottie-color`, alpha QA report) | `uv run python main.py -w icon_lottie --icon heart --lottie-color 22c55e --size 128` | [Specs](docs/workflows_reference.md#56-icon_lottie--animated-icons-useanimations-lottie--transparent-gifapng-frames) |
 | **`upscale`** | AI Super-Resolution: ESRGAN Vulkan (alpha preserved) or **SeedVR2 3B** (`--upscale-mode seedvr2`) for images & video (auto QC gate, `--skip-qc` to override) | `uv run python main.py -w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` | [Specs](docs/workflows_reference.md#52-upscale--4k-ai-super-resolution-esrgan-vulkan) |
 | **`ocr_image`** | Local OCR on images & screenshots (MiniCPM-OCR-1.0 via llama-server — FR/EN, ~4 s/page, ~2 GB VRAM) | `uv run python main.py -w ocr_image -i screenshot.png` | [Specs](docs/workflows_reference.md#422-ocr_image--local-ocr-on-images--screenshots-minicpm-ocr-10-via-llamaserver) |
 
@@ -266,7 +267,7 @@ uv run python -m server    # → Opens http://127.0.0.1:8765
 ### 🌐 The Full-Python Web Console & `web-assets` Bridge
 Prefer a visual dashboard over the CLI? Run `uv run python -m server`:
 - Built with **FastAPI + Jinja2 + HTMX** (zero Node.js, zero npm, zero React bloat).
-- Automatically inspects all 74 workflows and generates interactive forms.
+- Automatically inspects all 75 workflows and generates interactive forms.
 - Features a **serialized GPU run queue** with automatic system load checks.
 - Live log streaming (SSE), media gallery, and model inventory.
 - **`web-assets` library integration**: resolve AI-eligible audio/image references (`--ref-lib`) or PBR material packs (`--from-lib`, `--pbr-group`) with `NO_AI` strictly excluded, and trigger optional library re-indexing via `--scan-web-assets`.
@@ -285,7 +286,7 @@ This repository is natively understood by AI coding agents (**ZCode, Claude Code
 
 To keep this landing page fast and readable, technical deep-dives have been organized into dedicated documentation modules:
 
-- 📦 **[Complete Workflow Technical Reference](docs/workflows_reference.md)** — Exhaustive processes, inputs/outputs, and mathematical specs for all 74 pipelines.
+- 📦 **[Complete Workflow Technical Reference](docs/workflows_reference.md)** — Exhaustive processes, inputs/outputs, and mathematical specs for all 75 pipelines.
 - ⚡ **[Installation & System Setup Guide](docs/installation.md)** — OS requirements, Vulkan drivers, model pack tables, and environment variables.
 - 🔄 **[Vulkan Engines Update & Build Manual](docs/guide_moteurs_vulkan.md)** — Automated builders, CMake scripts, backups, and rollbacks for `sd-cli` and `llama.cpp`.
 - 🎬 **[Video Generation & 4K Mastering Architecture](docs/architecture_video.md)** — DiT architectures (Wan 2.2, LTX-2.5, H3), AMD AMF hardware encoder, and overnight rendering.
@@ -300,7 +301,7 @@ To keep this landing page fast and readable, technical deep-dives have been orga
 ```text
 generator-assets/
 ├── core/                   # Engine core: config, CLI orchestrators, LLM enrichers, PBR generators
-├── workflows/              # 74 autonomous media generation workflow implementations
+├── workflows/              # 75 autonomous media generation workflow implementations
 ├── godot_assets/           # Default output directory for engine-ready game assets
 ├── output/                 # Output directory for video renders, audio tracks, and contact sheets
 ├── scripts/                # Specialized helper utilities, downloaders, and Vulkan builders
