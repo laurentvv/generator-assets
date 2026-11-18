@@ -861,6 +861,7 @@ _WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
     "gif_export": (LICENCE_COMMERCIAL, "MIT port of video-gif-studio export pipeline (Pillow/FFmpeg, no model weights)", None),
     "alpha_qa": (LICENCE_COMMERCIAL, "MIT port of video-gif-studio alpha QA gates (numpy/OpenCV, no model weights)", None),
     "beat_sync": (LICENCE_COMMERCIAL, "MIT port of video-gif-studio beat analysis (numpy/FFmpeg, no model weights)", None),
+    "icon_lottie": (LICENCE_COMMERCIAL, "MIT (useAnimations icons + python-lottie + resvg, no model weights)", None),
 }
 
 

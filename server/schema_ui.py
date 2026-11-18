@@ -48,7 +48,7 @@ WORKFLOW_FAMILY = {
     "music_bg": "music", "chanson": "music", "musique_adn": "music",
     "musique_essence": "music", "acestep_cover": "music", "audio_repaint": "music",
     "retrait_voix": "music", "sfx": "music", "audio_ambience": "music", "beat_sync": "music",
-    "alpha_qa": "images",
+    "alpha_qa": "images", "icon_lottie": "images",
     "upscale": "utils", "batch": "utils",
 }
 
