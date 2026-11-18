@@ -111,23 +111,20 @@ def _fake_checkerboard(size: int = 128, cell: int = 8) -> Image.Image:
 # core.gif_export — GIF invariant / timing / APNG
 # ============================================================================
 
-def test_encode_gif_transparency_invariant_round_trip():
+def test_encode_gif_transparency_invariant_round_trip(tmp_path):
     frames = [_moving_square(i) for i in range(4)]
     durations = [100, 100, 100, 100]
-    target = Path("animation.gif")
+    target = tmp_path / "animation.gif"
     encode_gif(frames, durations, target)
-    try:
-        qc = verify_gif(target, frames, durations)
-        assert qc["technical_pass"] is True
-        assert qc["alpha_mismatch_pixels"] == 0
-        with Image.open(target) as gif:
-            first = next(ImageSequence.Iterator(gif)).convert("RGBA")
-        background_alpha = np.array(first)[0, 0, 3]
-        foreground_alpha = np.array(first)[16, 16, 3]
-        assert background_alpha == 0, "GIF transparency index must decode to alpha 0"
-        assert foreground_alpha > 0, "GIF foreground must stay visible"
-    finally:
-        target.unlink(missing_ok=True)
+    qc = verify_gif(target, frames, durations)
+    assert qc["technical_pass"] is True
+    assert qc["alpha_mismatch_pixels"] == 0
+    with Image.open(target) as gif:
+        first = next(ImageSequence.Iterator(gif)).convert("RGBA")
+    background_alpha = np.array(first)[0, 0, 3]
+    foreground_alpha = np.array(first)[16, 16, 3]
+    assert background_alpha == 0, "GIF transparency index must decode to alpha 0"
+    assert foreground_alpha > 0, "GIF foreground must stay visible"
 
 
 def test_encode_gif_no_visible_foreground_raises():
@@ -154,17 +151,29 @@ def test_compute_frame_timing_rejects_invalid_phases():
         compute_frame_timing(10, 10.0, phases=[{"start": 0.0, "end": 2.0, "speed": 2.0}])
 
 
-def test_encode_apng_preserves_soft_alpha():
+def test_compute_frame_timing_speed_phase_compresses():
+    # Source 24 frames @ 12 fps, 2x-speed phase over the first second:
+    # 41.7 ms/frame >= 20 ms so every frame is kept, total = 0.5 s (fast
+    # span) + 1 s (normal span) = 1500 ms.
+    indices, durations = compute_frame_timing(
+        24, 12.0, phases=[{"start": 0.0, "end": 1.0, "speed": 2.0, "ramp": 0.0}])
+    assert len(indices) == 24
+    assert sum(durations) == pytest.approx(1500, abs=40)
+    # Aggressive 10x speed: 8.3 ms/frame < 20 ms → frames merged (~1100 ms).
+    fast_indices, fast_durations = compute_frame_timing(
+        24, 12.0, phases=[{"start": 0.0, "end": 1.0, "speed": 10.0, "ramp": 0.0}])
+    assert len(fast_indices) < 24
+    assert sum(fast_durations) == pytest.approx(1100, abs=40)
+
+
+def test_encode_apng_preserves_soft_alpha(tmp_path):
     frames = [_disc(64, 24.0, (30, 120, 220), alpha=180) for _ in range(2)]
-    target = Path("animation.apng")
+    target = tmp_path / "animation.apng"
     encode_apng(frames, [80, 80], target)
-    try:
-        decoded = [np.array(f.convert("RGBA")) for f in ImageSequence.Iterator(Image.open(target))]
-        soft_pixel = decoded[0][32, 32 + 24 + 1, 3]  # 1 px past the core radius
-        assert 0 < soft_pixel < 255, "APNG master must keep fractional alpha"
-        assert int(decoded[0][32, 32, 3]) == 180, "APNG core alpha must be exact"
-    finally:
-        target.unlink(missing_ok=True)
+    decoded = [np.array(f.convert("RGBA")) for f in ImageSequence.Iterator(Image.open(target))]
+    soft_pixel = decoded[0][32, 32 + 24 + 1, 3]  # 1 px past the core radius
+    assert 0 < soft_pixel < 255, "APNG master must keep fractional alpha"
+    assert int(decoded[0][32, 32, 3]) == 180, "APNG core alpha must be exact"
 
 
 def test_build_contact_sheet_layout(tmp_path):
