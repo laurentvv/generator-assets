@@ -5,7 +5,7 @@ description: Generates any media with the local generator-assets factory (C++ Vu
 
 # generator-assets — generate media with the local factory
 
-This repository is a **universal local AI media factory**: 71 workflows orchestrated by a single CLI,
+This repository is a **universal local AI media factory**: 74 workflows orchestrated by a single CLI,
 executed by C++/GGUF Vulkan engines (sd-cli, llama.cpp, audio.cpp, trellis.cpp, FFmpeg) — no cloud or
 CUDA dependency. Your mission when this skill triggers: translate a media need into **the right
 workflow command**, respecting the guardrails, then deliver the produced files.
@@ -21,9 +21,9 @@ uv run python main.py -w <workflow> "<prompt or args>" [options]
 - `-o <name>`: base name of the outputs (otherwise derived from the prompt);
 - `--seed <N>`: fixed seed for A/B reproducibility;
 - `uv run python main.py --check`: checks that engines and models are detected;
-- `uv run python main.py --interactive`: interactive console (71-workflow menu) for human exploration;
+- `uv run python main.py --interactive`: interactive console (74-workflow menu) for human exploration;
 - **web console (2026-10-11)**: `uv run python -m server` → http://127.0.0.1:8765 —
-  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 71 workflows: auto-generated forms
+  full-Python UI (FastAPI+Jinja2+HTMX) piloting all 74 workflows: auto-generated forms
   from the live registry, serialized queue (one heavy job at a time), automatic load
   gate, live log/progress (SSE), output library with thumbnails/waveforms, uploads.
   For the HUMAN user; agents keep using the CLI (same subprocess contract);
@@ -75,9 +75,11 @@ Any CLI evolution must preserve this contract.
 | 9-patch frames/buttons | `ui_9slice` | `-w ui_9slice "stone dialog frame"` |
 | 47-tile Wang autotile atlas | `autotile_pack` | `-w autotile_pack "cave walls"` |
 | Clean cutout (transparent background) | `rembg` | `-w rembg -i image.png` |
+| Alpha QA verdict on a transparent PNG (fake checkerboard / coverage / specks / holes / halo — deterministic, exit 1 on FAIL) | `alpha_qa` | `-w alpha_qa -i sticker.png` |
 | AI upscale (ESRGAN 2x/4x/4K alpha preserved, or SeedVR2 3B image & video `--upscale-mode seedvr2`; pre-upscale black/frozen/short QC gate unless `--skip-qc`) | `upscale` | `-w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` |
 | JSON pack of batch generations | `batch` | `-w batch --recipe recipe.json` |
 | Local OCR on images/screenshots (FR/EN, ~4 s/page) | `ocr_image` | `-w ocr_image -i screenshot.png` |
+| Transparent GIF / APNG / RGBA frames from a video or PNG sequence + optional Godot sprite sheet (255-color palette invariant, alpha QA gate) | `gif_export` | `-w gif_export -i clip.mp4 --width 640` or `-w gif_export -i frames_dir --fps 12 --key FF00FF --sprite-sheet` |
 
 ### 🧱 PBR textures & 3D (Flux + DeepBump + Blender + TRELLIS.2)
 
@@ -145,6 +147,7 @@ work.
 | Music with the essence of a reference (SA3 init_audio) | `musique_essence` | `-w musique_essence -i track.wav` |
 | Re-style an existing track (ACE-Step cover, duration locked, CPU) | `acestep_cover` | `-w acestep_cover --audio track.wav -p "<style>" --seed 42` |
 | Surgical time-span repainting (`ACE-Step 1.5` bit-exact MIT or `SA3 Medium` fast Vulkan) | `audio_repaint` | `-w audio_repaint --audio track.wav -p "cello break" --repaint-start 4 --repaint-end 9` |
+| Beat/tempo analysis of a music file + beat-aligned cut plan (numpy rms engine, no PyTorch — review beats.json: half/double-tempo risk) | `beat_sync` | `-w beat_sync -i music.mp3 --bpm 120 --beats-per-cycle 2` |
 | Vocal removal / stem separation (`htdemucs`, `mel_roformer`, `bs_roformer`, optional `--apollo`, or `sam`) | `retrait_voix` | `-w retrait_voix -i track.wav --sep-engine mel_roformer --apollo` |
 | Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish/Drama 3 cloning, kitten2 zero-shot; `--voix-ref` or `--ref-lib`) | `voix_off` | `-w voix_off "Bonjour"` `--voix-ref voice.wav` |
 | EN character voice (Kokoro preset or Qwen3 VoiceDesign + pitch/whisper/hollow) | `voix_perso` | `-w voix_perso "..." --kokoro-voice am_onyx` |

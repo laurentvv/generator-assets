@@ -129,7 +129,7 @@ Isolate game items with zero white halos, quantize to classic retro palettes, an
 <span id="workflow-hub"></span>
 ## 📦 Workflow Catalog by Domain
 
-The engine ships **71 autonomous workflows**. Every workflow accepts natural language, enforces strict VRAM constraints, and outputs production assets:
+The engine ships **74 autonomous workflows**. Every workflow accepts natural language, enforces strict VRAM constraints, and outputs production assets:
 
 ```bash
 uv run python main.py -w <workflow_name> [options]
@@ -160,6 +160,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`video_vace`** | Motion-locked video: reference image + `--control-video` frames or auto-extracted `--source-video` (`--control-extract canny\|edges_bold\|depth_proxy`, Wan 2.1 VACE distilled) | `uv run python main.py -w video_vace -i ref.png --source-video clip.mp4 --control-extract canny` | [Specs](docs/workflows_reference.md#49b-video_vace--motion-locked-video-reference-image--control-frames-wan-21-vace-lightx2v-distilled) |
 | **`video_s2v`** | Speech-to-Video talking portrait: portrait (`-i`) + speech audio (`--audio`), Wan2.2-S2V 14B Q4_K_M (`512×512`, `33f @ 16 fps`, 4 steps LightX2V, auto cold `D:→C:` NVMe staging, `.webm` + `.mp4`) | `uv run python main.py -w video_s2v -i portrait.png --audio speech.wav -p "A person speaking calmly..."` | [Specs](docs/workflows_reference.md#49d-video_s2v--speech-to-video-talking-portrait-wan22-s2v-14b-lightx2v-4-step) |
 | **`rife_interp`** | AI frame rate multiplication up to 60 FPS preserving alpha transparency | `uv run python main.py -w rife_interp -i spritesheet.png --factor 2` | [Specs](docs/workflows_reference.md#47-rife_interp--ai-frame-rate-multiplication-60-fps) |
+| **`gif_export`** 🧪 | Deterministic transparent GIF + APNG + RGBA frames from a video or PNG sequence (255-color palette invariant, alpha QA gate, optional Godot sprite sheet — ported from video-gif-studio, MIT) | `uv run python main.py -w gif_export -i clip.mp4 --width 640` | [Specs](docs/workflows_reference.md#54-gif_export--deterministic-transparent-gif-apng--rgba-frames-alpha-qa-gate) |
 
 ---
 
@@ -180,6 +181,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`retrait_voix`** | Vocal removal & stem separation: `htdemucs` (4 stems), `mel_roformer`/`bs_roformer` (SOTA 2-stem, `--apollo`), `sam` | `uv run python main.py -w retrait_voix -i track.mp3 --sep-engine mel_roformer --apollo` | [Specs](docs/workflows_reference.md#412-retrait_voix--vocal-removal--stem-separation-htdemucs-gguf-vulkan) |
 | **`sfx`** | AI sound effect generation (Stable Audio 3, supports `--ref-lib` `web-assets` reference) or procedural waveform synthesis | `uv run python main.py -w sfx "heavy sword slash metal impact" --duration 1.2` | [Specs](docs/workflows_reference.md#41-sfx--ai--procedural-sound-effects-synthesis) |
 | **`audio_ambience`**| Procedural seamless ambient soundscapes (dungeon, forest, storm) + Godot bus | `uv run python main.py -w audio_ambience "dark subterranean dungeon"` | [Specs](docs/workflows_reference.md#42-audio_ambience--procedural-seamless-looping-ambient-soundscapes) |
+| **`beat_sync`** 🧪 | Local beat/tempo analysis of a music file (numpy rms engine, no PyTorch) + beat-aligned cut/schedule plan | `uv run python main.py -w beat_sync -i music.mp3 --bpm 120` | [Specs](docs/workflows_reference.md#425-beat_sync--local-beat-analysis--beat-aligned-cut-plan-rms-engine-no-pytorch) |
 
 ---
 
@@ -205,6 +207,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`pixelart`** | Downsamples and quantizes sprites into retro hardware palettes (Pico-8, GameBoy) | `uv run python main.py -w pixelart -i item.png --palette pico8 --grid-size 64` | [Specs](docs/workflows_reference.md#35-pixelart--retro-palette-color-quantization--downsampling) |
 | **`ui_9slice`** | Generates expandable UI frames/dialog boxes + Godot 4 `StyleBoxTexture.tres` | `uv run python main.py -w ui_9slice "golden fantasy dialog frame" --margin 32` | [Specs](docs/workflows_reference.md#37-ui_9slice--expandable-9-patch-frames--buttons) |
 | **`rembg`** | Neural background removal (RMBG / BiRefNet ONNX) with zero white fringes | `uv run python main.py -w rembg -i sprite.png -o sprite_clean` | [Specs](docs/workflows_reference.md#38-rembg--high-precision-neural-background-removal) |
+| **`alpha_qa`** 🧪 | Alpha QA gate on a transparent PNG (fake checkerboard, coverage, border, specks, holes, halo — deterministic PASS/FAIL, exit 1 on FAIL) | `uv run python main.py -w alpha_qa -i sticker.png` | [Specs](docs/workflows_reference.md#55-alpha_qa--deterministic-alpha-qa-gate-on-transparent-assets) |
 | **`upscale`** | AI Super-Resolution: ESRGAN Vulkan (alpha preserved) or **SeedVR2 3B** (`--upscale-mode seedvr2`) for images & video (auto QC gate, `--skip-qc` to override) | `uv run python main.py -w upscale -i clip.mp4 --upscale-mode seedvr2 --factor 2` | [Specs](docs/workflows_reference.md#52-upscale--4k-ai-super-resolution-esrgan-vulkan) |
 | **`ocr_image`** | Local OCR on images & screenshots (MiniCPM-OCR-1.0 via llama-server — FR/EN, ~4 s/page, ~2 GB VRAM) | `uv run python main.py -w ocr_image -i screenshot.png` | [Specs](docs/workflows_reference.md#422-ocr_image--local-ocr-on-images--screenshots-minicpm-ocr-10-via-llamaserver) |
 
@@ -263,7 +266,7 @@ uv run python -m server    # → Opens http://127.0.0.1:8765
 ### 🌐 The Full-Python Web Console & `web-assets` Bridge
 Prefer a visual dashboard over the CLI? Run `uv run python -m server`:
 - Built with **FastAPI + Jinja2 + HTMX** (zero Node.js, zero npm, zero React bloat).
-- Automatically inspects all 71 workflows and generates interactive forms.
+- Automatically inspects all 74 workflows and generates interactive forms.
 - Features a **serialized GPU run queue** with automatic system load checks.
 - Live log streaming (SSE), media gallery, and model inventory.
 - **`web-assets` library integration**: resolve AI-eligible audio/image references (`--ref-lib`) or PBR material packs (`--from-lib`, `--pbr-group`) with `NO_AI` strictly excluded, and trigger optional library re-indexing via `--scan-web-assets`.
@@ -282,7 +285,7 @@ This repository is natively understood by AI coding agents (**ZCode, Claude Code
 
 To keep this landing page fast and readable, technical deep-dives have been organized into dedicated documentation modules:
 
-- 📦 **[Complete Workflow Technical Reference](docs/workflows_reference.md)** — Exhaustive processes, inputs/outputs, and mathematical specs for all 71 pipelines.
+- 📦 **[Complete Workflow Technical Reference](docs/workflows_reference.md)** — Exhaustive processes, inputs/outputs, and mathematical specs for all 74 pipelines.
 - ⚡ **[Installation & System Setup Guide](docs/installation.md)** — OS requirements, Vulkan drivers, model pack tables, and environment variables.
 - 🔄 **[Vulkan Engines Update & Build Manual](docs/guide_moteurs_vulkan.md)** — Automated builders, CMake scripts, backups, and rollbacks for `sd-cli` and `llama.cpp`.
 - 🎬 **[Video Generation & 4K Mastering Architecture](docs/architecture_video.md)** — DiT architectures (Wan 2.2, LTX-2.5, H3), AMD AMF hardware encoder, and overnight rendering.
@@ -297,7 +300,7 @@ To keep this landing page fast and readable, technical deep-dives have been orga
 ```text
 generator-assets/
 ├── core/                   # Engine core: config, CLI orchestrators, LLM enrichers, PBR generators
-├── workflows/              # 71 autonomous media generation workflow implementations
+├── workflows/              # 74 autonomous media generation workflow implementations
 ├── godot_assets/           # Default output directory for engine-ready game assets
 ├── output/                 # Output directory for video renders, audio tracks, and contact sheets
 ├── scripts/                # Specialized helper utilities, downloaders, and Vulkan builders

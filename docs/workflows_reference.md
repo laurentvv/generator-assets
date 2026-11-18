@@ -1,6 +1,6 @@
 # 📦 Complete Workflow Technical Reference
 
-> Exhaustive reference manual for all 71 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
+> Exhaustive reference manual for all 74 autonomous workflows: process details, mathematical specifications, inputs, engines, outputs, and CLI options.
 > Back to main: [README.md](../README.md)
 
 ---
@@ -1325,6 +1325,26 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 
 ---
 
+#### 4.25. `beat_sync` — Local Beat Analysis & Beat-Aligned Cut Plan (rms engine, no PyTorch)
+🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: metronome 120 BPM → BPM 120, offset 0 ms, 16 beats, cuts [0, 1000, …] ms; suite 26 tests).
+
+* **Process** (ported from miles990/video-gif-studio `scripts/music_sync.py` rms engine + `scripts/audio_beat_sync.py`, MIT):
+  - FFmpeg (or native `wave` for PCM16) decodes to mono 8 kHz → 10 ms RMS energy envelope → positive onset differences → normalized autocorrelation scanned over 60–200 BPM → beat grid (`offset_ms` + uniform `beats_ms`).
+  - The neural `beat_this` backend is intentionally NOT ported (PyTorch — zero-PyTorch stack rule).
+  - `schedule_beat_cycles` produces animation cycles spanning `--beats-per-cycle` beats = suggested cut/impact timestamps for the video chain (ai-doc2video, beat-aligned montage).
+* **Upstream caveat kept**: the rms engine is a periodicity heuristic — no downbeat/chord/phrase detection; half/double-tempo and variable-tempo errors possible. Review `beats.json` / `waveform.svg` before use; override with `--bpm` / `--offset-ms` (manual mode).
+* **Inputs**: `-i/--input <audio>` (WAV PCM16 native, other formats via FFmpeg), `--bpm` (20..400), `--offset-ms`, `--beats-per-cycle` (default 2), `-o`.
+* **Outputs**: `output/<name>/beats.json` (bpm, offset_ms, beats_ms, onsets_ms, waveform, tempo candidates, source sha256) + `waveform.svg` (review artifact) + `schedule.json` (cycles = suggested cut points).
+* **Example**:
+  ```bash
+  # Automatic detection (review the grid before use):
+  uv run python main.py -w beat_sync -i output/music_bg/mybed_bed.wav
+  # Manual tempo override + cut plan every 2 beats:
+  uv run python main.py -w beat_sync -i music.mp3 --bpm 120 --beats-per-cycle 2
+  ```
+
+---
+
 ### 🛠️ 5. Style Consistency, Upscaling & Batching
 
 #### 5.1. `ip_adapter` — Art Style Locking & Godot Palettes
@@ -1394,6 +1414,43 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   # Diffusion packs shipped with the repo:
   uv run python main.py -w batch --file recipes/dark_fantasy_armory.json
   uv run python main.py -w batch --file recipes/dungeon_environment.json
+  ```
+
+---
+
+#### 5.4. `gif_export` — Deterministic Transparent GIF / APNG / RGBA Frames (alpha QA gate)
+🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: 30-frame clip → GIF verified 0 alpha-mismatch, contact sheet inspected; suite 26 tests).
+
+* **Process** (ported from miles990/video-gif-studio `scripts/gif_pipeline.py`, MIT — CPU-only, Pillow + FFmpeg):
+  1. Source = video (FFmpeg-conformed to a PNG sequence first, alpha-capable for VP9/ProRes-4444; OpenCV decode would drop alpha) or PNG-sequence directory (primary path, alpha preserved, `--fps` required).
+  2. Frame selection + 10 ms-grid exposure timing (20 ms clamp — GIF viewers short frames; optional chroma-key `--key`/`--key-tolerance`/`--key-softness` on a uniform backing color).
+  3. **GIF invariant kept intact**: one shared 255-color MEDIANCUT palette trained on visible pixels (96×96 thumbs, alpha ≥ 128), dither NONE, palette index 255 RESERVED for transparency (binary cutoff at 128), disposal=2, deterministic.
+  4. `verify_gif` re-decodes the delivered GIF and walks the timeline — any alpha mismatch raises (no silent delivery).
+  5. Alpha QA gate (`core/alpha_qa`) on the first selected frame: FAIL is reported honestly in `alpha-qa.json` (artifacts still written — sticker-style sources may legitimately warn).
+* **Inputs**: `-i/--input <video | PNG dir>`, `--fps` (conform rate; required for PNG dirs), `--width` (resize, default 640), `--columns` (sprite grid), `--key`, `--key-tolerance` (0.15), `--key-softness` (0.12), `--sprite-sheet`, `-o`.
+* **Outputs** (fresh run dir, auto-suffixed): `frames/NNNNN.png` (RGBA masters), `animation.gif`, `animation.apng` (soft fractional alpha master), `contact.png` (light/dark review sheet), `alpha-qa.json` (+ `alpha-holes.png` overlay), optional `spritesheet.png` + `spritesheet_godot4.json`, `manifest.json` (sha256 provenance + timings + QC).
+* **Example**:
+  ```bash
+  # Video → GIF/APNG/frames + review artifacts:
+  uv run python main.py -w gif_export -i output/monoplan_ia/clip_4.0s_1080p.mp4 --width 640
+  # PNG sequence (AI frames) → GIF + Godot sprite sheet, magenta keyed:
+  uv run python main.py -w gif_export -i frames_dir --fps 12 --key FF00FF --sprite-sheet --columns 4 -o sprite_gif
+  ```
+
+---
+
+#### 5.5. `alpha_qa` — Deterministic Alpha QA Gate on Transparent Assets
+🧪 **Status: tested — validation pending** (real-path leg PASS 2026-11-18: healthy sticker → PASS 60% transparent; painted checkerboard → FAIL exit 1 with `fake_transparency`; suite 26 tests).
+
+* **Process** (ported from miles990/video-gif-studio `scripts/image_alpha.py` detection gates, MIT — numpy/OpenCV, no model weights, no LLM judge):
+  - Gates: `fake_transparency` (painted checkerboard detector — periodic neutral pattern along ≥3 edges), `transparent_fraction` (0.15–0.90), `clipped_border` (2-px frame ≥99% transparent), `isolated_specks` (>0.001), `interior_holes` (enclosed zero-alpha cores + translucent pockets >0.005), `halo` (ΔE ≤ 20 vs nearest opaque within 5 px, ≥95% + outer-ring luma ≤ 8).
+  - Verdict purely local and deterministic: **PASS / FAIL — FAIL exits 1** (gate semantics, lesson 2026-10-30) with report + overlay already written.
+* **Inputs**: `-i/--input <image>` (RGBA expected), `-o`.
+* **Outputs**: `<name>_alpha-qa.json` (metrics + issues) + `<name>_alpha-holes.png` (red-box overlay) when enclosed regions exist.
+* **Example**:
+  ```bash
+  # QA a rembg / detourer_fond_blanc sticker before Godot import:
+  uv run python main.py -w alpha_qa -i output/rembg/item_rembg.png
   ```
 
 ---
