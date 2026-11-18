@@ -1,6 +1,6 @@
 ---
 name: agy
-description: Generate and iterate images with Google Antigravity's agy CLI in headless mode, and script non-interactive agent runs with machine-readable output. Use whenever the user asks for a generated or edited image (illustration, texture, icon, concept art, variation), mentions agy or Antigravity, or wants an agent run from a script, a batch or CI.
+description: Generate and iterate images with Google Antigravity's agy CLI in headless mode, script non-interactive agent runs with machine-readable output, and run dynamic workflows (/run-workflow, the run_workflow tool) that fan subagents out in parallel. Use whenever the user asks for a generated or edited image (illustration, texture, icon, concept art, variation), mentions agy or Antigravity, wants an agent run from a script, a batch or CI, or wants a multi-agent workflow orchestrated headless.
 ---
 
 # agy - headless Antigravity CLI
@@ -10,8 +10,11 @@ description: Generate and iterate images with Google Antigravity's agy CLI in he
 reuses the logged-in account's cached credentials - authenticate once with an
 interactive `agy` session before any headless use.
 
-Everything below was verified live on agy 1.2.16 (Windows 11, Git Bash),
-2026-10-04. Official reference: https://antigravity.google/docs/cli/headless/
+Measured on agy 1.2.16 (Windows 11, Git Bash, 2026-10-04) unless a section
+states otherwise - the dynamic-workflows section below was re-verified on
+1.5.9 (2026-11-15). Official references:
+https://antigravity.google/docs/cli/headless/ and
+https://antigravity.google/docs/dynamic-workflows/
 
 ## Generate an image (the core recipe)
 
@@ -103,6 +106,45 @@ agy -p "..." --output-format json | uv run --no-project python -c "import json,s
 model and fails loudly (exit 1) on an unknown slug; `--effort
 low|medium|high` trades depth for speed (1.2.16 also accepts `xhigh|max`).
 
+## Dynamic workflows (/run-workflow) - measured 2026-11-15, agy 1.5.9
+
+The agent can orchestrate subagents itself: it writes a short Python script
+(discover the items, spawn one `agent(prompt=..., schema=<JSON Schema>,
+role=..., type_name="self")` per item in parallel, `await` the results,
+combine) and runs it through the `run_workflow` tool. Each subagent works in
+its own conversation; typed results (`{"verdict": "..."}`) come back in the
+tool output logs (`[agent:self] Review a.py: done (<uuid>): {...}`) and the
+final response summarizes them. Official reference:
+https://antigravity.google/docs/dynamic-workflows/ (interactive App/CLI
+features - named phases, per-agent `model` tiers, `workspace="branch"`
+isolation, multi-turn persistent agents - are doc claims, not verified
+headless).
+
+Verified headless (2 full-review runs + 1 denial probe, effort low,
+disposable temp dir, one agent per file):
+
+- The capability is the TOOL, not the slash expansion: `/run-workflow <task>`
+  in a `-p` prompt is honored, and with `--disable-slash-commands` the agent
+  STILL calls `run_workflow` (workflow DONE, verdicts correct) - a plain
+  natural-language ask ("run a workflow that reviews each file in parallel")
+  works the same.
+- The workflow runs synchronously inside the print turn (`num_turns` stays
+  1): 42-46 s wall clock for a 3-file review on effort low. The envelope
+  `usage` carries the main conversation only (~30k tokens observed); the N
+  subagent turns are billed on top and INVISIBLE in the envelope. Budget
+  `--print-timeout` for main + all subagents together.
+- PERMISSION TRAP: without `--dangerously-skip-permissions` (or a matching
+  allow rule) the script-approval gate soft-denies the whole workflow -
+  exit 0, `status: SUCCESS`, EMPTY response, `denied_actions: [{"action":
+  "command", "display_name": "RunWorkflow"}]`, tool step in ERROR. Same
+  signature as the denied image copy: never trust exit 0, check
+  `denied_actions`.
+
+Fan-out safety: the flag approves every tool call of the main run AND of
+every subagent the workflow spawns - the disposable-directory discipline
+scales by agent count, not by run count. The 1.5.9 changelog says the
+script runs on the CLI's bundled Python (no local Python needed).
+
 ## Expectations and pitfalls (measured 2026-10-04, agy 1.2.16)
 
 - One image: 45-100 s and 45k-80k tokens; one reference edit: ~200 s and up
@@ -118,7 +160,8 @@ low|medium|high` trades depth for speed (1.2.16 also accepts `xhigh|max`).
 - CI or any terminal-less environment without cached credentials exits with
   `authentication required` instead of hanging.
 - `--disable-slash-commands` turns off slash-command and skill expansion in
-  print mode.
+  print mode - but the `run_workflow` tool still fires on a workflow-shaped
+  prompt (see dynamic workflows above).
 
 ## Safety
 
