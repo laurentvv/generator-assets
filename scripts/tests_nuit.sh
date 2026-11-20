@@ -225,6 +225,69 @@ leg_acestep90_12s() {
       --out "$OUT/acestep90_12s/smoke90_12s.wav"
 }
 
+leg_dance_sheet_v2() {
+  # Dance sheet v2 chain (19-11 user verdict on v1: "la tete est horrible") — the
+  # §1.55 contract-grade item, retooled: 16 poses dual-ref (head-only identity patch
+  # + framing lock; probed 19-11: 512² dual-ref 14 s/it on-device, 640² hybrid
+  # 58 s/it REJECTED) -> stitch 2048² -> amorce v3 -> monoplan clip v2 -> identity
+  # grid (4 frames). ~55 min total. Morning verdict required on sheet + mp4 + grid.
+  # Machine-local chain (output/ is git-ignored): explicit existence check so a
+  # fresh clone logs a clear reason instead of a bare rc=127 FAIL (review 11-20).
+  local chain="output/test_dance_sheet_m1106/night_dance_v2.sh"
+  if [ ! -f "$chain" ]; then
+    log "[dance_sheet_v2] machine-local chain script missing ($chain) — skip, no marker"
+    return 0
+  fi
+  run_leg dance_sheet_v2 bash "$chain"
+}
+
+# ------------------------------------------------- IndexTTS2.5 slot campaign legs (added 11-20)
+# Queued 11-15 (user "ajoute ça au test de nuit"), implemented 11-20: first IndexTTS2.5
+# datapoints — 0 verdicts, never tested. q8_0 GGUF on disk 11-15 (byte-verified); audio.cpp
+# v0.9.5 family index_tts2 (model_specs/index_tts2.json: v2.5 variant = multilingual
+# tiktoken, languages zh/en/ja/es/ar). 11-20 wiring smoke: voice_ref is MANDATORY (upstream
+# zero-shot design, no built-in voices — refusal "IndexTTS2 request requires --voice-ref"
+# without one), Vulkan gen exit 0, RTF ~11 incl. load on a 1-sentence text.
+# fr_probe = GAP datapoint (fr NOT in the spec language list) — a FAIL marker here is the
+# EXPECTED recorded outcome, not a regression. Morning listening verdict on the wavs.
+
+leg_indextts25_en_tts() {
+  # EN zero-shot TTS, neutral synthetic reference — quality + RTF datapoint.
+  run_leg indextts25_en_tts \
+    C:/audio-cpp/audiocpp_cli.exe --task tts --family index_tts2 \
+      --model "$MODELES/IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf" \
+      --backend vulkan \
+      --voice-ref "$REPO/output/comparatif_tts/ref_voix_synth.wav" \
+      --text "The night factory hums quietly while the last render finishes. A new voice steps out of the silence, steady and clear, ready to read the script." \
+      --language en --seed 42 --metrics \
+      --out "$OUT/indextts25_en_tts/indextts25_en_tts.wav"
+}
+
+leg_indextts25_en_clone() {
+  # EN clone on the user reference — same text + seed as en_tts -> direct timbre A/B.
+  run_leg indextts25_en_clone \
+    C:/audio-cpp/audiocpp_cli.exe --task tts --family index_tts2 \
+      --model "$MODELES/IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf" \
+      --backend vulkan \
+      --voice-ref "$REPO/output/comparatif_tts/ref_voix_laurent.wav" \
+      --text "The night factory hums quietly while the last render finishes. A new voice steps out of the silence, steady and clear, ready to read the script." \
+      --language en --seed 42 --metrics \
+      --out "$OUT/indextts25_en_clone/indextts25_en_clone.wav"
+}
+
+leg_indextts25_fr_probe() {
+  # FR probe = gap datapoint (fr unsupported per spec): expected clean refusal (FAIL marker
+  # = recorded outcome). If audio comes out anyway, it goes to the morning listening verdict.
+  run_leg indextts25_fr_probe \
+    C:/audio-cpp/audiocpp_cli.exe --task tts --family index_tts2 \
+      --model "$MODELES/IndexTTS2.5-GGUF/index-tts2_5-q8_0.gguf" \
+      --backend vulkan \
+      --voice-ref "$REPO/output/comparatif_tts/ref_voix_laurent.wav" \
+      --text "La nuit, la fabrique ronronne doucement pendant que le dernier rendu se termine. Une nouvelle voix sort du silence, posée et claire, prête à lire le script." \
+      --language fr --seed 42 --metrics \
+      --out "$OUT/indextts25_fr_probe/indextts25_fr_probe.wav"
+}
+
 leg_sam_vulkan_retest() {
   # SAM Audio Vulkan retest on v0.9.0 (native #711). 09/28 on the scratch build: fixed
   # encoder buffer 2.58/3.73 GB > AMD driver buffer limit -> ErrorOutOfDeviceMemory.
@@ -395,6 +458,7 @@ rapport() {
     echo "| leg | status | duration | evidence |"
     echo "|---|---|---|---|"
     while read -r id; do
+      id="${id%$'\r'}"   # queue.txt edited from Windows tools carries CRLF
       case "$id" in ""|\#*) continue;; esac
       local st="-" du="-" ev="-"
       [ -f "$OUT/$id/DONE" ] && st="✅ PASS"
@@ -416,6 +480,9 @@ rapport() {
       [ "$id" = "ltx_upscale_spatial" ]  && [ -f "$OUT/ltx_upscale_spatial/spatial_33f.webm" ] && ev="spatial_33f.webm — vs base (2x latent detail?)"
       [ "$id" = "ltx33_929_paramsdisk" ] && [ -f "$OUT/ltx33_929_paramsdisk/ltx33_paramsdisk.webm" ] && ev="ltx33_paramsdisk.webm — LTX fit on 929 with --params-backend disk (#1976)"
       [ "$id" = "heartmula_gothic" ]     && [ -f "$OUT/heartmula_gothic/heartmula_gothic_30s.wav" ] && ev="heartmula_gothic_30s.wav — USER LISTENING VERDICT (standing gothic recipe)"
+      [ "$id" = "indextts25_en_tts" ]   && [ -f "$OUT/indextts25_en_tts/indextts25_en_tts.wav" ] && ev="indextts25_en_tts.wav — listening verdict + RTF datapoint (synth ref)"
+      [ "$id" = "indextts25_en_clone" ] && [ -f "$OUT/indextts25_en_clone/indextts25_en_clone.wav" ] && ev="indextts25_en_clone.wav — timbre vs ref_voix_laurent.wav + A/B vs en_tts (same text/seed)"
+      [ "$id" = "indextts25_fr_probe" ] && ev="expected-FAIL datapoint (fr outside the spec languages) — wav if generated"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -432,6 +499,7 @@ fi
 
 log "=== Night test queue run — queue: $QUEUE ==="
 while read -r id; do
+  id="${id%$'\r'}"   # queue.txt edited from Windows tools carries CRLF (11-20: all ids "unknown" without this)
   case "$id" in ""|\#*) continue;; esac
   case "$id" in
     wan_i2v_929)        leg_wan_i2v_929 ;;
@@ -449,6 +517,10 @@ while read -r id; do
     ltx_upscale_spatial)  leg_ltx_upscale_spatial ;;
     ltx33_929_paramsdisk) leg_ltx33_929_paramsdisk ;;
     heartmula_gothic)     leg_heartmula_gothic ;;
+    indextts25_en_tts)    leg_indextts25_en_tts ;;
+    indextts25_en_clone)  leg_indextts25_en_clone ;;
+    indextts25_fr_probe)  leg_indextts25_fr_probe ;;
+    dance_sheet_v2)       leg_dance_sheet_v2 ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
