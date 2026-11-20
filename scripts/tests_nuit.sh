@@ -544,7 +544,7 @@ leg_fruc_vs_mci() {
       -i "$REPO/output/dance_m1106v2_brut.webm" \
       -vf "fruc_vulkan=fps=48" -an \
       -c:v libx264 -preset fast \
-      -o "$OUT/fruc_vs_mci/fruc_48fps.mp4"
+      "$OUT/fruc_vs_mci/fruc_48fps.mp4"
   if [ -f "$OUT/fruc_vs_mci/DONE" ]; then
     planche "$OUT/fruc_vs_mci/fruc_48fps.mp4" "$OUT/fruc_vs_mci/planche.png" || true
   fi
