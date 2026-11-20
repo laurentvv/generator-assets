@@ -503,6 +503,72 @@
  ],
  [
   [
+   "--dance-dir"
+  ],
+  "dance_dir",
+  "_StoreAction",
+  "'output/test_dance_sheet_m1106'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--dance-no-clips"
+  ],
+  "dance_no_clips",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
+   "--dance-prompt"
+  ],
+  "dance_prompt",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--dance-prompts-dir"
+  ],
+  "dance_prompts_dir",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--dance-ref"
+  ],
+  "dance_ref",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--dance-ref-head"
+  ],
+  "dance_ref_head",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--delight"
   ],
   "delight",
