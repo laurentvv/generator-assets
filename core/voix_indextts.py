@@ -69,6 +69,11 @@ def normaliser_reference(reference: str, cible: float = REFERENCE_TARGET_LUFS) -
     dossier = os.path.dirname(os.path.abspath(reference))
     racine = os.path.splitext(os.path.basename(reference))[0]
     cible_chemin = os.path.join(dossier, f"{racine}_ttsnorm.wav")
+    if not os.access(dossier, os.W_OK):
+        raise PermissionError(
+            f"Reference directory is not writable — cannot write the normalized "
+            f"reference {cible_chemin}. Normalize it manually or move the reference."
+        )
     print(f"⚠️ Reference too quiet ({mesure:.1f} LUFS < {REFERENCE_SANE_LUFS} LUFS) — "
           f"normalizing to {cible:.0f} LUFS: {cible_chemin}")
     commande = ["ffmpeg", "-hide_banner", "-y", "-i", reference,
@@ -101,7 +106,7 @@ def generer_voix_indextts(
     if not texte or not texte.strip():
         raise ValueError("Empty text: nothing to synthesize.")
     if not reference:
-        raise ValueError("A voice reference is required (--tts-reference): "
+        raise ValueError("A voice reference is required (--indextts-reference): "
                          "IndexTTS2.5 refuses to run without one (zero-shot design).")
     for chemin, role in ((audiocpp, "audiocpp_cli"), (modele, "model"), (reference, "voice reference")):
         if not os.path.exists(chemin):

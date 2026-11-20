@@ -28,16 +28,24 @@ def _ebur128(lufs: float) -> str:
 
 
 class _FakeEngines:
-    """Routes run_engine calls: ebur128 -> scripted loudness, loudnorm/tts -> recorded."""
+    """Routes run_engine calls: ebur128 -> scripted loudness, loudnorm/tts -> recorded.
 
-    def __init__(self, ref_lufs: float):
+    `lufs_stream` selects which ffmpeg stream carries the ebur128 summary —
+    real ffmpeg writes it on stderr (100% of the I: lines measured), stdout
+    is kept as a supported variant.
+    """
+
+    def __init__(self, ref_lufs: float, lufs_stream: str = "stderr"):
         self.ref_lufs = ref_lufs
+        self.lufs_stream = lufs_stream
         self.calls = []
 
     def __call__(self, commande, **kwargs):
         self.calls.append((list(commande), dict(kwargs)))
         joined = " ".join(commande)
         if "ebur128" in joined:
+            if self.lufs_stream == "stderr":
+                return subprocess.CompletedProcess(commande, 0, stdout="", stderr=_ebur128(self.ref_lufs))
             return subprocess.CompletedProcess(commande, 0, stdout=_ebur128(self.ref_lufs), stderr="")
         if "loudnorm" in joined:
             sortie = commande[-1]
@@ -73,8 +81,16 @@ def _run_generation(fake, tmp_path, ref, **kwargs):
 
 
 def test_mesurer_lufs_parses_integrated_value(monkeypatch, tmp_path):
+    """Production reality: ffmpeg writes the ebur128 summary on STDERR."""
     wav = _touch(tmp_path / "ref.wav")
-    fake = _FakeEngines(-39.0)
+    fake = _FakeEngines(-39.0, lufs_stream="stderr")
+    monkeypatch.setattr("core.voix_indextts.run_engine", fake)
+    assert mesurer_lufs(wav) == -39.0
+
+
+def test_mesurer_lufs_also_reads_stdout(monkeypatch, tmp_path):
+    wav = _touch(tmp_path / "ref.wav")
+    fake = _FakeEngines(-39.0, lufs_stream="stdout")
     monkeypatch.setattr("core.voix_indextts.run_engine", fake)
     assert mesurer_lufs(wav) == -39.0
 
