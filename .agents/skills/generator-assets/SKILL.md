@@ -92,6 +92,7 @@ Any CLI evolution must preserve this contract.
 | 360° equirectangular skybox + IBL | `skybox` | `-w skybox "purple cosmic nebula"` |
 | Voxel 3D model for GridMap | `voxel3d` | `-w voxel3d -i sprite.png --grid-size 32` |
 | **Rigged packed animated animal for Godot** (Quaternius, mocap packs) | `animal_godot` | `-w animal_godot -i wolf.blend -o wolf_godot.glb` — dedicated skill `blender-rig` for AI rigging/animation |
+| **Identity-consistent dance sheet + clip (VALIDATED e2e 2026-11-20)**: 16 dual-ref poses → numbered 2048² sheet → LTX clip → identity grid, ~55 min | `dance_sheet` | `-w dance_sheet -o dance_v3` (refs/prompts machine-local under `--dance-dir`; `--dance-no-clips` = sheet only) |
 | Orthogonal sheet to model in Blender | `turnaround3d` | `-w turnaround3d "dwarven warrior"` |
 | Water/lava flowmap + Godot shader | `flowmap` | `-w flowmap "lava river" --angle 45` |
 | Standard CC0 prop or décor plate (YouTube) | `asset_blendkit` | `-w asset_blendkit --query "wooden barrel" --list-assets` |
