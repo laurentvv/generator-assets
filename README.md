@@ -194,6 +194,7 @@ uv run python main.py -w <workflow_name> [options]
 | **`outfit`** | PBR retexturing of existing clothing meshes preserving 100% of sewing UV patterns | `uv run python main.py -w outfit --character hero --top "rough burlap tunic"` | [Specs](docs/pipeline_personnages_3d.md) |
 | **`pose_control`** | Character sprite conditioned on OpenPose skeleton + rigged Godot scene (.tscn) | `uv run python main.py -w pose_control "dark knight" --pose slash_attack` | [Specs](docs/workflows_reference.md#25-pose_control--openpose-skeleton-guidance--rigged-godot-scenes) |
 | **`animal_godot`** | Rigged animated animal pack (.blend) → Godot-ready `.glb` with verified `AN_*` clips | `uv run python main.py -w animal_godot -i wolf_rig.blend -o wolf_godot.glb` | [Specs](docs/workflows_reference.md#416-animal_godot--game-ready-animated-animal-pack-blend--glb-for-godot) |
+| **`dance_sheet`** | Identity-consistent dance chain (VALIDATED end-to-end 2026-11-20): 16 dual-ref poses → numbered 2048² sheet → LTX-2.5 clip (zoom 1.0→1.0) → identity grid (~55 min, machine-local refs) | `uv run python main.py -w dance_sheet -o dance_v3` | [Specs](docs/workflows_reference.md#57-dance_sheet--identity-consistent-dance-sheet--clip-16-dual-ref-poses--2048-sheet--ltx-clip--identity-grid) |
 
 ---
 
