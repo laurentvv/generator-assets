@@ -153,6 +153,7 @@ work.
 | Expressive FR voice-over (qwen3-tts/VoxCPM2/Fish/Drama 3 cloning, kitten2 zero-shot; `--voix-ref` or `--ref-lib`) | `voix_off` | `-w voix_off "Bonjour"` `--voix-ref voice.wav` |
 | EN character voice (Kokoro preset or Qwen3 VoiceDesign + pitch/whisper/hollow) | `voix_perso` | `-w voix_perso "..." --kokoro-voice am_onyx` |
 | Fast local voice synthesis, faster than real time (LFM3-Audio-2B, llama.cpp Vulkan, FR default) | `lfm3_tts` | `-w lfm3_tts "Bienvenue, voyageur." --tts-langue fr --tts-voix female` |
+| IndexTTS2.5 zero-shot voice cloning (audio.cpp Vulkan, EN narration validated; mandatory `--indextts-reference`, loudness auto-normalized) | `indextts25_tts` | `-w indextts25_tts "The night factory hums." --indextts-reference ref.wav --indextts-seed 42` |
 | Re-voice a recording in another voice (Chatterbox VC, 24 kHz) | `voix_conversion` | `-w voix_conversion --audio take.wav --voice-ref target_voice.wav` |
 | EN robot voice (validated kokoro + ringmod recipe) | `voix_robot` | `-w voix_robot --texte "..."` |
 | Audio super-resolution → 48 kHz (16k voice / 24k music) | `audio_upscale` | `-w audio_upscale -i voice_16k.wav --upsr-variante speech` |
