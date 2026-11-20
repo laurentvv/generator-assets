@@ -294,7 +294,7 @@ leg_dance_sheet_workflow() {
   # went through the machine-local scripts, not through this port. Defaults
   # carry the machine-local refs/prompts (--dance-dir). ~55 min.
   run_leg dance_sheet_workflow \
-    uv run python main.py -w dance_sheet -o dance_workflow_nuit
+    uv run python main.py -w dance_sheet -o dance_workflow_nuit --seed 42
 }
 
 leg_sam_vulkan_retest() {

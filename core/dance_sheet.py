@@ -73,19 +73,19 @@ FONT_CANDIDATES = [
 ]
 
 
-def _charger_police(taille: int) -> ImageFont.FreeTypeFont:
+def _load_font(size: int) -> ImageFont.FreeTypeFont:
     for path in FONT_CANDIDATES:
         if Path(path).exists():
-            return ImageFont.truetype(path, taille)
+            return ImageFont.truetype(path, size)
     return ImageFont.load_default()
 
 
-def generer_pose_dualref(
+def render_pose_dualref(
     prompt: str,
-    sortie: str,
-    ref_corps: str,
-    ref_tete: str,
-    graine: int = 42,
+    output_path: str,
+    ref_body: str,
+    ref_head: str,
+    seed: int = 42,
     steps: int = 8,
     modele: str = DEFAULT_QWEN_IMAGE_EDIT2511_MODEL,
     llm: str = DEFAULT_QWEN_IMAGE_EDIT2511_LLM,
@@ -93,11 +93,17 @@ def generer_pose_dualref(
     vision: str = DEFAULT_QWEN_IMAGE_EDIT2511_VISION,
     lora_dir: str = DEFAULT_QWEN_IMAGE_EDIT2511_LORA_DIR,
 ) -> None:
-    """Renders ONE 512² pose from the two references (validated §1.55 recipe)."""
-    for chemin, role in ((ref_corps, "body reference"), (ref_tete, "head reference")):
+    """Renders ONE 512² pose from the two references (validated §1.55 recipe).
+
+    `prompt` must NOT carry the Lightning LoRA tag: it is appended exactly once
+    here via the `loras` plumbing (sd-cli ACCUMULATES duplicate tags — the
+    P0 review finding of 2026-11-20; strength 2.0 instead of 1.0 = silent
+    divergence from the frozen recipe).
+    """
+    for chemin, role in ((ref_body, "body reference"), (ref_head, "head reference")):
         if not os.path.exists(chemin):
             raise FileNotFoundError(f"{role} not found: {chemin}")
-    os.makedirs(os.path.dirname(sortie) or ".", exist_ok=True)
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     generer_image_qwen21(
         prompt=prompt + FRAMING_LOCK_NOTE,
         model=modele,
@@ -107,60 +113,67 @@ def generer_pose_dualref(
         height=POSE_SIZE,
         steps=steps,
         cfg_scale=1.0,
-        seed=graine,
-        output_path=sortie,
+        seed=seed,
+        output_path=output_path,
         loras=[LIGHTNING_8STEPS_LORA],
         lora_dir=lora_dir,
-        ref_images=[ref_corps, ref_tete],
+        ref_images=[ref_body, ref_head],
         llm_vision=vision,
     )
 
 
-def assembler_planche(dossier_poses: str, sortie: str) -> Path:
+def assemble_sheet(poses_dir: str, output_path: str) -> Path:
     """Stitches the 16 numbered poses into the 4×4 white sheet (validated v2 look)."""
     cellules: List[Image.Image] = []
     for i in range(1, POSE_COUNT + 1):
-        p = Path(dossier_poses) / f"pose{i:02d}.png"
+        p = Path(poses_dir) / f"pose{i:02d}.png"
         if not p.exists():
             raise FileNotFoundError(f"missing cell: {p}")
         cellules.append(Image.open(p).convert("RGB"))
     cote = cellules[0].width
-    planche = Image.new("RGB", (cote * SHEET_COLUMNS, cote * SHEET_COLUMNS), "white")
-    draw = ImageDraw.Draw(planche)
-    police = _charger_police(cote // 8)
+    heterogenes = [im.size for im in cellules if im.size != cellules[0].size]
+    if heterogenes:
+        raise ValueError(
+            "Heterogeneous pose cells (resume across resolutions?): "
+            f"expected {cellules[0].size}, got {heterogenes[:4]}…"
+        )
+    sheet = Image.new("RGB", (cote * SHEET_COLUMNS, cote * SHEET_COLUMNS), "white")
+    draw = ImageDraw.Draw(sheet)
+    police = _load_font(cote // 8)
     for idx, img in enumerate(cellules):
         n = idx + 1
         x, y = (idx % SHEET_COLUMNS) * cote, (idx // SHEET_COLUMNS) * cote
-        planche.paste(img, (x, y))
+        sheet.paste(img, (x, y))
         draw.rectangle([x + 4, y + 4, x + 4 + cote // 7, y + 4 + cote // 11], fill="white")
         draw.text((x + cote // 60, y + cote // 120), str(n), fill="black", font=police)
         draw.rectangle([x, y, x + cote - 1, y + cote - 1], outline="lightgray", width=2)
-    sortie_path = Path(sortie)
+    sortie_path = Path(output_path)
     os.makedirs(sortie_path.parent, exist_ok=True)
-    planche.save(sortie_path)
+    sheet.save(sortie_path)
     return sortie_path
 
 
-def composer_amorce(chemin_pose: str, sortie: str) -> Path:
-    """Composes the monoplan seed frame from pose01 (validated amorce geometry v3)."""
-    src = Image.open(chemin_pose).convert("RGB")
+def compose_seed_frame(pose_path: str, output_path: str) -> Path:
+    """Composes the monoplan seed frame ("amorce" — repo domain vocabulary)
+    from pose01 (validated geometry v3)."""
+    src = Image.open(pose_path).convert("RGB")
     largeur, hauteur = src.size
     fig = src.crop((AMORCE_INSET, AMORCE_INSET, largeur - AMORCE_INSET, hauteur - AMORCE_INSET))
     echelle = AMORCE_FIG_H / fig.height
     fig = fig.resize((round(fig.width * echelle), AMORCE_FIG_H), Image.LANCZOS)
     canvas = Image.new("RGB", AMORCE_CANVAS, "white")
     canvas.paste(fig, ((AMORCE_CANVAS[0] - fig.width) // 2, (AMORCE_CANVAS[1] - AMORCE_FIG_H) // 2))
-    sortie_path = Path(sortie)
+    sortie_path = Path(output_path)
     os.makedirs(sortie_path.parent, exist_ok=True)
     canvas.save(sortie_path)
     return sortie_path
 
 
-def grille_identite(video: str, sortie: str, times: Tuple[float, ...] = IDENTITY_GRID_TIMES) -> Path:
+def identity_grid(video: str, output_path: str, times: Tuple[float, ...] = IDENTITY_GRID_TIMES) -> Path:
     """Extracts frames at `times` from the clip into a half-size 2×2 identity grid."""
     cadres: List[Image.Image] = []
     for t in times:
-        brut = f"{sortie}.f{t}.png"
+        brut = f"{output_path}.f{t}.png"
         commande = [
             DEFAULT_FFMPEG, "-y", "-v", "error", "-ss", str(t),
             "-i", video, "-frames:v", "1", brut,
@@ -171,20 +184,20 @@ def grille_identite(video: str, sortie: str, times: Tuple[float, ...] = IDENTITY
         cadres.append(Image.open(brut).convert("RGB"))
         os.remove(brut)
     largeur, hauteur = cadres[0].size
-    grille = Image.new("RGB", (largeur * 2, hauteur * 2), "white")
+    grid = Image.new("RGB", (largeur * 2, hauteur * 2), "white")
     for i, cadre in enumerate(cadres):
-        grille.paste(cadre, ((i % 2) * largeur, (i // 2) * hauteur))
-    grille = grille.resize((largeur, hauteur), Image.LANCZOS)
-    sortie_path = Path(sortie)
+        grid.paste(cadre, ((i % 2) * largeur, (i // 2) * hauteur))
+    grid = grid.resize((largeur, hauteur), Image.LANCZOS)
+    sortie_path = Path(output_path)
     os.makedirs(sortie_path.parent, exist_ok=True)
-    grille.save(sortie_path)
+    grid.save(sortie_path)
     return sortie_path
 
 
-def poses_manquantes(dossier_poses: str) -> List[int]:
+def missing_poses(poses_dir: str) -> List[int]:
     """Indices (1-based) of the poses not yet rendered — the chain resumes."""
     manquantes: List[int] = []
     for i in range(1, POSE_COUNT + 1):
-        if not (Path(dossier_poses) / f"pose{i:02d}.png").exists():
+        if not (Path(poses_dir) / f"pose{i:02d}.png").exists():
             manquantes.append(i)
     return manquantes
