@@ -288,6 +288,15 @@ leg_indextts25_fr_probe() {
       --out "$OUT/indextts25_fr_probe/indextts25_fr_probe.wav"
 }
 
+leg_dance_sheet_workflow() {
+  # §6 real-path closure (11-20): the dance_sheet WORKFLOW port must re-run the
+  # chain through the factory full path once — the validated 11-20 night run
+  # went through the machine-local scripts, not through this port. Defaults
+  # carry the machine-local refs/prompts (--dance-dir). ~55 min.
+  run_leg dance_sheet_workflow \
+    uv run python main.py -w dance_sheet -o dance_workflow_nuit
+}
+
 leg_sam_vulkan_retest() {
   # SAM Audio Vulkan retest on v0.9.0 (native #711). 09/28 on the scratch build: fixed
   # encoder buffer 2.58/3.73 GB > AMD driver buffer limit -> ErrorOutOfDeviceMemory.
@@ -483,6 +492,7 @@ rapport() {
       [ "$id" = "indextts25_en_tts" ]   && [ -f "$OUT/indextts25_en_tts/indextts25_en_tts.wav" ] && ev="indextts25_en_tts.wav — listening verdict + RTF datapoint (synth ref)"
       [ "$id" = "indextts25_en_clone" ] && [ -f "$OUT/indextts25_en_clone/indextts25_en_clone.wav" ] && ev="indextts25_en_clone.wav — timbre vs ref_voix_laurent.wav + A/B vs en_tts (same text/seed)"
       [ "$id" = "indextts25_fr_probe" ] && ev="expected-FAIL datapoint (fr outside the spec languages) — wav if generated"
+      [ "$id" = "dance_sheet_workflow" ] && ev="output/dance_workflow_nuit_2048.png + _4.0s_1080p.mp4 + _grille_identite.png — §6 real-path closure of the workflow port (chain validated 11-20 via machine-local scripts)"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -521,6 +531,7 @@ while read -r id; do
     indextts25_en_clone)  leg_indextts25_en_clone ;;
     indextts25_fr_probe)  leg_indextts25_fr_probe ;;
     dance_sheet_v2)       leg_dance_sheet_v2 ;;
+    dance_sheet_workflow) leg_dance_sheet_workflow ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
