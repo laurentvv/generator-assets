@@ -11,6 +11,11 @@
 #   - FAIL_MACHINE_STATE→ skipped (known machine-state signature, e.g. LTX Vulkan_Host margin)
 # Reset a leg = delete its marker file.
 #
+# Shutdown: `bash scripts/tests_nuit.sh --shutdown` schedules a Windows shutdown
+# 300 s after the queue ends (user rule 2026-11-20: don't leave the PC running
+# all night for nothing). OPT-IN only — a plain run NEVER touches the machine
+# state. Abort within the grace window: `shutdown /a`.
+#
 # Queue: output/tests_nuit/queue.txt (one test id per line, '#' = comment).
 # Empty/exhausted queue → the run is a fast no-op.
 #
@@ -25,6 +30,12 @@ SD="C:/SD/sd-cli.exe"
 SD6B="C:/SD-6b3edaa/sd-cli.exe"   # LTX/H3 production build (master-841) — MEMORY_BANK §1.17
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
+
+SHUTDOWN=0
+for a in "$@"; do case "$a" in
+  --shutdown) SHUTDOWN=1 ;;
+  *) echo "unknown option: $a (supported: --shutdown)"; exit 1 ;;
+esac; done
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }
 
@@ -645,4 +656,8 @@ done < "$QUEUE"
 
 rapport
 log "=== Night queue run finished ==="
+if [ "$SHUTDOWN" -eq 1 ]; then
+  log "Shutdown scheduled in 300 s (abort within the grace window: shutdown /a)"
+  /c/Windows/System32/shutdown.exe /s /t 300 /c "tests_nuit: run termine, arret programme (annuler: shutdown /a)"
+fi
 exit 0
