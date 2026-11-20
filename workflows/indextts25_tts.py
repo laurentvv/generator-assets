@@ -62,7 +62,8 @@ class Indextts25TtsWorkflow(BaseWorkflow):
                              "IndexTTS2.5 is zero-shot and ships no built-in voices.")
 
         langue = params.get("indextts_langue") or "en"
-        graine = int(params.get("indextts_seed") or 42)
+        graine_brute = params.get("indextts_seed")
+        graine = int(graine_brute) if graine_brute is not None else 42
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         os.makedirs(output_dir, exist_ok=True)
