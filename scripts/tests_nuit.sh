@@ -538,10 +538,13 @@ leg_qwen3_align_v095() {
     C:/audio-cpp/audiocpp_cli.exe --task align --family qwen3_forced_aligner \
       --model "$gguf" \
       --backend vulkan \
-      --audio "$REPO/output/test_flashhead_v094/english_12s.wav" \
+      --audio "$REPO/output/test_flashhead_v094/english.wav" \
       --text "$(cat "$REPO/output/test_flashhead_v094/english.txt")" \
+      --language en \
       --seed 42 \
-      --out-dir "$OUT/qwen3_align_v095/"
+      --out-dir "$OUT/qwen3_align_v095/" \
+      --words-out "$OUT/qwen3_align_v095/words.json" \
+      --segments-out "$OUT/qwen3_align_v095/segments.json"
 }
 
 leg_fruc_vs_mci() {
@@ -557,7 +560,7 @@ leg_fruc_vs_mci() {
       -c:v libx264 -preset fast \
       "$OUT/fruc_vs_mci/fruc_48fps.mp4"
   if [ -f "$OUT/fruc_vs_mci/DONE" ]; then
-    planche "$OUT/fruc_vs_mci/fruc_48fps.mp4" "$OUT/fruc_vs_mci/planche.png" || true
+    planche "$OUT/fruc_vs_mci/fruc_48fps.mp4" "$OUT/fruc_vs_mci/planche.png" 7 || true
   fi
 }
 
@@ -597,11 +600,11 @@ rapport() {
       [ "$id" = "indextts25_en_clone" ] && [ -f "$OUT/indextts25_en_clone/indextts25_en_clone.wav" ] && ev="indextts25_en_clone.wav — timbre vs ref_voix_laurent.wav + A/B vs en_tts (same text/seed)"
       [ "$id" = "indextts25_fr_probe" ] && ev="expected-FAIL datapoint (fr outside the spec languages) — wav if generated"
       [ "$id" = "dance_sheet_workflow" ] && ev="output/dance_workflow_nuit_2048.png + _4.0s_1080p.mp4 + _grille_identite.png — §6 real-path closure of the workflow port (chain validated 11-20 via machine-local scripts)"
-      [ "$id" = "llama_b12590_smoke" ]   && [ -f "$OUT/llama_b12590_smoke/ts.txt" ] && ev="ts.txt — generation t/s vs band 181-217 (b12590 installed 11-20, smoke was deferred)"
+      [ "$id" = "llama_b12590_smoke" ]   && [ -s "$OUT/llama_b12590_smoke/ts.txt" ] && ev="ts.txt — generation t/s vs band 181-217 (b12590 installed 11-20, smoke was deferred)"
       [ "$id" = "sam_vulkan_v095" ]      && [ -f "$OUT/sam_vulkan_v095/target.wav" ] && ev="target.wav + residual.wav — SAM on Vulkan v0.9.5 (version-bound retest, rule 11-05)"
       [ "$id" = "flashhead_v095_probe" ] && ev="does v0.9.5 carry Vulkan IM2COL_3D? (blocked on 0.9.4; FAIL+IM2COL_3D = still blocked)"
-      [ "$id" = "qwen3_align_v095" ]     && [ -f "$OUT/qwen3_align_v095/target.json" -o -f "$OUT/qwen3_align_v095/segments.json" ] && ev="alignment segments json — subtitle-timing capability probe (0.6B q8_0 downloaded)"
-      [ "$id" = "fruc_vs_mci" ]          && ev="fruc_48fps.mp4 — expected NVIDIA-only (NV optical flow); any AMD output = surprise datapoint vs mci/aobmc ralenti"
+      [ "$id" = "qwen3_align_v095" ]     && [ -f "$OUT/qwen3_align_v095/words.json" ] && ev="words.json + segments.json — subtitle-timing capability probe (0.6B q8_0, 42 s demo transcript)"
+      [ "$id" = "fruc_vs_mci" ]          && ev="fruc_48fps.mp4 — expected NVIDIA-only (NV optical flow); if run.log shows a FRAMES-CONTEXT error instead of NV, follow-up = hwupload,fruc_vulkan,hwdownload before concluding AMD can't"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
