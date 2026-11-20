@@ -457,6 +457,99 @@ leg_heartmula_gothic() {
       --out "$OUT/heartmula_gothic/heartmula_gothic_30s.wav"
 }
 
+# ------------------------------------------------- probes 11-20 soir (sweep MEMORY_BANK)
+# Version-bound retests + new-capability probes flagged by the 11-20 watch sweep.
+
+leg_llama_b12590_smoke() {
+  # llama.cpp b12590 was installed 11-20 (49th always-follow) with the smoke
+  # DEFERRED on a red gate (victoria3 game). Historical band for generation
+  # t/s = 181-217 (LFM2.5-8B-A1B Q6_K, -ngl 99 -st). ~3 min.
+  run_leg llama_b12590_smoke \
+    C:/llama.cpp/llama-cli.exe -m "C:/Modeles_LLM/LFM2.5-8B-A1B-Q6_K.gguf" \
+      -p "The quick brown fox jumps over the lazy dog" -st -n 40 -ngl 99 \
+      < /dev/null
+  grep -oE "[0-9.]+ tokens per second" "$OUT/llama_b12590_smoke/run.log" 2>/dev/null | tail -2 > "$OUT/llama_b12590_smoke/ts.txt" || true
+}
+
+leg_sam_vulkan_v095() {
+  # SAM Audio Vulkan — version-bound retest (rule 2026-11-05): the
+  # FAIL_MACHINE_STATE verdict was measured on v0.9.0 (09-28, monolithic
+  # encoder buffer > AMD driver limit); audio.cpp is now v0.9.5 (11-14).
+  # PASS = SAM on Vulkan unlocked (CPU recipe RTF 2.9 reference). ~3 min.
+  run_leg sam_vulkan_v095 \
+    C:/audio-cpp/audiocpp_cli.exe --task s2s --family sam_audio \
+      --model "$MODELES/SAM-Audio-GGUF/sam-audio-small-q8_0.gguf" \
+      --backend vulkan --audio output/test_sam_audio/sample_chanson_30s.wav \
+      --text "the singing voice" --seed 42 \
+      --out-dir "$OUT/sam_vulkan_v095/"
+  if [ -f "$OUT/sam_vulkan_v095/FAIL" ] && grep -q "ErrorOutOfDeviceMemory" "$OUT/sam_vulkan_v095/run.log" 2>/dev/null; then
+    mv "$OUT/sam_vulkan_v095/FAIL" "$OUT/sam_vulkan_v095/FAIL_MACHINE_STATE"
+    log "[sam_vulkan_v095] OOM signature still present on v0.9.5 → FAIL_MACHINE_STATE"
+  fi
+}
+
+leg_flashhead_v095_probe() {
+  # SoulX-FlashHead talking-portrait — version-bound retest: BLOCKED on v0.9.4
+  # (Vulkan IM2COL_3D missing at ltx_video_vae.encode, §MEMORY_BANK) and the
+  # re-test trigger is "next audio.cpp release". Cheap 3 s probe: the failure
+  # signature (IM2COL_3D or progress) answers whether v0.9.5 carries it.
+  # Assets kept on disk from the 0.9.4 test (portrait + 12 s wav). ~3 min.
+  run_leg flashhead_v095_probe \
+    C:/audio-cpp/audiocpp_cli.exe --task sfx --family soulx_flashhead \
+      --model "$MODELES/SoulX-FlashHead-GGUF/SoulX-FlashHead-Lite-Q8_0.gguf" \
+      --backend vulkan \
+      --request-option "reference_image_file=$REPO/output/test_flashhead_v094/portrait.png" \
+      --request-option "height=512" --request-option "width=512" \
+      --request-option "seed=42" \
+      --audio "$REPO/output/test_flashhead_v094/english_12s.wav" \
+      --out-dir "$OUT/flashhead_v095_probe/"
+  if [ -f "$OUT/flashhead_v095_probe/FAIL" ] && grep -q "IM2COL_3D" "$OUT/flashhead_v095_probe/run.log" 2>/dev/null; then
+    log "[flashhead_v095_probe] IM2COL_3D still missing on v0.9.5 — stays blocked, marker kept as datapoint"
+  fi
+}
+
+leg_qwen3_align_v095() {
+  # Qwen3-ForcedAligner 0.6B — NEW capability probe: the family spec ships in
+  # audio.cpp v0.9.5 (qwen3_forced_aligner.json, task align) and the GGUFs
+  # landed in the audio.cpp-gguf monorepo on 11-20 (watch). Forced alignment =
+  # doc2video subtitle timing. Download q8_0 (~1.1 GB) then align the 0.9.4
+  # demo transcript against its wav. ~10 min.
+  local gguf="$MODELES/Qwen3-ForcedAligner-0.6B-GGUF/qwen3-forced-aligner-0.6b-q8_0.gguf"
+  mkdir -p "$MODELES/Qwen3-ForcedAligner-0.6B-GGUF" "$OUT/qwen3_align_v095"
+  if [ ! -f "$gguf" ]; then
+    log "[qwen3_align_v095] downloading the q8_0 aligner (~1.1 GB)…"
+    uv run python scripts/telecharger_gros_fichier_parallele.py \
+      "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/main/Qwen3-ForcedAligner-0.6B-GGUF/qwen3-forced-aligner-0.6b-q8_0.gguf" \
+      "$gguf" > "$OUT/qwen3_align_v095/download.log" 2>&1 \
+      || { log "[qwen3_align_v095] download failed (transient?) — no marker, retry next night"; return 0; }
+  fi
+  run_leg qwen3_align_v095 \
+    C:/audio-cpp/audiocpp_cli.exe --task align --family qwen3_forced_aligner \
+      --model "$gguf" \
+      --backend vulkan \
+      --audio "$REPO/output/test_flashhead_v094/english_12s.wav" \
+      --text "$(cat "$REPO/output/test_flashhead_v094/english.txt")" \
+      --seed 42 \
+      --out-dir "$OUT/qwen3_align_v095/"
+}
+
+leg_fruc_vs_mci() {
+  # ffmpeg 9.1 new filter fruc_vulkan (frame-rate up-conversion). EXPECTED to
+  # fail on AMD: it drives the Vulkan NV optical flow extension (NVIDIA
+  # hardware path) — the honest datapoint documents whether ANY fruc mode runs
+  # on RDNA2. Baseline for comparison: the mci/aobmc ralenti master 11-20.
+  # ~5 min.
+  run_leg fruc_vs_mci \
+    C:/ffmpeg/dist/bin/ffmpeg.exe -y -v error \
+      -i "$REPO/output/dance_m1106v2_brut.webm" \
+      -vf "fruc_vulkan=fps=48" -an \
+      -c:v libx264 -preset fast \
+      -o "$OUT/fruc_vs_mci/fruc_48fps.mp4"
+  if [ -f "$OUT/fruc_vs_mci/DONE" ]; then
+    planche "$OUT/fruc_vs_mci/fruc_48fps.mp4" "$OUT/fruc_vs_mci/planche.png" || true
+  fi
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -493,6 +586,11 @@ rapport() {
       [ "$id" = "indextts25_en_clone" ] && [ -f "$OUT/indextts25_en_clone/indextts25_en_clone.wav" ] && ev="indextts25_en_clone.wav — timbre vs ref_voix_laurent.wav + A/B vs en_tts (same text/seed)"
       [ "$id" = "indextts25_fr_probe" ] && ev="expected-FAIL datapoint (fr outside the spec languages) — wav if generated"
       [ "$id" = "dance_sheet_workflow" ] && ev="output/dance_workflow_nuit_2048.png + _4.0s_1080p.mp4 + _grille_identite.png — §6 real-path closure of the workflow port (chain validated 11-20 via machine-local scripts)"
+      [ "$id" = "llama_b12590_smoke" ]   && [ -f "$OUT/llama_b12590_smoke/ts.txt" ] && ev="ts.txt — generation t/s vs band 181-217 (b12590 installed 11-20, smoke was deferred)"
+      [ "$id" = "sam_vulkan_v095" ]      && [ -f "$OUT/sam_vulkan_v095/target.wav" ] && ev="target.wav + residual.wav — SAM on Vulkan v0.9.5 (version-bound retest, rule 11-05)"
+      [ "$id" = "flashhead_v095_probe" ] && ev="does v0.9.5 carry Vulkan IM2COL_3D? (blocked on 0.9.4; FAIL+IM2COL_3D = still blocked)"
+      [ "$id" = "qwen3_align_v095" ]     && [ -f "$OUT/qwen3_align_v095/target.json" -o -f "$OUT/qwen3_align_v095/segments.json" ] && ev="alignment segments json — subtitle-timing capability probe (0.6B q8_0 downloaded)"
+      [ "$id" = "fruc_vs_mci" ]          && ev="fruc_48fps.mp4 — expected NVIDIA-only (NV optical flow); any AMD output = surprise datapoint vs mci/aobmc ralenti"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -532,6 +630,11 @@ while read -r id; do
     indextts25_fr_probe)  leg_indextts25_fr_probe ;;
     dance_sheet_v2)       leg_dance_sheet_v2 ;;
     dance_sheet_workflow) leg_dance_sheet_workflow ;;
+    llama_b12590_smoke)   leg_llama_b12590_smoke ;;
+    sam_vulkan_v095)      leg_sam_vulkan_v095 ;;
+    flashhead_v095_probe) leg_flashhead_v095_probe ;;
+    qwen3_align_v095)     leg_qwen3_align_v095 ;;
+    fruc_vs_mci)          leg_fruc_vs_mci ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
