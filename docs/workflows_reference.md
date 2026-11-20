@@ -1343,6 +1343,23 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   uv run python main.py -w beat_sync -i music.mp3 --bpm 120 --beats-per-cycle 2
   ```
 
+#### 4.26. `indextts25_tts` — IndexTTS2.5 Voice Synthesis (audio.cpp Vulkan, zero-shot voice cloning)
+* **Process** (EN narration path USER VALIDATED 2026-11-20, MEMORY_BANK §1.67):
+  1. System-load pre-check runs automatically before the launch (busy machine = aborted).
+  2. The voice reference loudness is measured (ffmpeg EBU R128) and normalized to −16 LUFS when below −23 LUFS — **the output loudness FOLLOWS the reference level** (measured §1.67: a −39 LUFS ref produced −39 LUFS speech). Disable with `--indextts-raw-ref` (diagnostics only).
+  3. Synthesizes speech via `audiocpp_cli --task tts --family index_tts2` (Vulkan) with the reference timbre cloned (`--voice-ref` is MANDATORY — zero-shot design, the model ships no built-in voices).
+* **Engine**: IndexTTS2.5 q8_0 GGUF on `C:\Modeles_LLM` (3.50 GB, audio.cpp v0.9.5+ family `index_tts2`; env `INDEXTTS25_MODEL_PATH` / `AUDIOCPP_PATH`). Spec languages zh/en/ja/es/ar — off-spec languages (e.g. fr) generate with a warning but stay unsupported-by-spec (fr datapoint 11-20: audible structured speech, verdict pending).
+* **Inputs**: text prompt (positional), `--indextts-reference <wav>` (mandatory), `--indextts-langue` (default `en` — the validated narration path), `--indextts-seed` (default 42), `--indextts-raw-ref`, `-o`, `--output-dir`.
+* **Performance** (measured, RX 6950 XT): RTF ~3.2–4.3 including model load on short texts; 22.05 kHz mono output.
+* **Outputs**: `output/<name>.wav`.
+* **Licence**: bilibili Model Use License (IndexTeam IndexTTS-2.5 weights) — conditional; alternative `--workflow voix_off --moteur qwen3|voxcpm2` (Apache-2.0).
+* **Example** (validated):
+  ```bash
+  uv run python main.py -w indextts25_tts "The night factory hums quietly." \
+    --indextts-reference output/comparatif_tts/ref_voix_synth.wav --indextts-seed 42
+  ```
+* **Status (2026-11-20)**: ✅ **EN neutral narration user-validated** (page verdict; real-path workflow leg PASS same night — seed-reproducible, audio duration matches the night run to the millisecond). Timbre-clone quality pending re-validation (reference-level pitfall measured; re-test listening on the v4 validation page).
+
 ---
 
 ### 🛠️ 5. Style Consistency, Upscaling & Batching

@@ -907,6 +907,50 @@
  ],
  [
   [
+   "--indextts-langue"
+  ],
+  "indextts_langue",
+  "_StoreAction",
+  "'en'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--indextts-raw-ref"
+  ],
+  "indextts_raw_ref",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
+   "--indextts-reference"
+  ],
+  "indextts_reference",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--indextts-seed"
+  ],
+  "indextts_seed",
+  "_StoreAction",
+  "42",
+  null,
+  null,
+  "int"
+ ],
+ [
+  [
    "--init-img"
   ],
   "init_img",

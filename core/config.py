@@ -176,6 +176,9 @@ DEFAULT_MOSS_IMAGE_TOKENIZER = os.getenv(
 # Liquid models stay on D: — 23 GB is too big for the C: NVMe free space;
 # lesson 10-11 applies: cold loads are disk-bound, env-overridable paths).
 DEFAULT_LLAMA_TTS = os.getenv("LLAMA_TTS_PATH", r"C:\llama.cpp\llama-tts.exe")
+DEFAULT_INDEXTTS25_MODEL = os.getenv(
+    "INDEXTTS25_MODEL_PATH", r"C:\Modeles_LLM\IndexTTS2.5-GGUF\index-tts2_5-q8_0.gguf"
+)
 DEFAULT_LFM3_TTS_MODEL = os.getenv(
     "LFM3_TTS_MODEL_PATH", r"D:\Modeles_LLM\LFM3-Audio-2B-Q8_0.gguf"
 )
@@ -806,6 +809,11 @@ _WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
     "lfm3_tts": (
         LICENCE_CONDITIONNELLE,
         "LFM Open License v1.0",
+        "Use --workflow voix_off --moteur qwen3|voxcpm2 (Apache-2.0)",
+    ),
+    "indextts25_tts": (
+        LICENCE_CONDITIONNELLE,
+        "bilibili Model Use License (IndexTeam IndexTTS-2.5 weights)",
         "Use --workflow voix_off --moteur qwen3|voxcpm2 (Apache-2.0)",
     ),
     "video_vace": (LICENCE_COMMERCIAL, "Apache-2.0 (Wan 2.1 + LightX2V)", None),
