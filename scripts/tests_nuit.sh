@@ -231,7 +231,14 @@ leg_dance_sheet_v2() {
   # + framing lock; probed 19-11: 512² dual-ref 14 s/it on-device, 640² hybrid
   # 58 s/it REJECTED) -> stitch 2048² -> amorce v3 -> monoplan clip v2 -> identity
   # grid (4 frames). ~55 min total. Morning verdict required on sheet + mp4 + grid.
-  run_leg dance_sheet_v2 bash output/test_dance_sheet_m1106/night_dance_v2.sh
+  # Machine-local chain (output/ is git-ignored): explicit existence check so a
+  # fresh clone logs a clear reason instead of a bare rc=127 FAIL (review 11-20).
+  local chain="output/test_dance_sheet_m1106/night_dance_v2.sh"
+  if [ ! -f "$chain" ]; then
+    log "[dance_sheet_v2] machine-local chain script missing ($chain) — skip, no marker"
+    return 0
+  fi
+  run_leg dance_sheet_v2 bash "$chain"
 }
 
 # ------------------------------------------------- IndexTTS2.5 slot campaign legs (added 11-20)
@@ -475,7 +482,7 @@ rapport() {
       [ "$id" = "heartmula_gothic" ]     && [ -f "$OUT/heartmula_gothic/heartmula_gothic_30s.wav" ] && ev="heartmula_gothic_30s.wav — USER LISTENING VERDICT (standing gothic recipe)"
       [ "$id" = "indextts25_en_tts" ]   && [ -f "$OUT/indextts25_en_tts/indextts25_en_tts.wav" ] && ev="indextts25_en_tts.wav — listening verdict + RTF datapoint (synth ref)"
       [ "$id" = "indextts25_en_clone" ] && [ -f "$OUT/indextts25_en_clone/indextts25_en_clone.wav" ] && ev="indextts25_en_clone.wav — timbre vs ref_voix_laurent.wav + A/B vs en_tts (same text/seed)"
-      [ "$id" = "indextts25_fr_probe" ] && ev="FR gap datapoint — FAIL expected (fr not in spec languages); wav if generated"
+      [ "$id" = "indextts25_fr_probe" ] && ev="expected-FAIL datapoint (fr outside the spec languages) — wav if generated"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
