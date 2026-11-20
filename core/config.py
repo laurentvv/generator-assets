@@ -185,6 +185,27 @@ DEFAULT_LFM3_TTS_MODEL = os.getenv(
 DEFAULT_LFM3_TTS_MMPROJ = os.getenv(
     "LFM3_TTS_MMPROJ_PATH", r"D:\Modeles_LLM\mmproj-LFM3-Audio-2B-Q8_0.gguf"
 )
+# Qwen-Image-Edit-2511 kit (identity edit path, §1.55/§1.56) — the dance-sheet
+# dual-ref chain runs on it (NVMe mirror per the 10-11 lesson). The original
+# 20B VAE differs from the Qwen-Image-2.1 one.
+DEFAULT_QWEN_IMAGE_EDIT2511_MODEL = os.getenv(
+    "QWEN_IMAGE_EDIT2511_MODEL_PATH",
+    r"C:\Modeles_LLM\Qwen-Image-Edit-2511\qwen-image-edit-2511-Q3_K_M.gguf",
+)
+DEFAULT_QWEN_IMAGE_EDIT2511_LLM = os.getenv(
+    "QWEN_IMAGE_EDIT2511_LLM_PATH",
+    r"C:\Modeles_LLM\Qwen-Image-Edit-2511\Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
+)
+DEFAULT_QWEN_IMAGE_EDIT2511_VISION = os.getenv(
+    "QWEN_IMAGE_EDIT2511_VISION_PATH",
+    r"C:\Modeles_LLM\Qwen-Image-Edit-2511\mmproj-F16.gguf",
+)
+DEFAULT_QWEN_IMAGE_EDIT2511_VAE = os.getenv(
+    "QWEN_IMAGE_EDIT2511_VAE_PATH", r"C:\Modeles_LLM\qwen_image_vae.safetensors"
+)
+DEFAULT_QWEN_IMAGE_EDIT2511_LORA_DIR = os.getenv(
+    "QWEN_IMAGE_EDIT2511_LORA_DIR", r"C:\Modeles_LLM\Qwen-Image-Edit-2511\loras"
+)
 
 # Local OCR engine — openbmb MiniCPM-OCR-1.0 (1.3B specialist, Apache-2.0),
 # served through llama.cpp `llama-server` (--mmproj). USER VALIDATED 2026-10-28
@@ -870,6 +891,11 @@ _WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
     "alpha_qa": (LICENCE_COMMERCIAL, "MIT port of video-gif-studio alpha QA gates (numpy/OpenCV, no model weights)", None),
     "beat_sync": (LICENCE_COMMERCIAL, "MIT port of video-gif-studio beat analysis (numpy/FFmpeg, no model weights)", None),
     "icon_lottie": (LICENCE_COMMERCIAL, "MIT (useAnimations icons + python-lottie + resvg, no model weights)", None),
+    "dance_sheet": (
+        LICENCE_NON_COMMERCIAL,
+        "Qwen RESEARCH license (Qwen-Image-Edit-2511 poses) + LTX-2 Community License (clip)",
+        "For commercial output re-shoot the sheet with a permissive identity model; the clip alone is re-derivable via --workflow monoplan_ia",
+    ),
 }
 
 

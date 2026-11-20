@@ -1634,3 +1634,21 @@ uv run python main.py -w upscale -i godot_assets/casque.png --factor 4 --upscale
 
 ---
 
+
+#### 5.7. `dance_sheet` — Identity-Consistent Dance Sheet + Clip (16 dual-ref poses → 2048² sheet → LTX clip → identity grid)
+* **Process** (chain USER VALIDATED end-to-end 2026-11-20, MEMORY_BANK §1.55 — the dual-ref design fixed the v1 « la tête est horrible » verdict):
+  1. System-load pre-check runs automatically (busy machine = aborted).
+  2. Renders 16 individual 512² poses with **qwen-image-edit-2511 Q3_K_M** in **dual-reference** mode (`-r body -r head-only` + `--llm_vision mmproj-F16`): the body ref locks outfit/framing, the head ref patches the face identity; a framing-lock note is appended to every pose prompt. Lightning-8steps LoRA (`--lora-model-dir` + tag), 8 steps, cfg 1.0, euler, seed 42, flash-attn + offload-to-cpu. Existing cells are skipped (resume-friendly).
+  3. Stitches the cells into the **numbered 4×4 white sheet** (2048², programmatic PIL number badges — model-rendered numbers never work, §1.55) and composes the **monoplan seed frame** from pose01 (validated amorce geometry v3: inset crop, figure 466 px, centered 832×480).
+  4. Runs the **dance clip** through the validated `monoplan_ia` workflow (LTX-2.5 I2V, 65 f, zoom 1.0→1.0 fixed framing, 4 s master 1080p) unless `--dance-no-clips`.
+  5. Extracts an **identity grid** (frames at 0/1.3/2.6/3.9 s → half-size 2×2) for the morning identity check.
+* **Inputs (machine-local by design)**: `--dance-dir` (default `output/test_dance_sheet_m1106`) holding the user's own references + `prompts16/pose01.txt…pose16.txt`; `--dance-ref` / `--dance-ref-head` / `--dance-prompts-dir` overrides; `--dance-prompt` (clip prompt, default = the validated identity-locked dance prompt); `--dance-no-clips`; `-o` prefix; global `--seed` (default 42).
+* **Performance** (measured, RX 6950 XT, §1.55): ~35 min for the 16 poses (14 s/it × 8 steps × 16) + ~15-18 min for the clip = **≈55 min** — a night-queue-sized chain.
+* **Outputs**: `output/<name>_poses/pose01…16.png` + `<name>_2048.png` (sheet) + `<name>_amorce.png` + `<name>_4.0s_1080p.mp4` (+ `_brut.webm` + `_ralenti.mp4`) + `<name>_grille_identite.png`.
+* **Licence**: Qwen RESEARCH (poses) + LTX-2 Community (clip) — non-commercial tier; the clip alone is re-derivable via `--workflow monoplan_ia`.
+* **Example** (validated recipe):
+  ```bash
+  uv run python main.py -w dance_sheet -o dance_v3                 # full chain (~55 min)
+  uv run python main.py -w dance_sheet --dance-no-clips -o sheet_only   # sheet + amorce (~35 min)
+  ```
+* **Status (2026-11-20)**: ✅ chain **user-validated end-to-end** (page verdicts; the port itself pending its real-path night leg `dance_sheet_workflow`, queued in `scripts/tests_nuit.sh`).
