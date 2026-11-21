@@ -1360,6 +1360,25 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
   ```
 * **Status (2026-11-20)**: ✅ **EN neutral narration user-validated** (page verdict; real-path workflow leg PASS same night — seed-reproducible, audio duration matches the night run to the millisecond). Timbre-clone quality pending re-validation (reference-level pitfall measured; re-test listening on the v4 validation page).
 
+#### 4.27. `sous_titres` — Word-Timestamped Subtitles (Qwen3-ForcedAligner-0.6B, audio.cpp Vulkan)
+* **Process** (USER VALIDATED 2026-11-21 — v2 validation page 3/3, MEMORY_BANK §1.68):
+  1. System-load pre-check runs automatically before the launch (busy machine = aborted).
+  2. `align` mode (default): the prompt (`-p`) is the **EXACT transcript** of the audio → standalone forced alignment (`audiocpp_cli --task align --family qwen3_forced_aligner`, Vulkan). Short clips only (upstream does not chunk — a > 15 s input logs a warning and should move to `asr` mode).
+  3. `asr` mode: no transcript needed — Qwen3-ASR-0.6B transcribes (Silero VAD chunking exercised across > 15 s clips) and the forced aligner attaches the word timestamps through session options; the input is resampled to 16 kHz mono first (Silero VAD is 16 kHz only) and the VAD weights must be present (`C:\Modeles_LLM\vad\silero_vad\`, env `QWEN3_VAD_DIR`).
+* **Engine**: Qwen3-ForcedAligner-0.6B q8_0 (1.14 GB) on `C:\Modeles_LLM` (env `QWEN3_FORCED_ALIGNER_MODEL` / `QWEN3_FORCED_ALIGNER_F16_MODEL` / `QWEN3_VAD_DIR` / `AUDIOCPP_PATH`). Languages zh/en/yue/fr/de/it/ja/ko/pt/ru/es (fr/en tested; ja/ko need sidecar dicts).
+* **Inputs**: audio (`--audio`, required), transcript prompt (align mode), `--st-mode` (`align`|`asr`), `--st-langue` (default `fr`), `--st-quant` (`q8_0` default — byte-identical to f16, | `f16`), `--st-vad` (Silero weights dir), `-o`, `--output-dir`.
+* **Performance** (measured, RX 6950 XT): standalone align RTF 0.014–0.071 (14–70× real time); ASR→aligner long-audio RTF 0.088 (8.5× RT on 9.7–16 s clips).
+* **Outputs**: `output/sous_titres/<name>.srt` (one cue per word, 80 ms grid = subtitle grade) + `<name>_words.json` (raw engine samples, in the fed file's domain) +, in asr mode, `<name>_transcript.txt`.
+* **Licence**: Apache-2.0 (Qwen3-ASR-0.6B + Qwen3-ForcedAligner-0.6B).
+* **Examples**:
+  ```bash
+  # align mode — exact transcript known (short clip)
+  uv run python main.py -w sous_titres -i narration.wav -p "Le mot pour mot exact de l'audio." --st-langue fr
+  # asr mode — long audio, no transcript
+  uv run python main.py -w sous_titres -i episode.wav --st-mode asr
+  ```
+* **Status (2026-11-21)**: ✅ **USER VALIDATED** — word timestamps accepted on both validated voices (dylan standalone + dylan ASR→aligner chunked, ono_anna; 3/3 on the v2 page). ASR word-for-word EXACT on dylan (voice-dependent accuracy: the 3 homophone errors seen on alba disappear).
+
 ---
 
 ### 🛠️ 5. Style Consistency, Upscaling & Batching
