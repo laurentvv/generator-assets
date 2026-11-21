@@ -5,10 +5,12 @@ Split out of _common.text in the refactor after 1.17.3; every body is byte-ident
 from __future__ import annotations
 
 import os
-import shutil
 import subprocess
 from typing import Any, Dict, List, Tuple, Optional
+from _common.decision import escape_filter_path
 from _common.emit import die
+from _common.runner import ffmpeg_exe
+from _common.runner import safe_which as _safe_which
 
 
 # --------------------------------------------------------------------------- emoji (1.15)
@@ -16,9 +18,9 @@ from _common.emit import die
 # separately from detect_script() so a cue's font resolution is still decided by its letters.
 EMOJI_RANGES = (
     (0x1F300, 0x1FAFF),   # symbols & pictographs, supplemental, extended-A
-    (0x1F000, 0x1F0FF),   # mahjong/domino/playing cards
-    (0x2600, 0x27BF),     # misc symbols + dingbats
-    (0x2B00, 0x2BFF),     # misc symbols and arrows
+    (0x1F000, 0x1F0FF),   # mahjong/domino/playing cards (only 🀄 and 🃏 are emoji)
+    (0x2600, 0x27BF),     # misc symbols + dingbats (Emoji_Presentation only: _is_emoji_char)
+    (0x2B00, 0x2BFF),     # misc symbols and arrows (likewise)
     (0xFE0F, 0xFE0F),     # VS16 (emoji presentation selector)
     (0x1F1E6, 0x1F1FF),   # regional indicators (flags)
     (0x20E3, 0x20E3),     # combining enclosing keycap
@@ -50,17 +52,78 @@ _KEYCAP = 0x20E3
 _KEYCAP_BASES = frozenset("0123456789#*")
 
 
+def _cps(*spans) -> "frozenset":
+    out = set()
+    for span in spans:
+        lo, hi = span if isinstance(span, tuple) else (span, span)
+        out.update(range(lo, hi + 1))
+    return frozenset(out)
+
+
+# The text-symbol blocks in EMOJI_RANGES (U+2600-27BF, U+2B00-2BFF, U+1F000-1F0FF) are mostly
+# *text*: ♪ U+266A, ✓ U+2713 and ★ U+2605 are not emoji at all in Unicode's emoji-data.txt, and
+# ♥ U+2665, ✔ U+2714, ☺ U+263A are emoji only when VS16 asks for the picture -- their default
+# presentation is the character, which the caption font draws. Counting the whole block made
+# SDH music notes and check marks "emoji", and `--emoji none` (what macOS and a Linux box
+# without a colour face get under auto) cut them out of the burned text. In those blocks only
+# Emoji_Presentation=Yes characters start a cluster on their own; an Emoji=Yes one does when
+# VS16 or a skin-tone modifier follows it. Pinned from emoji-data.txt (Unicode 15.1); the
+# pictograph planes keep their block rule.
+_EMOJI_PRESENTATION_SYMBOLS = _cps(
+    (0x2614, 0x2615), (0x2648, 0x2653), 0x267F, 0x2693, 0x26A1, (0x26AA, 0x26AB),
+    (0x26BD, 0x26BE), (0x26C4, 0x26C5), 0x26CE, 0x26D4, 0x26EA, (0x26F2, 0x26F3), 0x26F5,
+    0x26FA, 0x26FD, 0x2705, (0x270A, 0x270B), 0x2728, 0x274C, 0x274E, (0x2753, 0x2755), 0x2757,
+    (0x2795, 0x2797), 0x27B0, 0x27BF, (0x2B1B, 0x2B1C), 0x2B50, 0x2B55, 0x1F004, 0x1F0CF)
+_EMOJI_TEXT_DEFAULT_SYMBOLS = _cps(
+    (0x2600, 0x2604), 0x260E, 0x2611, 0x2618, 0x261D, 0x2620, (0x2622, 0x2623), 0x2626, 0x262A,
+    (0x262E, 0x262F), (0x2638, 0x263A), 0x2640, 0x2642, (0x265F, 0x2660), 0x2663,
+    (0x2665, 0x2666), 0x2668, 0x267B, 0x267E, (0x2692, 0x2697), 0x2699, (0x269B, 0x269C),
+    0x26A0, 0x26A7, (0x26B0, 0x26B1), 0x26C8, 0x26CF, 0x26D1, 0x26D3, 0x26E9, (0x26F0, 0x26F1),
+    0x26F4, (0x26F7, 0x26F9), 0x2702, (0x2708, 0x2709), (0x270C, 0x270D), 0x270F, 0x2712, 0x2714,
+    0x2716, 0x271D, 0x2721, (0x2733, 0x2734), 0x2744, 0x2747, (0x2763, 0x2764), 0x27A1,
+    (0x2B05, 0x2B07))
+_SYMBOL_BLOCKS = ((0x2600, 0x27BF), (0x2B00, 0x2BFF), (0x1F000, 0x1F0FF))
+
+
+def _in_symbol_block(cp: int) -> bool:
+    return any(lo <= cp <= hi for lo, hi in _SYMBOL_BLOCKS)
+
+
 def _is_emoji_char(ch: str) -> bool:
+    """Is this character drawn as an emoji with nothing after it? In the text-symbol blocks only
+    the Emoji_Presentation characters are; ♪ ✓ ★ ♥ are text (see _EMOJI_PRESENTATION_SYMBOLS)."""
     cp = ord(ch)
+    if _in_symbol_block(cp):
+        return cp in _EMOJI_PRESENTATION_SYMBOLS
     return any(lo <= cp <= hi for lo, hi in EMOJI_RANGES)
+
+
+def _can_be_emoji(ch: str) -> bool:
+    """Emoji=Yes: an emoji by default, or a text-default symbol VS16 can turn into one (♥ ✔)."""
+    return _is_emoji_char(ch) or ord(ch) in _EMOJI_TEXT_DEFAULT_SYMBOLS
 
 
 def _is_emoji_base(ch: str) -> bool:
     """Can this character START an emoji cluster? Pictographs and regional indicators can;
     the joiners and modifiers (ZWJ, VS16, keycap, skin tone) never can -- they only bind to an
     emoji base that already stands before them. Without this, a ZWJ or a VS16 sitting after an
-    ordinary letter turned that letter into "an emoji" and the PNG route replaced it with a gap."""
+    ordinary letter turned that letter into "an emoji" and the PNG route replaced it with a gap.
+    A text-default symbol (♥ ✔ ☝) is a base only with the VS16 or modifier that follows it:
+    emoji_clusters() checks that, this function answers for the character alone."""
     return ord(ch) not in _EMOJI_TAIL and _is_emoji_char(ch)
+
+
+def _starts_emoji(text: str, i: int) -> bool:
+    """Does an emoji cluster start at text[i]? A default-emoji base does; a text-default symbol
+    does only when VS16 or a skin-tone modifier follows it (♥️, ☝🏽), the sequences Unicode
+    defines as emoji; ♥ alone, and ♪ ✓ ★ always, are characters the font draws."""
+    ch = text[i]
+    if _is_emoji_base(ch):
+        return True
+    if ord(ch) in _EMOJI_TEXT_DEFAULT_SYMBOLS and i + 1 < len(text):
+        nxt = ord(text[i + 1])
+        return nxt == _VS16 or 0x1F3FB <= nxt <= 0x1F3FF
+    return False
 
 
 def emoji_clusters(text: str) -> "List[Tuple[int, str]]":
@@ -72,7 +135,9 @@ def emoji_clusters(text: str) -> "List[Tuple[int, str]]":
     base (`0-9 # *`) that is actually followed by U+20E3. A ZWJ is glue *inside* a cluster, never
     a starter and never a tail on its own: `क्‍ष` (Hindi ka + virama + ZWJ + ssa) and `abc‍def`
     contain no emoji. A base explicitly marked with U+FE0E (VS15, text presentation) is likewise
-    not an emoji -- the author asked for the character, not the picture.
+    not an emoji -- the author asked for the character, not the picture. A text-default symbol
+    (♥ ✔ ☝) starts one only with the VS16 or skin-tone modifier after it, and a symbol that is
+    not emoji at all (♪ ✓ ★) never does: the caption font draws those.
     """
     out: "List[Tuple[int, str]]" = []
     i = 0
@@ -80,7 +145,7 @@ def emoji_clusters(text: str) -> "List[Tuple[int, str]]":
     while i < n:
         ch = text[i]
         start = i
-        if _is_emoji_base(ch):
+        if _starts_emoji(text, i):
             j = i + 1
             if j < n and ord(text[j]) == _VS15:      # text presentation requested: not an emoji
                 i = j + 1
@@ -102,7 +167,9 @@ def emoji_clusters(text: str) -> "List[Tuple[int, str]]":
             if cp in (_VS16, _KEYCAP) or 0x1F3FB <= cp <= 0x1F3FF:
                 j += 1
                 continue
-            if cp == _ZWJ and j + 1 < n and _is_emoji_base(text[j + 1]):
+            if cp == _ZWJ and j + 1 < n and ord(text[j + 1]) not in _EMOJI_TAIL \
+                    and _can_be_emoji(text[j + 1]):
+                # inside a ZWJ sequence a text-default symbol is emoji glue too: 🏃‍♀ ends in ♀
                 j += 2
                 continue
             if (j == start + 1 and ord(ch) in _EMOJI_REGIONAL and cp in _EMOJI_REGIONAL):
@@ -120,7 +187,7 @@ def has_emoji(text: str) -> bool:
 
 def emoji_codepoint_name(cluster: str) -> str:
     """The asset filename stem for a cluster: lowercase hex code points joined by '-', the
-    Twemoji/Noto convention (1f389, 1f469-200d-1f4bb, 1f1ef-1f1f5)."""
+    Twemoji convention (1f389, 1f469-200d-1f4bb, 1f1ef-1f1f5); emoji_asset_for() also tries Noto's."""
     return "-".join(f"{ord(c):x}" for c in cluster)
 
 
@@ -147,11 +214,34 @@ def emoji_asset_for(cluster: str, assets_dir: "Optional[str]") -> "Optional[str]
     if not assets_dir or not os.path.isdir(assets_dir):
         return None
     for name in _emoji_name_candidates(cluster):
-        for ext in (".png", ".PNG"):
-            candidate = os.path.join(assets_dir, name + ext)
-            if os.path.isfile(candidate):
-                return candidate
+        # Twemoji's name (1f469-200d-1f4bb.png, 31-20e3.png), then Noto Emoji's, whose code points
+        # are at least four hex digits (emoji_u1f469_200d_1f4bb.png, emoji_u0031_20e3.png): the hint
+        # names noto-emoji/png/128, whose files were never found (#404)
+        for stem in (name, "emoji_u" + "_".join(cp.zfill(4) for cp in name.split("-"))):
+            for ext in (".png", ".PNG"):
+                candidate = os.path.join(assets_dir, stem + ext)
+                if os.path.isfile(candidate):
+                    return candidate
     return None
+
+
+def emoji_mono_on_colour_note(support: "Dict[str, Any]") -> str:
+    """--emoji mono on a build whose libass draws the emoji face in colour: nothing here makes that
+    glyph monochrome (mono and color build the same text), so the result says color (#403: the
+    warning said "no colour path" beside a detail saying it renders in colour)."""
+    return ("--emoji mono: libass draws the emoji face in colour on this build and nothing here makes it "
+            "monochrome, so the emoji are drawn in colour (mode: color). " + str(support.get("detail") or ""))
+
+
+def emoji_missing_asset_note(missing: "List[str]", support: "Dict[str, Any]") -> str:
+    """What happens to the clusters --emoji-assets has no PNG for: they stay in the text for libass,
+    which is said as measured (libass_glyph), not as "drawn by the text font" (#403)."""
+    names = ", ".join(missing)
+    if support.get("libass_glyph") is False:
+        return (f"no PNG in the assets directory for {names} -- those clusters stay in the text, and libass draws no "
+                "emoji glyph on this build: an empty box at best")
+    return (f"no PNG in the assets directory for {names} -- those clusters stay in the text for libass to draw "
+            "with an installed face" + ("" if support.get("libass_glyph") else " (whether one has the glyph was not measured)"))
 
 
 EMOJI_ASSET_HINT = (
@@ -164,12 +254,24 @@ EMOJI_ASSET_HINT = (
 _EMOJI_COLOR_FAMILIES = ("Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji")
 
 
+def _fc_list_path(line: str) -> str:
+    """The file from one `fc-list ... file` line.
+
+    fontconfig prints `<file>: <families>`. The separator is a colon followed by a space.
+    A Windows drive letter is `C:` followed by a backslash, so splitting on the first colon
+    yields `C` and the font is reported missing.
+    """
+    if ": " in line:
+        return line.partition(": ")[0].strip()
+    return line.strip().rstrip(":")
+
+
 _EMOJI_SUPPORT_CACHE: "Dict[Tuple[Optional[str], bool], Dict[str, Any]]" = {}
 
 
 def _emoji_color_font() -> "Tuple[Optional[str], Optional[str], bool]":
     """(family, file, fontconfig_answered) for the first installed colour emoji family."""
-    exe = shutil.which("fc-list")
+    exe = _safe_which("fc-list")
     if not exe:
         return None, None, False
     for family in _EMOJI_COLOR_FAMILIES:
@@ -181,7 +283,7 @@ def _emoji_color_font() -> "Tuple[Optional[str], Optional[str], bool]":
         if proc.returncode != 0:
             return None, None, False
         for line in proc.stdout.splitlines():
-            path = line.split(":", 1)[0].strip()
+            path = _fc_list_path(line)
             if path and os.path.exists(path):
                 return family, path, True
     return None, None, True
@@ -192,7 +294,7 @@ def _libass_color_probe() -> "Optional[bool]":
     the font listing: Noto Color Emoji installs happily on builds whose freetype/libass has no
     colour-bitmap path at all, and those render a monochrome outline instead (measured). ~80 ms.
     None means the probe could not be run (no ffmpeg, a failure) -- unknown, not false."""
-    exe = shutil.which("ffmpeg")
+    exe = ffmpeg_exe("ffmpeg")[0]
     if not exe:
         return None
     import tempfile
@@ -204,7 +306,7 @@ def _libass_color_probe() -> "Optional[bool]":
             proc = subprocess.run(
                 [exe, "-hide_banner", "-loglevel", "error", "-f", "lavfi",
                  "-i", "color=c=black:s=64x64:d=0.04",
-                 "-vf", "subtitles=" + srt.replace("\\", "/"), "-frames:v", "1",
+                 "-vf", "subtitles=" + escape_filter_path(srt, bind=False), "-frames:v", "1",
                  "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=20)
         except (subprocess.TimeoutExpired, OSError):
@@ -219,7 +321,46 @@ def _libass_color_probe() -> "Optional[bool]":
     return False
 
 
-def emoji_support(assets: "Optional[str]" = None, probe: bool = True) -> "Dict[str, Any]":
+def _libass_render(exe: str, char: str, fonts_dir: "Optional[str]" = None) -> "Optional[bytes]":
+    """One 96x96 rgb24 frame of `char` drawn through libass (subtitles=), or None when it failed."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        srt = os.path.join(td, "g.srt")
+        with open(srt, "w", encoding="utf-8") as fh:
+            fh.write(f"1\n00:00:00,000 --> 00:00:01,000\n{char}\n")
+        try:
+            proc = subprocess.run(
+                [exe, "-hide_banner", "-loglevel", "error", "-f", "lavfi",
+                 "-i", "color=c=black:s=96x96:d=0.04",
+                 "-vf", "subtitles=" + escape_filter_path(srt, bind=False) + ":force_style='FontSize=64,Alignment=5'"
+                 + (":fontsdir=" + escape_filter_path(fonts_dir, bind=False) if fonts_dir else ""),
+                 "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=20)
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+    if proc.returncode != 0 or len(proc.stdout) < 96 * 96 * 3:
+        return None
+    return proc.stdout
+
+
+def _libass_glyph_probe(fonts_dir: "Optional[str]" = None) -> "Optional[bool]":
+    """Does libass draw an emoji GLYPH at all, or only what it draws for a character no face has?
+    "No colour pixels" (_libass_color_probe False) covers both a monochrome glyph and the empty
+    .notdef box: Apple Color Emoji (an sbix bitmap face) gives libass no usable glyph, and the box
+    is white (#395). So the emoji is compared with U+10FFFD, a code point no font carries: the same
+    frame, or nothing lit, is no glyph. A caller's --fonts-dir is searched too, as the burn searches it.
+    None: the probe could not run."""
+    exe = ffmpeg_exe("ffmpeg")[0]
+    if not exe:
+        return None
+    emoji, nothing = _libass_render(exe, "\U0001F389", fonts_dir), _libass_render(exe, "\U0010FFFD", fonts_dir)
+    if emoji is None or nothing is None:
+        return None
+    lit = any(emoji[i] > 60 for i in range(0, len(emoji)))
+    return bool(lit and emoji != nothing)
+
+
+def emoji_support(assets: "Optional[str]" = None, probe: bool = True, fonts_dir: "Optional[str]" = None) -> "Dict[str, Any]":
     """What this machine can actually do with emoji, cached per process.
 
     `mode` is `color` when a render probe proves libass draws colour, else `png` when an assets
@@ -228,17 +369,23 @@ def emoji_support(assets: "Optional[str]" = None, probe: bool = True) -> "Dict[s
     from a render (see references/gotchas.md#emoji). `probe=False` (`contract --json --static`, and every
     static/JSON-only path) skips the render entirely and leaves `libass_color` unknown.
     """
-    key = (assets or None, bool(probe))
+    key = (assets or None, bool(probe), fonts_dir or None)
     if key in _EMOJI_SUPPORT_CACHE:
         return dict(_EMOJI_SUPPORT_CACHE[key])
     family, file, fc_answered = _emoji_color_font()
     libass_color = _libass_color_probe() if probe else None
+    # a colour render is a glyph; without one, ask whether libass draws one at all (#395)
+    libass_glyph = True if libass_color else (_libass_glyph_probe(fonts_dir) if probe and libass_color is False else None)
     assets_dir = assets if (assets and os.path.isdir(assets)) else None
     if libass_color:
         mode = "color"
     elif assets_dir:
         mode = "png"
-    elif family:
+    elif family and libass_glyph is False:
+        mode = "none"
+    elif family or libass_glyph:
+        # a face libass draws the emoji from, colour family listed or not (A64, #457: a glyph from
+        # a monochrome face was answered `none`, against this docstring and libass_glyph: true)
         mode = "mono"
     elif not fc_answered:
         # No fontconfig to ask (a static ffmpeg build, a bare container): the PNG path needs none,
@@ -250,16 +397,21 @@ def emoji_support(assets: "Optional[str]" = None, probe: bool = True) -> "Dict[s
         detail = "no fontconfig on this machine; the PNG overlay path needs none"
     elif libass_color:
         detail = f"{family or 'an installed face'} renders in colour through libass on this ffmpeg"
+    elif family and libass_glyph is False:
+        detail = (f"{family} installed but libass draws no emoji glyph from it on this build (the render "
+                  "matches a code point no font has: an empty box or nothing)")
     elif family and libass_color is False:
         detail = f"{family} installed but libass renders it monochrome on this build"
     elif family and libass_color is None:
         detail = f"{family} installed; the colour render probe was not run"
     elif assets_dir:
         detail = "no colour emoji family installed; using the PNG assets directory"
+    elif libass_glyph:
+        detail = "no colour emoji family installed; libass draws the emoji monochrome from an installed face"
     else:
         detail = "no colour emoji family installed and no --emoji-assets directory"
     result = {"mode": mode, "color_font": family, "color_font_file": file,
-              "libass_color": libass_color, "assets": assets_dir,
+              "libass_color": libass_color, "libass_glyph": libass_glyph, "assets": assets_dir,
               "detail": detail, "fix": EMOJI_ASSET_HINT}
     _EMOJI_SUPPORT_CACHE[key] = result
     return dict(result)
@@ -285,12 +437,18 @@ def resolve_emoji_assets(flag: "Optional[str]" = None, project: "Optional[str]" 
 
 
 
-def emoji_filter_chain(plan, base_label, out_label, first_input=1):
+def emoji_filter_chain(plan, base_label, out_label, first_input=1, to_yuv="", base_chain="", overlay_opts=""):
     """(chains, inputs) that composite the planned PNGs on top of `base_label`.
 
     `inputs` is a list of argv fragments, each ending in the asset path, to be appended to the
     ffmpeg command in order (an overlay that fades needs `-loop 1` on its input so the still has
     a timeline the fade filter can move along; one that does not is a plain `-i`).
+    `to_yuv` ends each PNG's chain: the caller's rgb_chain_to_bt709(meta), so the RGBA asset is
+    converted to the BT.709 the output is tagged with instead of by overlay's BT.601 default;
+    `base_chain` (label_chain(meta, meta): an untagged source's BT.709 label) goes in front of
+    the first overlay, so 7.1+ does not convert the two pictures to one another.
+    `overlay_opts` ends each overlay's options: the caller's overlay_format(meta), so a 10-bit
+    picture is not composited at overlay's 8-bit default.
     """
     overlays = plan.get("overlays") or []
     if not overlays:
@@ -328,11 +486,15 @@ def emoji_filter_chain(plan, base_label, out_label, first_input=1):
                 chain += f",fade=t=out:st={max(gstart, gend - fout):.3f}:d={fout:.3f}:alpha=1"
         else:
             inputs.append(["-i", asset])
+        chain += to_yuv
         if len(labels) > 1:
             chain += f",split={len(labels)}"
         chains.append(chain + "".join(f"[{l}]" for l in labels))
         pads[key] = labels
     cur = base_label
+    if base_chain:
+        chains.append(f"[{cur}]{base_chain}null[ebase]")
+        cur = "ebase"
     remaining = {key: list(v) for key, v in pads.items()}
     for j, o in enumerate(overlays):
         label = remaining[_key(o)].pop(0)
@@ -345,6 +507,6 @@ def emoji_filter_chain(plan, base_label, out_label, first_input=1):
         # exactly what shipped first). eof_action=repeat (the default) holds the still for the
         # whole timeline; enable= is what confines it to the cue's window.
         chains.append(f"[{cur}][{label}]overlay=x={x}:y={o['y']}:"
-                      f"enable='between(t,{o['start']:.3f},{o['end']:.3f})'[{nxt}]")
+                      f"enable='between(t,{o['start']:.3f},{o['end']:.3f})'{overlay_opts}[{nxt}]")
         cur = nxt
     return chains, inputs
