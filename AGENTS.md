@@ -123,6 +123,7 @@ uv run python scripts/telecharger_gros_fichier_parallele.py <url> <dest>   # big
 - **Sound notification at task end** (user rule 2026-10-05: "Notifie moi avec un son quand tu auras fini"): at the end of every test window, long generation/night run — or any turn leaving artifacts for the user to verify — play a system sound (`powershell` `Media.SoundPlayer` e.g. `C:\Windows\Media\Windows Notify System Generic.wav` + console beep fallback) so the user knows to come check the result.
 - **Sound notification when user input is needed** (user rule 2026-11-07: "notifie moi par un son si besoin de moi"): play the same system sound whenever the agent blocks on a user decision — explicit GO required (external action, merge, publish), approval gate, ambiguity only the user can resolve — even mid-task. A question left pending must be audible, not just written.
 - **`h3_ref2va`: always `--turbo`** (VALIDATED 2026-09-09, ~38 min vs ~70 min for 22 frames); 20-step base only in A/B or explicit request.
+- **License = non-blocking criterion for LOCAL projects** (user rule 2026-11-21: « licence pas grave pour des projets locaux »): research / non-commercial / community weights are download-and-test OK for local/personal use — never gate an eval verdict or a test on the license alone. The license check only matters when outputs land on the monetized channel: verify the terms then (community caps, attribution clauses like MiniMax IV.2 / Fish « Built with ») and add the required credits.
 
 ### Watch & updates
 
