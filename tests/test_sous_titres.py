@@ -144,11 +144,12 @@ def test_transcrire_aligner_options_session(tmp_path, monkeypatch):
     monkeypatch.setattr("core.sous_titres.MODELE_FORCED_ALIGNER", str(gguf))
     vad = tmp_path / "vad"
     vad.mkdir()
-    monkeypatch.setattr("core.sous_titres.DOSSIER_VAD_SILERO", str(vad))
+    monkeypatch.setattr("core.sous_titres.DOSSIER_VAD_SILERO", str(tmp_path / "jamais_utilise"))
     wav = _ecrire_wav(str(tmp_path / "long.wav"))
     chemin_json = str(tmp_path / "long_words.json")
 
-    lus, texte, taux = transcrire_aligner(wav, chemin_json, langue="fr")
+    # explicit vad_dir wins over the module default (Kilo review warning fix)
+    lus, texte, taux = transcrire_aligner(wav, chemin_json, langue="fr", vad_dir=str(vad))
 
     assert taux == TAUX_SILERO
     assert lus == mots
@@ -158,7 +159,7 @@ def test_transcrire_aligner_options_session(tmp_path, monkeypatch):
     assert "--session-option" in cmd
     options = [cmd[i + 1] for i, f in enumerate(cmd) if f == "--session-option"]
     assert any(o.startswith("qwen3_asr.forced_aligner_path=") and o.endswith("aligner.gguf") for o in options)
-    assert any("vad_model_path=" in o for o in options)
+    assert any(o == f"qwen3_asr.vad_model_path={vad}" for o in options)
     # 16 kHz mono resample happened before the engine call
     resample = [c for c, _ in fake.calls if "ffmpeg.exe" in " ".join(str(x) for x in c)]
     assert resample and "-ar" in resample[0] and "16000" in resample[0]
@@ -210,12 +211,15 @@ def test_workflow_align_bout_en_bout(tmp_path, monkeypatch):
 
 def test_workflow_asr_bout_en_bout(tmp_path, monkeypatch):
     mots = [{"start_sample": 0, "end_sample": 500, "word": "Narrateur", "confidence": 0}]
-    resultat, fake = _lancer(tmp_path, monkeypatch, mots, st_mode="asr", output="test")
+    resultat, fake = _lancer(tmp_path, monkeypatch, mots, st_mode="asr",
+                             st_vad=str(tmp_path / "vad"), output="test")
 
     assert resultat["mode"] == "asr" and resultat["words"] == 1
     assert os.path.exists(resultat["srt"])
     cmd = fake.appel_unique_avec("--task asr")
     assert "--text" not in cmd
+    options = [cmd[i + 1] for i, f in enumerate(cmd) if f == "--session-option"]
+    assert any(o == f"qwen3_asr.vad_model_path={tmp_path / 'vad'}" for o in options)
 
 
 def test_workflow_exige_audio_puis_transcript():
