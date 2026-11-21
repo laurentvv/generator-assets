@@ -44,7 +44,7 @@ WORKFLOW_FAMILY = {
     "voix_off": "voice", "voix_perso": "voice", "voix_robot": "voice",
     "voix_conversion": "voice", "tts_dialogue": "voice", "audio_upscale": "voice",
     "audio_restaure": "voice",
-    "lfm3_tts": "voice", "indextts25_tts": "voice",
+    "lfm3_tts": "voice", "indextts25_tts": "voice", "sous_titres": "voice",
     "music_bg": "music", "chanson": "music", "musique_adn": "music",
     "musique_essence": "music", "acestep_cover": "music", "audio_repaint": "music",
     "retrait_voix": "music", "sfx": "music", "audio_ambience": "music", "beat_sync": "music",

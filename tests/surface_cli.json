@@ -2440,6 +2440,56 @@
  ],
  [
   [
+   "--st-langue"
+  ],
+  "st_langue",
+  "_StoreAction",
+  "'fr'",
+  null,
+  null,
+  null
+ ],
+ [
+  [
+   "--st-mode"
+  ],
+  "st_mode",
+  "_StoreAction",
+  "'align'",
+  [
+   "align",
+   "asr"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--st-quant"
+  ],
+  "st_quant",
+  "_StoreAction",
+  "'q8_0'",
+  [
+   "f16",
+   "q8_0"
+  ],
+  null,
+  null
+ ],
+ [
+  [
+   "--st-vad"
+  ],
+  "st_vad",
+  "_StoreAction",
+  "None",
+  null,
+  null,
+  null
+ ],
+ [
+  [
    "--steps"
   ],
   "steps",

@@ -821,6 +821,7 @@ _WORKFLOW_LICENCE_MAP: dict[str, tuple[str, str, Optional[str]]] = {
         "Use FFmpeg soxr resample or --workflow audio_restaure (OpenMDW-1.1 / MIT) if attribution-free required",
     ),
     "voix_conversion": (LICENCE_COMMERCIAL, "MIT (ResembleAI Chatterbox)", None),
+    "sous_titres": (LICENCE_COMMERCIAL, "Apache-2.0 (Qwen3-ASR-0.6B + Qwen3-ForcedAligner-0.6B)", None),
     "retrait_voix": (LICENCE_COMMERCIAL, "MIT / Apache-2.0 (HTDemucs / RoFormer / SAM Audio)", None),
     "animal_godot": (LICENCE_COMMERCIAL, "Permissive Blender GLB export (inherits source pack license, e.g. CC0 Quaternius)", None),
     "asset_blendkit": (LICENCE_COMMERCIAL, "CC0 by default via Blendkit (cc_zero; Blender headless)", None),
