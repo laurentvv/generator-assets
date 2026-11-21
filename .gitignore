@@ -73,3 +73,6 @@ tools/
 # Agent local state (ledger, installed skills) - kept on disk, never committed
 .agent/
 .agents/
+
+# raylib test-campaign prototypes: local build artifacts
+scripts/proto_raylib/*.exe
