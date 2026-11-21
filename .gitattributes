@@ -25,3 +25,14 @@ server/static/*.wav -text
 .agent/*.duckdb* binary
 *.cmd -text
 *.bat -text
+
+# BEGIN:agents-kit-base
+# Managed by agents-kit (files sync) - do not edit inside the markers.
+# Installed skills are byte-fingerprinted: they must stay LF on every checkout (2026-10-18 lesson).
+.agents/skills/** text eol=lf
+# The agent-state DuckDB database is binary (2026-10-16 lesson).
+.agent/*.duckdb* binary
+# Windows launchers ship CRLF upstream; never translate them (2026-10-31 lesson).
+*.cmd -text
+*.bat -text
+# END:agents-kit-base
