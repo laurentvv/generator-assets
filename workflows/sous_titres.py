@@ -72,11 +72,11 @@ class SousTitresWorkflow(BaseWorkflow):
 
         transcript = params.get("prompt")
         if mode == "align" and not (transcript and transcript.strip()):
-            raise SystemExit(
-                "❌ sous_titres align mode needs the EXACT transcript as the prompt: "
-                'uv run python main.py -w sous_titres -i audio.wav -p "Le mot pour mot..." '
-                "(or --st-mode asr for long audio without a transcript)."
-            )
+                raise SystemExit(
+                    "❌ sous_titres align mode needs the EXACT transcript as the prompt: "
+                    'uv run python main.py -w sous_titres --audio audio.wav -p "Le mot pour mot exact de l\'audio." '
+                    "(or --st-mode asr for long audio without a transcript)."
+                )
 
         output_dir = params.get("output_dir", DEFAULT_OUTPUT_DIR)
         dossier = os.path.join(output_dir, "sous_titres")
