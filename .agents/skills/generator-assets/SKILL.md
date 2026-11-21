@@ -155,7 +155,7 @@ work.
 | EN character voice (Kokoro preset or Qwen3 VoiceDesign + pitch/whisper/hollow) | `voix_perso` | `-w voix_perso "..." --kokoro-voice am_onyx` |
 | Fast local voice synthesis, faster than real time (LFM3-Audio-2B, llama.cpp Vulkan, FR default) | `lfm3_tts` | `-w lfm3_tts "Bienvenue, voyageur." --tts-langue fr --tts-voix female` |
 | IndexTTS2.5 zero-shot voice cloning (audio.cpp Vulkan, EN narration validated; mandatory `--indextts-reference`, loudness auto-normalized) | `indextts25_tts` | `-w indextts25_tts "The night factory hums." --indextts-reference ref.wav --indextts-seed 42` |
-| Word-timestamped subtitles from audio (ForcedAligner Vulkan; `align` = exact transcript short clip via `-p`, `asr` = long audio via Qwen3-ASR + Silero VAD) | `sous_titres` | `-w sous_titres -i narration.wav -p "Le transcript exact."` or `--st-mode asr` |
+| Word-timestamped subtitles from audio (ForcedAligner Vulkan; `align` = exact transcript short clip via `-p`, `asr` = long audio via Qwen3-ASR + Silero VAD) | `sous_titres` | `-w sous_titres --audio narration.wav -p "Le transcript exact."` or `--st-mode asr` |
 | Re-voice a recording in another voice (Chatterbox VC, 24 kHz) | `voix_conversion` | `-w voix_conversion --audio take.wav --voice-ref target_voice.wav` |
 | EN robot voice (validated kokoro + ringmod recipe) | `voix_robot` | `-w voix_robot --texte "..."` |
 | Audio super-resolution → 48 kHz (16k voice / 24k music) | `audio_upscale` | `-w audio_upscale -i voice_16k.wav --upsr-variante speech` |

@@ -1373,9 +1373,9 @@ eference.wav" --duration 30 --scale 0.45 --seed 42
 * **Examples**:
   ```bash
   # align mode — exact transcript known (short clip)
-  uv run python main.py -w sous_titres -i narration.wav -p "Le mot pour mot exact de l'audio." --st-langue fr
+  uv run python main.py -w sous_titres --audio narration.wav -p "Le mot pour mot exact de l'audio." --st-langue fr
   # asr mode — long audio, no transcript
-  uv run python main.py -w sous_titres -i episode.wav --st-mode asr
+  uv run python main.py -w sous_titres --audio episode.wav --st-mode asr
   ```
 * **Status (2026-11-21)**: ✅ **USER VALIDATED** — word timestamps accepted on both validated voices (dylan standalone + dylan ASR→aligner chunked, ono_anna; 3/3 on the v2 page). ASR word-for-word EXACT on dylan (voice-dependent accuracy: the 3 homophone errors seen on alba disappear).
 

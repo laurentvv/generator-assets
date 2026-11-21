@@ -126,27 +126,31 @@ def transcrire_aligner(
     chemin_json: str,
     langue: str = "fr",
     backend: str = "vulkan",
+    quant: str = "q8_0",
+    vad_dir: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], str, int]:
     """Long-audio path: Qwen3-ASR-0.6B words + forced-aligner timestamps.
 
     Resamples the input to 16 kHz mono, runs the ASR with the aligner + Silero
     VAD session options, returns (words, transcript_text, sample_rate). The
     transcript is taken from the engine stdout (words JSON carries timestamps).
+    `vad_dir` overrides the Silero weights directory (default: DOSSIER_VAD_SILERO).
     """
-    if not os.path.isdir(DOSSIER_VAD_SILERO):
+    dossier_vad = vad_dir or DOSSIER_VAD_SILERO
+    if not os.path.isdir(dossier_vad):
         raise FileNotFoundError(
-            f"Silero VAD weights directory not found: {DOSSIER_VAD_SILERO} — the portable "
+            f"Silero VAD weights directory not found: {dossier_vad} — the portable "
             "install ships no default VAD assets (MEMORY_BANK §1.68 gotcha ①)"
         )
     audio_16k = os.path.splitext(chemin_json)[0] + "_src16k.wav"
     _resampler_16k_mono(chemin_audio, audio_16k)
-    modele = _resoudre_modele_aligner("q8_0")
+    modele = _resoudre_modele_aligner(quant)
     retour = run_engine(
         [resoudre_audiocpp(), "--task", "asr", "--family", "qwen3_asr",
          "--model", MODELE_QWEN3_ASR, "--backend", backend, "--language", langue,
          "--audio", audio_16k, "--words-out", chemin_json,
          "--session-option", f"qwen3_asr.forced_aligner_path={modele}",
-         "--session-option", f"qwen3_asr.vad_model_path={DOSSIER_VAD_SILERO}"],
+         "--session-option", f"qwen3_asr.vad_model_path={dossier_vad}"],
         capture=True, check=True, timeout=1800, etiquette="asr words + aligner",
     )
     transcript = os.path.splitext(chemin_json)[0] + "_transcript.txt"

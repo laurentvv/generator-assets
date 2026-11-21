@@ -68,8 +68,7 @@ class SousTitresWorkflow(BaseWorkflow):
         mode = params.get("st_mode") or "align"
         langue = params.get("st_langue") or "fr"
         quant = params.get("st_quant") or "q8_0"
-        if params.get("st_vad"):
-            os.environ["QWEN3_VAD_DIR"] = params["st_vad"]
+        vad_dir = params.get("st_vad")
 
         transcript = params.get("prompt")
         if mode == "align" and not (transcript and transcript.strip()):
@@ -111,7 +110,9 @@ class SousTitresWorkflow(BaseWorkflow):
             mots, taux = aligner_mots(audio, transcript, chemin_json, langue=langue, quant=quant)
         else:
             self.log(f"ASR word timestamps ({langue}, Silero VAD chunking) — validated pipeline §1.68...")
-            mots, texte, taux = transcrire_aligner(audio, chemin_json, langue=langue)
+            mots, texte, taux = transcrire_aligner(
+                audio, chemin_json, langue=langue, quant=quant, vad_dir=vad_dir,
+            )
             self.log(f"ASR transcript: {texte[:80]}{'…' if len(texte) > 80 else ''}")
 
         ecrire_srt_mots(mots, taux, chemin_srt)
