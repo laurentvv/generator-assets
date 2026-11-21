@@ -23,12 +23,15 @@ under `not_exported`, never silently dropped.
 import json
 import math
 import os
+import re
 from fractions import Fraction
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from xml.sax.saxutils import escape as _xml_escape
 
 from _common.decision import MissingFpsError, aspect_ratio, frame_size, parse_time
+from _common.emit import warn
+from _common.probe import display_size
 
 FORMATS = {".edl": "edl", ".fcpxml": "fcpxml", ".otio": "otio"}
 # Common NTSC rates are stored as the exact ratio an editor expects, not as 29.97.
@@ -39,7 +42,7 @@ _NOT_EXPORTED = {
     "silence": "the silence cut (render.py measures it at render time; the timeline keeps the clips whole)",
     "captions": "captions (burn them with render.py, or import the .srt into the editor)",
     "graphics": "graphics (titles, lower thirds, social templates)",
-    "overlays": "overlays (logos and text)",
+    "overlays": "overlays (logos, images, text and video layers)",
     "fit": "fit / reframe to the delivery aspect (set the sequence frame in the editor)",
     "audiogram": "the audiogram picture",
     "loudness": "loudness normalisation",
@@ -100,12 +103,97 @@ def _seconds(value: Any, what: str, fps: Optional[float]) -> float:
 
 
 def _picture(meta: Dict[str, Any]) -> Optional[Tuple[int, int]]:
-    """A source's displayed width x height (rotation metadata swaps them, as fit.py reads it)."""
-    video = meta.get("video") or {}
-    w, h = int(video.get("width") or 0), int(video.get("height") or 0)
+    """A source's displayed width x height, as fit.py reads it: rotation metadata swaps them, and
+    non-square pixels are squared at the display aspect (probe.display_size(), #411)."""
+    w, h = display_size(meta.get("video") or {})
     if not (w and h):
         return None
-    return (h, w) if video.get("rotation") in (90, -90, 270, -270) else (w, h)
+    return (w, h)
+
+
+_TC = re.compile(r"^(\d{2}):(\d{2}):(\d{2})[:;.](\d{2,3})$")
+
+
+def _drop_frame(drop: Optional[bool], rate: Fraction) -> bool:
+    """Drop-frame counting applies to the NTSC rates only (29.97 and 59.94)."""
+    return bool(drop) and rate.denominator == 1001 and round(float(rate)) in (30, 60)
+
+
+def start_tc_frames(tc: Dict[str, Any], rate: Fraction) -> int:
+    """A source's start timecode (probe()'s `timecode`: {value, drop_frame}) as a frame count at
+    its own `rate`, drop-frame counted where it is one; 0 when the source has none (#414). A
+    label that does not exist at that rate (frame 29 at 25 fps, or a frame drop-frame counting
+    skips) is read as none, as probe() skips a malformed tag, rather than as a shifted start."""
+    m = _TC.match(str((tc or {}).get("value") or "").strip())
+    if not m:
+        return 0
+    h, mi, se, fr = (int(g) for g in m.groups())
+    nominal = int(round(float(rate)))
+    if mi > 59 or se > 59 or fr >= nominal:
+        return 0
+    frames = ((h * 60 + mi) * 60 + se) * nominal + fr
+    if _drop_frame(tc.get("drop_frame"), rate):
+        if se == 0 and mi % 10 and fr < nominal // 15:
+            return 0
+        minutes = h * 60 + mi
+        frames -= (nominal // 15) * (minutes - minutes // 10)
+    return frames
+
+
+def _tc_label(frames: int, rate: Fraction, drop: bool) -> str:
+    """`frames` as hh:mm:ss:ff at the nominal integer rate; drop-frame (`;`) for an NTSC source
+    whose own timecode is drop-frame, so the label is the one the media itself shows. Timecode
+    wraps at 24 hours as the media's own does (output_timecode_args() counts the same day): a
+    source starting at 23:59:50:00 is labelled 00:00:00:00 ten seconds in, not 24:00:00:00, which
+    no editor reads (A266)."""
+    nominal = int(round(float(rate)))
+    if not _drop_frame(drop, rate):
+        return _tc(frames % (nominal * 86400), nominal) if nominal >= 1 else _tc(frames, nominal)
+    d = nominal // 15
+    frames %= (nominal * 600 - d * 9) * 144
+    per_10, per_min = nominal * 600 - d * 9, nominal * 60 - d
+    tens, rem = divmod(frames, per_10)
+    frames += d * 9 * tens + (d * ((rem - d) // per_min) if rem > d else 0)
+    return _tc(frames, nominal)[:-3] + ";" + _tc(frames, nominal)[-2:]
+
+
+def output_timecode_args(meta: Dict[str, Any], first_frame: Optional[float], rate: Optional[float] = None) -> List[str]:
+    """The arguments that give an output the start timecode of the source frame it starts on:
+    `first_frame` seconds after the source picture's first frame (negative: a head the tool
+    added), or None to write no start timecode at all (a join, whose later frames no single start
+    label describes). A tool that moves the start of the picture used to write the source's own
+    start timecode unchanged: FFmpeg copies the video stream's `timecode` tag, and the MOV/MP4
+    muxer rebuilds a tmcd track from it, so a cut from 1 s was stamped 01:00:00:00 for frame 30.
+    Both the stream and the container tag are set (Matroska keeps a stale stream tag otherwise;
+    MXF reads the container's). Nothing for a source without a start timecode. The label also
+    goes on STATE.expected_timecode, which source_carry compares the written file with: an
+    MXF, which always writes one, reads 00:00:00:00 when none is wanted and is listed as dropped.
+    `rate` is the frame rate the output is delivered at when the tool changes it (fit --fps, a
+    VFR source conformed to a constant rate), None for the source's own: the source's label is
+    read at the source's rate and the output's is counted at the output's, so 01:00:00:12 at 25
+    fps (0.48 s past the hour) is 01:00:00:24 at 50."""
+    from _common.runner import STATE
+    tc = (meta or {}).get("timecode") or {}
+    fps = ((meta or {}).get("video") or {}).get("fps")
+    if not tc.get("value") or not fps:
+        return []
+    label = ""
+    if first_frame is not None:
+        src_rate = exact_rate(float(fps))
+        out_rate = exact_rate(float(rate)) if rate else src_rate
+        drop = _drop_frame(tc.get("drop_frame"), out_rate)
+        nominal = round(float(out_rate))
+        if nominal >= 1:
+            day = (nominal * 600 - (nominal // 15) * 9) * 144 if drop else nominal * 86400
+            # the source label and the offset to the first frame, both in output frames, rounded
+            # once: 00:00:00:02 at 25 fps plus 0.08 s is 4.8 frames at 30, so frame 5, not 2 + 2
+            pos = (Fraction(start_tc_frames(tc, src_rate)) / src_rate
+                   + Fraction(first_frame).limit_denominator(1000000)) * out_rate
+            label = _tc_label(math.floor(pos + Fraction(1, 2)) % day, out_rate, drop)
+        # below 1 fps no frame count can name a frame: the label is removed, as when the first
+        # frame is unknown, rather than divide by a zero-length day
+    STATE.expected_timecode = label
+    return ["-metadata:s:v:0", f"timecode={label}", "-metadata", f"timecode={label}"]
 
 
 def build(proj: Dict[str, Any], probes: Dict[str, Dict[str, Any]], rel) -> Dict[str, Any]:
@@ -138,16 +226,18 @@ def build(proj: Dict[str, Any], probes: Dict[str, Dict[str, Any]], rel) -> Dict[
     if (want_w or 0) < 0 or (want_h or 0) < 0:
         raise TimelineError(f"frame width/height must be positive, got {frame.get('width')!r} x {frame.get('height')!r}")
     src_w, src_h = _picture(first) or (1920, 1080)
-    if ratio is None and not want_w and not want_h:
+    fit_mode = str(frame.get("fit") or "pad")
+    if ratio is None and not want_w and not want_h and not (fit_mode == "crop" and len(clips_in) > 1):
         width, height = src_w, src_h
     else:
         width, height = frame_size(ratio, want_w, want_h, src_w, src_h)
-    fit_mode = str(frame.get("fit") or "pad")
     if fit_mode not in _CONFORM:
         raise TimelineError(f"frame.fit {frame.get('fit')!r}: use pad, crop or blur (fit.py's --fit)")
 
+    # A half frame rounds up, floor(x + 1/2), in every count of frames here: velisa/timebase@1 TB-4,
+    # decision.py and FFmpeg's av_rescale all do, and round() took 12.5 to 12 (#638).
     def fr(seconds: float) -> int:
-        return int(round(Fraction(seconds).limit_denominator(1000000) * rate))
+        return math.floor(Fraction(seconds).limit_denominator(1000000) * rate + Fraction(1, 2))
 
     trans = proj.get("transition") or {}
     t_type = str(trans.get("type", "fade")) if len(clips_in) > 1 else "none"
@@ -170,6 +260,14 @@ def build(proj: Dict[str, Any], probes: Dict[str, Dict[str, Any]], rel) -> Dict[
         if start < 0:
             raise TimelineError(f"clips[{i}].in must not be negative, got {c['in']!r}")
         end = _seconds(c["out"], f"clips[{i}].out", clip_fps) if c.get("out") is not None else dur
+        # as cut.py reads them (#414): an in at or past the media's end is refused, an out past it
+        # is the media's end -- the render clamps it there, so the timeline does too, and says so
+        if dur > 0 and start >= dur:
+            raise TimelineError(f"clips[{i}].in ({start:g}s) is at or past the end of {os.path.basename(src)} ({dur:.3f}s)")
+        if dur > 0 and end > dur + 1e-6:
+            notes.append(f"clips[{i}].out ({end:g}s) is past the end of {os.path.basename(src)} ({dur:.3f}s): "
+                         "the clip ends at the media's end, as the render cuts it")
+            end = dur
         if end <= start:
             raise TimelineError(f"clip {i}: out ({end:g}) is not after in ({start:g})")
         speed = _number(c.get("speed") or 1.0, f"clips[{i}].speed")
@@ -180,9 +278,18 @@ def build(proj: Dict[str, Any], probes: Dict[str, Dict[str, Any]], rel) -> Dict[
         if reframe:
             reframed.append(os.path.basename(src))
         src_in, src_out = fr(start), fr(end)
+        # the source's own clock (#414): its frame rate, and its start timecode as a frame count at
+        # that rate. EDL source timecodes are counted at it (a 25 fps clip in a 29.97 sequence has
+        # no frame :29); FCPXML and OTIO start the media at it, so a conform finds the frames.
+        clip_rate = exact_rate(float(clip_fps)) if clip_fps else rate
+        tc = meta.get("timecode") or {}
+        tc_start = start_tc_frames(tc, clip_rate)
         clips.append({"index": i, "src": os.path.abspath(src), "name": os.path.basename(src),
                       "src_in": src_in, "src_out": src_out, "speed": speed,
-                      "length": int(round((src_out - src_in) / speed)),
+                      "in_seconds": Fraction(start).limit_denominator(1000000), "rate": clip_rate,
+                      "tc_start": tc_start, "tc_seconds": Fraction(tc_start) / clip_rate,
+                      "drop_frame": _drop_frame(tc.get("drop_frame"), clip_rate),
+                      "length": math.floor(Fraction(src_out - src_in) / Fraction(speed) + Fraction(1, 2)),
                       "media_frames": fr(dur), "has_video": bool(meta.get("video")),
                       "has_audio": bool(meta.get("audio")),
                       "picture": picture, "fps": clip_fps, "reframed": reframe})
@@ -217,12 +324,24 @@ def build(proj: Dict[str, Any], probes: Dict[str, Dict[str, Any]], rel) -> Dict[
     markers: List[Dict[str, Any]] = []
     chapters = proj.get("chapters")
     if isinstance(chapters, list):
+        total_seconds = Fraction(total) / rate
+        previous: Optional[float] = None
         for j, ch in enumerate(chapters):
             # read as render.py's chapters stage reads it (metadata.py): a chapter list carries
-            # no fps, so hh:mm:ss:ff needs its @fps there and here alike
-            at = fr(_seconds(ch.get("at", 0), f"chapters[{j}].at", None))
-            if 0 <= at < total:
-                markers.append({"at": at, "title": str(ch.get("title") or "")})
+            # no fps, so hh:mm:ss:ff needs its @fps there and here alike. What metadata.py refuses
+            # is refused here too, never dropped (#414): a chapter at or past the end, or one that
+            # does not come after the one before it.
+            at_s = _seconds(ch.get("at", 0), f"chapters[{j}].at", None)
+            if at_s < 0:
+                raise TimelineError(f"chapters[{j}].at must not be negative, got {ch.get('at')!r}")
+            if previous is not None and at_s <= previous:
+                raise TimelineError(f"chapters[{j}]: the chapter at {at_s:g}s does not come after the previous one "
+                                    f"at {previous:g}s (metadata.py refuses it too)")
+            if at_s >= total_seconds:
+                raise TimelineError(f"chapters[{j}]: the chapter at {at_s:g}s starts at or after the end of the "
+                                    f"timeline ({float(total_seconds):.3f}s); metadata.py refuses it too")
+            previous = at_s
+            markers.append({"at": min(fr(at_s), total - 1), "title": str(ch.get("title") or "")})
     elif chapters:
         notes.append("chapters given as a file are not exported as markers; write them inline as [{at, title}]")
 
@@ -263,6 +382,19 @@ def _tc(frames: int, fps_int: int) -> str:
     return f"{h:02d}:{m:02d}:{s:02d}:{f:02d}"
 
 
+# CMX 3600 numbers events in a three-digit field, and record timecode runs from 01:00:00:00 within
+# one 24-hour day.
+EDL_MAX_EVENTS = 999
+
+
+def _edl_text(value: Any) -> str:
+    """Caller text (a file name, a clip or chapter name, the title) on one EDL line. The format is
+    one statement per line with no escape, so a line break -- any str.splitlines() boundary -- or
+    another control character in a name added lines, or whole events, that parse_error() then
+    accepted (A261). Each becomes a space."""
+    return "".join(" " if (ch in "\x85\u2028\u2029" or ord(ch) < 32 or ord(ch) == 127) else ch for ch in str(value))
+
+
 def to_edl(tl: Dict[str, Any]) -> str:
     """CMX 3600, non-drop timecode at the nominal integer rate, record starting at 01:00:00:00.
     Every event is reel AX (the convention for file-based media) with the file named in
@@ -273,35 +405,54 @@ def to_edl(tl: Dict[str, Any]) -> str:
     from where the previous one stopped to where the next dissolve begins."""
     fps_int = int(round(float(tl["rate"])))
     hour = fps_int * 3600
+    rate = tl["rate"]
     clips = tl["clips"]
     d = tl["transition_frames"]
     # record range of each event: starts `trim_head` before its visible start (the dissolve
     # window), ends where the next event starts
     starts = [c["record_in"] - c["trim_head"] for c in clips]
     ends = starts[1:] + [tl["total"]]
-    lines = [f"TITLE: {tl['name']}", "FCM: NON-DROP FRAME", ""]
+    events = len(clips) + (1 if tl["music"] else 0)
+    if events > EDL_MAX_EVENTS:
+        # A265: f"{n:03d}" wrote event 1000 as four digits, outside the field
+        raise TimelineError(f"an EDL numbers its events in three digits (at most {EDL_MAX_EVENTS}); this timeline has "
+                            f"{events} -- export .fcpxml or .otio, or split the project")
+    if hour + tl["total"] > fps_int * 86400:
+        raise TimelineError(f"the timeline ({float(Fraction(tl['total']) / rate):.0f}s) runs past 24:00:00:00 when the "
+                            "EDL's record starts at 01:00:00:00 -- export .fcpxml or .otio, or split the project")
+    lines = [f"TITLE: {_edl_text(tl['name'])}", "FCM: NON-DROP FRAME", ""]
     n = 0
-    prev_src_end = 0
+    prev_src_end = ""
+
+    def src_tc(c: Dict[str, Any], seq_frames: int) -> str:
+        """The source timecode `seq_frames` (sequence frames of source media) after the clip's in
+        point: counted at the clip's own rate from its own start timecode (#414)."""
+        own = c.get("rate") or rate
+        seconds = c.get("in_seconds", Fraction(c["src_in"]) / rate) + Fraction(seq_frames) / rate
+        return _tc_label(math.floor(seconds * own + Fraction(1, 2)) + c.get("tc_start", 0), own, c.get("drop_frame", False))
+
     for i, c in enumerate(clips):
         n += 1
         chan = "B" if c["has_audio"] and c["has_video"] else ("V" if c["has_video"] else "A")
         rec_in, rec_out = hour + starts[i], hour + ends[i]
-        s_in = c["src_in"]
-        s_out = s_in + int(round((ends[i] - starts[i]) * c["speed"]))
+        s_in = src_tc(c, 0)
+        s_out = src_tc(c, math.floor((ends[i] - starts[i]) * Fraction(c["speed"]) + Fraction(1, 2)))
         if i > 0 and d:
-            lines.append(f"{n:03d}  AX       {chan:<5} C        {_tc(prev_src_end, fps_int)} {_tc(prev_src_end, fps_int)} "
+            lines.append(f"{n:03d}  AX       {chan:<5} C        {prev_src_end} {prev_src_end} "
                          f"{_tc(rec_in, fps_int)} {_tc(rec_in, fps_int)}")
-            lines.append(f"{n:03d}  AX       {chan:<5} D    {d:03d} {_tc(s_in, fps_int)} {_tc(s_out, fps_int)} "
+            lines.append(f"{n:03d}  AX       {chan:<5} D    {d:03d} {s_in} {s_out} "
                          f"{_tc(rec_in, fps_int)} {_tc(rec_out, fps_int)}")
-            lines.append(f"* FROM CLIP NAME: {clips[i - 1]['name']}")
-            lines.append(f"* TO CLIP NAME: {c['name']}")
+            lines.append(f"* FROM CLIP NAME: {_edl_text(clips[i - 1]['name'])}")
+            lines.append(f"* TO CLIP NAME: {_edl_text(c['name'])}")
         else:
-            lines.append(f"{n:03d}  AX       {chan:<5} C        {_tc(s_in, fps_int)} {_tc(s_out, fps_int)} "
+            lines.append(f"{n:03d}  AX       {chan:<5} C        {s_in} {s_out} "
                          f"{_tc(rec_in, fps_int)} {_tc(rec_out, fps_int)}")
-            lines.append(f"* FROM CLIP NAME: {c['name']}")
-        lines.append(f"* SOURCE FILE: {c['src']}")
+            lines.append(f"* FROM CLIP NAME: {_edl_text(c['name'])}")
+        lines.append(f"* SOURCE FILE: {_edl_text(c['src'])}")
         if abs(c["speed"] - 1.0) > 1e-6:
-            lines.append(f"M2   AX       {fps_int * c['speed']:05.1f}                {_tc(s_in, fps_int)}")
+            # the speed in source frames per second, at the rate the source labels are counted in
+            own_fps = int(round(float(c.get("rate") or rate)))
+            lines.append(f"M2   AX       {own_fps * c['speed']:05.1f}                {s_in}")
         lines.append("")
         prev_src_end = s_out
     if tl["music"]:
@@ -309,11 +460,11 @@ def to_edl(tl: Dict[str, Any]) -> str:
         m = tl["music"]
         lines.append(f"{n:03d}  AX       A2    C        {_tc(0, fps_int)} {_tc(m['length'], fps_int)} "
                      f"{_tc(hour, fps_int)} {_tc(hour + m['length'], fps_int)}")
-        lines.append(f"* FROM CLIP NAME: {m['name']}")
-        lines.append(f"* SOURCE FILE: {m['src']}")
+        lines.append(f"* FROM CLIP NAME: {_edl_text(m['name'])}")
+        lines.append(f"* SOURCE FILE: {_edl_text(m['src'])}")
         lines.append("")
     for mk in tl["markers"]:
-        lines.append(f"* LOC: {_tc(hour + mk['at'], fps_int)} WHITE   {mk['title']}")
+        lines.append(f"* LOC: {_tc(hour + mk['at'], fps_int)} WHITE   {_edl_text(mk['title'])}")
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
@@ -324,10 +475,23 @@ def _t(frames: int, rate: Fraction) -> str:
     return f"{value.numerator}s" if value.denominator == 1 else f"{value.numerator}/{value.denominator}s"
 
 
+def _ts(value: Fraction) -> str:
+    """A rational FCPXML time from seconds."""
+    return f"{value.numerator}s" if value.denominator == 1 else f"{value.numerator}/{value.denominator}s"
+
+
 def _url(path: str) -> str:
     # pathlib builds the percent-encoded file:// URL itself (and the drive-letter form on
     # Windows): no network-library import in scripts/, not even for quoting (see the no-fetch test)
     return Path(os.path.abspath(path)).as_uri()
+
+
+def _xml_text(value: Any) -> str:
+    """Caller text as XML 1.0 can hold it: a control character other than tab, line feed and
+    carriage return (and U+FFFE/U+FFFF) has no representation at all, not even escaped, so a clip
+    or chapter name carrying one made the FCPXML not well-formed (the sibling of A261). Each
+    becomes a space."""
+    return "".join(" " if ((ord(ch) < 32 and ch not in "\t\n\r") or ch in "\ufffe\uffff") else ch for ch in str(value))
 
 
 def to_fcpxml(tl: Dict[str, Any]) -> str:
@@ -337,7 +501,7 @@ def to_fcpxml(tl: Dict[str, Any]) -> str:
     sequence has its own format (r1); each video asset has its source's, and a clip of another
     aspect states its spatial conform (adjust-conform) for frame.fit."""
     rate = tl["rate"]
-    q = lambda s: _xml_escape(str(s), {'"': "&quot;"})  # noqa: E731
+    q = lambda s: _xml_escape(_xml_text(s), {'"': "&quot;"})  # noqa: E731
     fd = _t(1, rate)
     res: List[str] = []
     ids: Dict[Any, str] = {}  # a format's (width, height, frameDuration) or an asset's path -> its id
@@ -359,12 +523,14 @@ def to_fcpxml(tl: Dict[str, Any]) -> str:
             return seq_fmt
         return fmt(c["picture"][0], c["picture"][1], _t(1, exact_rate(float(c["fps"]))) if c["fps"] else fd)
 
-    def asset(path: str, name: str, frames: int, has_video: bool, has_audio: bool, format_id: str = "") -> str:
+    def asset(path: str, name: str, frames: int, has_video: bool, has_audio: bool, format_id: str = "",
+              start: Fraction = Fraction(0)) -> str:
         if path in ids:
             return ids[path]
         rid = f"r{len(ids) + 1}"
         ids[path] = rid
-        res.append(f'    <asset id="{rid}" name="{q(name)}" start="0s" duration="{_t(frames, rate)}" '
+        # the media starts at its own start timecode (#414): a clip's start is counted from there
+        res.append(f'    <asset id="{rid}" name="{q(name)}" start="{_ts(start)}" duration="{_t(frames, rate)}" '
                    f'hasVideo="{int(has_video)}" hasAudio="{int(has_audio)}"'
                    + (f' format="{format_id}"' if has_video else "") + ' audioSources="1" audioChannels="2">\n'
                    f'      <media-rep kind="original-media" src="{q(_url(path))}"/>\n    </asset>')
@@ -375,23 +541,25 @@ def to_fcpxml(tl: Dict[str, Any]) -> str:
     markers = list(tl["markers"])
     for i, c in enumerate(tl["clips"]):
         cid = clip_fmt(c)
-        rid = asset(c["src"], c["name"], c["media_frames"], c["has_video"], c["has_audio"], cid)
+        base = c.get("tc_seconds", Fraction(0))
+        rid = asset(c["src"], c["name"], c["media_frames"], c["has_video"], c["has_audio"], cid, base)
         if i > 0 and d:
             spine.append(f'        <transition name="Cross Dissolve" offset="{_t(c["record_in"] - c["trim_head"], rate)}" '
                          f'duration="{_t(d, rate)}"/>')
-        src_start = c["src_in"] + int(round(c["trim_head"] * c["speed"]))
+        src_start = c["src_in"] + math.floor(c["trim_head"] * Fraction(c["speed"]) + Fraction(1, 2))
         inner: List[str] = []
         if abs(c["speed"] - 1.0) > 1e-6:
             # timeMap maps clip-local time to source time; two linear points give a constant speed
             inner.append("          <timeMap>")
-            inner.append(f'            <timept time="0s" value="{_t(src_start, rate)}" interp="linear"/>')
+            inner.append(f'            <timept time="0s" value="{_ts(base + Fraction(src_start) / rate)}" interp="linear"/>')
             inner.append(f'            <timept time="{_t(c["visible"], rate)}" '
-                         f'value="{_t(src_start + int(round(c["visible"] * c["speed"])), rate)}" interp="linear"/>')
+                         f'value="{_ts(base + Fraction(src_start + math.floor(c["visible"] * Fraction(c["speed"]) + Fraction(1, 2))) / rate)}" interp="linear"/>')
             inner.append("          </timeMap>")
             start_attr = "0s"
         else:
-            start_attr = _t(src_start, rate)
-        local0 = src_start if abs(c["speed"] - 1.0) <= 1e-6 else 0
+            start_attr = _ts(base + Fraction(src_start) / rate)
+        # the clip's local time: the source's (from its start timecode), or 0 under a timeMap
+        local0 = base + Fraction(src_start) / rate if abs(c["speed"] - 1.0) <= 1e-6 else Fraction(0)
         # the FCPXML 1.10 DTD's order inside an asset-clip: timeMap, then the adjust-* elements
         # (adjust-conform), then anchored items (the music bed), then markers. Anything out of
         # that order does not validate, and Final Cut validates what it imports against that DTD.
@@ -402,13 +570,14 @@ def to_fcpxml(tl: Dict[str, Any]) -> str:
         if i == 0 and tl["music"]:
             m = tl["music"]
             mid = asset(m["src"], m["name"], m["media_frames"], False, True)
-            inner.append(f'          <asset-clip ref="{mid}" lane="-1" offset="{_t(local0, rate)}" name="{q(m["name"])}" '
+            inner.append(f'          <asset-clip ref="{mid}" lane="-1" offset="{_ts(local0)}" name="{q(m["name"])}" '
                          f'start="0s" duration="{_t(m["length"], rate)}" audioRole="music"/>')
         for mk in [m for m in markers if c["record_in"] <= m["at"] < c["record_in"] + c["visible"]]:
-            inner.append(f'          <chapter-marker start="{_t(local0 + mk["at"] - c["record_in"], rate)}" '
+            inner.append(f'          <chapter-marker start="{_ts(local0 + Fraction(mk["at"] - c["record_in"]) / rate)}" '
                          f'duration="{fd}" value="{q(mk["title"])}"/>')
         head = (f'        <asset-clip ref="{rid}" offset="{_t(c["record_in"], rate)}" name="{q(c["name"])}" '
-                f'start="{start_attr}" duration="{_t(c["visible"], rate)}" format="{cid}" tcFormat="NDF"')
+                f'start="{start_attr}" duration="{_t(c["visible"], rate)}" format="{cid}" '
+                f'tcFormat="{"DF" if c.get("drop_frame") else "NDF"}"')
         spine.append(head + (">\n" + "\n".join(inner) + "\n        </asset-clip>" if inner else "/>"))
     out = ['<?xml version="1.0" encoding="UTF-8"?>', "<!DOCTYPE fcpxml>", '<fcpxml version="1.10">',
            "  <resources>", *res, "  </resources>", "  <library>", f'    <event name="{q(tl["name"])}">',
@@ -441,16 +610,18 @@ def to_otio(tl: Dict[str, Any]) -> str:
                           "transition_type": "SMPTE_Dissolve",
                           # OTIO: in_offset is the part before the cut, out_offset the part after
                           "in_offset": _rt(c["trim_head"], rate), "out_offset": _rt(tl["clips"][i - 1]["trim_tail"], rate)})
-        src_start = c["src_in"] + int(round(c["trim_head"] * c["speed"]))
+        src_start = c["src_in"] + math.floor(c["trim_head"] * Fraction(c["speed"]) + Fraction(1, 2))
+        # the media's range starts at its start timecode (#414), in timeline frames
+        base = c.get("tc_seconds", Fraction(0)) * rate
         clip = {"OTIO_SCHEMA": "Clip.2", "name": c["name"], "metadata": {}, "enabled": True,
                 # OTIO's own convention: source_range starts at the media's in point and lasts the
                 # clip's length on the timeline; a LinearTimeWarp says how fast the media runs
                 # through it (core OTIO does not rescale durations by effects).
-                "source_range": _range(src_start, c["visible"], rate),
+                "source_range": _range(base + src_start, c["visible"], rate),
                 "effects": [], "markers": [],
                 "media_references": {"DEFAULT_MEDIA": {
                     "OTIO_SCHEMA": "ExternalReference.1", "name": c["name"], "metadata": {},
-                    "target_url": _url(c["src"]), "available_range": _range(0, c["media_frames"], rate),
+                    "target_url": _url(c["src"]), "available_range": _range(base, c["media_frames"], rate),
                     "available_image_bounds": None}},
                 "active_media_reference_key": "DEFAULT_MEDIA"}
         if abs(c["speed"] - 1.0) > 1e-6:
@@ -482,17 +653,61 @@ WRITERS = {"edl": to_edl, "fcpxml": to_fcpxml, "otio": to_otio}
 
 
 def parses(path: str, fmt: str) -> bool:
-    """The verification step: the written file reads back as what it claims to be."""
+    """The verification step: the written file reads back as what it claims to be. A file that
+    does not is recorded with the reason (`diagnostics.warnings`, `timeline_parse_failed`: the
+    exception, or what was read instead), beside the step's `ok: false`."""
+    why = parse_error(path, fmt)
+    if why:
+        warn(f"{path} does not read back as {fmt}: {why}", "timeline_parse_failed", path=path, format=fmt, error=why)
+    return why is None
+
+
+def _xml_root_tag(data: bytes) -> str:
+    """The root element of a well-formed XML document, read with expat directly.
+
+    ElementTree expands entities declared in an internal DTD, and on Python 3.9/3.10 (both
+    supported) that is an entity-expansion ("billion laughs") risk on a file the tool did not
+    write. A timeline never declares an entity (to_fcpxml writes a bare `<!DOCTYPE fcpxml>`), so
+    a declaration is refused rather than expanded. Errors are ElementTree's ParseError, so a
+    failure reads the same as before."""
+    from xml.etree.ElementTree import ParseError
+    from xml.parsers import expat
+    parser = expat.ParserCreate()
+    parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_NEVER)
+    root: List[str] = []
+
+    def start(name: str, _attrs: Any) -> None:
+        if not root:
+            root.append(name)
+
+    def entity(name: str, *_rest: Any) -> None:
+        raise ParseError(f"the document declares the entity {name!r}; a timeline never declares one")
+
+    parser.StartElementHandler = start
+    parser.EntityDeclHandler = entity
+    try:
+        parser.Parse(data, True)
+    except expat.ExpatError as exc:
+        raise ParseError(str(exc)) from None
+    return root[0]
+
+
+def parse_error(path: str, fmt: str) -> Optional[str]:
+    """Why `path` does not read back as `fmt`, or None when it does (parses() without the record)."""
     try:
         text = Path(path).read_text(encoding="utf-8")
         if fmt == "fcpxml":
-            import xml.etree.ElementTree as ET
-            return ET.fromstring(text.encode("utf-8")).tag == "fcpxml"
+            tag = _xml_root_tag(text.encode("utf-8"))
+            return None if tag == "fcpxml" else f"the root element is <{tag}>, not <fcpxml>"
         if fmt == "otio":
-            return json.loads(text).get("OTIO_SCHEMA") == "Timeline.1"
-        return text.startswith("TITLE:") and any(line[:3].isdigit() for line in text.splitlines())
-    except (OSError, ValueError, SyntaxError):
-        return False
+            doc = json.loads(text)
+            schema = doc.get("OTIO_SCHEMA") if isinstance(doc, dict) else None
+            return None if schema == "Timeline.1" else f"OTIO_SCHEMA is {schema!r}, not 'Timeline.1'"
+        if not text.startswith("TITLE:"):
+            return "the first line is not TITLE:"
+        return None if any(line[:3].isdigit() for line in text.splitlines()) else "no numbered event line"
+    except (OSError, ValueError, SyntaxError) as exc:
+        return f"{type(exc).__name__}: {exc}"
 
 
 def summary(tl: Dict[str, Any], fmt: str) -> Dict[str, Any]:

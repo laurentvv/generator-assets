@@ -23,9 +23,16 @@ import sys
 from typing import Dict, List, Optional, Tuple
 
 # `detect_scenes` moved into _common/probe.py in 1.16.0 (see silence.py); the body is unchanged.
-from _common import (detect_scenes, STATE, add_common, apply_common, beat_grid, default_font_file, die, emit,
-                     escape_filter_path, ffmpeg_base, info, print_json, probe, run, decode_pcm_mono,
+from _common import (guard_sidecar, detect_scenes, STATE, add_common, apply_common, beat_grid, default_font_file, die, emit,
+                     ffmpeg_base, info, print_json, probe, run, decode_pcm_mono,
                      rms_envelope, BEAT_MIN_CONFIDENCE, decode_gray_frames, frame_flow, label_shot_flow)
+from _common import drawtext_fontfile  # noqa: E402
+from _common import ffmpeg_filters, filter_missing_hint  # noqa: E402
+from _common.emit import note, record_fallback  # noqa: E402
+from _common.color import bt709_label_filter  # noqa: E402
+from _common.probe import PROBED_VIDEO, square_pixels  # noqa: E402
+from _common import dry_run_input_pending  # noqa: E402
+from _common.emit import input_length  # noqa: E402
 
 SHOT_FPS = 4.0          # frames/second sampled for --shots' flow estimate
 SHOT_W, SHOT_H = 48, 27  # decode size for --shots (16:9-ish; enough blocks, still a few KB/shot)
@@ -103,10 +110,52 @@ def speech_music_ratio(samples: "List[float]", rate: int, step_s: float = SPEECH
     return [{"time": round(i * step_s, 2), "speech_music_ratio": round(z / med, 3)} for i, z in enumerate(zcrs)]
 
 
+# A --sheet picks one frame a scene with select. One expression summing a term a scene was refused
+# by FFmpeg 7.1 and later at 3,000 scenes ("Error while parsing expression", ENOMEM) and taken by
+# 6.1. No expression here grows with the scene count: the scenes are dealt round-robin to branches
+# of at most SHEET_SELECT_TERMS terms, each summed as a balanced tree (at most
+# ceil(log2(SHEET_SELECT_TERMS)) = 6 nested parentheses), and the branches' frames are merged back in
+# time order by interleave. Round-robin keeps the branches level, so interleave holds about one
+# thumbnail a branch.
+SHEET_SELECT_TERMS = 64
+
+
+def _first_at(t: float) -> str:
+    """The select term for the first frame at or after `t`. The starts are presentation times, so
+    the frame is chosen by its time, not by start x fps as a frame number -- on a
+    variable-frame-rate source that number is another frame (#411)."""
+    a = f"{max(0.0, t - 0.0006):.4f}"
+    return f"gte(t\\,{a})*(isnan(prev_t)+lt(prev_t\\,{a}))"
+
+
+def _balanced_sum(terms: List[str]) -> str:
+    if len(terms) == 1:
+        return terms[0]
+    mid = len(terms) // 2
+    return f"({_balanced_sum(terms[:mid])}+{_balanced_sum(terms[mid:])})"
+
+
+def sheet_graph(starts: List[float], src: str, thumb: str, tile: str) -> str:
+    """The --sheet filter graph: exactly one frame a scene (the first at or after its start), each
+    made a thumbnail by `thumb`, laid out by `tile`, out as [sheet]."""
+    # no scene (a dry run whose input an earlier step has yet to write, a clip of under one scene):
+    # the sheet is its one tile, the first frame, as the 1x1 layout the caller sized for it
+    starts = starts or [0.0]
+    k = max(1, math.ceil(len(starts) / SHEET_SELECT_TERMS))
+    if k == 1:
+        return f"{src}select='{_balanced_sum([_first_at(t) for t in starts])}',{thumb},{tile}[sheet]"
+    parts = [f"{src}split={k}" + "".join(f"[s{j}]" for j in range(k))]
+    for j in range(k):
+        expr = _balanced_sum([_first_at(t) for t in starts[j::k]])
+        parts.append(f"[s{j}]select='{expr}',{thumb}[t{j}]")
+    parts.append("".join(f"[t{j}]" for j in range(k)) + f"interleave=nb_inputs={k},{tile}[sheet]")
+    return ";".join(parts)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input")
-    ap.add_argument("--threshold", type=float, default=8.0, help="minimum scdet score for a cut, 0-100 (default 8)")
+    ap.add_argument("--threshold", type=float, default=8.0, help="minimum scdet score for a cut, 0..100 (default 8)")
     ap.add_argument("--ratio", type=float, default=3.0, help="a cut must exceed this multiple of the neighbouring frames' median score (default 3; lower = more cuts)")
     ap.add_argument("--min-scene", type=float, default=1.0, help="ignore cuts closer than this in seconds (default 1)")
     ap.add_argument("--highlights", type=int, default=0, help="number of highlight ranges to propose")
@@ -139,10 +188,43 @@ def main() -> int:
     add_common(ap)
     args = ap.parse_args()
     apply_common(args)
+    if args.highlights < 0:
+        die(f"--highlights must be 0 or more (the number of ranges to propose), got {args.highlights}")
+    if not args.highlights:
+        # A145: these shape or write the --highlights picks; without it they were accepted and
+        # nothing was written (--edl FILE completed with no file)
+        for flag, given in (("--edl", args.edl is not None), ("--target", args.target is not None),
+                            ("--max-scene", args.max_scene != ap.get_default("max_scene"))):
+            if given:
+                die(f"{flag} applies to the ranges --highlights proposes, and --highlights was not given; "
+                    "add --highlights N")
+    if args.target is not None and args.target <= 0:
+        die(f"--target must be more than 0 seconds, got {args.target:g}")
+    if args.max_scene <= 0:
+        die(f"--max-scene must be more than 0 seconds, got {args.max_scene:g}")
+    if args.highlights:  # the EDL is written only with --highlights
+        guard_sidecar(args.edl, args.input, siblings=(args.sheet,))
 
     meta = probe(args.input)
-    if not meta.get("video"):
-        die("input has no video stream")
+    # Under --dry-run in a render.py/batch.py plan the input may be an earlier stage's output that
+    # was never written: every measurement is skipped (diagnostics.skipped measurement_input_pending)
+    # and the document keeps its shape with nothing measured, as loudness.py/cut.py do -- not an
+    # ffmpeg failure that stops the plan from being written.
+    pending = dry_run_input_pending(args.input)
+    # An audio-only file (WAV/FLAC/MP3 ...) is measured too (after 3.2.0): the beat grid, the loudness
+    # peaks and the speech ratio are measurements of the sound, and a music bed is usually
+    # delivered without a picture. It has no picture to cut, so it is one scene from 0 to its
+    # duration -- the same answer a video with no cut in it gets -- and the result says
+    # audio_only: true. What needs a picture (--sheet, --shots) is refused, not skipped.
+    audio_only = not meta.get("video")
+    if audio_only:
+        if not meta.get("audio"):
+            die("input has no video or audio stream")
+        picture_flags = [f for f, on in (("--sheet", args.sheet), ("--shots", args.shots)) if on]
+        if picture_flags:
+            die(f"{' and '.join(picture_flags)} need{'s' if len(picture_flags) == 1 else ''} a video stream; "
+                "this file is audio-only (input has no video stream). --beats, --audio-peaks, --speech "
+                "and --highlights measure the sound alone.", kind="input")
     # Only parsed when it is going to be used: --beat-range is a --beats flag, and a run that
     # never asked for beats should not be able to die on one.
     beat_range = parse_beat_range(args.beat_range) if args.beats else (60.0, 200.0)
@@ -151,19 +233,23 @@ def main() -> int:
             die("--beats needs an audio stream; this file has none", kind="input")
         if args.beat_step <= 0:
             die("--beat-step must be greater than 0", kind="input")
-    dur = meta.get("duration") or 0.0
-    cuts = detect_scenes(args.input, args.threshold, args.min_scene, dur, args.ratio)
+    dur = input_length(meta)
+    cuts = [0.0] if (audio_only or pending) else detect_scenes(args.input, args.threshold, args.min_scene, dur, args.ratio)
+    has_audio = bool(meta.get("audio")) and not pending
     bounds = cuts + [dur]
     step_s = 0.5
     # With --beats the file is decoded once, at the finer rate, and both envelopes come from that
     # one pass: the 0.5 s scene blocks are an exact multiple of the 10 ms onset blocks.
     beat_rate = 22050
     need_fine = args.beats or args.audio_peaks or args.speech
-    fine_samples = decode_pcm_mono(args.input, beat_rate, check=False) if (need_fine and meta.get("audio")) else None
+    # --beats decodes with check=True: a decode that fails is an ffmpeg failure, not an empty
+    # envelope reported as "no steady pulse in this audio" (the scene scoring alone tolerates it
+    # and runs on the picture)
+    fine_samples = decode_pcm_mono(args.input, beat_rate, check=bool(args.beats)) if (need_fine and has_audio) else None
     if fine_samples is not None:
         env = audio_envelope(args.input, step_s, rate=beat_rate, samples=fine_samples)
     else:
-        env = audio_envelope(args.input, step_s) if meta.get("audio") else []
+        env = audio_envelope(args.input, step_s) if has_audio else []
 
     scenes = []
     for i in range(len(bounds) - 1):
@@ -185,6 +271,8 @@ def main() -> int:
         peaks.sort(key=lambda p: p["time"])
 
     result: Dict = {"file": args.input, "duration": round(dur, 3), "scene_count": len(scenes), "scenes": scenes, "audio_peaks": peaks}
+    if audio_only:
+        result["audio_only"] = True
     info(f"{len(scenes)} scenes, {len(peaks)} audio peaks over {dur:.1f}s")
 
     if args.shots:
@@ -196,7 +284,7 @@ def main() -> int:
         info(f"--shots: {len(shots)} shots (" + ", ".join(f"{v} {k}" for k, v in sorted(counts.items())) + ")")
 
     if args.audio_peaks:
-        if not meta.get("audio"):
+        if not has_audio:
             result["audio_peaks_db"] = []
             info("--audio-peaks: no audio stream, nothing to measure")
         else:
@@ -205,7 +293,7 @@ def main() -> int:
             info(f"--audio-peaks: {len(result['audio_peaks_db'])} peaks")
 
     if args.speech:
-        if not meta.get("audio"):
+        if not has_audio:
             result["speech"] = []
             info("--speech: no audio stream, nothing to measure")
         else:
@@ -217,9 +305,15 @@ def main() -> int:
         # A beat grid is a measurement of the music's periodicity, not a statement about where a
         # cut belongs. scenes.py reports what it measured, including a low confidence: reporting a
         # weak measurement is honest, and only a tool that CHANGES a file refuses to act on one.
-        fine = rms_envelope(fine_samples or [], max(1, int(round(beat_rate * args.beat_step))))
-        grid = beat_grid(fine, args.beat_step, bpm_range=beat_range,
-                         min_confidence=args.min_confidence, duration=dur)
+        # The envelope's real step is a whole number of samples: 220 / 22050 = 9.977 ms for the
+        # default 10 ms. Timing the onsets as if it were 10 ms stretched every measured time by
+        # 0.23 % -- 68 ms by the end of a 30 s track, the "40-60 ms off" a click track showed --
+        # so the grid is timed (and step_s reported) at the step the envelope actually has.
+        beat_block = max(1, round(beat_rate * args.beat_step))
+        fine = rms_envelope(fine_samples or [], beat_block)
+        grid = beat_grid(fine, beat_block / beat_rate, bpm_range=beat_range,
+                         min_confidence=args.min_confidence, duration=dur,
+                         pcm=fine_samples, pcm_rate=beat_rate)
         result["beats"] = grid["beats"]
         result["beat_grid"] = {
             # The regular grid AND the subset a measured onset supports. A tool that MOVES
@@ -231,8 +325,13 @@ def main() -> int:
             "onsets": len(grid["onsets"]), "supported": grid["supported"],
             "unsupported": grid["unsupported"], "method": grid["method"],
             "step_s": grid["step_s"], "range_bpm": grid["range_bpm"], "usable": grid["usable"],
+            # after 3.2.0, additive: how each onset was timed below the envelope step
+            # ("pcm-window-ratio": placed on the decoded samples; null: at the step)
+            "onset_refinement": grid["onset_refinement"],
         }
-        if grid["tempo_bpm"] is None:
+        if pending:
+            info("--beats: [dry-run] the input does not exist yet, nothing measured")
+        elif grid["tempo_bpm"] is None:
             info(f"--beats: no steady pulse in this audio (confidence {grid['confidence']:.2f}) -- "
                  "speech, ambience or rubato has no tempo to measure")
         else:
@@ -248,6 +347,7 @@ def main() -> int:
             rank_key = lambda sc: (-sc["audio_rms"], sc["start"])
         ranked = sorted(scenes, key=rank_key)[: args.highlights]
         picks: List[Tuple[float, float]] = []
+        empty: List[Tuple[float, float]] = []
         budget = args.target if args.target else None
         per = (budget / max(1, len(ranked))) if budget else args.max_scene
         for sc in ranked:
@@ -257,44 +357,78 @@ def main() -> int:
             if env and length < sc["duration"]:
                 best, best_s = -1.0, sc["start"]
                 win = max(1, int(length / step_s))
-                lo, hi = int(sc["start"] / step_s), max(int(sc["start"] / step_s) + 1, int(sc["end"] / step_s) - win)
-                for i in range(lo, hi + 1):
+                # A139: a window starts at the scene's start or on the step grid after it, and
+                # ends inside the scene. The grid point at or before the start (floor) was a
+                # candidate, so a pick opened up to one step (0.5 s) early, on the previous shot
+                latest = sc["end"] - length
+                starts = [sc["start"]] + [i * step_s for i in range(math.ceil(sc["start"] / step_s - 1e-9),
+                                                                      math.floor(latest / step_s + 1e-9) + 1)
+                                          if sc["start"] < i * step_s <= latest]
+                for t in starts:
+                    i = int(t / step_s + 1e-9)
                     val = sum(env[i:i + win])
                     if val > best:
-                        best, best_s = val, i * step_s
-            picks.append((round(best_s, 2), round(min(sc["end"], best_s + length), 2)))
+                        best, best_s = val, t
+            # to the hundredth the result and the EDL are written in, inward: a start of 3.333
+            # written as 3.33 opened on the frame before the cut
+            pick_s = math.ceil(best_s * 100 - 1e-6) / 100
+            pick_e = math.floor(min(sc["end"], pick_s + length) * 100 + 1e-6) / 100
+            if pick_e <= pick_s:
+                # no hundredth fits inside it: written as 0.00-0.00 it was a range cut.py refuses
+                empty.append((sc["start"], sc["end"]))
+                continue
+            picks.append((pick_s, pick_e))
+        if empty and not picks:
+            die(f"--highlights found no range of at least 0.01 s, the precision the ranges are written in "
+                f"(each pick is at most {min(per, args.max_scene):g} s, or its scene is shorter)",
+                kind="input", hint="raise --target (or drop it), or lower --highlights")
+        for s, e in empty:
+            note(f"--highlights: the scene {s:.3f}-{e:.3f}s holds no range of at least 0.01 s and has no pick")
         picks.sort()
         result["highlights"] = [{"start": s, "end": e, "duration": round(e - s, 2)} for s, e in picks]
         result["highlights_total"] = round(sum(e - s for s, e in picks), 2)
         result["highlights_rank_by"] = args.rank_by
         info(f"proposed {len(picks)} highlight ranges totalling {result['highlights_total']:.1f}s")
-        if args.edl:
-            if not STATE.dry_run:  # the contract says --edl is not written under --dry-run
-                with open(args.edl, "w", encoding="utf-8") as fh:
-                    for s, e in picks:
-                        fh.write(f"{s:.2f}-{e:.2f}\n")
-            info(f"wrote {args.edl}")
 
     if args.sheet:
         n = len(scenes)
         cols = min(4, max(1, n))
         rows = max(1, math.ceil(n / cols))
         tile_w = 1280 // cols // 2 * 2
-        # exactly one frame per scene: the frame index at the scene start
-        fps = meta["video"].get("fps") or 30.0
-        expr = "+".join(f"eq(n\\,{int(round(sc['start'] * fps))})" for sc in scenes)
         stamp = ""
+        if not args.no_timecode and ffmpeg_filters() and "drawtext" not in ffmpeg_filters():
+            # as look.py (#394): the sheet needs drawtext only for its stamps
+            args.no_timecode = True
+            record_fallback("this ffmpeg build has no drawtext filter, so the --sheet has no timecode stamps "
+                            "(the same as --no-timecode)", "scenes_sheet_no_drawtext")
+            note("--sheet without timecode stamps: this ffmpeg build has no drawtext filter ("
+                 + filter_missing_hint("drawtext") + ")")
         if not args.no_timecode:
             default_font = default_font_file("DejaVu Sans")
-            font_prefix = f"fontfile={escape_filter_path(default_font)}:" if default_font else ""
+            font_prefix = f"{drawtext_fontfile(default_font)}:" if default_font else ""
             stamp = f",drawtext=text='%{{pts\\:hms}}':{font_prefix}fontcolor=white:fontsize=h/14:box=1:boxcolor=black@0.55:boxborderw=4:x=6:y=6"
-        vf = (f"select='{expr}',scale={tile_w}:-2{stamp},"
-              f"tile={cols}x{rows}:padding=2:margin=2:color=0x202020")
-        run(ffmpeg_base() + ["-i", args.input, "-vf", vf, "-frames:v", "1", "-fps_mode", "vfr", args.sheet])
+        # an untagged source is labelled BT.709 (tags only), or the sheet's RGB read it as BT.601 (#410);
+        # a non-square-pixel source is squared at its display aspect (#411)
+        lab = bt709_label_filter(meta)
+        square = square_pixels(meta["video"])
+        thumb = (lab + "," if lab else "") + (square + "," if square else "") + f"scale={tile_w}:-2{stamp}"
+        graph = sheet_graph([sc["start"] for sc in scenes], f"[0:{PROBED_VIDEO}]", thumb,
+                            f"tile={cols}x{rows}:padding=2:margin=2:color=0x202020")
+        run(ffmpeg_base() + ["-i", args.input, "-filter_complex", graph, "-map", "[sheet]", "-an",
+                             "-frames:v", "1", "-fps_mode", "vfr", "-update", "1", args.sheet])
         info(f"wrote {args.sheet}")
         result["sheet"] = args.sheet
 
-    if args.json:
+    # after the sheet, as silence.py writes its EDL after the cut (#462 A41): a --sheet refused as an
+    # existing file, or failed, left the EDL behind, and the corrected retry was then refused for it
+    if args.highlights and args.edl:
+        if not STATE.dry_run:  # the contract says --edl is not written under --dry-run
+            with open(args.edl, "w", encoding="utf-8") as fh:
+                for s, e in picks:
+                    fh.write(f"{s:.2f}-{e:.2f}\n")
+        info(f"wrote {args.edl}")
+
+    if STATE.json:  # --json-brief too: emit() is what adds the diagnostics (scenes_sheet_no_drawtext)
         emit(None, **result)
     else:
         print_json(result)
