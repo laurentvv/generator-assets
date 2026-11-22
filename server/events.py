@@ -7,6 +7,7 @@ blocking the worker (the next event re-renders full state anyway).
 """
 
 import asyncio
+import json
 from typing import Any, Dict, Optional
 
 
@@ -33,13 +34,14 @@ class EventHub:
 
     def publish(self, event: str, data: Any) -> None:
         """Fire-and-forget broadcast; `data` is a string (HTML) or dict (JSON)."""
+        payload = json.dumps(data) if isinstance(data, dict) else data
         for queue in list(self._subscribers.values()):
             try:
-                queue.put_nowait({"event": event, "data": data})
+                queue.put_nowait({"event": event, "data": payload})
             except asyncio.QueueFull:
                 try:
                     queue.get_nowait()
-                    queue.put_nowait({"event": event, "data": data})
+                    queue.put_nowait({"event": event, "data": payload})
                 except (asyncio.QueueFull, asyncio.QueueEmpty):
                     pass  # consumer too slow; full-state events will resync it
 

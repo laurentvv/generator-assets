@@ -66,9 +66,7 @@ class MusicBgWorkflow(BaseWorkflow):
     # help/defaults kept as-is, unchanged surface). Shared flags of the
     # audio family hosted here: --moteur (also voix_off), --variante (also
     # chanson/musique_adn), --music-backend (also musique_essence/retrait_voix/
-    # voix_off), --tonalite and --lyrics (also musique_adn). ⚠️ --force-bpm exposes
-    # dest=force_bpm but the run reads bpm_force: historical mismatch, to be fixed
-    # only with user validation (the flag is currently inert).
+    # voix_off), --tonalite and --lyrics (also musique_adn).
     PARAMETRES = [
         dict(flags=("--lufs",), type=float, default=None,
              help="Target LUFS of the \"bed\" music bed for music_bg (workflow default: -30)."),
@@ -118,7 +116,7 @@ class MusicBgWorkflow(BaseWorkflow):
             else:
                 etapes = 8 if variante != "xl-sft" else 25
         # Musical constraints (ACE-Step only: enforced on the LM planner)
-        bpm_force = params.get("bpm_force")
+        bpm_force = params.get("force_bpm") if params.get("force_bpm") is not None else params.get("bpm_force")
         tonalite = params.get("tonalite") or None
         mesure = params.get("mesure") or None
         backend = params.get("music_backend") or "vulkan"
@@ -128,7 +126,8 @@ class MusicBgWorkflow(BaseWorkflow):
         nb_candidats = max(1, min(int(params.get("candidats") or 3), 12))
         lyrics = params.get("lyrics") or "[Instrumental]"
         graine = int(params.get("seed") if params.get("seed") is not None else -1)
-        nom_base = params.get("output") or f"{slugifier_texte(prompt)}_loop"
+        raw_output = params.get("output")
+        nom_base = os.path.splitext(os.path.basename(raw_output))[0] if raw_output else f"{slugifier_texte(prompt)}_loop"
 
         output_dir = params.get("output_dir") or ""
         if not output_dir or output_dir == DEFAULT_OUTPUT_DIR:

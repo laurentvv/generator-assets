@@ -518,7 +518,7 @@ def resoudre_upscaler(nom_ou_chemin: Optional[str] = None) -> Optional[str]:
 
 
 def resoudre_sd_model(nom_ou_chemin: Optional[str] = None) -> str:
-    """Resolves the absolute path of a diffusion model (Flux.1 or SDXL Juggernaut)."""
+    """Resolves the absolute path of a diffusion model (Flux.1, Chroma1-HD or SDXL Juggernaut)."""
     if not nom_ou_chemin or nom_ou_chemin.lower() in ("default", "flux", "flux.1"):
         return DEFAULT_SD_MODEL
 
@@ -526,15 +526,18 @@ def resoudre_sd_model(nom_ou_chemin: Optional[str] = None) -> str:
         return os.path.abspath(nom_ou_chemin)
 
     cle = nom_ou_chemin.lower()
-    if os.path.exists(DEFAULT_MODEL_DIR):
-        for f in os.listdir(DEFAULT_MODEL_DIR):
+    dossiers = [DEFAULT_MODEL_DIR, *(d for d in MODEL_DIRS if d != DEFAULT_MODEL_DIR)]
+    for dossier in dossiers:
+        if not os.path.exists(dossier):
+            continue
+        for f in os.listdir(dossier):
             f_lower = f.lower()
             if not f_lower.endswith((".safetensors", ".gguf", ".ckpt", ".bin")):
                 continue
             if cle in f_lower:
-                return os.path.join(DEFAULT_MODEL_DIR, f)
+                return os.path.join(dossier, f)
             if cle in ("juggernaut", "juggernautxl", "sdxl", "ragnarok") and "juggernaut" in f_lower:
-                return os.path.join(DEFAULT_MODEL_DIR, f)
+                return os.path.join(dossier, f)
 
     return nom_ou_chemin
 
@@ -761,6 +764,188 @@ def verifier_prerequis(config: dict) -> bool:
             print(f"   - {m}")
         return False
     return True
+
+
+def verifier_prerequis_workflow(workflow: str, config: Optional[dict] = None) -> dict:
+    """Targeted prerequisite check for a single workflow (`main.py --check -w <workflow>`).
+
+    Verifies ONLY the executables and model files required by `workflow` instead
+    of the global Flux+Llama baseline. Returns a structured report dict:
+    {"ok": bool, "workflow": str, "checked": [(label, path, present)], "missing": [...], "licence": dict}.
+    """
+    import shutil
+
+    cfg = config or {}
+    wf = (workflow or "").strip().lower()
+
+    def _exists(path: Optional[str]) -> bool:
+        if not path:
+            return False
+        if os.path.exists(path):
+            return True
+        # Bare executable names like "ffmpeg" resolve via PATH
+        if os.sep not in path and "/" not in path:
+            return shutil.which(path) is not None
+        return False
+
+    # Per-workflow (label, path) requirements
+    sd_cli = cfg.get("sd_cli", DEFAULT_SD_CLI)
+    sd_cli_ltx = DEFAULT_SD_CLI_LTX
+    audiocpp = DEFAULT_AUDIOCPP_CLI
+    ff = DEFAULT_FFMPEG
+
+    flux_pack = [
+        ("sd-cli", sd_cli),
+        ("Flux/SD model", cfg.get("sd_model", DEFAULT_SD_MODEL)),
+        ("T5-XXL", cfg.get("t5xxl", DEFAULT_T5XXL)),
+        ("VAE", cfg.get("vae", DEFAULT_VAE)),
+    ]
+    if "chroma" not in os.path.basename(str(cfg.get("sd_model", DEFAULT_SD_MODEL))).lower():
+        flux_pack.insert(2, ("CLIP-L", cfg.get("clip_l", DEFAULT_CLIP_L)))
+
+    requis_par_workflow: dict[str, list[tuple[str, str]]] = {
+        "generate": flux_pack,
+        "tileable": flux_pack,
+        "variations": flux_pack,
+        "spritesheet": flux_pack,
+        "rpg_portrait": flux_pack,
+        "skybox": flux_pack,
+        "turnaround3d": flux_pack,
+        "ui_9slice": flux_pack,
+        "vfx_flipbook": flux_pack,
+        "ip_adapter": flux_pack,
+        "autotile_pack": flux_pack,
+        "qwen_image": [
+            ("sd-cli", sd_cli),
+            ("Qwen-Image-2.1 model", DEFAULT_QWEN_IMAGE21_MODEL),
+            ("Qwen-Image-2.1 LLM", DEFAULT_QWEN_IMAGE21_LLM),
+            ("Qwen-Image-2.1 VAE", DEFAULT_QWEN_IMAGE21_VAE),
+        ],
+        "moss_image": [
+            ("sd-cli", sd_cli),
+            ("MOSS-Image model", DEFAULT_MOSS_IMAGE_MODEL),
+            ("MOSS-Image LLM", DEFAULT_MOSS_IMAGE_LLM),
+            ("MOSS-Image VAE", DEFAULT_MOSS_IMAGE_VAE),
+            ("MOSS-Image tokenizer", DEFAULT_MOSS_IMAGE_TOKENIZER),
+        ],
+        "pose_control": [
+            ("sd-cli", sd_cli),
+            ("SDXL checkpoint", DEFAULT_SDXL_MODEL),
+            ("ControlNet OpenPose", DEFAULT_CONTROLNET_POSE),
+        ],
+        "rembg": [("RMBG ONNX", DEFAULT_RMBG_MODEL)],
+        "material3d": [("DeepBump ONNX", DEFAULT_DEEPBUMP_MODEL)],
+        "rife_interp": [("RIFE ONNX", DEFAULT_RIFE_MODEL)],
+        "upscale": [("sd-cli", sd_cli), ("ESRGAN model", cfg.get("esrgan_model", DEFAULT_ESRGAN_MODEL))],
+        "video": [
+            ("sd-cli", sd_cli),
+            ("Video DiT model", resoudre_modele_video()),
+            ("Video VAE", resoudre_vae_video()),
+            ("UMT5-XXL", resoudre_t5xxl_video()),
+        ],
+        "video_vace": [
+            ("sd-cli", sd_cli),
+            ("VACE DiT model", DEFAULT_VACE_MODEL),
+            ("VACE T5-XXL", DEFAULT_VACE_T5XXL),
+            ("Wan VAE", DEFAULT_WAN_VAE),
+        ],
+        "video_s2v": [
+            ("sd-cli", sd_cli),
+            ("Wan2.2-S2V model", DEFAULT_WAN_S2V_MODEL),
+            ("wav2vec2 audio encoder", DEFAULT_WAN_S2V_AUDIO_ENCODER),
+            ("VACE T5-XXL", DEFAULT_VACE_T5XXL),
+            ("Wan VAE", DEFAULT_WAN_VAE),
+            ("ffmpeg", ff),
+        ],
+        "h3_ref2va": [
+            ("sd-cli", sd_cli),
+            ("H3 Ref2VA DiT", DEFAULT_H3_REF2VA_MODEL),
+            ("H3 Video VAE", DEFAULT_H3_VIDEO_VAE),
+            ("H3 Audio VAE", DEFAULT_H3_AUDIO_VAE),
+            ("H3 LLM", DEFAULT_H3_LLM),
+            ("ffmpeg", ff),
+        ],
+        "monoplan_ia": [
+            ("sd-cli (LTX)", sd_cli_ltx),
+            ("LTX-2.5 DiT", os.path.join(DEFAULT_MODEL_DIR, "LTX-2.5-Distilled-Q4_K_M.gguf")),
+            ("LTX-2.5 Video VAE", os.path.join(DEFAULT_MODEL_DIR, "ltx-2.5-video-vae-conv-bf16.safetensors")),
+            ("LTX-2.5 LLM", os.path.join(DEFAULT_MODEL_DIR, "gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf")),
+            ("ffmpeg", ff),
+        ],
+        "video_multishot": [
+            ("sd-cli (LTX)", sd_cli_ltx),
+            ("LTX-2.5 DiT", os.path.join(DEFAULT_MODEL_DIR, "LTX-2.5-Distilled-Q4_K_M.gguf")),
+            ("LTX-2.5 Video VAE", os.path.join(DEFAULT_MODEL_DIR, "ltx-2.5-video-vae-conv-bf16.safetensors")),
+            ("LTX-2.5 Audio VAE", os.path.join(DEFAULT_MODEL_DIR, "ltx-2.5-audio-vae-bf16.safetensors")),
+            ("LTX-2.5 LLM", os.path.join(DEFAULT_MODEL_DIR, "gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf")),
+        ],
+        "music_bg": [("audio.cpp", audiocpp), ("ACE-Step 1.5 dir", DEFAULT_ACESTEP15_DIR), ("ffmpeg", ff)],
+        "chanson": [("audio.cpp", audiocpp), ("ACE-Step 1.5 dir", DEFAULT_ACESTEP15_DIR), ("ffmpeg", ff)],
+        "musique_adn": [("audio.cpp", audiocpp), ("ACE-Step 1.5 dir", DEFAULT_ACESTEP15_DIR), ("ffmpeg", ff)],
+        "musique_essence": [("audio.cpp", audiocpp), ("MiniMax-Music3 dir", DEFAULT_MUSIC3_DIR), ("ffmpeg", ff)],
+        "acestep_cover": [("audio.cpp", audiocpp), ("ACE-Step 1.5 dir", DEFAULT_ACESTEP15_DIR), ("ffmpeg", ff)],
+        "audio_repaint": [("audio.cpp", audiocpp), ("ACE-Step 1.5 dir", DEFAULT_ACESTEP15_DIR), ("SA3 Medium", DEFAULT_SA3_MEDIUM_MODEL)],
+        "retrait_voix": [("audio.cpp", audiocpp), ("Mel-Band-RoFormer", DEFAULT_MEL_ROFORMER_MODEL), ("ffmpeg", ff)],
+        "audio_restaure": [("audio.cpp", audiocpp), ("Apollo model", DEFAULT_APOLLO_MODEL), ("ffmpeg", ff)],
+        "sfx": [("audio.cpp", audiocpp), ("SA3 Medium", DEFAULT_SA3_MEDIUM_MODEL), ("ffmpeg", ff)],
+        "voix_off": [("audio.cpp", audiocpp), ("ffmpeg", ff)],
+        "voix_robot": [("audio.cpp", audiocpp), ("ffmpeg", ff)],
+        "voix_conversion": [("audio.cpp", audiocpp), ("ffmpeg", ff)],
+        "lfm3_tts": [
+            ("llama-tts", DEFAULT_LLAMA_TTS),
+            ("LFM3-Audio-2B model", DEFAULT_LFM3_TTS_MODEL),
+            ("LFM3-Audio-2B mmproj", DEFAULT_LFM3_TTS_MMPROJ),
+        ],
+        "indextts25_tts": [
+            ("audio.cpp", audiocpp),
+            ("IndexTTS2.5 model", DEFAULT_INDEXTTS25_MODEL),
+            ("ffmpeg", ff),
+        ],
+        "sous_titres": [
+            ("audio.cpp", audiocpp),
+            ("Qwen3-ForcedAligner GGUF", os.getenv("QWEN3_FORCED_ALIGNER_MODEL", os.path.join(DEFAULT_MODEL_DIR, "qwen3-forced-aligner-0.6b-q8_0.gguf"))),
+            ("Qwen3-ASR GGUF", os.getenv("QWEN3_ASR_MODEL", os.path.join(DEFAULT_MODEL_DIR, "Qwen3-ASR-0.6B-GGUF", "qwen3-asr-0.6b-q8_0.gguf"))),
+            ("Silero VAD dir", os.getenv("QWEN3_VAD_DIR", os.path.join(DEFAULT_MODEL_DIR, "vad", "silero_vad"))),
+            ("ffmpeg", ff),
+        ],
+        "ocr_image": [
+            ("llama-server", DEFAULT_LLAMA_SERVER),
+            ("MiniCPM-OCR model", DEFAULT_MINICPM_OCR_MODEL),
+            ("MiniCPM-OCR mmproj", DEFAULT_MINICPM_OCR_MMPROJ),
+        ],
+        "open_water": [("open-water repo", DEFAULT_OPEN_WATER_DIR), ("ffmpeg", ff)],
+        "gif_export": [("ffmpeg", ff)],
+        "beat_sync": [("ffmpeg", ff)],
+        "son_convertir": [("ffmpeg", ff)],
+    }
+
+    cibles = requis_par_workflow.get(wf, [])
+    checked: list[tuple[str, str, bool]] = []
+    missing: list[str] = []
+    for label, path in cibles:
+        ok = _exists(path)
+        checked.append((label, path, ok))
+        if not ok:
+            missing.append(f"{label} missing: {path}")
+
+    licence = classifier_licence_workflow(wf, sd_model=cfg.get("sd_model"))
+    if not cibles:
+        print(f"✅ [Diagnostic:{wf}] Pure CPU/utility workflow — no heavy model prerequisites required.")
+    elif missing:
+        print(f"⚠️  [Diagnostic:{wf}] Missing prerequisites ({len(missing)}/{len(checked)}):")
+        for m in missing:
+            print(f"   - {m}")
+    else:
+        print(f"✅ [Diagnostic:{wf}] All {len(checked)} required executables and models are ready!")
+    print(f"   License tier: {licence['tier']} ({licence['licence']})")
+
+    return {
+        "ok": len(missing) == 0,
+        "workflow": wf,
+        "checked": checked,
+        "missing": missing,
+        "licence": licence,
+    }
 
 
 # ---------------------------------------------------------------------------

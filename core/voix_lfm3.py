@@ -20,6 +20,7 @@ from core.config import (
     DEFAULT_LFM3_TTS_MODEL,
     DEFAULT_LFM3_TTS_MMPROJ,
 )
+from core.nvme_staging import stager_vers_nvme_temporaire
 from core.process import run_engine
 
 VOIX_DISPONIBLES = ("female", "male")
@@ -51,22 +52,22 @@ def generer_voix_lfm3(
         if not os.path.exists(chemin):
             raise FileNotFoundError(f"{role} not found: {chemin}")
 
-    commande = [
-        llama_tts,
-        "-m", modele,
-        "-mm", mmproj,
-        "-p", texte,
-        "--tts-lang", langue,
-        "--tts-voice", voix,
-        "-ngl", str(ngl),
-        "-o", sortie,
-    ]
-
     try:
         print(f"🎙️ LFM3-Audio-2B voice synthesis: lang={langue}, voice={voix}…")
     except UnicodeEncodeError:
         print(f"LFM3-Audio-2B voice synthesis: lang={langue}, voice={voix}…")
-    run_engine(commande, capture=False, check=True, timeout=600, etiquette="llama-tts lfm3")
+    with stager_vers_nvme_temporaire({"modele": modele, "mmproj": mmproj}, prefix="_tmp_lfm3_") as staged:
+        commande = [
+            llama_tts,
+            "-m", staged["modele"],
+            "-mm", staged["mmproj"],
+            "-p", texte,
+            "--tts-lang", langue,
+            "--tts-voice", voix,
+            "-ngl", str(ngl),
+            "-o", sortie,
+        ]
+        run_engine(commande, capture=False, check=True, timeout=600, etiquette="llama-tts lfm3")
     if not os.path.exists(sortie):
         raise RuntimeError(f"The generation did not produce {sortie}")
 

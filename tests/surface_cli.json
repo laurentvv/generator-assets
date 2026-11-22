@@ -1891,6 +1891,20 @@
  ],
  [
   [
+   "--preset"
+  ],
+  "preset",
+  "_StoreAction",
+  "None",
+  [
+   "doc2video",
+   "godot"
+  ],
+  null,
+  null
+ ],
+ [
+  [
    "--profondeur-bits"
   ],
   "profondeur_bits",

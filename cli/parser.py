@@ -177,6 +177,8 @@ def construire_parseur() -> argparse.ArgumentParser:
                         help="Main title text (miniature thumbnail, rapport_deck title slide).")
     groupe_ia.add_argument("--sous-titre", default=None,
                         help="Secondary line (miniature subtitle, rapport_deck title slide).")
+    groupe_ia.add_argument("--preset", default=None, choices=["godot", "doc2video"],
+                        help="Consumer export preset (godot = game assets/loops -30 LUFS; doc2video = YouTube -16 LUFS / 4K / commercial clearance check). Never overrides explicitly passed flags.")
 
     # Utility modes
     parser.add_argument("--interactive", action="store_true", help="Starts the interactive session.")
@@ -293,7 +295,7 @@ def construire_params(args: argparse.Namespace, prompt_texte: str) -> dict:
         "update_llama", "llama_install_dir", "llama_source_dir",
         "update_vulkan", "scan_web_assets",
         "llama_cli", "llm_model", "sd_cli", "sd_model", "clip_l", "t5xxl",
-        "vae", "backend", "threads", "style", "no_preview",
+        "vae", "backend", "threads", "style", "no_preview", "preset",
     ):
         params.pop(cle, None)
 
@@ -306,4 +308,21 @@ def construire_params(args: argparse.Namespace, prompt_texte: str) -> dict:
     params["portrait"] = args.portrait or args.input
 
     return {cle: valeur for cle, valeur in params.items() if valeur is not None}
+
+
+def dests_explicites(parseur: argparse.ArgumentParser, argv: list[str]) -> set[str]:
+    """Returns the set of argparse dests explicitly provided in `argv`."""
+    flag_to_dest = {
+        flag: action.dest
+        for action in parseur._actions
+        for flag in action.option_strings
+    }
+    explicites: set[str] = set()
+    for token in argv:
+        if not token.startswith("-"):
+            continue
+        cle = token.split("=", 1)[0]
+        if cle in flag_to_dest:
+            explicites.add(flag_to_dest[cle])
+    return explicites
 

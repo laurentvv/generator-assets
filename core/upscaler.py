@@ -98,7 +98,8 @@ def upscale_esrgan(
         ]
 
         run_engine(commande, timeout=600, capture=False, check=True, etiquette="sd-cli ESRGAN")
-        img_upscaled_rgb = Image.open(temp_out).convert("RGB")
+        with Image.open(temp_out) as img:
+            img_upscaled_rgb = img.convert("RGB")
 
     return _reinjecter_alpha(image_entree, img_upscaled_rgb)
 
@@ -148,7 +149,8 @@ def upscale_seedvr2(
         run_engine(commande, timeout=1800, capture=False, check=True, etiquette="sd-cli SeedVR2 image")
         if not os.path.exists(temp_out):
             raise FileNotFoundError(f"SeedVR2 did not produce output image: {temp_out}")
-        img_upscaled_rgb = Image.open(temp_out).convert("RGB")
+        with Image.open(temp_out) as img:
+            img_upscaled_rgb = img.convert("RGB")
 
     return _reinjecter_alpha(image_entree, img_upscaled_rgb)
 

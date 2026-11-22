@@ -117,7 +117,8 @@ def _transcrire_page(
     image: str, consigne: str, port: int, delai_s: float
 ) -> Dict[str, Any]:
     """OCR of one image through /v1/chat/completions (reasoning off)."""
-    donnees = base64.b64encode(open(image, "rb").read()).decode()
+    with open(image, "rb") as handle:
+        donnees = base64.b64encode(handle.read()).decode()
     requete = {
         "messages": [
             {
