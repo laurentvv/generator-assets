@@ -255,8 +255,11 @@ uv run python scripts/download_models.py --pack base
 
 ### Step 3: Produce Your First Asset!
 ```bash
-# Generate a complete PBR material ready for Godot:
-uv run python main.py -w material3d "runic ancient dungeon stone floor" -s 1024
+# Generate a complete PBR material ready for Godot (or use --preset godot|doc2video):
+uv run python main.py -w material3d "runic ancient dungeon stone floor" -s 1024 --preset godot
+
+# Check prerequisites for a specific workflow before running:
+uv run python main.py --check -w sous_titres
 
 # Or launch the Web Console in your browser:
 uv run python -m server    # → Opens http://127.0.0.1:8765

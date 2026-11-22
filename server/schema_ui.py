@@ -73,7 +73,7 @@ HIDDEN_DESTS = {
     "verbose", "interactive", "workflow", "prompt_flag", "list_workflows",
     "list_loras", "list_upscalers", "check", "update_sd", "update_llama",
     "update_vulkan", "sd_install_dir", "sd_source_dir", "llama_install_dir",
-    "llama_source_dir", "no_preview", "preview",
+    "llama_source_dir", "no_preview", "preview", "preset",
 }
 
 # Dest -> widget override (inferred widget otherwise, see introspection.py).
@@ -219,6 +219,14 @@ WORKFLOW_META = {
     "tts_dialogue": {"primary": ["emotions", "pitch"], "estimate": "≈1 min/line"},
     "lfm3_tts": {"primary": ["tts_langue", "tts_voix"], "estimate": "seconds (faster than real time, GPU)"},
     "indextts25_tts": {"primary": ["indextts_langue", "indextts_reference"], "estimate": "seconds (RTF ~3-4 Vulkan incl. load)", "warnings": ["Voice reference is MANDATORY (zero-shot); its loudness is normalized before the call — output follows the reference level (§1.67)."]},
+    "sous_titres": {
+        "primary": ["audio", "st_mode", "st_langue", "st_quant", "st_vad"],
+        "estimate": "seconds (14-70× real time Vulkan)",
+        "warnings": [
+            "align mode (default): prompt MUST be the exact transcript, short clips (<=15 s).",
+            "asr mode: long audio via Qwen3-ASR + Silero VAD (16 kHz mono resample).",
+        ],
+    },
     "ocr_image": {"primary": ["input", "ocr_consigne"], "estimate": "≈5 s/page (GPU, ~2 GB VRAM)", "heavy": False},
     "audio_upscale": {"primary": ["upsr_variante", "upsr_rate"], "estimate": "CPU RTF ~13 (minutes)", "warnings": ["Mono output; refuses input > 24 kHz (§1.27)."]},
     "audio_restaure": {"primary": ["restore_engine", "restore_chunk", "restore_overlap"], "estimate": "≈seconds (Vulkan RTF ~0.5)", "warnings": ["RE-USE: speech only; Apollo: 44.1 kHz general polish with -1.0 dBTP guard."]},
@@ -264,7 +272,10 @@ WORKFLOW_META = {
 # WORKFLOW_META[...]["heavy"] is False; this list is the authoritative default.
 LIGHT_DEFAULTS = {
     "pixelart", "flowmap", "voxel3d", "rembg", "audio_ambience", "anim_loop",
-    "rife_interp",
+    "rife_interp", "alpha_qa", "beat_sync", "carte_fin", "classeur_donnees",
+    "doc_texte", "filigrane_batch", "gif_export", "icon_lottie", "icone_jeu",
+    "maquette_ui", "miniature", "photo_develop", "planche_pdf", "prepa_i2v",
+    "projet_montage", "rapport_deck", "son_convertir", "titre_anime",
 }
 
 # Family-level standing notices (shown on every workflow of the family).
@@ -282,8 +293,13 @@ ESTIMATE_SECONDS = {
     "pixelart": 5, "flowmap": 5, "voxel3d": 10, "rembg": 15, "audio_ambience": 10,
     "anim_loop": 20, "rife_interp": 60, "sfx": 60, "tts_dialogue": 60,
     "voix_off": 90, "voix_perso": 90, "voix_robot": 60, "voix_conversion": 90,
-    "lfm3_tts": 15, "indextts25_tts": 60,
-    "ocr_image": 30,
+    "lfm3_tts": 15, "indextts25_tts": 60, "sous_titres": 30,
+    "alpha_qa": 5, "beat_sync": 5, "carte_fin": 10, "classeur_donnees": 5,
+    "doc_texte": 5, "filigrane_batch": 10, "gif_export": 15, "icon_lottie": 10,
+    "icone_jeu": 5, "maquette_ui": 5, "miniature": 5, "photo_develop": 10,
+    "planche_pdf": 10, "prepa_i2v": 5, "projet_montage": 5, "rapport_deck": 10,
+    "son_convertir": 10, "titre_anime": 15,
+    "ocr_image": 30, "ocr_pdf": 60,
     "generate": 120, "tileable": 120, "variations": 120, "ui_9slice": 120,
     "spritesheet": 240, "ip_adapter": 120, "rpg_portrait": 180, "material3d": 300,
     "mesh3d": 180, "skybox": 360, "turnaround3d": 240, "upscale": 120,

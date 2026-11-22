@@ -191,7 +191,9 @@ def waveform(path: Path, bars: int = 180, width: int = 640, height: int = 120,
             if frames == 0 or width_sample not in (1, 2, 4) or frames > 30_000_000:
                 return None
             data = handle.readframes(frames)
-        step = max(1, len(data) // (bars * channels * width_sample))
+        frame_size = max(1, channels * width_sample)
+        frames_per_bar = max(1, (len(data) // frame_size) // bars)
+        step = frames_per_bar * frame_size
         peaks: List[float] = []
         for index in range(bars):
             start = index * step
@@ -201,10 +203,10 @@ def waveform(path: Path, bars: int = 180, width: int = 640, height: int = 120,
             if width_sample == 1:
                 vals = [abs(b - 128) for b in chunk]
             elif width_sample == 2:
-                vals = [abs(chunk[i] | (chunk[i + 1] << 8)) for i in range(0, len(chunk) - 1, 2)]
+                vals = [abs(int.from_bytes(chunk[i:i + 2], "little", signed=True)) for i in range(0, len(chunk) - 1, 2)]
             else:
-                vals = [abs(int.from_bytes(chunk[i:i + 4], "little")) for i in range(0, len(chunk) - 3, 4)]
-            peaks.append((max(vals) or 0) / (255 if width_sample == 1 else 32768 if width_sample == 2 else 2**31))
+                vals = [abs(int.from_bytes(chunk[i:i + 4], "little", signed=True)) for i in range(0, len(chunk) - 3, 4)]
+            peaks.append((max(vals) or 0) / (128 if width_sample == 1 else 32768 if width_sample == 2 else 2**31))
         if not peaks:
             return None
         norm = max(peaks) or 1.0

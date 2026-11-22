@@ -27,7 +27,7 @@ for flux in (sys.stdout, sys.stderr):
 # tests/test_cli_contract.py and consumers use main.construire_parseur).
 from cli.interactive import lancer_mode_interactif
 from cli.maintenance import gerer_maintenance_llama, gerer_maintenance_sd, gerer_maintenance_vulkan
-from cli.parser import construire_parseur, construire_params
+from cli.parser import construire_params, construire_parseur, dests_explicites
 from core.config import (
     DEFAULT_ESRGAN_MODEL,
     DEFAULT_LORA_DIRS,
@@ -35,8 +35,10 @@ from core.config import (
     lister_upscalers,
     resoudre_sd_model,
     verifier_prerequis,
+    verifier_prerequis_workflow,
 )
 from core.journal import configurer_journal
+from core.presets import appliquer_preset
 from workflows import WorkflowRegistry
 
 
@@ -108,6 +110,12 @@ def main():
         sys.exit(0)
 
     if args.check:
+        explicites = dests_explicites(parser, sys.argv[1:])
+        if "workflow" in explicites:
+            wf_check = args.workflow.lower()
+            print(f"🔍 Checking prerequisites for workflow '{wf_check}'...")
+            rapport = verifier_prerequis_workflow(wf_check, config)
+            sys.exit(0 if rapport["ok"] else 1)
         print("🔍 Checking prerequisites and paths...")
         valide = verifier_prerequis(config)
         if valide:
@@ -140,6 +148,15 @@ def main():
     wf_cible = args.workflow.lower()
     if wf_cible == "generate" and args.file:
         wf_cible = "batch"
+
+    if getattr(args, "preset", None):
+        params = appliquer_preset(
+            wf_cible,
+            params,
+            args.preset,
+            explicites=dests_explicites(parser, sys.argv[1:]),
+            sd_model=config.get("sd_model"),
+        )
 
     try:
         workflow_cls = WorkflowRegistry.get(wf_cible)

@@ -197,12 +197,17 @@ class JobManager:
             while True:
                 chunk = await proc.stdout.read(4096)
                 if not chunk:
-                    break
-                buffer += chunk
-                # Engines emit both plain lines (\n) and carriage-return
-                # progress bars (\r) — split on both without blocking.
-                parts = buffer.replace(b"\r\n", b"\n").replace(b"\r", b"\n").split(b"\n")
-                buffer = parts.pop()  # incomplete tail stays buffered
+                    if buffer:
+                        parts = [buffer]
+                        buffer = b""
+                    else:
+                        break
+                else:
+                    buffer += chunk
+                    # Engines emit both plain lines (\n) and carriage-return
+                    # progress bars (\r) — split on both without blocking.
+                    parts = buffer.replace(b"\r\n", b"\n").replace(b"\r", b"\n").split(b"\n")
+                    buffer = parts.pop()  # incomplete tail stays buffered
                 for raw in parts:
                     line = raw.decode("utf-8", errors="replace").strip()
                     if not line:
@@ -216,11 +221,13 @@ class JobManager:
                     if found is not None:
                         progress = max(progress, found)
                 now = time.time()
-                if now - last_emit > 0.6 and parts:
+                if (now - last_emit > 0.6 or not chunk) and parts:
                     last_emit = now
                     db.update_job(job_id, progress=round(progress, 3))
                     hub().publish("job_log", self.render("partials/log_tail.html", lines=tail[-120:]))
                     hub().publish("job_progress", self.render("partials/progress.html", job=db.get_job(job_id), progress=progress))
+                if not chunk:
+                    break
 
         exit_code = await proc.wait()
         self._procs.pop(job_id, None)

@@ -143,7 +143,7 @@ def create_app() -> FastAPI:
         per_page = 60
         items = db.search_outputs(kind=kind or None, workflow=workflow or None, query=q,
                                   limit=per_page, offset=(page_n - 1) * per_page)
-        total = db.count_outputs(kind=kind or None, query=q)
+        total = db.count_outputs(kind=kind or None, workflow=workflow or None, query=q)
         return page("library.html", request, active="library", items=items, total=total,
                     kind=kind, workflow=workflow, q=q, page_n=page_n, per_page=per_page,
                     detail=detail, snapshot=manager().snapshot(),
@@ -204,8 +204,14 @@ def create_app() -> FastAPI:
         entry = introspection.get(workflow)
         if entry is None:
             return HTMLResponse(f"unknown workflow {workflow}", status_code=400)
-        params = {key: str(value) for key, value in form.items()
-                  if key != "workflow" and value not in (None, "") and key in entry["params"]}
+        params: Dict[str, Any] = {}
+        for key in set(form.keys()):
+            if key == "workflow" or key not in entry["params"]:
+                continue
+            vals = [str(v) for v in form.getlist(key) if v not in (None, "")]
+            if not vals:
+                continue
+            params[key] = vals if entry["params"][key].get("store") == "append" and len(vals) > 1 else vals[-1]
         try:
             job = await manager().enqueue(workflow, params)
         except ArgvError as exc:

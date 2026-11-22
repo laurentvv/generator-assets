@@ -20,6 +20,7 @@ import re
 from typing import Any, Dict, Optional
 
 from core.config import DEFAULT_AUDIOCPP_CLI, DEFAULT_INDEXTTS25_MODEL
+from core.music_ai import resoudre_ffmpeg
 from core.process import run_engine
 
 # Languages officially supported by the IndexTTS2.5 tokenizer (model spec
@@ -40,7 +41,7 @@ _LUFS_PATTERN = re.compile(r"I:\s*(-?\d+(?:\.\d+)?)\s*LUFS")
 
 def mesurer_lufs(chemin: str) -> Optional[float]:
     """Integrated loudness (LUFS) of a WAV via ffmpeg ebur128, None if unmeasurable."""
-    commande = ["ffmpeg", "-hide_banner", "-nostats", "-i", chemin,
+    commande = [resoudre_ffmpeg(), "-hide_banner", "-nostats", "-i", chemin,
                 "-af", "ebur128", "-f", "null", "-"]
     retour = run_engine(commande, capture=True, check=False, timeout=120,
                         etiquette="ebur128 loudness")
@@ -76,7 +77,7 @@ def normaliser_reference(reference: str, cible: float = REFERENCE_TARGET_LUFS) -
         )
     print(f"⚠️ Reference too quiet ({mesure:.1f} LUFS < {REFERENCE_SANE_LUFS} LUFS) — "
           f"normalizing to {cible:.0f} LUFS: {cible_chemin}")
-    commande = ["ffmpeg", "-hide_banner", "-y", "-i", reference,
+    commande = [resoudre_ffmpeg(), "-hide_banner", "-y", "-i", reference,
                 "-af", f"loudnorm=I={cible}:TP={REFERENCE_TRUE_PEAK}",
                 "-ar", "48000", cible_chemin]
     run_engine(commande, capture=True, check=True, timeout=120,

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 -*-
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Character voice synthesis (English) — recipes VALIDATED by the novel2video-ai

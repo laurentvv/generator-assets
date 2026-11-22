@@ -20,7 +20,8 @@ uv run python main.py -w <workflow> "<prompt or args>" [options]
 
 - `-o <name>`: base name of the outputs (otherwise derived from the prompt);
 - `--seed <N>`: fixed seed for A/B reproducibility;
-- `uv run python main.py --check`: checks that engines and models are detected;
+- `--preset godot|doc2video`: consumer export preset (applies validated defaults without overriding explicitly passed flags; `doc2video` also runs a commercial license check);
+- `uv run python main.py --check [-w <workflow>]`: checks that engines and models are detected (targeted per-workflow check when `-w <workflow>` is passed);
 - `uv run python main.py --interactive`: interactive console (75-workflow menu) for human exploration;
 - **web console (2026-10-11)**: `uv run python -m server` → http://127.0.0.1:8765 —
   full-Python UI (FastAPI+Jinja2+HTMX) piloting all 75 workflows: auto-generated forms
