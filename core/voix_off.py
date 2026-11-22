@@ -35,6 +35,7 @@ from core.music_ai import (
     resoudre_audiocpp,
     resoudre_ffmpeg,
 )
+from core.nvme_staging import stager_vers_nvme_temporaire
 from core.process import run_engine
 
 # GGUF package paths (overridable via environment variable).
@@ -249,34 +250,35 @@ def generer_voix_off(
     # fish_drama3 switches to the dedicated cloning task when a reference is
     # provided (the tts task ignores --voice-ref for this family).
     tache = "clon" if (ref_effective and conf["famille"] == "fish_drama3") else "tts"
-    cmd = [resoudre_audiocpp(), "--task", tache, "--family", conf["famille"],
-           "--model", modele, "--backend", backend, "--text", texte,
-           "--metrics", "--out", sortie]
-    if conf["langue"]:
-        cmd += ["--language", conf["langue"]]
-    if ref_effective:
-        cmd += ["--voice-ref", ref_effective]
-        if conf["famille"] in ("qwen3_tts", "fish_audio"):
-            transcript = transcrire_reference(ref_effective, dossier_travail, backend)
-            cmd += ["--reference-text", transcript]
-        elif conf["famille"] == "fish_drama3":
-            transcript = transcrire_reference(ref_effective, dossier_travail, backend)
-            cmd += ["--request-option", f"reference_text={transcript}"]
-    if conf["famille"] == "fish_drama3":
-        # Validated 16 GB VRAM profile (first real-hardware validation 2026-10-19;
-        # upstream settings were measured on a 96 GB GPU only): 24 of the 40
-        # MoE expert banks evaluated on CPU, the rest + backbone + audio tower
-        # on the selected backend.
-        cmd += ["--session-option", "fish_drama3.cpu_expert_layers=24",
-                "--session-option", "fish_drama3.context_length=2048"]
-    if instruct and moteur == "qwen3":
-        cmd += ["--instruct", instruct]
-    if seed is not None and seed >= 0:
-        cmd += ["--seed", str(seed)]
+    with stager_vers_nvme_temporaire({"modele": modele}, prefix="_tmp_tts_") as staged:
+        cmd = [resoudre_audiocpp(), "--task", tache, "--family", conf["famille"],
+               "--model", staged["modele"], "--backend", backend, "--text", texte,
+               "--metrics", "--out", sortie]
+        if conf["langue"]:
+            cmd += ["--language", conf["langue"]]
+        if ref_effective:
+            cmd += ["--voice-ref", ref_effective]
+            if conf["famille"] in ("qwen3_tts", "fish_audio"):
+                transcript = transcrire_reference(ref_effective, dossier_travail, backend)
+                cmd += ["--reference-text", transcript]
+            elif conf["famille"] == "fish_drama3":
+                transcript = transcrire_reference(ref_effective, dossier_travail, backend)
+                cmd += ["--request-option", f"reference_text={transcript}"]
+        if conf["famille"] == "fish_drama3":
+            # Validated 16 GB VRAM profile (first real-hardware validation 2026-10-19;
+            # upstream settings were measured on a 96 GB GPU only): 24 of the 40
+            # MoE expert banks evaluated on CPU, the rest + backbone + audio tower
+            # on the selected backend.
+            cmd += ["--session-option", "fish_drama3.cpu_expert_layers=24",
+                    "--session-option", "fish_drama3.context_length=2048"]
+        if instruct and moteur == "qwen3":
+            cmd += ["--instruct", instruct]
+        if seed is not None and seed >= 0:
+            cmd += ["--seed", str(seed)]
 
-    print(f"🎙️ Voice over generation: engine={moteur}, cloning={'yes' if ref_effective else 'no'}, backend={backend}…")
-    # audio.cpp progress live on the console (generation = minutes)
-    run_engine(cmd, capture=False, check=True, timeout=3600, etiquette="audio.cpp voice over")
+        print(f"🎙️ Voice over generation: engine={moteur}, cloning={'yes' if ref_effective else 'no'}, backend={backend}…")
+        # audio.cpp progress live on the console (generation = minutes)
+        run_engine(cmd, capture=False, check=True, timeout=3600, etiquette="audio.cpp voice over")
     if not os.path.exists(sortie):
         raise RuntimeError(f"The generation did not produce {sortie}")
     return {"sortie": sortie, "moteur": moteur, "clonage": bool(ref_effective),

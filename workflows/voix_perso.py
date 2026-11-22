@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 -*-
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Character Voice Workflow: English character voices from the VALIDATED pilot

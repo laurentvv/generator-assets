@@ -251,7 +251,7 @@ def search_outputs(kind: Optional[str] = None, workflow: Optional[str] = None,
         clauses.append("kind = ?")
         params.append(kind)
     if workflow:
-        clauses.append("workflow = ? OR path LIKE ?")
+        clauses.append("(workflow = ? OR path LIKE ?)")
         params.extend([workflow, f"%/{workflow}/%"])
     if query:
         clauses.append("path LIKE ?")
@@ -264,11 +264,15 @@ def search_outputs(kind: Optional[str] = None, workflow: Optional[str] = None,
     return [dict(row) for row in rows]
 
 
-def count_outputs(kind: Optional[str] = None, query: str = "") -> int:
+def count_outputs(kind: Optional[str] = None, workflow: Optional[str] = None,
+                  query: str = "") -> int:
     clauses, params = ["1 = 1"], []
     if kind:
         clauses.append("kind = ?")
         params.append(kind)
+    if workflow:
+        clauses.append("(workflow = ? OR path LIKE ?)")
+        params.extend([workflow, f"%/{workflow}/%"])
     if query:
         clauses.append("path LIKE ?")
         params.append(f"%{query}%")

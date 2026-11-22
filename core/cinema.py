@@ -625,7 +625,7 @@ class _BlocTitre:
         x = (self.largeur - largeur) / 2
         y = self.y_ligne1 if i_ligne == 0 else self.y_ligne2
         pos = []
-        for j, avance in enumerate(avances):
+        for avance in avances:
             pos.append((x, y))
             x += avance + track_px
         return pos
@@ -661,7 +661,7 @@ class _BlocTitre:
                     if a_glyphe > 0.003:
                         if a_glyphe < 0.999:
                             r, g, b, a = tuile.split()
-                            tuile = Image.merge("RGBA", (r, g, b, a.point(lambda v: int(v * a_glyphe))))
+                            tuile = Image.merge("RGBA", (r, g, b, a.point(lambda v, scale=a_glyphe: int(v * scale))))
                         canvas.alpha_composite(tuile, (int(x + dx), int(y + dy + dy_monte)))
                 index += 1
 
