@@ -136,9 +136,9 @@ def checkerboard(arr: np.ndarray) -> bool:
             if len(y) <= 2 * block + 2:
                 continue
 
-            def corr(shift: int) -> float:
-                return float(np.dot(y[:-shift], y[shift:]) /
-                             max(np.sqrt(np.sum(y[:-shift] ** 2) * np.sum(y[shift:] ** 2)), 1e-9))
+            def corr(shift: int, series: np.ndarray = y) -> float:
+                return float(np.dot(series[:-shift], series[shift:]) /
+                             max(np.sqrt(np.sum(series[:-shift] ** 2) * np.sum(series[shift:] ** 2)), 1e-9))
 
             if corr(2 * block) >= 0.5 and corr(block) <= -0.5:
                 hits += 1

@@ -396,6 +396,8 @@ def exporter_ambiance_godot(
     sr: int = 44100
 ) -> Tuple[str, str, str]:
     """Exports the stereo ambience to .wav, .ogg and produces the Godot 4 AudioBusLayout resource."""
+    from core.music_ai import convertir_ogg
+
     os.makedirs(output_dir, exist_ok=True)
     chemin_wav = os.path.join(output_dir, f"{nom_base}.wav")
     chemin_ogg = os.path.join(output_dir, f"{nom_base}.ogg")
@@ -403,7 +405,9 @@ def exporter_ambiance_godot(
 
     sf.write(chemin_wav, audio_data, sr, subtype='PCM_16', format='WAV')
     try:
-        sf.write(chemin_ogg, audio_data, sr, format='OGG')
+        # OGG always via ffmpeg: libsndfile does a C stack overflow (silent
+        # exit 127) beyond a few seconds — rule §1.10 MEMORY_BANK.
+        convertir_ogg(chemin_wav, chemin_ogg)
     except Exception:
         chemin_ogg = chemin_wav
 

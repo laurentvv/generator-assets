@@ -9,7 +9,6 @@ Pattern follows core/mesh_ia.py: blender --background --factory-startup
 --python <tmp> -- <args-after-->. Absolute paths only (MEMORY lesson 1.26).
 """
 import os
-import random
 import sys
 import tempfile
 

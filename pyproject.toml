@@ -45,3 +45,7 @@ exclude = [".agents"]
 "main.py" = ["E402"]
 "scripts/**" = ["E402"]
 "core/clothes_catalog.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

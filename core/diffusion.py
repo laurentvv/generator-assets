@@ -7,12 +7,12 @@ Automatically detects Flux.1 models (GGUF + Encoders) and SDXL / SD 1.5 (Safeten
 """
 
 from contextlib import contextmanager
+import logging
 import os
-import shutil
+import shutil  # noqa: F401 — kept for callers/tests patching diffusion.shutil.disk_usage
 import tempfile
-import time
-import uuid
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
+import numpy as np
 from PIL import Image
 from core.config import (
     DEFAULT_CLIP_L,
@@ -47,13 +47,42 @@ from core.config import (
     resoudre_vae_video,
     resoudre_t5xxl_video
 )
+from core.nvme_staging import stager_vers_nvme_temporaire
 from core.process import run_engine
+
+logger = logging.getLogger(__name__)
+
+
+def verifier_luminosite_image(image: Image.Image) -> Dict[str, Any]:
+    """Post-render luminance sanity check (MEMORY_BANK §1.37 Chroma img2img guard).
+
+    A full white collapse measures mean > 240 and std < 10; a black collapse
+    measures mean < 5 and std < 5.
+    """
+    arr = np.asarray(image.convert("L"), dtype=np.float32)
+    mean_val = float(arr.mean())
+    std_val = float(arr.std())
+    white_collapse = bool(mean_val > 240.0 and std_val < 10.0)
+    black_collapse = bool(mean_val < 5.0 and std_val < 5.0)
+    return {
+        "mean": round(mean_val, 2),
+        "std": round(std_val, 2),
+        "white_collapse": white_collapse,
+        "black_collapse": black_collapse,
+        "healthy": not (white_collapse or black_collapse),
+    }
+
+
+def est_modele_chroma(sd_model_path: str) -> bool:
+    """Detects whether the given model is a Chroma1-HD checkpoint (T5-only, no CLIP-L)."""
+    nom = os.path.basename(sd_model_path).lower()
+    return "chroma" in nom
 
 
 def est_modele_flux(sd_model_path: str) -> bool:
-    """Detects whether the given model is a Flux model (GGUF or name containing flux)."""
+    """Detects whether the given model is a Flux/Chroma DiT model (GGUF or name containing flux)."""
     nom = os.path.basename(sd_model_path).lower()
-    return "flux" in nom or nom.endswith(".gguf")
+    return "flux" in nom or "chroma" in nom or nom.endswith(".gguf")
 
 
 def formater_prompt_avec_loras(prompt: str, loras: Optional[List[Union[str, Tuple[str, float]]]] = None) -> str:
@@ -120,6 +149,7 @@ def generer_image_vulkan(
     several parallel runs and insensitive to leftovers from a previous call.
     """
     prompt_final = formater_prompt_avec_loras(prompt, loras)
+    is_chroma = est_modele_chroma(sd_model)
     is_flux = est_modele_flux(sd_model)
 
     if control_image and not os.path.exists(control_image):
@@ -139,7 +169,7 @@ def generer_image_vulkan(
         # a stale image can never be read back on failure.
         os.remove(output_path)
 
-    moteur_nom = "Flux.1" if is_flux else "SDXL / SD"
+    moteur_nom = "Chroma1-HD" if is_chroma else ("Flux.1" if is_flux else "SDXL / SD")
     mode_str = "Img2Img" if init_img else ("Seamless Tile" if circular else "Txt2Img")
     if control_image and control_net:
         mode_str += " + ControlNet"
@@ -151,90 +181,121 @@ def generer_image_vulkan(
     cfg_effectif = cfg_scale if cfg_scale != 1.0 or is_flux else 7.0
     print(f"[{moteur_nom} - {mode_str}] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_effectif})...")
 
+    stage_inputs: Dict[str, str] = {"sd_model": sd_model}
     if is_flux:
-        commande = [
-            sd_cli,
-            "--diffusion-model", sd_model,
-            "--clip_l", clip_l,
-            "--t5xxl", t5xxl,
-            "--vae", vae,
-            "-p", prompt_final,
-            "--steps", str(steps),
-            "--cfg-scale", str(cfg_scale),
-            "--guidance", str(guidance),
-            "--sampling-method", "euler",
-            "-W", str(width),
-            "-H", str(height),
-            "-o", output_path,
-            "-t", str(threads),
-            "--vae-tiling",
-            "--backend", backend,
-            "-v"
-        ]
-    else:
-        # Monolithic SDXL or SD 1.5 checkpoint (.safetensors)
-        commande = [
-            sd_cli,
-            "-m", sd_model,
-            "-p", prompt_final,
-            "--steps", str(steps),
-            "--cfg-scale", str(cfg_effectif),
-            "--sampling-method", "euler_a",
-            "-W", str(width),
-            "-H", str(height),
-            "-o", output_path,
-            "-t", str(threads),
-            "--vae-tiling",
-            "--backend", backend,
-            "-v"
-        ]
-
-    # LoRA folder handling
-    dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
-    if os.path.exists(dossier_lora_effectif):
-        commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
-
-    if seed >= 0:
-        commande.extend(["-s", str(seed)])
-    else:
-        commande.extend(["-s", "-1"])
-
-    if init_img and os.path.exists(init_img):
-        commande.extend(["-i", init_img, "--strength", str(strength)])
-
-    if control_image and control_net:
-        commande.extend([
-            "--control-image", control_image,
-            "--control-net", control_net,
-            "--control-strength", str(control_strength)
-        ])
-        if control_type:
-            commande.extend(["--control-type", control_type])
-
-    if ip_adapter and ip_adapter_image and clip_vision:
-        commande.extend([
-            "--ip-adapter", ip_adapter,
-            "--ip-adapter-image", ip_adapter_image,
-            "--ip-adapter-strength", str(ip_adapter_strength),
-            "--clip_vision", clip_vision
-        ])
-
-    if circular:
-        commande.append("--circular")
-
-    if hires:
-        commande.extend([
-            "--hires",
-            "--hires-scale", str(hires_scale),
-            "--hires-denoising-strength", str(hires_strength)
-        ])
+        stage_inputs["t5xxl"] = t5xxl
+        stage_inputs["vae"] = vae
+        if not is_chroma:
+            stage_inputs["clip_l"] = clip_l
 
     try:
-        run_engine(commande, timeout=1800, capture=False, check=True, etiquette=f"sd-cli {moteur_nom}")
+        with stager_vers_nvme_temporaire(stage_inputs, prefix="_tmp_img_") as staged:
+            sd_model_eff = staged["sd_model"]
+            if is_flux:
+                # Chroma1-HD (MEMORY_BANK §1.37) is T5-only (NO --clip_l) and runs
+                # full-frame decode (NO --vae-tiling) to avoid seams.
+                commande = [
+                    sd_cli,
+                    "--diffusion-model", sd_model_eff,
+                ]
+                if not is_chroma:
+                    commande.extend(["--clip_l", staged["clip_l"]])
+                commande.extend([
+                    "--t5xxl", staged["t5xxl"],
+                    "--vae", staged["vae"],
+                    "-p", prompt_final,
+                    "--steps", str(steps),
+                    "--cfg-scale", str(cfg_scale),
+                    "--guidance", str(guidance),
+                    "--sampling-method", "euler",
+                    "-W", str(width),
+                    "-H", str(height),
+                    "-o", output_path,
+                    "-t", str(threads),
+                ])
+                if not is_chroma:
+                    commande.append("--vae-tiling")
+                commande.extend([
+                    "--backend", backend,
+                    "-v"
+                ])
+            else:
+                # Monolithic SDXL or SD 1.5 checkpoint (.safetensors)
+                commande = [
+                    sd_cli,
+                    "-m", sd_model_eff,
+                    "-p", prompt_final,
+                    "--steps", str(steps),
+                    "--cfg-scale", str(cfg_effectif),
+                    "--sampling-method", "euler_a",
+                    "-W", str(width),
+                    "-H", str(height),
+                    "-o", output_path,
+                    "-t", str(threads),
+                    "--vae-tiling",
+                    "--backend", backend,
+                    "-v"
+                ]
+
+            # LoRA folder handling
+            dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
+            if os.path.exists(dossier_lora_effectif):
+                commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
+
+            if seed >= 0:
+                commande.extend(["-s", str(seed)])
+            else:
+                commande.extend(["-s", "-1"])
+
+            if init_img and os.path.exists(init_img):
+                commande.extend(["-i", init_img, "--strength", str(strength)])
+
+            if control_image and control_net:
+                commande.extend([
+                    "--control-image", control_image,
+                    "--control-net", control_net,
+                    "--control-strength", str(control_strength)
+                ])
+                if control_type:
+                    commande.extend(["--control-type", control_type])
+
+            if ip_adapter and ip_adapter_image and clip_vision:
+                commande.extend([
+                    "--ip-adapter", ip_adapter,
+                    "--ip-adapter-image", ip_adapter_image,
+                    "--ip-adapter-strength", str(ip_adapter_strength),
+                    "--clip_vision", clip_vision
+                ])
+
+            if circular:
+                commande.append("--circular")
+
+            if hires:
+                commande.extend([
+                    "--hires",
+                    "--hires-scale", str(hires_scale),
+                    "--hires-denoising-strength", str(hires_strength)
+                ])
+
+            run_engine(commande, timeout=1800, capture=False, check=True, etiquette=f"sd-cli {moteur_nom}")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"The output file {output_path} was not produced.")
-        # .copy() loads the pixels into memory before the temporary file is removed.
-        return Image.open(output_path).copy()
+        # .copy() loads the pixels into memory and context-manager closes the
+        # handle immediately before Windows removes the temporary file.
+        with Image.open(output_path) as img:
+            rendu = img.copy()
+        if is_chroma and init_img:
+            lum = verifier_luminosite_image(rendu)
+            if not lum["healthy"]:
+                kind = "white" if lum["white_collapse"] else "black"
+                msg = (
+                    f"⚠️ [Chroma1-HD img2img guard] Suspected {kind} collapse "
+                    f"(luminance mean={lum['mean']}, std={lum['std']}, strength={strength}, guidance={guidance}) — "
+                    "verify the output visually (MEMORY_BANK §1.37)."
+                )
+                logger.warning(msg)
+                print(msg)
+        return rendu
     except Exception as e:
         print(f"❌ Error during the render ({moteur_nom}) via sd-cli: {e}")
         raise
@@ -316,41 +377,47 @@ def generer_image_qwen21(
         mode_str += f" + {len(loras)} LoRA(s)"
     print(f"[Qwen-Image-2.1 - {mode_str}] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
     sd_cli = sd_cli or DEFAULT_SD_CLI
-    commande = [
-        sd_cli,
-        "--diffusion-model", model,
-        "--vae", vae,
-        "--llm", llm,
-        "-p", prompt_final,
-        "--cfg-scale", str(cfg_scale),
-        "--sampling-method", "euler",
-        "--steps", str(steps),
-        "-W", str(width),
-        "-H", str(height),
-        "-s", str(seed),
-        "--flash-attn", "on",
-        "--offload-to-cpu",
-        "-o", output_path,
-    ]
-    if sigmas:
-        commande.extend(["--sigmas", sigmas])
-    if negative_prompt:
-        commande.extend(["-n", negative_prompt])
+    stage_inputs: Dict[str, str] = {"model": model, "vae": vae, "llm": llm}
     if vision_path:
-        commande.extend(["--llm_vision", vision_path])
-    for ref in refs:
-        commande.extend(["-r", ref])
-    if init_image:
-        commande.extend(["-i", init_image, "--strength", str(strength)])
-    dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
-    if loras and os.path.exists(dossier_lora_effectif):
-        commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
+        stage_inputs["vision"] = vision_path
 
     try:
-        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli Qwen-Image-2.1")
+        with stager_vers_nvme_temporaire(stage_inputs, prefix="_tmp_qwen21_") as staged:
+            commande = [
+                sd_cli,
+                "--diffusion-model", staged["model"],
+                "--vae", staged["vae"],
+                "--llm", staged["llm"],
+                "-p", prompt_final,
+                "--cfg-scale", str(cfg_scale),
+                "--sampling-method", "euler",
+                "--steps", str(steps),
+                "-W", str(width),
+                "-H", str(height),
+                "-s", str(seed),
+                "--flash-attn", "on",
+                "--offload-to-cpu",
+                "-o", output_path,
+            ]
+            if sigmas:
+                commande.extend(["--sigmas", sigmas])
+            if negative_prompt:
+                commande.extend(["-n", negative_prompt])
+            if vision_path:
+                commande.extend(["--llm_vision", staged["vision"]])
+            for ref in refs:
+                commande.extend(["-r", ref])
+            if init_image:
+                commande.extend(["-i", init_image, "--strength", str(strength)])
+            dossier_lora_effectif = lora_dir or DEFAULT_LORA_DIRS[0]
+            if loras and os.path.exists(dossier_lora_effectif):
+                commande.extend(["--lora-model-dir", dossier_lora_effectif, "--lora-apply-mode", "auto"])
+
+            run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli Qwen-Image-2.1")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"The output file {output_path} was not produced.")
-        return Image.open(output_path).copy()
+        with Image.open(output_path) as img:
+            return img.copy()
     except Exception as e:
         print(f"❌ Error during the render (Qwen-Image-2.1) via sd-cli: {e}")
         raise
@@ -408,28 +475,31 @@ def generer_image_moss(
 
     print(f"[MOSS-Image-SFT - t2i] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
     sd_cli = sd_cli or DEFAULT_SD_CLI
-    commande = [
-        sd_cli,
-        "--diffusion-model", model,
-        "--llm", llm,
-        "--vae", vae,
-        "--tokenizer", tokenizer,
-        "-p", prompt,
-        "--cfg-scale", str(cfg_scale),
-        "--sampling-method", sampling_method,
-        "--steps", str(steps),
-        "-W", str(width),
-        "-H", str(height),
-        "-s", str(seed),
-        "--fa",
-        "-o", output_path,
-    ]
+    stage_inputs = {"model": model, "llm": llm, "vae": vae, "tokenizer": tokenizer}
 
     try:
-        run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli MOSS-Image")
+        with stager_vers_nvme_temporaire(stage_inputs, prefix="_tmp_moss_") as staged:
+            commande = [
+                sd_cli,
+                "--diffusion-model", staged["model"],
+                "--llm", staged["llm"],
+                "--vae", staged["vae"],
+                "--tokenizer", staged["tokenizer"],
+                "-p", prompt,
+                "--cfg-scale", str(cfg_scale),
+                "--sampling-method", sampling_method,
+                "--steps", str(steps),
+                "-W", str(width),
+                "-H", str(height),
+                "-s", str(seed),
+                "--fa",
+                "-o", output_path,
+            ]
+            run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli MOSS-Image")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"The output file {output_path} was not produced.")
-        return Image.open(output_path).copy()
+        with Image.open(output_path) as img:
+            return img.copy()
     except Exception as e:
         print(f"❌ Error during the render (MOSS-Image-SFT) via sd-cli: {e}")
         raise
@@ -825,84 +895,17 @@ def _stager_vers_nvme_temporaire(
     min_free_margin_bytes: int = 5 * 1024**3,
     log_fn=print,
 ):
-    """Temporarily copies cold-stored model files from slow drives onto NVMe.
-
-    Per project process (AGENTS.md §7, 2026-11-14): D: is an external USB 3.0 HDD
-    (2.8-30 MB/s on segmented re-reads). Files whose drive matches ``slow_drives``
-    are staged into a unique subfolder under ``nvme_root``, verified by byte size,
-    and always deleted in ``finally`` once execution completes or fails.
-    """
-    if not enabled:
-        yield dict(paths)
-        return
-
-    nvme_abs = os.path.abspath(nvme_root)
-    nvme_drive = os.path.splitdrive(nvme_abs)[0].upper()
-    slow_norm = {d.upper() for d in slow_drives}
-
-    to_stage: Dict[str, str] = {}
-    for key, src_path in paths.items():
-        if not src_path or not os.path.exists(src_path):
-            continue
-        src_abs = os.path.abspath(src_path)
-        src_drive = os.path.splitdrive(src_abs)[0].upper()
-        if src_drive in slow_norm and src_drive != nvme_drive:
-            to_stage[key] = src_abs
-
-    if not to_stage:
-        yield dict(paths)
-        return
-
-    # Deduplicate shared source paths before disk-space budgeting and telemetry.
-    unique_sources = list(dict.fromkeys(to_stage.values()))
-    total_bytes = sum(os.path.getsize(p) for p in unique_sources)
-    probe_dir = nvme_abs if os.path.exists(nvme_abs) else os.path.dirname(nvme_abs) or nvme_abs
-    free_bytes = shutil.disk_usage(probe_dir).free
-    if free_bytes < total_bytes + min_free_margin_bytes:
-        raise OSError(
-            f"Insufficient free space on '{nvme_root}' for temporary NVMe staging: "
-            f"need {(total_bytes + min_free_margin_bytes) / (1024**3):.1f} GiB free, "
-            f"have {free_bytes / (1024**3):.1f} GiB."
-        )
-
-    tmp_dir = os.path.join(nvme_abs, f"_tmp_s2v_{os.getpid()}_{uuid.uuid4().hex[:8]}")
-    staged_map = dict(paths)
-    try:
-        os.makedirs(tmp_dir, exist_ok=True)
-        t0 = time.monotonic()
-        copied_by_src: Dict[str, str] = {}
-        used_names: set[str] = set()
-        for key, src_abs in to_stage.items():
-            if src_abs in copied_by_src:
-                staged_map[key] = copied_by_src[src_abs]
-                continue
-            base_name = os.path.basename(src_abs)
-            dst_name = base_name if base_name not in used_names else f"{key}_{base_name}"
-            idx = 1
-            while dst_name in used_names:
-                dst_name = f"{key}_{idx}_{base_name}"
-                idx += 1
-            used_names.add(dst_name)
-            dst_abs = os.path.join(tmp_dir, dst_name)
-            t_file = time.monotonic()
-            shutil.copy2(src_abs, dst_abs)
-            if os.path.getsize(dst_abs) != os.path.getsize(src_abs):
-                raise RuntimeError(f"NVMe staging size mismatch for {base_name}")
-            copied_by_src[src_abs] = dst_abs
-            staged_map[key] = dst_abs
-            size_gib = os.path.getsize(dst_abs) / (1024**3)
-            log_fn(f"[NVMe stage] {base_name} ({size_gib:.2f} GiB in {time.monotonic() - t_file:.1f}s)")
-        dt_total = time.monotonic() - t0
-        mb_s = (total_bytes / (1024**2)) / max(dt_total, 1e-6)
-        log_fn(f"[NVMe stage] Total {total_bytes / (1024**3):.2f} GiB staged in {dt_total:.1f}s ({mb_s:.1f} MB/s)")
-        yield staged_map
-    finally:
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-            if os.path.exists(tmp_dir):
-                log_fn(f"⚠️ [NVMe stage] Partial cleanup (locked files remaining): {tmp_dir}")
-            else:
-                log_fn(f"[NVMe stage] Temporary copy cleaned: {tmp_dir}")
+    """Backward-compatible wrapper delegating to `core.nvme_staging.stager_vers_nvme_temporaire`."""
+    with stager_vers_nvme_temporaire(
+        paths,
+        nvme_root=nvme_root,
+        enabled=enabled,
+        slow_drives=slow_drives,
+        min_free_margin_bytes=min_free_margin_bytes,
+        prefix="_tmp_s2v_",
+        log_fn=log_fn,
+    ) as staged:
+        yield staged
 
 
 @contextmanager

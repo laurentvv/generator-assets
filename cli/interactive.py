@@ -56,7 +56,7 @@ def lancer_mode_interactif(config: dict):
             for k, (_, desc) in menu_workflows.items():
                 print(f"  [{k.rjust(2)}] {desc}")
 
-            choix = input("\n👉 Choice (1-42) [default: 1] : ").strip()
+            choix = input(f"\n👉 Choice (1-{len(menu_workflows)}) [default: 1] : ").strip()
             if choix.lower() == 'q':
                 print("👋 Goodbye!")
                 break
@@ -236,7 +236,7 @@ def lancer_mode_interactif(config: dict):
                     params["prompt"] = input("💡 Reference concept: ").strip()
                 items = input("📦 Comma-separated consistent items (e.g. sword,shield,potion,helmet) : ").strip()
                 if items:
-                    params["themes"] = items
+                    params["items"] = items
 
             elif wf_name == "anim_loop":
                 params["prompt"] = input("💡 VFX loop type (e.g. portal vortex, magic fire, waterfall) : ").strip() or "portal"

@@ -30,6 +30,15 @@ MODEL_CONSTANTS = [
     ("", "DEFAULT_QWEN_IMAGE21_VAE", "Qwen-Image VAE"),
     ("", "DEFAULT_QWEN_IMAGE21_TURBO_MODEL", "Turbo distilled Q8_0 (validated 2026-10-11)"),
     ("", "DEFAULT_QWEN_IMAGE21_LLM_VISION", "Qwen-Image multimodal mmproj (VL vision)"),
+    ("Images — MOSS-Image-SFT", "DEFAULT_MOSS_IMAGE_MODEL", "MOSS-Image-SFT DiT GGUF (Apache-2.0)"),
+    ("", "DEFAULT_MOSS_IMAGE_LLM", "Qwen3.5-9B Q8_0 text encoder"),
+    ("", "DEFAULT_MOSS_IMAGE_VAE", "MOSS-Image Flux2 VAE"),
+    ("", "DEFAULT_MOSS_IMAGE_TOKENIZER", "MOSS-Image external tokenizer"),
+    ("Voice — TTS / OCR", "DEFAULT_INDEXTTS25_MODEL", "IndexTTS2.5 zero-shot TTS GGUF (audio.cpp)"),
+    ("", "DEFAULT_LFM3_TTS_MODEL", "LFM3-Audio-2B TTS GGUF (llama-tts)"),
+    ("", "DEFAULT_LFM3_TTS_MMPROJ", "LFM3-Audio-2B mmproj"),
+    ("", "DEFAULT_MINICPM_OCR_MODEL", "MiniCPM-OCR-1.0 GGUF (llama-server)"),
+    ("", "DEFAULT_MINICPM_OCR_MMPROJ", "MiniCPM-OCR-1.0 mmproj"),
     ("Video — Wan 2.1", "DEFAULT_WAN_MODEL", "Wan 2.1 T2V 1.3B GGUF"),
     ("", "DEFAULT_WAN_VAE", "Wan VAE"),
     ("", "DEFAULT_WAN_T5XXL", "UMT5-XXL encoder"),
@@ -94,6 +103,13 @@ WORKFLOW_MODEL_MAP = {
     "audio_repaint": ["DEFAULT_ACESTEP15_DIR", "DEFAULT_SA3_MEDIUM_MODEL"],
     "retrait_voix": ["DEFAULT_MEL_ROFORMER_MODEL", "DEFAULT_BS_ROFORMER_MODEL", "DEFAULT_APOLLO_MODEL"],
     "audio_restaure": ["DEFAULT_APOLLO_MODEL"],
+    "moss_image": [
+        "DEFAULT_MOSS_IMAGE_MODEL", "DEFAULT_MOSS_IMAGE_LLM",
+        "DEFAULT_MOSS_IMAGE_VAE", "DEFAULT_MOSS_IMAGE_TOKENIZER",
+    ],
+    "indextts25_tts": ["DEFAULT_INDEXTTS25_MODEL"],
+    "lfm3_tts": ["DEFAULT_LFM3_TTS_MODEL", "DEFAULT_LFM3_TTS_MMPROJ"],
+    "ocr_image": ["DEFAULT_MINICPM_OCR_MODEL", "DEFAULT_MINICPM_OCR_MMPROJ"],
 }
 
 
