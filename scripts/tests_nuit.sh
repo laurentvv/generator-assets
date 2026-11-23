@@ -1015,6 +1015,66 @@ leg_llm_lfm3_17b() {
   touch "$OUT/llm_lfm3_17b/DONE"
 }
 
+# --------------------------------------- Craft suite legs (added 23-11 soir, GO user « n'hésite pas ajouter des tests »)
+
+leg_craft_designcraft_sheet() {
+  # designcraft 0.21.1 update test — the NEW `place.contactSheet` command (File › Place
+  # Contact Sheet, released in 0.21.0): file.new → place.load (3 deterministic frames
+  # extracted in-leg from our dance webm) → place.contactSheet → export PNG. Morning
+  # comparison vs the ffmpeg montage built in-leg (feature test + planche-pattern §1.55
+  # comparison at the eye). Paths resolved with sort -V (lexical sort would pick 0.9.0
+  # over 0.25.x — the 10-22 manager bug, same class). App updated tonight 0.20.1→0.21.1.
+  local DC=$(ls -d D:/CraftApps/designcraft/designcraft-*-windows-x64-portable 2>/dev/null | sort -V | tail -1)
+  local F="$OUT/craft_designcraft_sheet"
+  mkdir -p "$F"
+  if [ ! -d "$DC" ]; then log "[craft_designcraft_sheet] ABORT: designcraft install dir not found"; return 1; fi
+  local SRC="$REPO/output/dance_m1106v2_brut.webm"
+  if [ ! -f "$SRC" ]; then log "[craft_designcraft_sheet] ABORT: source webm missing ($SRC)"; return 1; fi
+  C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
+    -ss 0.5  -i "$SRC" -frames:v 1 "$F/frame_a.png" \
+    -ss 1.5  -i "$SRC" -frames:v 1 "$F/frame_b.png" \
+    -ss 2.5  -i "$SRC" -frames:v 1 "$F/frame_c.png" \
+    || { log "[craft_designcraft_sheet] ABORT: frame extraction failed"; return 1; }
+  run_leg dc_sheet "$DC/designcraft-cli.exe" run \
+    --cmd 'file.new={}' \
+    --cmd "place.load={\"files\":[{\"path\":\"$F/frame_a.png\"},{\"path\":\"$F/frame_b.png\"},{\"path\":\"$F/frame_c.png\"}]}" \
+    --cmd 'place.contactSheet={"columns":3,"rows":1,"gutter":6,"margin":36}' \
+    --scale 3 \
+    --export "$F/sheet_designcraft.png"
+  # ffmpeg reference montage of the same 3 frames (side-by-side for the morning verdict)
+  if [ -f "$F/sheet_designcraft.png" ]; then
+    C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
+      -i "$F/frame_a.png" -i "$F/frame_b.png" -i "$F/frame_c.png" -filter_complex \
+      "[0][1][2]hstack=inputs=3" "$F/sheet_ffmpeg_ref.png" || true
+  fi
+}
+
+leg_craft_effectcraft_smoke() {
+  # effectcraft 0.25.1 update test — the rebuilt caching + relocated media libraries:
+  # import OUR webm (VP9/Matroska = one of the 0.25.1 decode-fix areas) and render it.
+  # CLI sessions are stateless (every invocation = fresh project, verified 23-11), so the
+  # whole chain MUST stay in ONE `run`: comp.new {open:true} (active comp) → file.import
+  # {addToComp:true} → renderQueue.add → renderQueue.render (engine command; the `render`
+  # CLI subcommand cannot see a comp created in the same invocation). Dry-run validated
+  # 23-11: statusLabel Done + webm content = our dance video. App updated tonight
+  # 0.24.1→0.25.1.
+  local EC=$(ls -d D:/CraftApps/effectcraft/effectcraft-*-windows-x64-portable 2>/dev/null | sort -V | tail -1)
+  local F="$OUT/craft_effectcraft_smoke"
+  mkdir -p "$F"
+  if [ ! -d "$EC" ]; then log "[craft_effectcraft_smoke] ABORT: effectcraft install dir not found"; return 1; fi
+  local SRC="$REPO/output/dance_m1106v2_brut.webm"
+  if [ ! -f "$SRC" ]; then log "[craft_effectcraft_smoke] ABORT: source webm missing ($SRC)"; return 1; fi
+  run_leg ec_import_render "$EC/effectcraft-cli.exe" run \
+    comp.new '{"name":"ec_import_test","width":1920,"height":1080,"frameRate":24,"duration":4,"open":true}' \
+    file.import "{\"paths\":[\"$SRC\"],\"addToComp\":true}" \
+    renderQueue.add "{\"comp\":\"ec_import_test\",\"format\":\"webm\",\"output\":\"$F/ec_dance_2s.webm\",\"start\":0,\"end\":2}" \
+    renderQueue.render '{}'
+  if [ -f "$F/ec_dance_2s.webm" ]; then
+    C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error -ss 1 -i "$F/ec_dance_2s.webm" \
+      -frames:v 1 "$F/ec_render_frame.png" || true
+  fi
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -1113,6 +1173,8 @@ while read -r id; do
     h3video_1106_ab)      leg_h3video_1106_ab ;;
     moss_4step_lora)      leg_moss_4step_lora ;;
     llm_lfm3_17b)         leg_llm_lfm3_17b ;;
+    craft_designcraft_sheet) leg_craft_designcraft_sheet ;;
+    craft_effectcraft_smoke) leg_craft_effectcraft_smoke ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
