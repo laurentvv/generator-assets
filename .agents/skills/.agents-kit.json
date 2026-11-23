@@ -17,6 +17,15 @@
         "scripts/state_agents.py": "189441f49af07e303eac77c1bc764e5e67387a193a9f17a880531cdc48c933c9",
         "SKILL.md": "f909119fd031e7bf9f163bbdd4d842adc7b543fde698b448a0099cddf53adcca"
       }
+    },
+    "vulnerability-scanner": {
+      "source": "davila7/claude-code-templates",
+      "ref": "5a8853e7f0cbf5173451e329ae073250e6c442ca",
+      "files": {
+        "SKILL.md": "4e3d487497ccec5a67eac82203b0988308fdef223500dd142bfae6015e46bbbc",
+        "references/ai-and-agents.md": "a1a7ba63758f07edb26ffb2e00dbd7b0d9d2740e44409c3f80353a39af9f0aff",
+        "references/web-and-supply-chain.md": "08d33fae453a1585af93925776e13a111293f5eacf43d137a1a853e3fb15c6be"
+      }
     }
   }
 }
