@@ -83,6 +83,12 @@ run_leg() {
   return 0
 }
 
+# substat <leg-dir>: PASS/FAIL/- from markers — status line for compound-leg SUBSTATUS.txt
+substat() {
+  [ -f "$1/DONE" ] && echo "PASS" && return 0
+  [ -f "$1/FAIL" ] && echo "FAIL" || echo "-"
+}
+
 # ---------------------------------------------------------------- legs (implementations)
 
 leg_wan_i2v_929() {
@@ -482,6 +488,400 @@ leg_llama_b12590_smoke() {
   grep -oE "[0-9.]+ tokens per second" "$OUT/llama_b12590_smoke/run.log" 2>/dev/null | tail -2 > "$OUT/llama_b12590_smoke/ts.txt" || true
 }
 
+leg_h3image_smoke() {
+  # MiniMax-H3-Image — RETRY 11-22 (GO user « Lance run de nuit »). The 11-21 night run
+  # killed t2i + edit mid/after load: the leg downloaded to D: and ran from there — DiT
+  # segmented prefetch read 11.36 GB at 5 MB/s (2048 s, D: USB HDD signature) and both
+  # legs died right at/after load completion with no OS-level crash event. Rule
+  # 2026-11-14 violated by the original leg. Fix = ONE factor changed: stage all 3 files
+  # to C: NVMe (rule 2026-11-14), recipe otherwise VERBATIM (seed 42, deterministic).
+  # baseline_qwen (DONE 11-21, C: NVMe models) stays the A/B reference. If verbatim t2i
+  # still dies (fast this time = observable memory/Vulkan signature), a 4th sub-leg
+  # retries t2i with --offload-to-cpu as the diagnostic variant.
+  local D=D:/Modeles_LLM/MiniMax-H3-Image-GGUF
+  local STAGE=C:/Modeles_LLM/MiniMax-H3-Image-GGUF
+  mkdir -p "$STAGE"
+  local free_kb need_kb=32000000
+  free_kb=$(df --output=avail /c | tail -1 | tr -dc '0-9')
+  if [ -z "$free_kb" ] || [ "$free_kb" -lt "$need_kb" ]; then
+    log "[h3image_smoke] ABORT staging: C: free $((free_kb/1024)) MB < 32 GB required"
+    return 1
+  fi
+  for f in minimax_h3_image_pruned-UD-Q3_K_XL.gguf qwen3vl_32b_minimax_h3-Q4_K_M.gguf h3_image_vae.safetensors; do
+    if [ ! -f "$STAGE/$f" ]; then
+      log "[h3image_smoke] staging D:→C: $f (~15 min, D: is a USB HDD)"
+      cp "$D/$f" "$STAGE/$f" || { log "[h3image_smoke] staging FAILED for $f"; return 1; }
+    fi
+  done
+  log "[h3image_smoke] staging OK (C: NVMe)"
+  local PROMPT="A gothic cathedral at night lit by blue moonlight, heavy rain, dramatic volumetric fog, weathered stone gargoyles, cinematic composition, high detail"
+  run_leg h3image_t2i "$SD" \
+    --diffusion-model "$STAGE/minimax_h3_image_pruned-UD-Q3_K_XL.gguf" \
+    --vae "$STAGE/h3_image_vae.safetensors" \
+    --llm "$STAGE/qwen3vl_32b_minimax_h3-Q4_K_M.gguf" \
+    -p "$PROMPT" -W 1024 -H 1024 --cfg-scale 1.0 --steps 6 \
+    --sampling-method euler --sigmas minimax-h3-image --rng cpu --seed 42 \
+    --output "$OUT/h3image_smoke/h3_t2i_1024.png"
+  run_leg h3image_baseline_qwen "$SD" \
+    --diffusion-model "$MODELES/qwen-image-2.1-UC-Q8_0.gguf" \
+    --llm "$MODELES/Qwen3VL-8B-Instruct-Q4_K_M.gguf" \
+    --vae "$MODELES/qwen_image_2.1_vae_bf16.safetensors" \
+    -p "$PROMPT" -W 1024 -H 1024 --cfg-scale 6.0 --steps 40 \
+    --sampling-method euler --rng cpu --seed 42 \
+    --output "$OUT/h3image_smoke/qwen_t2i_1024.png"
+  run_leg h3image_edit "$SD" \
+    --diffusion-model "$STAGE/minimax_h3_image_pruned-UD-Q3_K_XL.gguf" \
+    --vae "$STAGE/h3_image_vae.safetensors" \
+    --llm "$STAGE/qwen3vl_32b_minimax_h3-Q4_K_M.gguf" \
+    -r output/test_media_export_port/input/sticker_sain.png \
+    -p "Edit <Picture 1>: replace the on-image text with SANTE CHECK, keep the original illustration style, colors and layout" \
+    -W 1024 -H 1024 --cfg-scale 1.0 --steps 6 \
+    --sampling-method euler --sigmas minimax-h3-image --rng cpu --seed 42 \
+    --output "$OUT/h3image_smoke/h3_edit_sticker.png"
+  if [ ! -f "$OUT/h3image_t2i/DONE" ]; then
+    log "[h3image_smoke] verbatim t2i failed again — diagnostic variant --offload-to-cpu"
+    run_leg h3image_t2i_offload "$SD" \
+      --diffusion-model "$STAGE/minimax_h3_image_pruned-UD-Q3_K_XL.gguf" \
+      --vae "$STAGE/h3_image_vae.safetensors" \
+      --llm "$STAGE/qwen3vl_32b_minimax_h3-Q4_K_M.gguf" \
+      --offload-to-cpu \
+      -p "$PROMPT" -W 1024 -H 1024 --cfg-scale 1.0 --steps 6 \
+      --sampling-method euler --sigmas minimax-h3-image --rng cpu --seed 42 \
+      --output "$OUT/h3image_smoke/h3_t2i_1024_offload.png"
+  fi
+  echo "t2i=$(substat $OUT/h3image_t2i) baseline=$(substat $OUT/h3image_baseline_qwen) edit=$(substat $OUT/h3image_edit) t2i_offload=$(substat $OUT/h3image_t2i_offload)" > "$OUT/h3image_smoke/SUBSTATUS.txt"
+  touch "$OUT/h3image_smoke/DONE"
+}
+
+inkling_srv_attempt() { # $1 = --n-cpu-moe value (or "none") — fork Vulkan llama-server.
+  # §1.41 (11-21): the ONLY working fork path = llama-server + --no-mmproj-offload (fork
+  # llama-mtmd-cli crashes at threadpool init, Vulkan AND CPU). Starts the server, waits
+  # for "server is listening", runs the 2 QA fixtures, greps t/s, kills the server.
+  # rc!=0 = attempt failed (next staged attempt takes over).
+  local NM="$1"
+  local SRV=/c/llama-cpp-unsloth-b12588/llama-server.exe
+  local LD="$OUT/inkling_ad_q4k"
+  local LOGF="$LD/server_moe${NM}.log"
+  local ARGS=(-m "$INK_MODEL" --mmproj "$INK_MM" --no-mmproj-offload -ngl 99 -c 8192 --port 8490 --host 127.0.0.1 --temp 0.0)
+  [ "$NM" != "none" ] && ARGS+=(--n-cpu-moe "$NM")
+  "$SRV" "${ARGS[@]}" > "$LOGF" 2>&1 &
+  local SPID=$!
+  local up=0 i
+  for i in $(seq 1 36); do
+    kill -0 $SPID 2>/dev/null || break
+    grep -q "server is listening" "$LOGF" 2>/dev/null && { up=1; break; }
+    sleep 5
+  done
+  local RC=0
+  if [ "$up" -eq 0 ]; then
+    log "[inkling_ad_q4k] fork server did not start (moe=$NM) — tail:"
+    tail -5 "$LOGF" | sed 's/^/    /'
+    RC=1
+  else
+    INK_DEST="$LD" INK_PORT=8490 uv run python - <<'PYEOF' || RC=1
+import base64, json, time, urllib.request, os
+from pathlib import Path
+dest = Path(os.environ["INK_DEST"])
+jobs = [
+    ("planche_byte10", Path("C:/GIT/ai-doc2video/.worktrees/byte-stories/branding/mascot/planche_mascotte_byte_10poses.png"),
+     "Describe this contact sheet briefly. Then read ALL visible on-screen text exactly as written, including any French words."),
+    ("moss_typo", Path("output/test_m1106/moss_1106.png"),
+     "What text is written on this image? Read it exactly, character by character."),
+]
+ok = True
+for name, img, prompt in jobs:
+    b64 = base64.b64encode(img.read_bytes()).decode()
+    body = json.dumps({"model": "inkling", "temperature": 0.0, "max_tokens": 300,
+        "messages": [{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+            {"type": "text", "text": prompt}]}]}).encode()
+    req = urllib.request.Request(f"http://127.0.0.1:{os.environ['INK_PORT']}/v1/chat/completions",
+                                 data=body, headers={"Content-Type": "application/json"})
+    t0 = time.time()
+    try:
+        with urllib.request.urlopen(req, timeout=900) as r:
+            out = json.load(r)
+        msg = out["choices"][0]["message"]
+        text = msg.get("content") or msg.get("reasoning_content", "")
+        wall = time.time() - t0
+        (dest / f"adq4k_{name}.log").write_text(f"wall={wall:.1f}s\n---CONTENT---\n{text}\n", encoding="utf-8")
+        print(f"OK {name} wall={wall:.1f}s")
+    except Exception as e:
+        ok = False
+        (dest / f"adq4k_{name}.FAIL").write_text(f"after {time.time()-t0:.1f}s: {e}", encoding="utf-8")
+        print(f"FAIL {name}: {e}")
+raise SystemExit(0 if ok else 1)
+PYEOF
+    grep -E "prompt_eval time|eval time|tokens per second" "$LOGF" | tail -8 > "$LD/ts_moe${NM}.txt" 2>/dev/null || true
+    kill $SPID 2>/dev/null
+    sleep 2
+    kill -9 $SPID 2>/dev/null
+  fi
+  return $RC
+}
+
+leg_inkling_ad_q4k() {
+  # Inkling-2-Mini — re-test of the NEW AD-Q4_K quant (user request 11-22 « Ajoute le
+  # test du nouveau modele C:\Modeles_LLM\Inkling-2-Mini » — 16.53 GB + mmproj F16,
+  # downloaded 11-22 01:07, ALREADY on C: NVMe = no staging needed). Prior art §1.41
+  # (11-21): UD-Q3_K_XL tested → quality TIE with Qwen3VL-8B but cost ×5-6 (planche
+  # 363 s / 5.89 t/s vision, mmproj CPU + looped arch) → NOT promoted; mainline
+  # b12606/b12608 REFUSE the unsloth quants (pre-#32704 re-share, #32704 absent from
+  # b12608). Tonight's questions: ① does mainline b12608 accept the AD-Q4_K layout?
+  # ② fork Vulkan path (known-good): staged --n-cpu-moe 8→16→24 (16.53 GB > 16 GB VRAM,
+  # experts to CPU) — quality datapoint on a higher-fidelity quant, SAME fixtures +
+  # SAME prompts as 11-21 = comparable (Q3_K_XL: planche 363 s; Qwen3VL-8B: 69.5 s).
+  local INKC=C:/Modeles_LLM/Inkling-2-Mini
+  INK_MODEL="$INKC/Inkling-2-Mini-AD-Q4_K.gguf"
+  INK_MM="$INKC/mmproj-Inkling-2-Mini-F16.gguf"
+  mkdir -p "$OUT/inkling_ad_q4k"
+  if [ ! -f "$INK_MODEL" ] || [ ! -f "$INK_MM" ]; then
+    log "[inkling_ad_q4k] ABORT: model or mmproj missing in $INKC"
+    return 1
+  fi
+  # Phase A — mainline b12608 load probe (typo fixture, staged --n-cpu-moe 16 because
+  # 16.53 GB > 16 GB VRAM: an arch refusal and a VRAM overflow must stay distinguishable)
+  run_leg inkling_ad_mainline /c/llama.cpp/llama-mtmd-cli.exe \
+    -m "$INK_MODEL" --mmproj "$INK_MM" --n-cpu-moe 16 \
+    --image output/test_m1106/moss_1106.png --temp 0.0 -n 260 -c 8192 \
+    -p "What text is written on this image? Read it exactly, character by character."
+  if [ -f "$OUT/inkling_ad_mainline/DONE" ]; then
+    # mainline accepts the AD layout → complete the fixture pair on mainline, fork not needed
+    run_leg inkling_ad_planche_mainline /c/llama.cpp/llama-mtmd-cli.exe \
+      -m "$INK_MODEL" --mmproj "$INK_MM" --n-cpu-moe 16 \
+      --image "C:/GIT/ai-doc2video/.worktrees/byte-stories/branding/mascot/planche_mascotte_byte_10poses.png" \
+      --temp 0.0 -n 260 -c 8192 \
+      -p "Describe this contact sheet briefly. Then read ALL visible on-screen text exactly as written, including any French words."
+  else
+    # Phase B — fork Vulkan llama-server, staged expert offload
+    run_leg inkling_ad_srv_moe8  inkling_srv_attempt 8   || true
+    if [ ! -f "$OUT/inkling_ad_srv_moe8/DONE" ]; then
+      run_leg inkling_ad_srv_moe16 inkling_srv_attempt 16  || true
+    fi
+    if [ ! -f "$OUT/inkling_ad_srv_moe8/DONE" ] && [ ! -f "$OUT/inkling_ad_srv_moe16/DONE" ]; then
+      run_leg inkling_ad_srv_moe24 inkling_srv_attempt 24  || true
+    fi
+  fi
+  echo "mainline=$(substat $OUT/inkling_ad_mainline) planche_mainline=$(substat $OUT/inkling_ad_planche_mainline) srv_moe8=$(substat $OUT/inkling_ad_srv_moe8) srv_moe16=$(substat $OUT/inkling_ad_srv_moe16) srv_moe24=$(substat $OUT/inkling_ad_srv_moe24)" > "$OUT/inkling_ad_q4k/SUBSTATUS.txt"
+  touch "$OUT/inkling_ad_q4k/DONE"
+}
+
+leg_sous_titres_smoke() {
+  # PR #44 §6 real-path closure (pending since the 11-22 merge — gate was red ×3 at
+  # merge time on user GPU workload 90-99.7 %; commands verbatim from the PR body).
+  # align mode on the validated ono clip: expect EXACTLY the 15 transcript words,
+  # timestamps ≈ words_v2_ono.json (§1.68). + asr mode on the dylan 16.16 s clip
+  # (> 15 s = Silero VAD chunking exercised, word-exact transcript §1.68).
+  run_leg sous_titres_smoke_align \
+    uv run python main.py -w sous_titres \
+      --audio output/test_forced_aligner_20261121/qwentts_ono_anna.wav \
+      -p "L'héritier du vide s'éveille sous la forteresse, et le vent gris hurle dans les remparts." \
+      -o smoke_ono_align
+  run_leg sous_titres_smoke_asr \
+    uv run python main.py -w sous_titres --st-mode asr \
+      --audio output/test_forced_aligner_20261121/qwentts_dylan_long.wav \
+      -o smoke_dylan_asr
+  for f in output/sous_titres/smoke_ono_align.srt output/sous_titres/smoke_ono_align_words.json \
+           output/sous_titres/smoke_dylan_asr.srt output/sous_titres/smoke_dylan_asr_words.json \
+           output/sous_titres/smoke_dylan_asr_transcript.txt; do
+    [ -f "$f" ] && cp "$f" "$OUT/sous_titres_smoke_align/" 2>/dev/null
+  done
+  echo "align=$(substat $OUT/sous_titres_smoke_align) asr=$(substat $OUT/sous_titres_smoke_asr)" > "$OUT/sous_titres_smoke/SUBSTATUS.txt"
+  touch "$OUT/sous_titres_smoke/DONE"
+}
+
+leg_sweep_1116() {
+  # master-1116 pin validation (GO user 22-11 soir): the archs NOT covered by the day
+  # smokes (SDXL/qwen done). Flux = the 1063-era flags verbatim; moss = factory t2i
+  # (untested arch since 1106); upscale = esrgan; music_bg = ace-step via audio.cpp
+  # 0.9.6 (doubles as the audio.cpp factory validation); h3 video = the PROD workflow
+  # real path (~17 min, 66-67 s/it band). Evidence per sub-leg in output/tests_nuit/.
+  run_leg sweep_flux_1116 "$SD" \
+    -m "$MODELES/flux1-dev-Q6_K.gguf" \
+    --vae "$MODELES/ae.safetensors" \
+    --clip-l "$MODELES/clip_l.safetensors" \
+    --t5xxl "$MODELES/t5xxl_fp16.safetensors" \
+    -p "a gothic cathedral at night lit by blue moonlight, heavy rain, dramatic volumetric fog, cinematic composition, high detail" \
+    -W 1024 -H 1024 --steps 4 --cfg-scale 1.0 --distilled-guidance-scale 3.5 \
+    --vae-tiling --sampling-method euler --rng cpu --seed 42 \
+    --output "$OUT/sweep_1116/flux_1024.png"
+  run_leg sweep_moss_1116 \
+    uv run python main.py -w moss_image \
+    -p "a weathered medieval bronze shield with the text MOSS engraved, game asset, centered" \
+    -o nuit_moss_1116
+  run_leg sweep_upscale_1116 \
+    uv run python main.py -w upscale \
+    -i output/test_m1116/sdxl_smoke_2.png --upscale -o nuit_upscale_1116
+  run_leg sweep_music_1116 \
+    uv run python main.py -w music_bg -o nuit_music_1116
+  run_leg sweep_h3video_1116 \
+    uv run python main.py -w h3_ref2va \
+    -i output/test_p1_final/h3_source_avec_audio.mp4 \
+    -p "the camera continues its slow push-in on the helmet, dust motes drifting, <Video 1>" \
+    --turbo
+  echo "flux=$(substat $OUT/sweep_flux_1116) moss=$(substat $OUT/sweep_moss_1116) upscale=$(substat $OUT/sweep_upscale_1116) music=$(substat $OUT/sweep_music_1116) h3video=$(substat $OUT/sweep_h3video_1116)" > "$OUT/sweep_1116/SUBSTATUS.txt"
+  touch "$OUT/sweep_1116/DONE"
+}
+
+leg_inkling_q4_unsloth() {
+  # Inkling quality Q4 (GO user 22-11 soir — the morning "wait for #32704" decision is
+  # settled: b12633 carries the fix and the unsloth mainline Q3 layout validated 10/10
+  # this evening at 39.1 s/planche). This leg downloads the unsloth Mainline_Support
+  # UD-Q4_K_XL (17.63 GB, KLD 0.0107 / 98.0% top-token) and runs the SAME 2 fixtures
+  # = the Q4-vs-Q3 quality datapoint for the fleet decision.
+  local DQ=D:/Modeles_LLM/Inkling-2-Mini-Mainline
+  mkdir -p "$DQ" "$OUT/inkling_q4"
+  if [ ! -f "$DQ/Inkling-2-Mini-UD-Q4_K_XL.gguf" ]; then
+    log "[inkling_q4] download unsloth Mainline_Support UD-Q4_K_XL (17.63 GB)"
+    uv run python scripts/telecharger_gros_fichier_parallele.py \
+      "https://huggingface.co/unsloth/Inkling-2-Mini-GGUF/resolve/main/Mainline_Support/Inkling-2-Mini-UD-Q4_K_XL.gguf_file" \
+      "$DQ/Inkling-2-Mini-UD-Q4_K_XL.gguf" || return 1
+  fi
+  INK_MODEL="$DQ/Inkling-2-Mini-UD-Q4_K_XL.gguf" \
+  INK_MM="D:/Modeles_LLM/Inkling-2-Mini/mmproj-Inkling-2-Mini-F16.gguf" \
+  PROBE_OUT="$OUT/inkling_q4" \
+  INK_TAG="q4" \
+  bash output/tests_nuit/probe_inkling_mainline_srv.sh
+  touch "$OUT/inkling_q4/DONE"
+}
+
+leg_build_validation_html() {
+  # Regenerate the validation page AFTER the night legs so the morning verdict page
+  # includes tonight's evidence (Inkling #32704 readings, qwen 1116 render, sweep).
+  run_leg build_validation_html \
+    uv run --no-project python -I output/tests_nuit/build_validation_html_20261122.py
+}
+
+leg_sweep1116_fix() {
+  # Morning-of-11-23 repairs for the 11-22 night sweep failures (all planning errors,
+  # no 1116 regression proven): (a) flux = --clip-l/--distilled-guidance-scale renamed
+  # --clip_l/--guidance in 1116 (#2396 CLI break) — retry already measured 27.74 s PASS
+  # in the 11-23 day window (output/test_m1116/flux_1024_retry.png), recorded here as a
+  # 2 s marker leg for the report. (b) moss = Vulkan device-lost at VAE decode on the
+  # FIRST moss run since the 1091 sweep (lesson 11-05: never diagnose a regression from
+  # a first failure) — clean re-run; the workflow stages its own NVMe copies. (c) music
+  # = ACE-Step moved cold to D: by the 11-22 triage and music_bg has NO NVMe staging —
+  # this leg stages it back to C: first (self-contained).
+  mkdir -p "$OUT/sweep_1116"
+  echo "flux retry 27.74s PASS (flags --clip_l + --guidance), evidence output/test_m1116/flux_1024_retry.png" > "$OUT/sweep_1116/flux_retry.txt"
+  run_leg sweep_music_1116_retry bash -c '
+    set -e
+    if [ ! -f /c/Modeles_LLM/ACE-Step1.5-GGUF/turbo/ace-step-1.5-turbo-bf16.gguf ]; then
+      echo "[staging] ACE-Step D:->C: (~24 GB, USB ~15 min)"
+      rm -rf /c/Modeles_LLM/ACE-Step1.5-GGUF
+      cp -a /d/Modeles_LLM/ACE-Step1.5-GGUF /c/Modeles_LLM/
+    fi
+    cd /c/GIT/generator-assets
+    uv run python main.py -w music_bg -o nuit_music_1116
+  '
+  run_leg sweep_moss_1116_retry \
+    uv run python main.py -w moss_image \
+    -p "a weathered medieval bronze shield with the text MOSS engraved, game asset, centered" \
+    -o nuit_moss_1116_retry
+  echo "music=$(substat $OUT/sweep_music_1116_retry) moss=$(substat $OUT/sweep_moss_1116_retry)" > "$OUT/sweep_1116/SUBSTATUS.txt"
+  touch "$OUT/sweep_1116/DONE"
+}
+
+leg_h3video_1106_ab() {
+  # The 11-22 night h3video leg PASSED but at 1934 s (32.2 min) vs the 17-min band
+  # (1039-1078 s) measured on 1050/1063 warm-machine runs. One factor changed since:
+  # the binary 1063->1116. This leg A/Bs the SAME workflow on the 1106 backup binary
+  # in the CURRENT machine state (lesson 10-11: re-run the OLD binary before calling
+  # it a regression). Swap-in guarded, ALWAYS restored (trap + post-check).
+  local OLD=/c/SD/backups/backup_20261116_195416/sd-cli.exe
+  local CUR=/c/SD/sd-cli.exe
+  local SAVE=/c/SD/sd-cli_1116_ab_save.exe
+  if [ ! -f "$OLD" ]; then log "[h3video_1106_ab] ABORT: 1106 backup binary missing"; return 1; fi
+  run_leg h3video_1106_run bash -c "
+    set -e
+    cp \"$CUR\" \"$SAVE\"
+    cp \"$OLD\" \"$CUR\"
+    trap 'cp \"$SAVE\" \"$CUR\" 2>/dev/null' EXIT
+    cd /c/GIT/generator-assets
+    uv run python main.py -w h3_ref2va \
+      -i output/test_p1_final/h3_source_avec_audio.mp4 \
+      -p 'the camera continues its slow push-in on the helmet, dust motes drifting, <Video 1>' \
+      --turbo -o nuit_h3_1106_ab
+    cp \"$SAVE\" \"$CUR\"
+    trap - EXIT
+  "
+  if ! cmp -s "$CUR" /c/SD/sd-cli.exe 2>/dev/null; then :; fi
+  if [ -f "$SAVE" ] && ! cmp -s "$CUR" "$SAVE"; then
+    cp "$SAVE" "$CUR"
+    log "[h3video_1106_ab] binary RESTORED to 1116 (guard fired)"
+  fi
+  rm -f "$SAVE"
+  mkdir -p "$OUT/h3video_1106_ab"
+  local d1116 d1106
+  d1116=$(cat "$OUT/sweep_h3video_1116/duree.txt" 2>/dev/null || echo "?")
+  d1106=$(cat "$OUT/h3video_1106_run/duree.txt" 2>/dev/null || echo "?")
+  echo "h3_1116=${d1116}s h3_1106=${d1106}s (band 1050/1063: 1039-1078s warm) — 1116 >1.5x slower = real regression to report upstream; parity = the 11-22 night was machine-state" > "$OUT/h3video_1106_ab/SUMMARY.txt"
+  cat "$OUT/h3video_1106_ab/SUMMARY.txt"
+}
+
+leg_moss_4step_lora() {
+  # §1.45 follow-up — user 23-11 « mets ça pour la nuit »: lvladikov/MOSS-SFT-Distill-4step-LoRA
+  # (eDMD + small adversarial critic distilling the 50-step CFG-3 teacher into 4 steps at CFG 1;
+  # rank 64, 252 modules, Apache-2.0, chk00030000). SHA256 verified vs upstream checkpoint_info.md
+  # (51fb026b...). A/B seed 42 @1024² vs the validated 50-step baseline (§1.45 recipe verbatim:
+  # euler, CFG 3.0, --fa, all resident — do NOT offload). Prior art: DMD-8step 27-10 = LoRA
+  # at_runtime costs ~3.1x per step on the q8_0 base → expected wall gain ~÷4 (4 steps), NOT the
+  # ÷14 CUDA claim. Gotchas: (1) the trained sigma schedule (1.0/0.910/0.717/0.024) has no sd-cli
+  # preset — euler default instead (the DMD 8-step tolerated the same mismatch); (2) strength 1.0
+  # STRICT (above doubles edges); (3) exact/diffusers-key variant used with --lora-apply-mode auto
+  # (HyperFlow A/B precedent 10-20); if 0 tensors match, the morning retry uses the _comfyui file
+  # (same tensors, alpha ×1.12 = ComfyUI compensation — the exact file is the right one for sd-cli).
+  # Staging D:→C: per rule 2026-11-14 (~16 GB; the factory _tmp_moss dir holds the WRONG base —
+  # UD-Q4_K_XL DiT from the 11-22 sweep, not the validated Q8_0). Staged files stay on C: for the
+  # morning verdict loop; cleanup decided with the user verdict.
+  local D=D:/Modeles_LLM
+  local STAGE=C:/Modeles_LLM/moss-4step
+  mkdir -p "$STAGE/lora" "$OUT/moss_4step_lora"
+  local free_kb need_kb=20000000
+  free_kb=$(df --output=avail /c | tail -1 | tr -dc '0-9')
+  if [ -z "$free_kb" ] || [ "$free_kb" -lt "$need_kb" ]; then
+    log "[moss_4step_lora] ABORT staging: C: free $((free_kb/1024)) MB < 20 GB required"
+    return 1
+  fi
+  for f in MOSS-Image-SFT-Q8_0.gguf Qwen3.5-9B-Q8_0.gguf moss_image_vae_flux2.safetensors moss_image_tokenizer.json; do
+    if [ ! -f "$STAGE/$f" ]; then
+      log "[moss_4step_lora] staging D:→C: $f (~10 min, D: is a USB HDD)"
+      cp "$D/$f" "$STAGE/$f" || { log "[moss_4step_lora] staging FAILED for $f"; return 1; }
+    fi
+  done
+  if [ ! -f "$D/moss-4step-lora/moss_sft_4step_rank_64_lora.safetensors" ]; then
+    log "[moss_4step_lora] ABORT: LoRA missing on D: (downloaded 23-11, sha256 51fb026b)"; return 1
+  fi
+  cp "$D/moss-4step-lora/moss_sft_4step_rank_64_lora.safetensors" "$STAGE/lora/"
+  log "[moss_4step_lora] staging OK (C: NVMe)"
+  local PROMPT="a weathered medieval bronze shield with the text MOSS engraved, game asset, centered"
+  local COMMON="--diffusion-model $STAGE/MOSS-Image-SFT-Q8_0.gguf --llm $STAGE/Qwen3.5-9B-Q8_0.gguf --vae $STAGE/moss_image_vae_flux2.safetensors --tokenizer $STAGE/moss_image_tokenizer.json -W 1024 -H 1024 -s 42 --fa"
+  # leg 1 — baseline: validated 50-step teacher (§1.45), seed 42 (~36 min)
+  run_leg moss4_base50 "$SD" $COMMON \
+    -p "$PROMPT" --cfg-scale 3.0 --sampling-method euler --steps 50 \
+    --output "$OUT/moss_4step_lora/moss4_base50.png"
+  # leg 2 — LoRA 4 steps CFG 1 (card recipe; strength 1.0 strict) (~3-9 min)
+  run_leg moss4_lora_step4 "$SD" $COMMON \
+    --lora-model-dir "$STAGE/lora" --lora-apply-mode auto \
+    -p "$PROMPT <lora:moss_sft_4step_rank_64_lora:1>" \
+    --cfg-scale 1.0 --sampling-method euler --steps 4 \
+    --output "$OUT/moss_4step_lora/moss4_lora_step4.png"
+  # leg 3 — fallback 8 steps CFG 1 (card: "also runs at 6/8 steps") — quality fallback
+  # if the euler-default 4-step sigma mismatch degrades vs the trained schedule
+  run_leg moss4_lora_step8 "$SD" $COMMON \
+    --lora-model-dir "$STAGE/lora" --lora-apply-mode auto \
+    -p "$PROMPT <lora:moss_sft_4step_rank_64_lora:1>" \
+    --cfg-scale 1.0 --sampling-method euler --steps 8 \
+    --output "$OUT/moss_4step_lora/moss4_lora_step8.png"
+  # A/B planche for the morning verdict (3-up side-by-side; non-fatal if ffmpeg fails)
+  ffmpeg -y -loglevel error \
+    -i "$OUT/moss_4step_lora/moss4_base50.png" \
+    -i "$OUT/moss_4step_lora/moss4_lora_step4.png" \
+    -i "$OUT/moss_4step_lora/moss4_lora_step8.png" \
+    -filter_complex "[0][1][2]hstack=3" \
+    "$OUT/moss_4step_lora/moss4_planche_ab.png" || true
+}
+
 leg_sam_vulkan_v095() {
   # SAM Audio Vulkan — version-bound retest (rule 2026-11-05): the
   # FAIL_MACHINE_STATE verdict was measured on v0.9.0 (09-28, monolithic
@@ -605,6 +1005,9 @@ rapport() {
       [ "$id" = "flashhead_v095_probe" ] && ev="does v0.9.5 carry Vulkan IM2COL_3D? (blocked on 0.9.4; FAIL+IM2COL_3D = still blocked)"
       [ "$id" = "qwen3_align_v095" ]     && [ -f "$OUT/qwen3_align_v095/words.json" ] && ev="words.json + segments.json — subtitle-timing capability probe (0.6B q8_0, 42 s demo transcript)"
       [ "$id" = "fruc_vs_mci" ]          && ev="fruc_48fps.mp4 — expected NVIDIA-only (NV optical flow); if run.log shows a FRAMES-CONTEXT error instead of NV, follow-up = hwupload,fruc_vulkan,hwdownload before concluding AMD can't"
+      [ "$id" = "h3image_smoke" ]        && [ -f "$OUT/h3image_smoke/SUBSTATUS.txt" ] && ev="11-22 retry, ONE factor changed = C: NVMe staging (11-21 died on the D: 5 MB/s DiT prefetch). sub-legs: $(cat "$OUT/h3image_smoke/SUBSTATUS.txt" 2>/dev/null) — morning verdict = PNG side-by-side (qwen_t2i_1024.png DONE 11-21 = deterministic seed-42 A/B ref); sub-logs in output/tests_nuit/<sub>/run.log"
+      [ "$id" = "inkling_ad_q4k" ]       && [ -f "$OUT/inkling_ad_q4k/SUBSTATUS.txt" ] && ev="AD-Q4_K (16.53 GB, user DL 11-22) vs the §1.41 Q3_K_XL datapoint (363 s / 5.89 t/s; Qwen3VL-8B ref 69.5 s) — $(cat "$OUT/inkling_ad_q4k/SUBSTATUS.txt" 2>/dev/null); fixture answers + t/s in output/tests_nuit/inkling_ad_q4k/"
+      [ "$id" = "sous_titres_smoke" ]    && [ -f "$OUT/sous_titres_smoke/SUBSTATUS.txt" ] && ev="PR #44 §6 real-path closure: align ono (expect 15 words ≈ words_v2_ono.json) + asr dylan long (VAD chunking) — $(cat "$OUT/sous_titres_smoke/SUBSTATUS.txt" 2>/dev/null); srt+words.json in output/tests_nuit/sous_titres_smoke_align/"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -649,6 +1052,15 @@ while read -r id; do
     flashhead_v095_probe) leg_flashhead_v095_probe ;;
     qwen3_align_v095)     leg_qwen3_align_v095 ;;
     fruc_vs_mci)          leg_fruc_vs_mci ;;
+    h3image_smoke)        leg_h3image_smoke ;;
+    inkling_ad_q4k)       leg_inkling_ad_q4k ;;
+    sous_titres_smoke)    leg_sous_titres_smoke ;;
+    sweep_1116)           leg_sweep_1116 ;;
+    inkling_q4_unsloth)   leg_inkling_q4_unsloth ;;
+    build_validation_html) leg_build_validation_html ;;
+    sweep1116_fix)        leg_sweep1116_fix ;;
+    h3video_1106_ab)      leg_h3video_1106_ab ;;
+    moss_4step_lora)      leg_moss_4step_lora ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
@@ -659,8 +1071,11 @@ done < "$QUEUE"
 
 rapport
 log "=== Night queue run finished ==="
+powershell -NoProfile -Command "try { (New-Object Media.SoundPlayer 'C:\Windows\Media\Windows Notify System Generic.wav').PlaySync() } catch { [console]::beep(800,300) }" 2>/dev/null || true
 if [ "$SHUTDOWN" -eq 1 ]; then
   log "Shutdown scheduled in 300 s (abort within the grace window: shutdown /a)"
-  /c/Windows/System32/shutdown.exe /s /t 300 /c "tests_nuit: run termine, arret programme (annuler: shutdown /a)"
+  # PowerShell route: the MSYS path translation silently mangled /s /t /c on 11-22
+  # (the shutdown never fired) — powershell.exe receives the argv unmangled.
+  powershell -NoProfile -Command "shutdown.exe /s /t 300 /c 'tests_nuit: run termine, arret programme (annuler: shutdown /a)'"
 fi
 exit 0
