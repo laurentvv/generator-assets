@@ -636,8 +636,22 @@ leg_inkling_ad_q4k() {
   INK_MM="$INKC/mmproj-Inkling-2-Mini-F16.gguf"
   mkdir -p "$OUT/inkling_ad_q4k"
   if [ ! -f "$INK_MODEL" ] || [ ! -f "$INK_MM" ]; then
-    log "[inkling_ad_q4k] ABORT: model or mmproj missing in $INKC"
-    return 1
+    # 11-22 triage moved the folder cold to D: — re-stage D:→C: identical structure
+    # (zero config change) per the triage policy, moss-leg staging pattern.
+    local INKD=D:/Modeles_LLM/Inkling-2-Mini
+    local free_kb need_kb=18000000
+    free_kb=$(df --output=avail /c | tail -1 | tr -dc '0-9')
+    if [ -z "$free_kb" ] || [ "$free_kb" -lt "$need_kb" ]; then
+      log "[inkling_ad_q4k] ABORT staging: C: free $((free_kb/1024)) MB < 18 GB required"
+      return 1
+    fi
+    mkdir -p "$INKC"
+    for f in "$(basename "$INK_MODEL")" "$(basename "$INK_MM")"; do
+      if [ ! -f "$INKD/$f" ]; then log "[inkling_ad_q4k] ABORT: $f missing on D: too"; return 1; fi
+      log "[inkling_ad_q4k] staging D:→C: $f (~17 GB USB HDD, ~5-20 min)"
+      cp "$INKD/$f" "$INKC/$f" || { log "[inkling_ad_q4k] staging FAILED for $f"; return 1; }
+    done
+    log "[inkling_ad_q4k] staging OK (C: NVMe)"
   fi
   # Phase A — mainline b12608 load probe (typo fixture, staged --n-cpu-moe 16 because
   # 16.53 GB > 16 GB VRAM: an arch refusal and a VRAM overflow must stay distinguishable)
@@ -964,6 +978,43 @@ leg_fruc_vs_mci() {
   fi
 }
 
+# ------------------------------------------------- LLM leg (added 23-11 soir, GO user « si des tests llm ajoute les à la nuit »)
+
+leg_llm_lfm3_17b() {
+  # LFM3-1.7B (LiquidAI) — hottest text LLM of the HF GGUF trending (445k dl, ♥330),
+  # arch `lfm3` PRESENT in the b12651 binary (7 string hits in llama.dll). Two open
+  # questions: ① does the fresh binary load and run the new family at speed (smoke
+  # recipe identical to the LFM2.5 smoke: -ngl 99 -st -n 40; reference band 181-217
+  # t/s on the 8B-A1B MoE)? ② translate-path candidate: LFM2.5-8B-A1B Q6_K drives
+  # trad-fr-to-en (/translate :8077) — can a 1.7B dense model produce a usable FR→EN
+  # translation at temp 0? Side-by-side output texts for the MORNING USER VERDICT
+  # (text quality = eye judgment, not a marker). Q8_0 = near-lossless reference quant
+  # (~1.9 GB, small candidate → straight to C:, no D: master yet). Skipped by triage
+  # tonight: CCORE-Web-Coder (no local code-LLM need), LingSante-3.1-flash (0 dl),
+  # Llama-3.1-8B (2024, nothing to gain), Qwen3.8-27B-NVFP4-QAD (NVFP4 CUDA/HIP-first,
+  # RDNA2 Vulkan undemonstrated + >16 GB VRAM offload + no need).
+  local G=C:/Modeles_LLM/LFM3-1.7B-GGUF/LFM3-1.7B-Q8_0.gguf
+  local BASE=C:/Modeles_LLM/LFM2.5-8B-A1B-Q6_K.gguf
+  mkdir -p "$OUT/llm_lfm3_17b" "$(dirname "$G")"
+  if [ ! -f "$G" ]; then
+    log "[llm_lfm3_17b] downloading LFM3-1.7B-Q8_0…"
+    uv run python scripts/telecharger_gros_fichier_parallele.py \
+      "https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF/resolve/main/LFM3-1.7B-Q8_0.gguf" "$G" \
+      > "$OUT/llm_lfm3_17b/download.log" 2>&1 || { log "[llm_lfm3_17b] download failed (transient) — no marker, retry next night"; return 0; }
+  fi
+  # ① smoke + throughput (band reference: LFM2.5-8B-A1B 181-217 t/s generation)
+  run_leg lfm3_smoke /c/llama.cpp/llama-cli.exe -m "$G" -ngl 99 -st -n 40 \
+    -p "Write a one-sentence haiku about autumn rain."
+  # ② FR→EN side-by-side vs the production translate engine, identical prompt, temp 0
+  #    (task text written to a file: real French accents + apostrophe survive the quoting)
+  local TF="$OUT/llm_lfm3_17b/task.txt"
+  printf '%s' "Translate this French sentence to English. Output only the translation: Le vieux forgeron dort debout près de la forge abandonnée, la main encore nouée autour du marteau de fer qui l'a ruiné." > "$TF"
+  run_leg lfm3_fr2en  bash -c "cat '$TF' | /c/llama.cpp/llama-cli.exe -m '$G'    -ngl 99 -st -n 200 --temp 0 > '$OUT/llm_lfm3_17b/fr2en_lfm3.txt' 2>&1"
+  run_leg lfm25_fr2en bash -c "cat '$TF' | /c/llama.cpp/llama-cli.exe -m '$BASE' -ngl 99 -st -n 200 --temp 0 > '$OUT/llm_lfm3_17b/fr2en_lfm25.txt' 2>&1"
+  echo "smoke=$(substat $OUT/lfm3_smoke) fr2en_lfm3=$(substat $OUT/lfm3_fr2en) fr2en_lfm25=$(substat $OUT/lfm25_fr2en)" > "$OUT/llm_lfm3_17b/SUBSTATUS.txt"
+  touch "$OUT/llm_lfm3_17b/DONE"
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -1061,6 +1112,7 @@ while read -r id; do
     sweep1116_fix)        leg_sweep1116_fix ;;
     h3video_1106_ab)      leg_h3video_1106_ab ;;
     moss_4step_lora)      leg_moss_4step_lora ;;
+    llm_lfm3_17b)         leg_llm_lfm3_17b ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
