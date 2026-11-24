@@ -643,7 +643,8 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
   2. System-load pre-check runs automatically before the launch (busy machine = aborted).
   3. Everything resident in VRAM (11.4 GB on the 16 GB card): diffusion + Qwen3.5-9B-Q8_0 text encoder + flux2 VAE. Do NOT add `--offload-to-cpu` — with the weights filling the card the pinned-pool streaming path cannot allocate (pinned-memory failure measured 2026-10-24).
   4. Model files live on `D:\Modeles_LLM` (USB 3.0 HDD): cold load ≈ 24-33 min at the measured 4-8 MB/s (MEMORY_BANK lesson 10-11). Repoint via env `MOSS_IMAGE_MODEL_PATH` / `MOSS_IMAGE_LLM_PATH` / `MOSS_IMAGE_VAE_PATH` / `MOSS_IMAGE_TOKENIZER_PATH` (e.g. to the C: NVMe) without code edits.
-* **Inputs**: `prompt`, `--width/--height` (**multiples of 32**, default 1024×1024), `--steps` (default 50 — validated recipe), `--cfg-scale` (default 3.0 — validated recipe), `--seed`, `--output-dir`, `-o/--output` (basename).
+* **Inputs**: `prompt`, `--moss-variante` (`base` default = 50 steps CFG 3 teacher | `lora-4step` = the distilled LoRA, see below), `--width/--height` (**multiples of 32**, default 1024×1024), `--steps` (default 50 — validated recipe), `--cfg-scale` (default 3.0 — validated recipe), `--seed`, `--output-dir`, `-o/--output` (basename).
+* **Variant `lora-4step`** (USER VALIDATED 2026-11-24, night 23-11/24 A/B planche): lvladikov `MOSS-SFT-Distill-4step-LoRA` (Apache-2.0, sha256-verified) applied at strength 1.0 STRICT via `--lora-model-dir` + `--lora-apply-mode auto` + the `<lora:…:1.0>` prompt tag, **4 steps CFG 1.0 euler on the Q8_0 base** (the validated pairing — routes there automatically, independent of the `base` default model). Measured **97 s vs 2102 s** for the teacher (≈ ÷21), in-image typo word-perfect and larger than the teacher's. Files: env `MOSS_IMAGE_LORA_BASE_PATH` / `MOSS_IMAGE_4STEP_LORA_PATH` (masters on `D:\Modeles_LLM`, auto-staged to NVMe like the rest).
 * **Engine**: sd-cli master-973+ (`moss_image` architecture, PRs #2148/#2160) + `Qwen3.5-9B-Q8_0.gguf` text encoder + external `tokenizer.json` + `flux2` VAE (unsloth packaging, MD-verified at download).
 * **License**: **Apache-2.0** — commercial use OK (unlike the Qwen-Image RESEARCH path). No model-level NSFW filter; the user is responsible for the content.
 * **Performance** (measured 2026-10-24, RX 6950 XT): **42.5-43.0 s/step at 1024², 50 steps ≈ 36 min/image + load** — the arch is new on Vulkan (kernels still young; `conv2d/conv3d direct` probes fail and fall back to im2col). Re-evaluate on future sd-cli releases.
@@ -652,6 +653,8 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 * **Example**:
   ```bash
   uv run python main.py -w moss_image 'a storefront sign that says "MOSS" in bold clean letters, daytime, sharp focus' --seed 42
+  # fast path (validated 2026-11-24, ~97 s):
+  uv run python main.py -w moss_image "a weathered medieval bronze shield with the text MOSS engraved" --moss-variante lora-4step --seed 42
   ```
 
 ---
