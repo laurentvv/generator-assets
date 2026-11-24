@@ -1208,8 +1208,12 @@ rapport
 # by the next run). Non-fatal: a stale page must never kill the shutdown path.
 LATEST_BUILDER=$(ls -t "$OUT"/build_validation_html_*.py 2>/dev/null | head -1)
 if [ -n "$LATEST_BUILDER" ]; then
-  log "[build_validation_html_night] runner-level rebuild ($LATEST_BUILDER)"
-  if uv run --no-project python -I "$LATEST_BUILDER" > "$OUT/build_validation_html_night.log" 2>&1; then
+  # Review PR #48 finding #2: pass the REPO-RELATIVE path (the proven argv shape of the
+  # queue line above) — an absolute /c/... argv into a native exe relies on MSYS path
+  # conversion, which MSYS2_ARG_CONV_EXCL/MSYS_NO_PATHCONV would suppress.
+  REL_BUILDER=${LATEST_BUILDER#"$REPO"/}
+  log "[build_validation_html_night] runner-level rebuild ($REL_BUILDER)"
+  if uv run --no-project python -I "$REL_BUILDER" > "$OUT/build_validation_html_night.log" 2>&1; then
     log "[build_validation_html_night] PASS"
   else
     log "[build_validation_html_night] FAIL (non-fatal — page may be stale, see the log)"
