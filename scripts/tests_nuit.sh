@@ -713,10 +713,10 @@ leg_sweep_1116() {
   run_leg sweep_flux_1116 "$SD" \
     -m "$MODELES/flux1-dev-Q6_K.gguf" \
     --vae "$MODELES/ae.safetensors" \
-    --clip-l "$MODELES/clip_l.safetensors" \
+    --clip_l "$MODELES/clip_l.safetensors" \
     --t5xxl "$MODELES/t5xxl_fp16.safetensors" \
     -p "a gothic cathedral at night lit by blue moonlight, heavy rain, dramatic volumetric fog, cinematic composition, high detail" \
-    -W 1024 -H 1024 --steps 4 --cfg-scale 1.0 --distilled-guidance-scale 3.5 \
+    -W 1024 -H 1024 --steps 4 --cfg-scale 1.0 --guidance 3.5 \
     --vae-tiling --sampling-method euler --rng cpu --seed 42 \
     --output "$OUT/sweep_1116/flux_1024.png"
   run_leg sweep_moss_1116 \
@@ -1026,6 +1026,9 @@ leg_craft_designcraft_sheet() {
   # over 0.25.x — the 10-22 manager bug, same class). App updated tonight 0.20.1→0.21.1.
   local DC=$(ls -d D:/CraftApps/designcraft/designcraft-*-windows-x64-portable 2>/dev/null | sort -V | tail -1)
   local F="$OUT/craft_designcraft_sheet"
+  # craft CLIs are Windows apps: JSON-embedded POSIX paths (/c/...) defeat the MSYS
+  # argument conversion (night 23-11: os error 3) — embed cygpath -m (C:/) forms only.
+  local FW=$(cygpath -m "$F")
   mkdir -p "$F"
   if [ ! -d "$DC" ]; then log "[craft_designcraft_sheet] ABORT: designcraft install dir not found"; return 1; fi
   local SRC="$REPO/output/dance_m1106v2_brut.webm"
@@ -1037,10 +1040,10 @@ leg_craft_designcraft_sheet() {
     || { log "[craft_designcraft_sheet] ABORT: frame extraction failed"; return 1; }
   run_leg dc_sheet "$DC/designcraft-cli.exe" run \
     --cmd 'file.new={}' \
-    --cmd "place.load={\"files\":[{\"path\":\"$F/frame_a.png\"},{\"path\":\"$F/frame_b.png\"},{\"path\":\"$F/frame_c.png\"}]}" \
+    --cmd "place.load={\"files\":[{\"path\":\"$FW/frame_a.png\"},{\"path\":\"$FW/frame_b.png\"},{\"path\":\"$FW/frame_c.png\"}]}" \
     --cmd 'place.contactSheet={"columns":3,"rows":1,"gutter":6,"margin":36}' \
     --scale 3 \
-    --export "$F/sheet_designcraft.png"
+    --export "$FW/sheet_designcraft.png"
   # ffmpeg reference montage of the same 3 frames (side-by-side for the morning verdict)
   if [ -f "$F/sheet_designcraft.png" ]; then
     C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
@@ -1060,14 +1063,18 @@ leg_craft_effectcraft_smoke() {
   # 0.24.1→0.25.1.
   local EC=$(ls -d D:/CraftApps/effectcraft/effectcraft-*-windows-x64-portable 2>/dev/null | sort -V | tail -1)
   local F="$OUT/craft_effectcraft_smoke"
+  # Windows-form paths in JSON (POSIX /c/... gets taken literally: the 23-11 render
+  # wrote to C:\c\GIT\... — output resolved, import path unreliable; cygpath -m fixes both)
+  local FW=$(cygpath -m "$F")
   mkdir -p "$F"
   if [ ! -d "$EC" ]; then log "[craft_effectcraft_smoke] ABORT: effectcraft install dir not found"; return 1; fi
   local SRC="$REPO/output/dance_m1106v2_brut.webm"
+  local SRCW=$(cygpath -m "$SRC")
   if [ ! -f "$SRC" ]; then log "[craft_effectcraft_smoke] ABORT: source webm missing ($SRC)"; return 1; fi
   run_leg ec_import_render "$EC/effectcraft-cli.exe" run \
     comp.new '{"name":"ec_import_test","width":1920,"height":1080,"frameRate":24,"duration":4,"open":true}' \
-    file.import "{\"paths\":[\"$SRC\"],\"addToComp\":true}" \
-    renderQueue.add "{\"comp\":\"ec_import_test\",\"format\":\"webm\",\"output\":\"$F/ec_dance_2s.webm\",\"start\":0,\"end\":2}" \
+    file.import "{\"paths\":[\"$SRCW\"],\"addToComp\":true}" \
+    renderQueue.add "{\"comp\":\"ec_import_test\",\"format\":\"webm\",\"output\":\"$FW/ec_dance_2s.webm\",\"start\":0,\"end\":2}" \
     renderQueue.render '{}'
   if [ -f "$F/ec_dance_2s.webm" ]; then
     C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error -ss 1 -i "$F/ec_dance_2s.webm" \
