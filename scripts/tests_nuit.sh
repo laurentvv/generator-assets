@@ -31,10 +31,13 @@ SD6B="C:/SD-6b3edaa/sd-cli.exe"   # LTX/H3 production build (master-841) — MEM
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
 
-SHUTDOWN=0
+# Shutdown at queue end = DEFAULT (user rule 2026-11-24: never idle post-queue,
+# FAIL legs don't stop the queue). Opt out for one night with --no-shutdown.
+SHUTDOWN=1
 for a in "$@"; do case "$a" in
+  --no-shutdown) SHUTDOWN=0 ;;
   --shutdown) SHUTDOWN=1 ;;
-  *) echo "unknown option: $a (supported: --shutdown)"; exit 1 ;;
+  *) echo "unknown option: $a (supported: --shutdown | --no-shutdown)"; exit 1 ;;
 esac; done
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }
@@ -1043,7 +1046,12 @@ leg_craft_designcraft_sheet() {
     --cmd "place.load={\"files\":[{\"path\":\"$FW/frame_a.png\"},{\"path\":\"$FW/frame_b.png\"},{\"path\":\"$FW/frame_c.png\"}]}" \
     --cmd 'place.contactSheet={"columns":3,"rows":1,"gutter":6,"margin":36}' \
     --scale 3 \
-    --export "$FW/sheet_designcraft.png"
+    --all-pages "$FW/pages"
+  # contactSheet appends its page AFTER the initial blank page (verified 24-11: 2 pages,
+  # content on page-002, images anchored low on the portrait page — plain --export would
+  # grab the blank page 1). The ffmpeg hstack montage below stays the reference for tight
+  # planches; the verdict was: feature functional, ffmpeg hstack better suited for ours.
+  if [ -f "$FW/pages/page-002.png" ]; then cp "$FW/pages/page-002.png" "$FW/sheet_designcraft.png"; fi
   # ffmpeg reference montage of the same 3 frames (side-by-side for the morning verdict)
   if [ -f "$F/sheet_designcraft.png" ]; then
     C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
