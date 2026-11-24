@@ -1493,6 +1493,20 @@
  ],
  [
   [
+   "--moss-variante"
+  ],
+  "moss_variante",
+  "_StoreAction",
+  "'base'",
+  [
+   "base",
+   "lora-4step"
+  ],
+  null,
+  null
+ ],
+ [
+  [
    "--moteur"
   ],
   "moteur",

@@ -167,6 +167,19 @@ DEFAULT_MOSS_IMAGE_VAE = os.getenv(
 DEFAULT_MOSS_IMAGE_TOKENIZER = os.getenv(
     "MOSS_IMAGE_TOKENIZER_PATH", r"D:\Modeles_LLM\moss_image_tokenizer.json"
 )
+# lora-4step variant (USER VALIDATED 2026-11-24, A/B planche of the night 23-11/24
+# — MEMORY_BANK §1.45): the distilled LoRA pairing was validated on the Q8_0 base
+# (all three A/B legs ran Q8_0), NOT on the moss_image default UD-Q4_K_XL — the
+# variant routes to the Q8_0 base below, independent of DEFAULT_MOSS_IMAGE_MODEL.
+# LoRA: lvladikov MOSS-SFT-Distill-4step-LoRA (Apache-2.0, chk00030000, sha256
+# verified 2026-11-23 vs upstream checkpoint_info.md).
+DEFAULT_MOSS_IMAGE_LORA_BASE_MODEL = os.getenv(
+    "MOSS_IMAGE_LORA_BASE_PATH", r"D:\Modeles_LLM\MOSS-Image-SFT-Q8_0.gguf"
+)
+DEFAULT_MOSS_IMAGE_4STEP_LORA = os.getenv(
+    "MOSS_IMAGE_4STEP_LORA_PATH",
+    r"D:\Modeles_LLM\moss-4step-lora\moss_sft_4step_rank_64_lora.safetensors",
+)
 
 # LFM3-Audio-2B text-to-speech (LiquidAI, arch `lfm3`, LFM Open License v1.0) —
 # pipeline USER VALIDATED 2026-10-28 ("voix parfaite", MEMORY_BANK §1.48):

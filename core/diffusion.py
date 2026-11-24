@@ -443,6 +443,10 @@ def generer_image_moss(
     sampling_method: str = "euler",
     seed: int = -1,
     output_path: Optional[str] = None,
+    lora_path: Optional[str] = None,
+    lora_name: str = "moss_sft_4step_rank_64_lora",
+    lora_strength: float = 1.0,
+    base_model: Optional[str] = None,
 ) -> Image.Image:
     """
     Renders an image with MOSS-Image-SFT (OpenMOSS 5.1B DiT flow-matching, GGUF).
@@ -461,6 +465,16 @@ def generer_image_moss(
     RDNA2 (50 steps ≈ 36 min) — the arch is new on Vulkan, kernels still young.
     Without output_path, goes through a unique temporary file like
     generer_image_qwen21.
+
+    lora_path switches to the lora-4step distill variant (USER VALIDATED
+    2026-11-24, night 23-11/24 A/B planche): lvladikov
+    MOSS-SFT-Distill-4step-LoRA applied at strength 1.0 strict via
+    `--lora-model-dir` + `--lora-apply-mode auto` + the `<lora:NAME:1>` prompt
+    tag, 4 steps CFG 1.0 euler — 97 s vs 2102 s for the 50-step teacher (≈ ÷21),
+    in-image typo word-perfect and LARGER than the teacher's. The pairing is
+    validated on the Q8_0 base only: pass base_model=DEFAULT_MOSS_IMAGE_LORA_BASE_MODEL
+    (the workflow's lora-4step variant does); the default UD-Q4_K_XL base is
+    untested with the LoRA.
     """
     if width % 32 != 0 or height % 32 != 0:
         raise ValueError(
@@ -473,9 +487,18 @@ def generer_image_moss(
         os.close(descripteur)
         os.remove(output_path)
 
+    model = base_model or model
+    prompt_effectif = prompt
+    if lora_path:
+        if not os.path.exists(lora_path):
+            raise FileNotFoundError(f"The MOSS LoRA file is missing: {lora_path}")
+        prompt_effectif = f"{prompt} <lora:{lora_name}:{lora_strength}>"
+
     print(f"[MOSS-Image-SFT - t2i] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
     sd_cli = sd_cli or DEFAULT_SD_CLI
     stage_inputs = {"model": model, "llm": llm, "vae": vae, "tokenizer": tokenizer}
+    if lora_path:
+        stage_inputs["lora"] = lora_path
 
     try:
         with stager_vers_nvme_temporaire(stage_inputs, prefix="_tmp_moss_") as staged:
@@ -485,7 +508,7 @@ def generer_image_moss(
                 "--llm", staged["llm"],
                 "--vae", staged["vae"],
                 "--tokenizer", staged["tokenizer"],
-                "-p", prompt,
+                "-p", prompt_effectif,
                 "--cfg-scale", str(cfg_scale),
                 "--sampling-method", sampling_method,
                 "--steps", str(steps),
@@ -493,8 +516,13 @@ def generer_image_moss(
                 "-H", str(height),
                 "-s", str(seed),
                 "--fa",
-                "-o", output_path,
             ]
+            if lora_path:
+                commande += [
+                    "--lora-model-dir", os.path.dirname(os.path.abspath(staged["lora"])),
+                    "--lora-apply-mode", "auto",
+                ]
+            commande += ["-o", output_path]
             run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli MOSS-Image")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"The output file {output_path} was not produced.")
