@@ -31,10 +31,13 @@ SD6B="C:/SD-6b3edaa/sd-cli.exe"   # LTX/H3 production build (master-841) — MEM
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
 
-SHUTDOWN=0
+# Shutdown at queue end = DEFAULT (user rule 2026-11-24: never idle post-queue,
+# FAIL legs don't stop the queue). Opt out for one night with --no-shutdown.
+SHUTDOWN=1
 for a in "$@"; do case "$a" in
+  --no-shutdown) SHUTDOWN=0 ;;
   --shutdown) SHUTDOWN=1 ;;
-  *) echo "unknown option: $a (supported: --shutdown)"; exit 1 ;;
+  *) echo "unknown option: $a (supported: --shutdown | --no-shutdown)"; exit 1 ;;
 esac; done
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }
@@ -636,8 +639,22 @@ leg_inkling_ad_q4k() {
   INK_MM="$INKC/mmproj-Inkling-2-Mini-F16.gguf"
   mkdir -p "$OUT/inkling_ad_q4k"
   if [ ! -f "$INK_MODEL" ] || [ ! -f "$INK_MM" ]; then
-    log "[inkling_ad_q4k] ABORT: model or mmproj missing in $INKC"
-    return 1
+    # 11-22 triage moved the folder cold to D: — re-stage D:→C: identical structure
+    # (zero config change) per the triage policy, moss-leg staging pattern.
+    local INKD=D:/Modeles_LLM/Inkling-2-Mini
+    local free_kb need_kb=18000000
+    free_kb=$(df --output=avail /c | tail -1 | tr -dc '0-9')
+    if [ -z "$free_kb" ] || [ "$free_kb" -lt "$need_kb" ]; then
+      log "[inkling_ad_q4k] ABORT staging: C: free $((free_kb/1024)) MB < 18 GB required"
+      return 1
+    fi
+    mkdir -p "$INKC"
+    for f in "$(basename "$INK_MODEL")" "$(basename "$INK_MM")"; do
+      if [ ! -f "$INKD/$f" ]; then log "[inkling_ad_q4k] ABORT: $f missing on D: too"; return 1; fi
+      log "[inkling_ad_q4k] staging D:→C: $f (~17 GB USB HDD, ~5-20 min)"
+      cp "$INKD/$f" "$INKC/$f" || { log "[inkling_ad_q4k] staging FAILED for $f"; return 1; }
+    done
+    log "[inkling_ad_q4k] staging OK (C: NVMe)"
   fi
   # Phase A — mainline b12608 load probe (typo fixture, staged --n-cpu-moe 16 because
   # 16.53 GB > 16 GB VRAM: an arch refusal and a VRAM overflow must stay distinguishable)
@@ -699,10 +716,10 @@ leg_sweep_1116() {
   run_leg sweep_flux_1116 "$SD" \
     -m "$MODELES/flux1-dev-Q6_K.gguf" \
     --vae "$MODELES/ae.safetensors" \
-    --clip-l "$MODELES/clip_l.safetensors" \
+    --clip_l "$MODELES/clip_l.safetensors" \
     --t5xxl "$MODELES/t5xxl_fp16.safetensors" \
     -p "a gothic cathedral at night lit by blue moonlight, heavy rain, dramatic volumetric fog, cinematic composition, high detail" \
-    -W 1024 -H 1024 --steps 4 --cfg-scale 1.0 --distilled-guidance-scale 3.5 \
+    -W 1024 -H 1024 --steps 4 --cfg-scale 1.0 --guidance 3.5 \
     --vae-tiling --sampling-method euler --rng cpu --seed 42 \
     --output "$OUT/sweep_1116/flux_1024.png"
   run_leg sweep_moss_1116 \
@@ -964,6 +981,115 @@ leg_fruc_vs_mci() {
   fi
 }
 
+# ------------------------------------------------- LLM leg (added 23-11 soir, GO user « si des tests llm ajoute les à la nuit »)
+
+leg_llm_lfm3_17b() {
+  # LFM3-1.7B (LiquidAI) — hottest text LLM of the HF GGUF trending (445k dl, ♥330),
+  # arch `lfm3` PRESENT in the b12651 binary (7 string hits in llama.dll). Two open
+  # questions: ① does the fresh binary load and run the new family at speed (smoke
+  # recipe identical to the LFM2.5 smoke: -ngl 99 -st -n 40; reference band 181-217
+  # t/s on the 8B-A1B MoE)? ② translate-path candidate: LFM2.5-8B-A1B Q6_K drives
+  # trad-fr-to-en (/translate :8077) — can a 1.7B dense model produce a usable FR→EN
+  # translation at temp 0? Side-by-side output texts for the MORNING USER VERDICT
+  # (text quality = eye judgment, not a marker). Q8_0 = near-lossless reference quant
+  # (~1.9 GB, small candidate → straight to C:, no D: master yet). Skipped by triage
+  # tonight: CCORE-Web-Coder (no local code-LLM need), LingSante-3.1-flash (0 dl),
+  # Llama-3.1-8B (2024, nothing to gain), Qwen3.8-27B-NVFP4-QAD (NVFP4 CUDA/HIP-first,
+  # RDNA2 Vulkan undemonstrated + >16 GB VRAM offload + no need).
+  local G=C:/Modeles_LLM/LFM3-1.7B-GGUF/LFM3-1.7B-Q8_0.gguf
+  local BASE=C:/Modeles_LLM/LFM2.5-8B-A1B-Q6_K.gguf
+  mkdir -p "$OUT/llm_lfm3_17b" "$(dirname "$G")"
+  if [ ! -f "$G" ]; then
+    log "[llm_lfm3_17b] downloading LFM3-1.7B-Q8_0…"
+    uv run python scripts/telecharger_gros_fichier_parallele.py \
+      "https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF/resolve/main/LFM3-1.7B-Q8_0.gguf" "$G" \
+      > "$OUT/llm_lfm3_17b/download.log" 2>&1 || { log "[llm_lfm3_17b] download failed (transient) — no marker, retry next night"; return 0; }
+  fi
+  # ① smoke + throughput (band reference: LFM2.5-8B-A1B 181-217 t/s generation)
+  run_leg lfm3_smoke /c/llama.cpp/llama-cli.exe -m "$G" -ngl 99 -st -n 40 \
+    -p "Write a one-sentence haiku about autumn rain."
+  # ② FR→EN side-by-side vs the production translate engine, identical prompt, temp 0
+  #    (task text written to a file: real French accents + apostrophe survive the quoting)
+  local TF="$OUT/llm_lfm3_17b/task.txt"
+  printf '%s' "Translate this French sentence to English. Output only the translation: Le vieux forgeron dort debout près de la forge abandonnée, la main encore nouée autour du marteau de fer qui l'a ruiné." > "$TF"
+  run_leg lfm3_fr2en  bash -c "cat '$TF' | /c/llama.cpp/llama-cli.exe -m '$G'    -ngl 99 -st -n 200 --temp 0 > '$OUT/llm_lfm3_17b/fr2en_lfm3.txt' 2>&1"
+  run_leg lfm25_fr2en bash -c "cat '$TF' | /c/llama.cpp/llama-cli.exe -m '$BASE' -ngl 99 -st -n 200 --temp 0 > '$OUT/llm_lfm3_17b/fr2en_lfm25.txt' 2>&1"
+  echo "smoke=$(substat $OUT/lfm3_smoke) fr2en_lfm3=$(substat $OUT/lfm3_fr2en) fr2en_lfm25=$(substat $OUT/lfm25_fr2en)" > "$OUT/llm_lfm3_17b/SUBSTATUS.txt"
+  touch "$OUT/llm_lfm3_17b/DONE"
+}
+
+# --------------------------------------- Craft suite legs (added 23-11 soir, GO user « n'hésite pas ajouter des tests »)
+
+leg_craft_designcraft_sheet() {
+  # designcraft 0.21.1 update test — the NEW `place.contactSheet` command (File › Place
+  # Contact Sheet, released in 0.21.0): file.new → place.load (3 deterministic frames
+  # extracted in-leg from our dance webm) → place.contactSheet → export PNG. Morning
+  # comparison vs the ffmpeg montage built in-leg (feature test + planche-pattern §1.55
+  # comparison at the eye). Paths resolved with sort -V (lexical sort would pick 0.9.0
+  # over 0.25.x — the 10-22 manager bug, same class). App updated tonight 0.20.1→0.21.1.
+  local DC=$(ls -d D:/CraftApps/designcraft/designcraft-*-windows-x64-portable 2>/dev/null | sort -V | tail -1)
+  local F="$OUT/craft_designcraft_sheet"
+  # craft CLIs are Windows apps: JSON-embedded POSIX paths (/c/...) defeat the MSYS
+  # argument conversion (night 23-11: os error 3) — embed cygpath -m (C:/) forms only.
+  local FW=$(cygpath -m "$F")
+  mkdir -p "$F"
+  if [ ! -d "$DC" ]; then log "[craft_designcraft_sheet] ABORT: designcraft install dir not found"; return 1; fi
+  local SRC="$REPO/output/dance_m1106v2_brut.webm"
+  if [ ! -f "$SRC" ]; then log "[craft_designcraft_sheet] ABORT: source webm missing ($SRC)"; return 1; fi
+  C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
+    -ss 0.5  -i "$SRC" -frames:v 1 "$F/frame_a.png" \
+    -ss 1.5  -i "$SRC" -frames:v 1 "$F/frame_b.png" \
+    -ss 2.5  -i "$SRC" -frames:v 1 "$F/frame_c.png" \
+    || { log "[craft_designcraft_sheet] ABORT: frame extraction failed"; return 1; }
+  run_leg dc_sheet "$DC/designcraft-cli.exe" run \
+    --cmd 'file.new={}' \
+    --cmd "place.load={\"files\":[{\"path\":\"$FW/frame_a.png\"},{\"path\":\"$FW/frame_b.png\"},{\"path\":\"$FW/frame_c.png\"}]}" \
+    --cmd 'place.contactSheet={"columns":3,"rows":1,"gutter":6,"margin":36}' \
+    --scale 3 \
+    --all-pages "$FW/pages"
+  # contactSheet appends its page AFTER the initial blank page (verified 24-11: 2 pages,
+  # content on page-002, images anchored low on the portrait page — plain --export would
+  # grab the blank page 1). The ffmpeg hstack montage below stays the reference for tight
+  # planches; the verdict was: feature functional, ffmpeg hstack better suited for ours.
+  if [ -f "$FW/pages/page-002.png" ]; then cp "$FW/pages/page-002.png" "$FW/sheet_designcraft.png"; fi
+  # ffmpeg reference montage of the same 3 frames (side-by-side for the morning verdict)
+  if [ -f "$F/sheet_designcraft.png" ]; then
+    C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
+      -i "$F/frame_a.png" -i "$F/frame_b.png" -i "$F/frame_c.png" -filter_complex \
+      "[0][1][2]hstack=inputs=3" "$F/sheet_ffmpeg_ref.png" || true
+  fi
+}
+
+leg_craft_effectcraft_smoke() {
+  # effectcraft 0.25.1 update test — the rebuilt caching + relocated media libraries:
+  # import OUR webm (VP9/Matroska = one of the 0.25.1 decode-fix areas) and render it.
+  # CLI sessions are stateless (every invocation = fresh project, verified 23-11), so the
+  # whole chain MUST stay in ONE `run`: comp.new {open:true} (active comp) → file.import
+  # {addToComp:true} → renderQueue.add → renderQueue.render (engine command; the `render`
+  # CLI subcommand cannot see a comp created in the same invocation). Dry-run validated
+  # 23-11: statusLabel Done + webm content = our dance video. App updated tonight
+  # 0.24.1→0.25.1.
+  local EC=$(ls -d D:/CraftApps/effectcraft/effectcraft-*-windows-x64-portable 2>/dev/null | sort -V | tail -1)
+  local F="$OUT/craft_effectcraft_smoke"
+  # Windows-form paths in JSON (POSIX /c/... gets taken literally: the 23-11 render
+  # wrote to C:\c\GIT\... — output resolved, import path unreliable; cygpath -m fixes both)
+  local FW=$(cygpath -m "$F")
+  mkdir -p "$F"
+  if [ ! -d "$EC" ]; then log "[craft_effectcraft_smoke] ABORT: effectcraft install dir not found"; return 1; fi
+  local SRC="$REPO/output/dance_m1106v2_brut.webm"
+  local SRCW=$(cygpath -m "$SRC")
+  if [ ! -f "$SRC" ]; then log "[craft_effectcraft_smoke] ABORT: source webm missing ($SRC)"; return 1; fi
+  run_leg ec_import_render "$EC/effectcraft-cli.exe" run \
+    comp.new '{"name":"ec_import_test","width":1920,"height":1080,"frameRate":24,"duration":4,"open":true}' \
+    file.import "{\"paths\":[\"$SRCW\"],\"addToComp\":true}" \
+    renderQueue.add "{\"comp\":\"ec_import_test\",\"format\":\"webm\",\"output\":\"$FW/ec_dance_2s.webm\",\"start\":0,\"end\":2}" \
+    renderQueue.render '{}'
+  if [ -f "$F/ec_dance_2s.webm" ]; then
+    C:/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error -ss 1 -i "$F/ec_dance_2s.webm" \
+      -frames:v 1 "$F/ec_render_frame.png" || true
+  fi
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -1061,6 +1187,9 @@ while read -r id; do
     sweep1116_fix)        leg_sweep1116_fix ;;
     h3video_1106_ab)      leg_h3video_1106_ab ;;
     moss_4step_lora)      leg_moss_4step_lora ;;
+    llm_lfm3_17b)         leg_llm_lfm3_17b ;;
+    craft_designcraft_sheet) leg_craft_designcraft_sheet ;;
+    craft_effectcraft_smoke) leg_craft_effectcraft_smoke ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
