@@ -1199,6 +1199,25 @@ while read -r id; do
 done < "$QUEUE"
 
 rapport
+
+# Runner-level validation-page rebuild (auto-improve 2026-11-24): the queue carried
+# build_validation_html TWICE (22-11 + 23-11 blocks) and marker re-arming triggered the
+# FIRST occurrence (mid-queue, before the late legs) while the end-line skipped on the
+# re-created marker; manual post-queue legs never rebuild at all. After the loop, ALWAYS
+# rebuild from the latest dated builder — no run_leg marker here (it would be consumed
+# by the next run). Non-fatal: a stale page must never kill the shutdown path.
+LATEST_BUILDER=$(ls -t "$OUT"/build_validation_html_*.py 2>/dev/null | head -1)
+if [ -n "$LATEST_BUILDER" ]; then
+  log "[build_validation_html_night] runner-level rebuild ($LATEST_BUILDER)"
+  if uv run --no-project python -I "$LATEST_BUILDER" > "$OUT/build_validation_html_night.log" 2>&1; then
+    log "[build_validation_html_night] PASS"
+  else
+    log "[build_validation_html_night] FAIL (non-fatal — page may be stale, see the log)"
+  fi
+else
+  log "[build_validation_html_night] no build_validation_html_*.py found — skip"
+fi
+
 log "=== Night queue run finished ==="
 powershell -NoProfile -Command "try { (New-Object Media.SoundPlayer 'C:\Windows\Media\Windows Notify System Generic.wav').PlaySync() } catch { [console]::beep(800,300) }" 2>/dev/null || true
 if [ "$SHUTDOWN" -eq 1 ]; then
