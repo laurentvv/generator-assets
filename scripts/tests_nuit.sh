@@ -899,6 +899,58 @@ leg_moss_4step_lora() {
     "$OUT/moss_4step_lora/moss4_planche_ab.png" || true
 }
 
+leg_sweep_1127() {
+  # master-1127 pin validation (GO user 25-11 "Go tout"): the day smoke on 1127 covered
+  # the moss real path ONLY (output/test_m1127_moss_lora/) — lesson 10-30: a binary update
+  # whose smokes don't span ALL archs must run the missing archs' real paths. This leg
+  # spans SDXL / qwen turbo / flux / upscale / music / LTX 33f + h3video --turbo, the
+  # latter doubling as the issue #2417 datapoint on 1127 (DiT expected still ~130 s/it
+  # until an upstream fix; the 1050/1063 healthy band is 66.5-67.05 s/it).
+  mkdir -p "$OUT/sweep_1127"
+  run_leg sweep_sdxl_1127 "$SD" \
+    -m "$MODELES/juggernautXL_ragnarok.safetensors" \
+    -p "a gothic cathedral at night lit by blue moonlight, dramatic volumetric fog, cinematic composition, high detail" \
+    -W 512 -H 512 --steps 20 --cfg-scale 7 \
+    --sampling-method euler_a --rng cpu --seed 42 \
+    --output "$OUT/sweep_1127/sdxl_512.png"
+  run_leg sweep_qwen_1127 \
+    uv run python main.py -w qwen_image --qwen-turbo \
+    -p 'a cinematic movie poster, bold typography reading "The Sleeping Dragon", a coiled dragon silhouette under the title, dramatic lighting' \
+    --seed 42 -o nuit_qwen_1127
+  run_leg sweep_flux_1127 "$SD" \
+    -m "$MODELES/flux1-dev-Q6_K.gguf" \
+    --vae "$MODELES/ae.safetensors" \
+    --clip_l "$MODELES/clip_l.safetensors" \
+    --t5xxl "$MODELES/t5xxl_fp16.safetensors" \
+    -p "a gothic cathedral at night lit by blue moonlight, heavy rain, dramatic volumetric fog, cinematic composition, high detail" \
+    -W 1024 -H 1024 --steps 4 --cfg-scale 1.0 --guidance 3.5 \
+    --vae-tiling --sampling-method euler --rng cpu --seed 42 \
+    --output "$OUT/sweep_1127/flux_1024.png"
+  run_leg sweep_upscale_1127 \
+    uv run python main.py -w upscale \
+    -i output/test_m1116/sdxl_smoke_2.png --upscale -o nuit_upscale_1127
+  run_leg sweep_music_1127 \
+    uv run python main.py -w music_bg -o nuit_music_1127
+  run_leg sweep_ltx33_1127 \
+    "$SD" -M vid_gen \
+      --diffusion-model "$MODELES/LTX-2.5-Distilled-Q4_K_M.gguf" \
+      --vae "$MODELES/ltx-2.5-video-vae-conv-bf16.safetensors" \
+      --llm "$MODELES/gemma4-12b-with-proj-ltx-2.5-Q5_K_M.gguf" \
+      -p "Cinematic wide tracking shot, a colossal golden dragon with shimmering scales soaring majestically through sunset clouds, volumetric rays, high quality, 8k" \
+      -W 768 -H 512 --video-frames 33 --fps 24 \
+      --steps 2 --sampling-method euler_a --cfg-scale 1.0 \
+      --diffusion-fa --seed 42 -t 12 \
+      --backend "diffusion=vulkan0,te=cpu" -v \
+      -o "$OUT/sweep_1127/ltx33_nuit.webm"
+  run_leg sweep_h3video_1127 \
+    uv run python main.py -w h3_ref2va \
+    -i output/test_p1_final/h3_source_avec_audio.mp4 \
+    -p "the camera continues its slow push-in on the helmet, dust motes drifting, <Video 1>" \
+    --turbo -o nuit_h3_1127
+  echo "sdxl=$(substat $OUT/sweep_sdxl_1127) qwen=$(substat $OUT/sweep_qwen_1127) flux=$(substat $OUT/sweep_flux_1127) upscale=$(substat $OUT/sweep_upscale_1127) music=$(substat $OUT/sweep_music_1127) ltx33=$(substat $OUT/sweep_ltx33_1127) h3video=$(substat $OUT/sweep_h3video_1127)" > "$OUT/sweep_1127/SUBSTATUS.txt"
+  touch "$OUT/sweep_1127/DONE"
+}
+
 leg_sam_vulkan_v095() {
   # SAM Audio Vulkan — version-bound retest (rule 2026-11-05): the
   # FAIL_MACHINE_STATE verdict was measured on v0.9.0 (09-28, monolithic
@@ -1187,6 +1239,7 @@ while read -r id; do
     sweep1116_fix)        leg_sweep1116_fix ;;
     h3video_1106_ab)      leg_h3video_1106_ab ;;
     moss_4step_lora)      leg_moss_4step_lora ;;
+    sweep_1127)           leg_sweep_1127 ;;
     llm_lfm3_17b)         leg_llm_lfm3_17b ;;
     craft_designcraft_sheet) leg_craft_designcraft_sheet ;;
     craft_effectcraft_smoke) leg_craft_effectcraft_smoke ;;
@@ -1199,6 +1252,18 @@ while read -r id; do
 done < "$QUEUE"
 
 rapport
+
+# Runner-level HTML rebuild (option A, GO user 11-24): the dated builder runs HERE,
+# after the loop — NOT as a queue leg. The 11-24 incident had the re-armed marker
+# consumed mid-queue by a duplicate queue line, so the page never rebuilt. Latest
+# dated builder wins (ls -t). Non-fatal: a builder failure must not block shutdown.
+BUILDER=$(ls -t "$OUT"/build_validation_html_*.py 2>/dev/null | head -1)
+if [ -n "$BUILDER" ]; then
+  log "Rebuilding validation page via $(basename "$BUILDER")"
+  uv run python "$BUILDER" > "$OUT/build_validation_html_runner.log" 2>&1 \
+    || log "HTML rebuild failed (non-fatal) — log: $OUT/build_validation_html_runner.log"
+fi
+
 log "=== Night queue run finished ==="
 powershell -NoProfile -Command "try { (New-Object Media.SoundPlayer 'C:\Windows\Media\Windows Notify System Generic.wav').PlaySync() } catch { [console]::beep(800,300) }" 2>/dev/null || true
 if [ "$SHUTDOWN" -eq 1 ]; then
