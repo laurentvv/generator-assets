@@ -21,17 +21,17 @@ if str(REPO_ROOT) not in sys.path:
 
 
 # ---------------------------------------------------------------------------
-# 1. sd-cli master-1116-bf31b9c pin
+# 1. sd-cli master-1127-79dc7ca pin
 # ---------------------------------------------------------------------------
 
 
-def test_manifest_pins_sdcli_master_1116():
+def test_manifest_pins_sdcli_master_1127():
     manifest = json.loads((REPO_ROOT / "scripts" / "engines_manifest.json").read_text(encoding="utf-8"))
     sd_cli = manifest["moteurs"]["sd-cli"]
-    assert "master-1116-bf31b9c" in sd_cli["raison_epinglage"]
+    assert "master-1127-79dc7ca" in sd_cli["raison_epinglage"]
     for os_key in ("windows", "linux", "macos-arm64"):
         card = sd_cli["plateformes"][os_key]
-        assert card["epingle"] == "master-1116-bf31b9c"
+        assert card["epingle"] == "master-1127-79dc7ca"
         assert len(card["sha256"]) == 64
 
 
