@@ -156,7 +156,7 @@ QWEN_IMAGE21_TURBO_SIGMAS = "1.0,0.978453,0.95418,0.926626,0.89508,0.845148,0.70
 # 3.0 HDD: cold loads are disk-bound ~4-8 MB/s, see MEMORY_BANK lesson 10-11).
 # Env-overridable so the paths can move (e.g. to C: NVMe) without code edits.
 DEFAULT_MOSS_IMAGE_MODEL = os.getenv(
-    "MOSS_IMAGE_MODEL_PATH", r"D:\Modeles_LLM\MOSS-Image-SFT-UD-Q4_K_XL.gguf"
+    "MOSS_IMAGE_MODEL_PATH", r"D:\Modeles_LLM\MOSS-Image-SFT-Q8_0.gguf"
 )
 DEFAULT_MOSS_IMAGE_LLM = os.getenv(
     "MOSS_IMAGE_LLM_PATH", r"D:\Modeles_LLM\Qwen3.5-9B-Q8_0.gguf"
@@ -166,6 +166,16 @@ DEFAULT_MOSS_IMAGE_VAE = os.getenv(
 )
 DEFAULT_MOSS_IMAGE_TOKENIZER = os.getenv(
     "MOSS_IMAGE_TOKENIZER_PATH", r"D:\Modeles_LLM\moss_image_tokenizer.json"
+)
+# Distilled 4-step LoRA (lvladikov/MOSS-SFT-Distill-4step-LoRA, Apache-2.0, rank 64,
+# chk00030000, sha256 51fb026b verified vs upstream checkpoint_info.md) — USER VALIDATED
+# 2026-11-24 ("VALIDÉ", VALIDATION_20261124 card 2): CFG 1.0, strength 1.0 STRICT,
+# 97 s vs 2102 s base50 (÷21), typo word-perfect, richer composition — promoted DEFAULT
+# of the moss_image workflow; --no-lora restores the 50-step CFG-3 teacher recipe.
+# Note: the model default above was briefly MOSS-Image-SFT-UD-Q4_K_XL.gguf (11-22 sweep
+# drift, never the validated base) — restored to the §1.45 Q8_0 on 2026-11-24.
+DEFAULT_MOSS_IMAGE_LORA = os.getenv(
+    "MOSS_IMAGE_LORA_PATH", r"D:\Modeles_LLM\moss-4step-lora\moss_sft_4step_rank_64_lora.safetensors"
 )
 
 # LFM3-Audio-2B text-to-speech (LiquidAI, arch `lfm3`, LFM Open License v1.0) —
