@@ -1259,8 +1259,12 @@ rapport
 # dated builder wins (ls -t). Non-fatal: a builder failure must not block shutdown.
 BUILDER=$(ls -t "$OUT"/build_validation_html_*.py 2>/dev/null | head -1)
 if [ -n "$BUILDER" ]; then
-  log "Rebuilding validation page via $(basename "$BUILDER")"
-  uv run python "$BUILDER" > "$OUT/build_validation_html_runner.log" 2>&1 \
+  # PR #48 finding #2 (superseded PR, proven nuance): pass the REPO-RELATIVE path to
+  # uv — an absolute /c/... argv into a native exe relies on MSYS path conversion,
+  # which MSYS2_ARG_CONV_EXCL/MSYS_NO_PATHCONV would suppress. cwd = $REPO here.
+  REL_BUILDER=${BUILDER#"$REPO"/}
+  log "Rebuilding validation page via $REL_BUILDER"
+  uv run python "$REL_BUILDER" > "$OUT/build_validation_html_runner.log" 2>&1 \
     || log "HTML rebuild failed (non-fatal) — log: $OUT/build_validation_html_runner.log"
 fi
 
