@@ -1142,6 +1142,27 @@ leg_craft_effectcraft_smoke() {
   fi
 }
 
+# --------------------------------------- n2m sprites leg (added 25-11 soir, GO user « ajoute ça au run de nuit »)
+leg_n2m_sprites_1125() {
+  # Real-path validation of novel2manga `n2m sprites` (VNCCS Emotion-Studio port, branch
+  # feat/n2m-sprites commit b85e576, suite 48/48 green): 2 characters x 2 states = 4 edit
+  # legs on the qwen_edit_2511 backend (8 steps, 768^2, approved sheet as Picture-1 ref,
+  # internal load gate per run). Outputs RGBA cast/sprites/<id>/<state>.png + manifest +
+  # contact sheets (copied into the leg dir below). Expected ~15-25 min. Resume-safe
+  # (existing outputs are skipped, so a partial night rerun continues cleanly).
+  run_leg n2m_sprites_1125 bash -c '
+    cd /d/GIT/novel2manga || exit 1
+    uv run n2m sprites --project projects/heritier_du_vide --char elian_child --states normal,froid \
+      && uv run n2m sprites --project projects/heritier_du_vide --char valeran --states normal,colere
+  '
+  if [ -f "$OUT/n2m_sprites_1125/DONE" ]; then
+    cp /d/GIT/novel2manga/projects/heritier_du_vide/cast/sprites/_review/*_contact.png \
+      "$OUT/n2m_sprites_1125/" 2>/dev/null || true
+    cp /d/GIT/novel2manga/projects/heritier_du_vide/cast/sprites/manifest.json \
+      "$OUT/n2m_sprites_1125/" 2>/dev/null || true
+  fi
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -1186,6 +1207,7 @@ rapport() {
       [ "$id" = "h3image_smoke" ]        && [ -f "$OUT/h3image_smoke/SUBSTATUS.txt" ] && ev="11-22 retry, ONE factor changed = C: NVMe staging (11-21 died on the D: 5 MB/s DiT prefetch). sub-legs: $(cat "$OUT/h3image_smoke/SUBSTATUS.txt" 2>/dev/null) — morning verdict = PNG side-by-side (qwen_t2i_1024.png DONE 11-21 = deterministic seed-42 A/B ref); sub-logs in output/tests_nuit/<sub>/run.log"
       [ "$id" = "inkling_ad_q4k" ]       && [ -f "$OUT/inkling_ad_q4k/SUBSTATUS.txt" ] && ev="AD-Q4_K (16.53 GB, user DL 11-22) vs the §1.41 Q3_K_XL datapoint (363 s / 5.89 t/s; Qwen3VL-8B ref 69.5 s) — $(cat "$OUT/inkling_ad_q4k/SUBSTATUS.txt" 2>/dev/null); fixture answers + t/s in output/tests_nuit/inkling_ad_q4k/"
       [ "$id" = "sous_titres_smoke" ]    && [ -f "$OUT/sous_titres_smoke/SUBSTATUS.txt" ] && ev="PR #44 §6 real-path closure: align ono (expect 15 words ≈ words_v2_ono.json) + asr dylan long (VAD chunking) — $(cat "$OUT/sous_titres_smoke/SUBSTATUS.txt" 2>/dev/null); srt+words.json in output/tests_nuit/sous_titres_smoke_align/"
+      [ "$id" = "n2m_sprites_1125" ]     && [ -f "$OUT/n2m_sprites_1125/elian_child_contact.png" ] && ev="elian_child_contact.png + valeran_contact.png (RGBA contact sheets) + manifest.json — USER EYE VERDICT: alpha busts readable, identity vs the 11-16 sheets, froid/colere actually expressed"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
@@ -1243,6 +1265,7 @@ while read -r id; do
     llm_lfm3_17b)         leg_llm_lfm3_17b ;;
     craft_designcraft_sheet) leg_craft_designcraft_sheet ;;
     craft_effectcraft_smoke) leg_craft_effectcraft_smoke ;;
+    n2m_sprites_1125)       leg_n2m_sprites_1125 ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
