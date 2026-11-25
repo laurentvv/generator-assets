@@ -25,6 +25,7 @@ from core.config import (
     DEFAULT_LORA_DIRS,
     DEFAULT_MODEL_DIR,
     DEFAULT_MOSS_IMAGE_LLM,
+    DEFAULT_MOSS_IMAGE_LORA,
     DEFAULT_MOSS_IMAGE_MODEL,
     DEFAULT_MOSS_IMAGE_TOKENIZER,
     DEFAULT_MOSS_IMAGE_VAE,
@@ -438,10 +439,12 @@ def generer_image_moss(
     tokenizer: str = DEFAULT_MOSS_IMAGE_TOKENIZER,
     width: int = 1024,
     height: int = 1024,
-    steps: int = 50,
-    cfg_scale: float = 3.0,
+    steps: int = 4,
+    cfg_scale: float = 1.0,
     sampling_method: str = "euler",
     seed: int = -1,
+    use_lora: bool = True,
+    lora_path: str = DEFAULT_MOSS_IMAGE_LORA,
     output_path: Optional[str] = None,
 ) -> Image.Image:
     """
@@ -449,18 +452,28 @@ def generer_image_moss(
 
     Pipeline user-VALIDATED 2026-10-24 on the RX 6950 XT (MEMORY_BANK §1.45,
     "Moss parfait oui"): moss_image arch (sd-cli since master-973) + Qwen3.5-9B
-    Q8_0 text encoder + external tokenizer.json + flux2 VAE. Validated recipe:
-    euler, 50 steps, CFG 3.0, --fa, everything resident in VRAM (11.4 GB on the
-    16 GB card — do NOT pass --offload-to-cpu: it forces the graph through the
-    pinned-pool streaming path, which cannot allocate once the weights fill the
-    card). In-image text rendering is the model's strength; small secondary
-    text is garbled (documented base weakness). Apache-2.0: commercial use OK.
+    Q8_0 text encoder + external tokenizer.json + flux2 VAE, euler, --fa,
+    everything resident in VRAM (do NOT pass --offload-to-cpu: it forces the
+    graph through the pinned-pool streaming path, which cannot allocate once
+    the weights fill the card). In-image text rendering is the model's
+    strength; small secondary text is garbled (documented base weakness).
+    Apache-2.0: commercial use OK.
+
+    DEFAULT recipe since 2026-11-24 (user "VALIDÉ", VALIDATION_20261124 card 2):
+    the distilled 4-step LoRA (lvladikov/MOSS-SFT-Distill-4step-LoRA, rank 64,
+    sha256 51fb026b) at CFG 1.0, strength 1.0 STRICT — 97 s vs 2102 s for the
+    50-step teacher (÷21), typo word-perfect, richer composition. Mechanics:
+    the LoRA file is staged alongside the weights and passed via
+    --lora-model-dir (directory shared with the staged weights) +
+    --lora-apply-mode auto; the <lora:<stem>:1> tag is appended to the prompt.
+    Gotchas (11-23 night legs): the trained sigma schedule has no sd-cli
+    preset — euler default is tolerated (same mismatch as the DMD 8-step);
+    strength above 1.0 doubles edges — never exceed it. use_lora=False
+    restores the 50-step CFG-3.0 teacher (~36 min, 42.5-43.0 s/step band).
 
     Dimensions must be multiples of 32 (same grid requirement as the other
-    flow-matching architectures). Measured 42.5-43.0 s/step at 1024x1024 on
-    RDNA2 (50 steps ≈ 36 min) — the arch is new on Vulkan, kernels still young.
-    Without output_path, goes through a unique temporary file like
-    generer_image_qwen21.
+    flow-matching architectures). Without output_path, goes through a unique
+    temporary file like generer_image_qwen21.
     """
     if width % 32 != 0 or height % 32 != 0:
         raise ValueError(
@@ -473,9 +486,14 @@ def generer_image_moss(
         os.close(descripteur)
         os.remove(output_path)
 
-    print(f"[MOSS-Image-SFT - t2i] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale})...")
+    lora_actif = bool(use_lora and lora_path)
+    print(f"[MOSS-Image-SFT - t2i] Launching sd-cli ({width}x{height}, steps={steps}, cfg={cfg_scale}, "
+          f"{'lora4' if lora_actif else 'teacher-50'})...")
     sd_cli = sd_cli or DEFAULT_SD_CLI
     stage_inputs = {"model": model, "llm": llm, "vae": vae, "tokenizer": tokenizer}
+    if lora_actif:
+        stage_inputs["lora"] = lora_path
+    prompt_effectif = f"{prompt} <lora:{os.path.splitext(os.path.basename(lora_path))[0]}:1>" if lora_actif else prompt
 
     try:
         with stager_vers_nvme_temporaire(stage_inputs, prefix="_tmp_moss_") as staged:
@@ -485,7 +503,7 @@ def generer_image_moss(
                 "--llm", staged["llm"],
                 "--vae", staged["vae"],
                 "--tokenizer", staged["tokenizer"],
-                "-p", prompt,
+                "-p", prompt_effectif,
                 "--cfg-scale", str(cfg_scale),
                 "--sampling-method", sampling_method,
                 "--steps", str(steps),
@@ -493,8 +511,13 @@ def generer_image_moss(
                 "-H", str(height),
                 "-s", str(seed),
                 "--fa",
-                "-o", output_path,
             ]
+            if lora_actif:
+                commande += [
+                    "--lora-model-dir", os.path.dirname(staged["lora"]),
+                    "--lora-apply-mode", "auto",
+                ]
+            commande += ["-o", output_path]
             run_engine(commande, timeout=7200, capture=False, check=True, etiquette="sd-cli MOSS-Image")
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"The output file {output_path} was not produced.")
