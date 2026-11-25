@@ -1605,6 +1605,17 @@
  ],
  [
   [
+   "--no-lora"
+  ],
+  "no_lora",
+  "_StoreTrueAction",
+  "False",
+  null,
+  0,
+  null
+ ],
+ [
+  [
    "--no-preview"
   ],
   "no_preview",
