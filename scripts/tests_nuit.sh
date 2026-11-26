@@ -1163,6 +1163,122 @@ leg_n2m_sprites_1125() {
   fi
 }
 
+leg_n2m_sprites_fix_1126() {
+  # Real-path re-validation of the sprite matte fix (novel2manga 7859c47, local-only
+  # branch merged fast-forward into feat/n2m-sprites — repo has no remote, no PR):
+  # the 25-11 night sprites carried a white enclosed-background notch above the skull
+  # on the 2 emotion sprites (pocket between hair spikes touching the top edge,
+  # missed by the 8 fixed border seeds). The fix scans the top edge + upper 40% of
+  # the side edges per pixel; bottom/lower sides stay unseeded (crop lines — the
+  # screentone weave touches them, offline re-key proved keying them eats the
+  # fabric: semi-alpha 3% -> 22%). --overwrite forces regeneration through the
+  # fixed matte; contact sheets copied for the morning verdict.
+  run_leg n2m_sprites_fix_1126 bash -c '
+    cd /d/GIT/novel2manga || exit 1
+    uv run n2m sprites --project projects/heritier_du_vide --char elian_child --states normal,froid --overwrite \
+      && uv run n2m sprites --project projects/heritier_du_vide --char valeran --states normal,colere --overwrite
+  '
+  if [ -f "$OUT/n2m_sprites_fix_1126/DONE" ]; then
+    cp /d/GIT/novel2manga/projects/heritier_du_vide/cast/sprites/_review/*_contact.png \
+      "$OUT/n2m_sprites_fix_1126/" 2>/dev/null || true
+  fi
+}
+
+leg_hyperflow_h3_ab() {
+  # A/B on the h3 Ref2VA PROD path (issue #2417 datapoint + speed candidate): leg A =
+  # validated turbo recipe verbatim as a direct sd-cli call (baseline pruned Q4_K_M DiT
+  # + 8-step turbo LoRA, euler default schedule) vs legs B4/B6/B8 = VideoRebirthAI
+  # hyperflow-flash 14B Q4_K_M GGUF with the native sd-cli sigma presets
+  # hyperflow-h3-flash-4/6/8 (CFG 1). Shared fixture: 12-frame tail @24fps + WAV
+  # extracted ONCE from the shared source (verbatim logic of workflows/h3_ref2va.py),
+  # same seed 42, same prompt. Decision input: wall-time per leg + 4-up mid-frame
+  # planche; HyperFlow enters the PROD recipes only if quality holds at 4-6 steps.
+  # Download is resume-safe (-C -) and gated on size; checkpoints license on the HF
+  # card (read at the morning verdict — courtesy credit per the 2026-11-23 rule).
+  local AB=/c/GIT/generator-assets/output/tests_nuit/hyperflow_h3_ab
+  mkdir -p "$AB/fixture" "$AB"
+  # shared fixture: last 0.5 s = 12 frames @24 fps + paired WAV (ffmpeg -sseof)
+  run_leg hyperflow_fixture /c/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
+    -sseof -0.5 -i "C:/GIT/generator-assets/output/test_p1_final/h3_source_avec_audio.mp4" \
+    -vf fps=24 "$AB/fixture/frame_%04d.png"
+  run_leg hyperflow_fixture_audio /c/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
+    -sseof -0.5 -i "C:/GIT/generator-assets/output/test_p1_final/h3_source_avec_audio.mp4" \
+    -vn -acodec pcm_s16le "$AB/fixture/ref_audio.wav"
+  # B DiT download (~9.22 GB, resume-safe; skipped when already complete)
+  run_leg hyperflow_dl bash -c '
+    F="C:/Modeles_LLM/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf"
+    if [ -f "$F" ] && [ "$(stat -c%s "$F")" -gt 9000000000 ]; then echo "already staged"; exit 0; fi
+    curl -L -C - --retry 3 -o "$F" \
+      "https://huggingface.co/VideoRebirthAI/hyperflow-h3-flash/resolve/main/ref2va_gguf/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf"
+  '
+  local PROMPT="the camera continues its slow push-in on the helmet, dust motes drifting, <Video 1>"
+  # NOTE: -p is NOT part of COMMON — an unquoted $PROMPT inside a space-joined var
+  # would word-split at the first space (prompt truncated, stray positional args).
+  local COMMON="-M vid_gen --vae $MODELES/minimax_h3_video_vae_fp16.safetensors --audio-vae $MODELES/minimax_h3_audio_vae_fp32.safetensors --llm $MODELES/qwen3vl_32b_minimax_h3-Q2_K_M.gguf --ref-video $AB/fixture --ref-video-audio $AB/fixture/ref_audio.wav --video-frames 22 --fps 24 --cfg-scale 1.0 --sampling-method euler --diffusion-fa --offload-to-cpu --rng cpu --max-vram 10 --backend diffusion=vulkan0,te=cpu,vae=cpu -v"
+  # leg A — validated turbo baseline (8-step LoRA, default schedule) (~17-32 min, #2417)
+  run_leg h3_ab_turbo "$SD" $COMMON \
+    --diffusion-model "$MODELES/minimax_h3_ref2va_pruned-Q4_K_M.gguf" \
+    --lora-model-dir "$MODELES/loras" --lora-apply-mode auto \
+    -p "$PROMPT <lora:minimax_h3_ref2v_turbo_8step_v1.0_768p_bf16:1>" \
+    --steps 8 -o "$AB/h3_turbo_8step.webm"
+  # legs B — hyperflow-flash native presets (CFG 1): decisive 4-step first, then 6/8
+  run_leg h3_ab_hf4 "$SD" $COMMON \
+    --diffusion-model "C:/Modeles_LLM/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf" \
+    -p "$PROMPT" \
+    --sigmas hyperflow-h3-flash-4 --steps 4 -o "$AB/hyperflow_4step.webm"
+  run_leg h3_ab_hf6 "$SD" $COMMON \
+    --diffusion-model "C:/Modeles_LLM/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf" \
+    -p "$PROMPT" \
+    --sigmas hyperflow-h3-flash-6 --steps 6 -o "$AB/hyperflow_6step.webm"
+  run_leg h3_ab_hf8 "$SD" $COMMON \
+    --diffusion-model "C:/Modeles_LLM/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf" \
+    -p "$PROMPT" \
+    --sigmas hyperflow-h3-flash-8 --steps 8 -o "$AB/hyperflow_8step.webm"
+  # 4-up mid-frame planche (non-fatal: morning verdict also reads the webms directly)
+  run_leg hyperflow_planche bash -c '
+    AB=/c/GIT/generator-assets/output/tests_nuit/hyperflow_h3_ab
+    cd "$AB" || exit 1
+    i=0
+    for v in h3_turbo_8step hyperflow_4step hyperflow_6step hyperflow_8step; do
+      i=$((i+1))
+      ffmpeg -y -loglevel error -i "$v.webm" -vf "select=eq(n\\,12)" -vsync 0 "planche_$v.png" || exit 1
+    done
+    ffmpeg -y -loglevel error \
+      -i planche_h3_turbo_8step.png -i planche_hyperflow_4step.png \
+      -i planche_hyperflow_6step.png -i planche_hyperflow_8step.png \
+      -filter_complex "[0][1][2][3]hstack=4" planche_ab.png || exit 1
+    echo "turbo=$(stat -c%s h3_turbo_8step.webm) hf4=$(stat -c%s hyperflow_4step.webm) hf6=$(stat -c%s hyperflow_6step.webm) hf8=$(stat -c%s hyperflow_8step.webm)" > webm_sizes.txt
+  '
+  echo "fixture=$(substat $OUT/hyperflow_fixture) audio=$(substat $OUT/hyperflow_fixture_audio) dl=$(substat $OUT/hyperflow_dl) turbo=$(substat $OUT/h3_ab_turbo) hf4=$(substat $OUT/h3_ab_hf4) hf6=$(substat $OUT/h3_ab_hf6) hf8=$(substat $OUT/h3_ab_hf8) planche=$(substat $OUT/hyperflow_planche)" > "$OUT/hyperflow_h3_ab/SUBSTATUS.txt"
+  touch "$OUT/hyperflow_h3_ab/DONE"
+}
+
+leg_moss_prompt_ab() {
+  # fisher-moss methodology A/B on the moss_image real path (4-step LoRA default,
+  # seed 42): A = plain one-liner prompt as a user would type, B = structured
+  # expansion following the OpenMOSS prompt-skill methodology (lock subject/action
+  # -> composition skeleton -> bind character/props/hands -> space/materials/
+  # lighting -> output language; Work-Fisher/fisher-moss-prompt-expander, Apache-2.0,
+  # adapted from the official OpenMOSS/MOSS-Image prompt skill). Question: does the
+  # methodology measurably improve moss composition quality? Comparative 2-up plate
+  # for the morning verdict; if B wins, fold the methodology into the skill refs.
+  local PROMPT_A="a knight standing in a misty pine forest at dawn"
+  local PROMPT_B="Perched on a moss-covered boulder at the edge of a clearing, one armored knight stands at rest, three-quarter view from the waist up, centered composition with the knight as the sole visual focus. The knight wears a weathered steel breastplate over a quilted gambeson, a heavy travel cloak drawn over the left shoulder and clasped by a plain iron brooch at the collarbone; the right gauntlet rests on the pommel of a longsword planted point-down between two tree roots. Gnarled pine trunks rise in layered ranks behind the knight, their silhouettes dissolving into banks of pale morning fog; thin shafts of golden dawn light slant through the canopy from the upper left, catching fine dust motes and glinting softly along the beveled edges of the breastplate. The forest floor is carpeted with wet moss and fallen needles, dark and saturated in shadow, luminous where the light pools. Cinematic depth of field, volumetric lighting, high detail."
+  mkdir -p "$OUT/moss_prompt_ab"
+  run_leg moss_ab_base uv run python main.py -w moss_image \
+    -p "$PROMPT_A" --seed 42 -o nuit_moss_ab_base
+  run_leg moss_ab_method uv run python main.py -w moss_image \
+    -p "$PROMPT_B" --seed 42 -o nuit_moss_ab_method
+  run_leg moss_ab_planche bash -c '
+    cd /c/GIT/generator-assets/output || exit 1
+    ffmpeg -y -loglevel error \
+      -i nuit_moss_ab_base.png -i nuit_moss_ab_method.png \
+      -filter_complex "[0][1]hstack=2" tests_nuit/moss_prompt_ab/planche_ab.png || exit 1
+  '
+  echo "base=$(substat $OUT/moss_ab_base) method=$(substat $OUT/moss_ab_method) planche=$(substat $OUT/moss_ab_planche)" > "$OUT/moss_prompt_ab/SUBSTATUS.txt"
+  touch "$OUT/moss_prompt_ab/DONE"
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -1266,6 +1382,9 @@ while read -r id; do
     craft_designcraft_sheet) leg_craft_designcraft_sheet ;;
     craft_effectcraft_smoke) leg_craft_effectcraft_smoke ;;
     n2m_sprites_1125)       leg_n2m_sprites_1125 ;;
+    n2m_sprites_fix_1126)   leg_n2m_sprites_fix_1126 ;;
+    hyperflow_h3_ab)        leg_hyperflow_h3_ab ;;
+    moss_prompt_ab)         leg_moss_prompt_ab ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
