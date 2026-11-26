@@ -134,3 +134,39 @@ Four questions before launching — they determine workflow and budget:
 Typical hero-prop chain: `generate` (concept) → `mesh_ia --res 512` iteration (~11 min) →
 `mesh_ia --res 1024` master (~55 min) → `--faces-cible 30000` → §3 checklist. After user
 validation, the recipe becomes a workflow (repo rule).
+
+## 6. IA-mesh finish pipeline (concepts from AssetFurnace — inspiration, not adoption)
+
+Source: [Bingeljell/image-to-3dlab](https://github.com/Bingeljell/image-to-3dlab) ("AssetFurnace",
+Apache-2.0, eval 2026-11-26): an orchestrator turning prompt/image into a rigged + animated GLB.
+**Not runnable here** — every 3D backend it drives needs Metal / CUDA-Linux / HIP-Linux (RDNA3),
+and its TRELLIS.2/Hunyuan paths are PyTorch + CUDA-only extensions (flash-attn, nvdiffrast,
+spconv). Only the *pipeline concepts* below are ported, as headless bpy steps applied to the raw
+GLB our own Vulkan engines emit (`trellis-cli` = pwilkin/trellis.cpp `C:\trellis`; Pixal3D fork =
+raven38/pixal3d.cpp `C:\pixal3d`, SV mode `--sv-image RGBA.png -m <sv-set-dir>`, FOV 20° gauge,
+seed 42).
+
+1. **Pixel Match (source-pixel reprojection)** — AssetFurnace paints every mesh surface visible
+   from the source image with the image's *real pixels* (text/logos/faces stay sharp where the
+   texture-flow repaint would blur them). Port: bake the source RGBA onto the GLB atlas from the
+   front gauge camera (SV = FOV 20°, mesh_scale 1.0; bpy camera + `object.bake` diffuse), keep the
+   flow-textured output as the occluded-region fallback. Highest value on heraldry/face details
+   for game assets (evaluated per asset — flat 2D sprites may not benefit).
+2. **Finish (retopo + texture compression)** — engines already quadric-decimate (300k @1024
+   default; `--decim` legacy grid alternative). For game tiers add a Blender Decimate pass to the
+   §2 budget, and drop the atlas a tier for standard/background assets (2048→1024); GLB textures
+   are already WebP-compressed by trellis-cli (`--webp on` default) — keep `gltfpack` in mind for
+   split props.
+3. **Auto-rig + animation presets** — AssetFurnace's SkinTokens + 21 presets are model-based (not
+   portable). Our chain stays MPFB/`character3d` for humanoids; for props/creatures, watch
+   upstream trellis.cpp (multiview merges landed upstream 2026-11-24) before hand-rigging. GLB
+   animations land as `AN_*` clips (§2).
+4. **Prop sheets** — one concept image → several props with LODs: decompose on the 2D side first
+   (qwen_edit_2511 object isolation, same family as the n2m sprite pipeline), then one engine run
+   per prop with the §2 tier budgets.
+5. **Provenance** — AssetFurnace emits a `.provenance.json` per run (hashes, settings, license
+   class). Our equivalent: the workflow journal + night-run legs already record seed/res/weights;
+   keep recording the engine commit (version.json discipline) next to each delivered GLB.
+
+Status: concepts recorded 2026-11-26; none promoted to a workflow yet — each needs a validated
+bpy recipe on a real asset before adoption (repo rule).

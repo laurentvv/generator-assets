@@ -89,7 +89,7 @@ Any CLI evolution must preserve this contract.
 | :--- | :--- | :--- |
 | Complete PBR material pack + Godot `.tres` (`--delight` specular/shadow flattening; `--from-lib`/`--pbr-group` `web-assets` import) | `material3d` | `-w material3d "ancient gothic stone tile with purple runes" -s 1024` |
 | Parametric 3D mesh `.glb` (slab, chest, pillar…) | `mesh3d` | `-w mesh3d "ornate iron chest" --shape cube` |
-| **AI 3D object with real volume** from prompt or image | `mesh_ia` | `-w mesh_ia "obsidian dragon skull" --res 512` or `-i helmet.png` (`--mesh-moteur pixal3d` = one-pass flat colors, VALIDATED 2026-10-02) |
+| **AI 3D object with real volume** from prompt or image | `mesh_ia` | `-w mesh_ia "obsidian dragon skull" --res 512` or `-i helmet.png` (`--mesh-moteur pixal3d` = one-pass flat colors, VALIDATED 2026-10-02; the pixal3d.cpp SV single-image fork is installed at `C:\pixal3d` — see `C:\pixal3d\README_POSTE.md`, SV smoke INCONCLUSIVE 26-11, clean retest pending) |
 | 360° equirectangular skybox + IBL | `skybox` | `-w skybox "purple cosmic nebula"` |
 | Voxel 3D model for GridMap | `voxel3d` | `-w voxel3d -i sprite.png --grid-size 32` |
 | **Rigged packed animated animal for Godot** (Quaternius, mocap packs) | `animal_godot` | `-w animal_godot -i wolf.blend -o wolf_godot.glb` — dedicated skill `blender-rig` for AI rigging/animation |
@@ -241,7 +241,7 @@ exists.
 | Question | Where to look |
 | :--- | :--- |
 | Full workflow detail (inputs/outputs/options/examples) | [`references/catalogue_workflows.md`](references/catalogue_workflows.md) |
-| Game-ready 3D standards (budgets, naming, LOD, checklist), Blender/MPFB/BlendKit prerequisites, pitfalls | [`references/pipeline_3d_blender.md`](references/pipeline_3d_blender.md) |
+| Game-ready 3D standards (budgets, naming, LOD, checklist), Blender/MPFB/BlendKit prerequisites, pitfalls, **§6 IA-mesh finish pipeline (Pixel Match / retopo / prop-sheet concepts from AssetFurnace)** | [`references/pipeline_3d_blender.md`](references/pipeline_3d_blender.md) |
 | Reference doc, showcases, installation procedures | [`README.md`](../../../README.md) & [`docs/workflows_reference.md`](../../../docs/workflows_reference.md) |
 | MakeHuman clothing/texturing | [`GUIDE_AGENT_IA_HABILLAGE.md`](../../../GUIDE_AGENT_IA_HABILLAGE.md) |
 | Validated stacks & pitfalls per domain | [`docs/MEMORY_BANK.md`](../../../docs/MEMORY_BANK.md) |
