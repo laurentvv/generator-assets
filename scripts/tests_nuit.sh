@@ -1279,6 +1279,96 @@ leg_moss_prompt_ab() {
   touch "$OUT/moss_prompt_ab/DONE"
 }
 
+leg_pixal3d_sv_1126() {
+  # pixal3d.cpp (raven38 fork of trellis.cpp) SV single-image mode on Vulkan Windows,
+  # installed 26-11 (MEMORY_BANK §1.72): 2/2 silent exit-127 deaths at the HR shape
+  # flow init, BUT the decisive run had a foreign orphan llama-server co-resident
+  # (8.7 GiB VRAM -> ~6.2 GiB free vs documented pipeline peak +7.36 GB, CUDA ref
+  # PIXAL3D_DESKTOP_VRAM.md) = an expected death in that state, plus AMD_WATCHDOG
+  # LiveKernelEvents that pre-date our runs. This leg = the clean-window retest
+  # (C:\pixal3d\README_POSTE.md protocol):
+  #   ① sv_vramwait      — poll until Dedicated VRAM < 3 GiB (~30 min cap;
+  #                        FAIL_MACHINE_STATE if no clean window comes, e.g. the
+  #                        orphan server stays up all night)
+  #   ② sv_alloc_trace   — the SV run with TRELLIS_DBG_ALLOC_TRACE=1 + TRELLIS_DBG_BUDGET=1
+  #                        (death-point evidence if it still dies; GLB = PASS)
+  #   ③ sv_budget_8192   — ONLY if ② died: TRELLIS_DEVICE_BUDGET_MB=8192 (DiT graph
+  #                        chunking override) — separates VRAM pressure from op bug
+  #   ④ ctrl_trellis081  — trellis.cpp v0.8.1 res-1024 TRELLIS.2 on the SAME driver
+  #                        (same-session control, lesson 11-13): healthy control =>
+  #                        the blame narrows to the fork's SV path, then upstream issue.
+  # Input: the already-staged RGBA sprite copy (cast n2m valeran normal, 768²).
+  # ~12-18 min per SV run, ~10-17 min control. Morning verdict reads VERDICT_DRAFT.txt
+  # + run.log tails; no Blender planche in-leg (GLB/logs/stats are the verdict surface).
+  local D=$OUT/pixal3d_sv_1126
+  mkdir -p "$D"
+  cp /c/pixal3d/output/smoke_sv_1126/valeran_normal_in.png "$D/valeran_normal_in.png"
+
+  # ① clean-VRAM window: run_leg's gate is system-wide (passes at 60% VRAM) — this
+  #    pipeline needs its own dedicated-VRAM precondition (9.8 GiB resident = death)
+  run_leg sv_vramwait bash -c '
+    for i in $(seq 1 90); do
+      cd /c/GIT/generator-assets || exit 1
+      uv run python scripts/check_charge_systeme.py > /c/pixal3d/dl/gate_night.txt 2>&1
+      V=$(grep "Dedicated VRAM" /c/pixal3d/dl/gate_night.txt | grep -o "[0-9.]*" | head -1)
+      echo "poll $i: dedicated=${V:-?} GiB"
+      if awk -v v="${V:-99}" "BEGIN{exit !(v<3.0)}"; then echo CLEAN; exit 0; fi
+      sleep 20
+    done
+    echo "no clean VRAM window in ~30 min (foreign GPU server still resident?)"
+    exit 3
+  '
+
+  # ② the SV retest itself (alloc trace ON for the death-point evidence)
+  if [ -f "$OUT/sv_vramwait/DONE" ]; then
+    run_leg sv_alloc_trace env TRELLIS_DBG_ALLOC_TRACE=1 TRELLIS_DBG_BUDGET=1 \
+      /c/pixal3d/bin/trellis-cli.exe \
+      --sv-image "$D/valeran_normal_in.png" \
+      -m /c/Modeles_LLM/pixal3d-sv-q8_0-v1 \
+      --output "$D/valeran_sv.glb" \
+      --res 1024 --seed 42 --require-gpu --dump-bg
+  fi
+
+  # ③ budget-override diagnostic leg — only meaningful after a ② failure
+  if [ -f "$OUT/sv_alloc_trace/FAIL" ]; then
+    run_leg sv_budget_8192 env TRELLIS_DBG_ALLOC_TRACE=1 TRELLIS_DEVICE_BUDGET_MB=8192 \
+      /c/pixal3d/bin/trellis-cli.exe \
+      --sv-image "$D/valeran_normal_in.png" \
+      -m /c/Modeles_LLM/pixal3d-sv-q8_0-v1 \
+      --output "$D/valeran_sv_budget8192.glb" \
+      --res 1024 --seed 42 --require-gpu --dump-bg
+  fi
+
+  # ④ same-driver control on the production TRELLIS.2 engine (attribution)
+  if [ -f "$OUT/sv_vramwait/DONE" ]; then
+    run_leg ctrl_trellis081 \
+      /c/trellis/trellis-cli.exe "$D/valeran_normal_in.png" \
+      "$D/ctrl_trellis081_valeran.glb" \
+      --res 1024 --seed 42 --require-gpu
+  fi
+
+  echo "vramwait=$(substat $OUT/sv_vramwait) alloc_trace=$(substat $OUT/sv_alloc_trace) budget8192=$(substat $OUT/sv_budget_8192) ctrl_t081=$(substat $OUT/ctrl_trellis081)" > "$D/SUBSTATUS.txt"
+  {
+    echo "pixal3d SV clean-window retest — $(date +%F %H:%M)"
+    echo "VRAM window: $(substat $OUT/sv_vramwait) | SV trace: $(substat $OUT/sv_alloc_trace) | budget8192: $(substat $OUT/sv_budget_8192) | ctrl trellis 0.8.1: $(substat $OUT/ctrl_trellis081)"
+    echo
+    echo "decision tree (§1.72 / README_POSTE):"
+    echo "- vramwait FAIL -> no clean window tonight, retry another night (delete its marker)"
+    echo "- alloc_trace DONE (GLB present) -> contamination confirmed, SV WORKS on RDNA2 Vulkan: verdict CONTAMINATION, close"
+    echo "- alloc_trace FAIL + budget8192 DONE -> VRAM-pressure family: document the working budget knob in README_POSTE"
+    echo "- both FAIL + ctrl DONE -> fork SV path implicated on RDNA2 Vulkan: draft upstream issue from the alloc trace"
+    echo "- both FAIL + ctrl FAIL -> machine/driver-wide (same driver state): NOT a fork bug, check AMD driver"
+    echo
+    echo "logs: output/tests_nuit/{sv_vramwait,sv_alloc_trace,sv_budget_8192,ctrl_trellis081}/run.log"
+    ls -la "$D"/*.glb 2>/dev/null || echo "(no GLB produced)"
+  } > "$D/VERDICT_DRAFT.txt"
+  if [ -f "$OUT/sv_vramwait/FAIL" ] && [ ! -f "$OUT/sv_alloc_trace/DONE" ]; then
+    touch "$D/FAIL_MACHINE_STATE"
+  else
+    touch "$D/DONE"
+  fi
+}
+
 # ---------------------------------------------------------------- report
 
 rapport() {
@@ -1385,6 +1475,7 @@ while read -r id; do
     n2m_sprites_fix_1126)   leg_n2m_sprites_fix_1126 ;;
     hyperflow_h3_ab)        leg_hyperflow_h3_ab ;;
     moss_prompt_ab)         leg_moss_prompt_ab ;;
+    pixal3d_sv_1126)        leg_pixal3d_sv_1126 ;;
     *) log "[?] unknown queue id: $id — ignored" ;;
   esac
   if [ -s "$OUT/gate_last.log" ] && grep -q "DO NOT launch" "$OUT/gate_last.log"; then
