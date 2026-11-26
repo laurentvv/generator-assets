@@ -1196,7 +1196,7 @@ leg_hyperflow_h3_ab() {
   # Download is resume-safe (-C -) and gated on size; checkpoints license on the HF
   # card (read at the morning verdict — courtesy credit per the 2026-11-23 rule).
   local AB=/c/GIT/generator-assets/output/tests_nuit/hyperflow_h3_ab
-  mkdir -p "$AB/fixture"
+  mkdir -p "$AB/fixture" "$AB"
   # shared fixture: last 0.5 s = 12 frames @24 fps + paired WAV (ffmpeg -sseof)
   run_leg hyperflow_fixture /c/ffmpeg/dist/bin/ffmpeg.exe -y -loglevel error \
     -sseof -0.5 -i "C:/GIT/generator-assets/output/test_p1_final/h3_source_avec_audio.mp4" \
@@ -1249,7 +1249,7 @@ leg_hyperflow_h3_ab() {
       -filter_complex "[0][1][2][3]hstack=4" planche_ab.png || exit 1
     echo "turbo=$(stat -c%s h3_turbo_8step.webm) hf4=$(stat -c%s hyperflow_4step.webm) hf6=$(stat -c%s hyperflow_6step.webm) hf8=$(stat -c%s hyperflow_8step.webm)" > webm_sizes.txt
   '
-  echo "fixture=$(substat $OUT/hyperflow_h3_ab/hyperflow_fixture) audio=$(substat $OUT/hyperflow_h3_ab/hyperflow_fixture_audio) dl=$(substat $OUT/hyperflow_h3_ab/hyperflow_dl) turbo=$(substat $OUT/hyperflow_h3_ab/h3_ab_turbo) hf4=$(substat $OUT/hyperflow_h3_ab/h3_ab_hf4) hf6=$(substat $OUT/hyperflow_h3_ab/h3_ab_hf6) hf8=$(substat $OUT/hyperflow_h3_ab/h3_ab_hf8) planche=$(substat $OUT/hyperflow_h3_ab/hyperflow_planche)" > "$OUT/hyperflow_h3_ab/SUBSTATUS.txt"
+  echo "fixture=$(substat $OUT/hyperflow_fixture) audio=$(substat $OUT/hyperflow_fixture_audio) dl=$(substat $OUT/hyperflow_dl) turbo=$(substat $OUT/h3_ab_turbo) hf4=$(substat $OUT/h3_ab_hf4) hf6=$(substat $OUT/h3_ab_hf6) hf8=$(substat $OUT/h3_ab_hf8) planche=$(substat $OUT/hyperflow_planche)" > "$OUT/hyperflow_h3_ab/SUBSTATUS.txt"
   touch "$OUT/hyperflow_h3_ab/DONE"
 }
 
@@ -1264,6 +1264,7 @@ leg_moss_prompt_ab() {
   # for the morning verdict; if B wins, fold the methodology into the skill refs.
   local PROMPT_A="a knight standing in a misty pine forest at dawn"
   local PROMPT_B="Perched on a moss-covered boulder at the edge of a clearing, one armored knight stands at rest, three-quarter view from the waist up, centered composition with the knight as the sole visual focus. The knight wears a weathered steel breastplate over a quilted gambeson, a heavy travel cloak drawn over the left shoulder and clasped by a plain iron brooch at the collarbone; the right gauntlet rests on the pommel of a longsword planted point-down between two tree roots. Gnarled pine trunks rise in layered ranks behind the knight, their silhouettes dissolving into banks of pale morning fog; thin shafts of golden dawn light slant through the canopy from the upper left, catching fine dust motes and glinting softly along the beveled edges of the breastplate. The forest floor is carpeted with wet moss and fallen needles, dark and saturated in shadow, luminous where the light pools. Cinematic depth of field, volumetric lighting, high detail."
+  mkdir -p "$OUT/moss_prompt_ab"
   run_leg moss_ab_base uv run python main.py -w moss_image \
     -p "$PROMPT_A" --seed 42 -o nuit_moss_ab_base
   run_leg moss_ab_method uv run python main.py -w moss_image \
@@ -1274,7 +1275,7 @@ leg_moss_prompt_ab() {
       -i nuit_moss_ab_base.png -i nuit_moss_ab_method.png \
       -filter_complex "[0][1]hstack=2" tests_nuit/moss_prompt_ab/planche_ab.png || exit 1
   '
-  echo "base=$(substat $OUT/moss_prompt_ab/moss_ab_base) method=$(substat $OUT/moss_prompt_ab/moss_ab_method) planche=$(substat $OUT/moss_prompt_ab/moss_ab_planche)" > "$OUT/moss_prompt_ab/SUBSTATUS.txt"
+  echo "base=$(substat $OUT/moss_ab_base) method=$(substat $OUT/moss_ab_method) planche=$(substat $OUT/moss_ab_planche)" > "$OUT/moss_prompt_ab/SUBSTATUS.txt"
   touch "$OUT/moss_prompt_ab/DONE"
 }
 
