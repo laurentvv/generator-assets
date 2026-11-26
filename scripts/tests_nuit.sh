@@ -1287,7 +1287,7 @@ leg_pixal3d_sv_1126() {
   # PIXAL3D_DESKTOP_VRAM.md) = an expected death in that state, plus AMD_WATCHDOG
   # LiveKernelEvents that pre-date our runs. This leg = the clean-window retest
   # (C:\pixal3d\README_POSTE.md protocol):
-  #   ① sv_vramwait      — poll until Dedicated VRAM < 3 GiB (~30 min cap;
+  #   ① sv_vramwait      — poll until Dedicated VRAM < 3 GiB (~35-40 min actual cap;
   #                        FAIL_MACHINE_STATE if no clean window comes, e.g. the
   #                        orphan server stays up all night)
   #   ② sv_alloc_trace   — the SV run with TRELLIS_DBG_ALLOC_TRACE=1 + TRELLIS_DBG_BUDGET=1
@@ -1298,14 +1298,37 @@ leg_pixal3d_sv_1126() {
   #                        (same-session control, lesson 11-13): healthy control =>
   #                        the blame narrows to the fork's SV path, then upstream issue.
   # Input: the already-staged RGBA sprite copy (cast n2m valeran normal, 768²).
-  # ~12-18 min per SV run, ~10-17 min control. Morning verdict reads VERDICT_DRAFT.txt
+  # ~12-18 min per SV run (estimated — never completed on this machine); the control
+  # duration is undocumented upstream (first clean-machine datapoint expected tonight).
+  # ③/④ are additionally gated by a 5-min VRAM rewait (lesson 11-05). Morning verdict
+  # reads VERDICT_DRAFT.txt
   # + run.log tails; no Blender planche in-leg (GLB/logs/stats are the verdict surface).
   local D=$OUT/pixal3d_sv_1126
   mkdir -p "$D"
+  # P2 review fix: fail loudly when the staged input is gone (machine-local file,
+  # same guard pattern as leg_dance_sheet_v2) instead of a confusing CLI failure later
+  [ -f /c/pixal3d/output/smoke_sv_1126/valeran_normal_in.png ] || { log "[pixal3d_sv_1126] ABORT: staged RGBA input missing"; return 1; }
   cp /c/pixal3d/output/smoke_sv_1126/valeran_normal_in.png "$D/valeran_normal_in.png"
 
+  # bounded VRAM re-wait helper (P1 review fix, lesson 11-05): a crashed ggml/Vulkan
+  # CLI can linger in teardown holding VRAM for minutes — never diagnose (or control)
+  # a run that follows another GPU workload. ~5 min cap at 15 polls; returns 0 when
+  # Dedicated VRAM < 3 GiB.
+  vram_clean_wait() {
+    local polls="$1" i V
+    for i in $(seq 1 "$polls"); do
+      (cd /c/GIT/generator-assets && uv run python scripts/check_charge_systeme.py > /c/pixal3d/dl/gate_night.txt 2>&1)
+      V=$(grep "Dedicated VRAM" /c/pixal3d/dl/gate_night.txt | grep -o "[0-9.]*" | head -1)
+      echo "vram rewait poll $i: dedicated=${V:-?} GiB"
+      if awk -v v="${V:-99}" "BEGIN{exit !(v<3.0)}"; then return 0; fi
+      sleep 20
+    done
+    return 1
+  }
+
   # ① clean-VRAM window: run_leg's gate is system-wide (passes at 60% VRAM) — this
-  #    pipeline needs its own dedicated-VRAM precondition (9.8 GiB resident = death)
+  #    pipeline needs its own dedicated-VRAM precondition (9.8 GiB resident = death).
+  #    ~35-40 min actual cap (90 polls x (20 s sleep + gate run))
   run_leg sv_vramwait bash -c '
     for i in $(seq 1 90); do
       cd /c/GIT/generator-assets || exit 1
@@ -1329,22 +1352,33 @@ leg_pixal3d_sv_1126() {
       --res 1024 --seed 42 --require-gpu --dump-bg
   fi
 
-  # ③ budget-override diagnostic leg — only meaningful after a ② failure
+  # ③ budget-override diagnostic leg — only meaningful after a ② failure, and only
+  #    on a released VRAM (lesson 11-05: a ②-crazed teardown holding VRAM would make
+  #    a legit budget fix look like "the knob doesn't help" = inverted verdict)
   if [ -f "$OUT/sv_alloc_trace/FAIL" ]; then
-    run_leg sv_budget_8192 env TRELLIS_DBG_ALLOC_TRACE=1 TRELLIS_DEVICE_BUDGET_MB=8192 \
-      /c/pixal3d/bin/trellis-cli.exe \
-      --sv-image "$D/valeran_normal_in.png" \
-      -m /c/Modeles_LLM/pixal3d-sv-q8_0-v1 \
-      --output "$D/valeran_sv_budget8192.glb" \
-      --res 1024 --seed 42 --require-gpu --dump-bg
+    if vram_clean_wait 15; then
+      run_leg sv_budget_8192 env TRELLIS_DBG_ALLOC_TRACE=1 TRELLIS_DEVICE_BUDGET_MB=8192 \
+        /c/pixal3d/bin/trellis-cli.exe \
+        --sv-image "$D/valeran_normal_in.png" \
+        -m /c/Modeles_LLM/pixal3d-sv-q8_0-v1 \
+        --output "$D/valeran_sv_budget8192.glb" \
+        --res 1024 --seed 42 --require-gpu --dump-bg
+    else
+      log "[pixal3d_sv_1126] ③ skipped — VRAM not released after the ② crash (lesson 11-05)"
+    fi
   fi
 
-  # ④ same-driver control on the production TRELLIS.2 engine (attribution)
+  # ④ same-driver control on the production TRELLIS.2 engine (attribution) — same
+  #    VRAM-release precondition: a contaminated control is worse than no control
   if [ -f "$OUT/sv_vramwait/DONE" ]; then
-    run_leg ctrl_trellis081 \
-      /c/trellis/trellis-cli.exe "$D/valeran_normal_in.png" \
-      "$D/ctrl_trellis081_valeran.glb" \
-      --res 1024 --seed 42 --require-gpu
+    if vram_clean_wait 15; then
+      run_leg ctrl_trellis081 \
+        /c/trellis/trellis-cli.exe "$D/valeran_normal_in.png" \
+        "$D/ctrl_trellis081_valeran.glb" \
+        --res 1024 --seed 42 --require-gpu
+    else
+      log "[pixal3d_sv_1126] ④ skipped — VRAM not released (lesson 11-05); rerun the control alone on a clean machine before any machine-wide conclusion"
+    fi
   fi
 
   echo "vramwait=$(substat $OUT/sv_vramwait) alloc_trace=$(substat $OUT/sv_alloc_trace) budget8192=$(substat $OUT/sv_budget_8192) ctrl_t081=$(substat $OUT/ctrl_trellis081)" > "$D/SUBSTATUS.txt"
@@ -1358,6 +1392,9 @@ leg_pixal3d_sv_1126() {
     echo "- alloc_trace FAIL + budget8192 DONE -> VRAM-pressure family: document the working budget knob in README_POSTE"
     echo "- both FAIL + ctrl DONE -> fork SV path implicated on RDNA2 Vulkan: draft upstream issue from the alloc trace"
     echo "- both FAIL + ctrl FAIL -> machine/driver-wide (same driver state): NOT a fork bug, check AMD driver"
+    echo "  CAVEAT: if ctrl FAILs right after a ②/③ crash, the 5-min VRAM rewait gates it, but if it"
+    echo "  still failed, rerun ④ alone on a clean machine (delete its marker) before any machine-wide conclusion"
+    echo "- budget8192 '-' or ctrl '-' = skipped by the VRAM rewait: rerun that sub-leg alone (delete its marker)"
     echo
     echo "logs: output/tests_nuit/{sv_vramwait,sv_alloc_trace,sv_budget_8192,ctrl_trellis081}/run.log"
     ls -la "$D"/*.glb 2>/dev/null || echo "(no GLB produced)"
@@ -1414,6 +1451,7 @@ rapport() {
       [ "$id" = "inkling_ad_q4k" ]       && [ -f "$OUT/inkling_ad_q4k/SUBSTATUS.txt" ] && ev="AD-Q4_K (16.53 GB, user DL 11-22) vs the §1.41 Q3_K_XL datapoint (363 s / 5.89 t/s; Qwen3VL-8B ref 69.5 s) — $(cat "$OUT/inkling_ad_q4k/SUBSTATUS.txt" 2>/dev/null); fixture answers + t/s in output/tests_nuit/inkling_ad_q4k/"
       [ "$id" = "sous_titres_smoke" ]    && [ -f "$OUT/sous_titres_smoke/SUBSTATUS.txt" ] && ev="PR #44 §6 real-path closure: align ono (expect 15 words ≈ words_v2_ono.json) + asr dylan long (VAD chunking) — $(cat "$OUT/sous_titres_smoke/SUBSTATUS.txt" 2>/dev/null); srt+words.json in output/tests_nuit/sous_titres_smoke_align/"
       [ "$id" = "n2m_sprites_1125" ]     && [ -f "$OUT/n2m_sprites_1125/elian_child_contact.png" ] && ev="elian_child_contact.png + valeran_contact.png (RGBA contact sheets) + manifest.json — USER EYE VERDICT: alpha busts readable, identity vs the 11-16 sheets, froid/colere actually expressed"
+      [ "$id" = "pixal3d_sv_1126" ]      && [ -f "$OUT/pixal3d_sv_1126/VERDICT_DRAFT.txt" ] && ev="VERDICT_DRAFT.txt decision tree (§1.72 clean-window retest) — sub-legs: $(cat "$OUT/pixal3d_sv_1126/SUBSTATUS.txt" 2>/dev/null); sub-logs in output/tests_nuit/<sub>/run.log"
       echo "| $id | $st | $du | $ev |"
     done < "$QUEUE"
     echo ""
