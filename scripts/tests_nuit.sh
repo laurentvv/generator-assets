@@ -1212,7 +1212,9 @@ leg_hyperflow_h3_ab() {
       "https://huggingface.co/VideoRebirthAI/hyperflow-h3-flash/resolve/main/ref2va_gguf/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf"
   '
   local PROMPT="the camera continues its slow push-in on the helmet, dust motes drifting, <Video 1>"
-  local COMMON="-M vid_gen --vae $MODELES/minimax_h3_video_vae_fp16.safetensors --audio-vae $MODELES/minimax_h3_audio_vae_fp32.safetensors --llm $MODELES/qwen3vl_32b_minimax_h3-Q2_K_M.gguf --ref-video $AB/fixture --ref-video-audio $AB/fixture/ref_audio.wav -p $PROMPT --video-frames 22 --fps 24 --cfg-scale 1.0 --sampling-method euler --diffusion-fa --offload-to-cpu --rng cpu --max-vram 10 --backend diffusion=vulkan0,te=cpu,vae=cpu -v"
+  # NOTE: -p is NOT part of COMMON — an unquoted $PROMPT inside a space-joined var
+  # would word-split at the first space (prompt truncated, stray positional args).
+  local COMMON="-M vid_gen --vae $MODELES/minimax_h3_video_vae_fp16.safetensors --audio-vae $MODELES/minimax_h3_audio_vae_fp32.safetensors --llm $MODELES/qwen3vl_32b_minimax_h3-Q2_K_M.gguf --ref-video $AB/fixture --ref-video-audio $AB/fixture/ref_audio.wav --video-frames 22 --fps 24 --cfg-scale 1.0 --sampling-method euler --diffusion-fa --offload-to-cpu --rng cpu --max-vram 10 --backend diffusion=vulkan0,te=cpu,vae=cpu -v"
   # leg A — validated turbo baseline (8-step LoRA, default schedule) (~17-32 min, #2417)
   run_leg h3_ab_turbo "$SD" $COMMON \
     --diffusion-model "$MODELES/minimax_h3_ref2va_pruned-Q4_K_M.gguf" \
@@ -1222,12 +1224,15 @@ leg_hyperflow_h3_ab() {
   # legs B — hyperflow-flash native presets (CFG 1): decisive 4-step first, then 6/8
   run_leg h3_ab_hf4 "$SD" $COMMON \
     --diffusion-model "C:/Modeles_LLM/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf" \
+    -p "$PROMPT" \
     --sigmas hyperflow-h3-flash-4 --steps 4 -o "$AB/hyperflow_4step.webm"
   run_leg h3_ab_hf6 "$SD" $COMMON \
     --diffusion-model "C:/Modeles_LLM/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf" \
+    -p "$PROMPT" \
     --sigmas hyperflow-h3-flash-6 --steps 6 -o "$AB/hyperflow_6step.webm"
   run_leg h3_ab_hf8 "$SD" $COMMON \
     --diffusion-model "C:/Modeles_LLM/minimax_h3_ref2va_hyperflow_flash_14b-Q4_K_M.gguf" \
+    -p "$PROMPT" \
     --sigmas hyperflow-h3-flash-8 --steps 8 -o "$AB/hyperflow_8step.webm"
   # 4-up mid-frame planche (non-fatal: morning verdict also reads the webms directly)
   run_leg hyperflow_planche bash -c '
