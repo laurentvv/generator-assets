@@ -3,26 +3,26 @@
   "moteurs": {
     "sd-cli": {
       "repo": "leejet/stable-diffusion.cpp",
-      "raison_epinglage": "master-1133-52491bd VALIDATED 5/5 day legs & PINNED 2026-11-26 (GO user 'Go tout GPU libre' on /news; delta 79dc7ca->52491bd = 6 commits: fix clear backend buffer caches after idle weight release #2418, fix RelayVSR KV graph cuts + DGL OOM reporting #2419 (RelayVSR = CUDA/Metal-only, OUT of Vulkan scope per C:\\SD\\README #2285 note), feat server DGL job cancel #2420, feat server --api-key/--api-key-file/--cors-origins #2367, feat ClipProj-MiniMax-H3 (no mlp) #2410 (H3 image family; our h3video path unaffected), feat DGL editor inline media previews #2423 (server-only). NO H3/Vulkan perf commit = upstream issue #2417 still open (h3video datapoint stands on 1127 night sweep 7/7 PASS; ltx33/music legs not re-run on 1133: delta touches neither, both PASS on 1127 same night). LEGS (gate green before each, evidence output/test_m1133/ + output/m1133_*.png): SDXL 512^2 20st cfg7 euler_a seed42 exit 0 sampling 8.50s (band 6.9-9.3s) clean render; flux 1024^2 4st cfg1 guidance3.5 --vae-tiling exit 0 sampling 26.62s (band 26.6-27.5s) BIT-IDENTICAL to the 1127 night PASS reference; qwen turbo REAL PATH workflow --qwen-turbo seed42 exit 0 sampling 99.04s (band 96.9-99.5s) typo 'The Sleeping Dragon' word-perfect; moss_image REAL PATH 4-step LoRA CFG1 seed42 exit 0 sampling 91.00s (1127: 89.87s = parity+), 756/756 LoRA tensors, typo 'MOSS' word-perfect, staging D:->C: auto; upscale esrgan -w upscale exit 0 1024^2 saved. Windows zip sha256 verified against GH digest at install (ManagedUpdater); linux/macos digests from GH API (no local download). Rollback: backups/backup_20261126_141105 (20 files self-contained exe+dll, 11-24 lesson).",
+      "raison_epinglage": "master-1145-dee497f VALIDATED 7/7 legs & PINNED 2026-11-27 (GO user on /news items 2/4/5; the watch flagged master-1141-e637c7b but the ManagedUpdater took the newer master-1145 published the same day; delta 52491bd->dee497f = 12 commits: fix resize Qwen Image Edit vision references #2433 (TOUCHED - validated by the qwen_edit leg MOSS->NIGHT replacement), fix load LTX-2.5 keyframe embedding as F32 #2432 + fix load LTX INT8 ConvRot checkpoints #2436 (TOUCHED - validated by the ltx33 leg), feat support -mlp variants of ClipProj-MiniMax-H3 #2424 (H3 image family; our h3video path unaffected), fix support fused QKV in FLUX.3 checkpoints #2434 (FLUX.3 only), perf rms_affine modulation fusion lingbot video #2422 (lingbot only), refactor reuse INT8 GEMM for W4A8 #2435 (our K-quant GGUF paths unaffected; moss leg ran as insurance), feat server Web UI comparison/input sizing #2437 + feat server --output-dir #2442 + fix server DGL output dirs #2444 (server-only), fix detect Ming-Image vs Z-Image by pad-token #2441 (other archs), perf optimize LTXAV CUDA execution #2443 (CUDA-only, out of Vulkan scope). NO H3/Vulkan perf commit = upstream issue #2417 unchanged. LEGS 7/7 PASS (gate green before each, evidence output/test_m1145/): SDXL 512^2 20st cfg7 euler_a seed42 exit 0 sampling 9.31s (band 6.9-9.3s, top edge on the first run of the new exe); flux 1024^2 4st exit 0 sampling 27.73s (+0.2s over band = variance) BIT-IDENTICAL to the m1133 reference (0/1048576 px diff); qwen turbo REAL PATH exit 0 sampling 98.25s (band 96.9-99.5s) typo 'The Sleeping Dragon' word-perfect (two 'Failed to allocate pinned memory' warnings + slow VAE decode 16.9s mid-leg = machine-state RAM pressure, NOT a binary regression - flux bit-parity proves the backend); moss REAL PATH 4-step LoRA CFG1 seed42 exit 0 sampling 90.41s (m1133: 91.00 = parity), 756/756 LoRA tensors, typo 'MOSS' word-perfect; qwen_edit 512^2 smoke exit 0 sampling 50.88s (MEMORY_BANK sec 1.55 envelope consistent), 2160/2160 LoRA tensors, MOSS->NIGHT replacement clean (vision references resize fix #2433 works); ltx33 33f 768x512 2st euler_a te=cpu exit 0 sampling 36.74s, webm 1573897 B valid VP8 (995 ref: 111s wall / 1571132 B); upscale esrgan exit 0. Sweep was cut short at 5/7 by a user GPU need, completed same evening on 'go la suite GPU libre'. Rollback: backups/backup_20261127_202616 = master-1133.",
       "plateformes": {
         "windows": {
-          "epingle": "master-1133-52491bd",
-          "asset": "sd-master-52491bd-bin-win-vulkan-x64.zip",
-          "sha256": "976ed26dfc06c16b720fdf272d6445cdd7fe42056f2b1f53e4359e25d5a1d1f1",
+          "epingle": "master-1145-dee497f",
+          "asset": "sd-master-dee497f-bin-win-vulkan-x64.zip",
+          "sha256": "7139dc97582dacdcf1fe0454c0957e3b6b12dedadf15c35a2f0af93883b4827e",
           "sous_dossier": "SD",
           "exe": "sd-cli.exe"
         },
         "linux": {
-          "epingle": "master-1133-52491bd",
-          "asset": "sd-master-52491bd-bin-Linux-Ubuntu-26.04-x86_64-vulkan.zip",
-          "sha256": "b2803c094aad4b31393d0a48ef31bac0fff5132a14b8e8cbbc732933fc8b2618",
+          "epingle": "master-1145-dee497f",
+          "asset": "sd-master-dee497f-bin-Linux-Ubuntu-26.04-x86_64-vulkan.zip",
+          "sha256": "d7ef921dc3de09f39660c7dff7c548258ad41f046e40162c6d2ce6d981708646",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         },
         "macos-arm64": {
-          "epingle": "master-1133-52491bd",
-          "asset": "sd-master-52491bd-bin-Darwin-macOS-26.7.2-arm64.zip",
-          "sha256": "083968d8cd095c221041ad5fce7a940b0fddf3e9ddb785bbecf67dabe28c2fec",
+          "epingle": "master-1145-dee497f",
+          "asset": "sd-master-dee497f-bin-Darwin-macOS-26.7.2-arm64.zip",
+          "sha256": "c6fd20ac9751907d2a77c18fc36d93bc0741a1c08c6e17fb2d31895020f61323",
           "sous_dossier": "sd-cli",
           "exe": "sd-cli"
         }
