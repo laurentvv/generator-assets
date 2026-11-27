@@ -11,16 +11,19 @@
 #   - FAIL_MACHINE_STATE→ skipped (known machine-state signature, e.g. LTX Vulkan_Host margin)
 # Reset a leg = delete its marker file.
 #
-# Shutdown: `bash scripts/tests_nuit.sh --shutdown` schedules a Windows shutdown
-# 300 s after the queue ends (user rule 2026-11-20: don't leave the PC running
-# all night for nothing). OPT-IN only — a plain run NEVER touches the machine
-# state. Abort within the grace window: `shutdown /a`.
+# Shutdown: `bash scripts/tests_nuit.sh` schedules a Windows shutdown 300 s after
+# the queue ends — DEFAULT since 2026-11-24 (never idle post-queue, FAIL legs don't
+# stop the queue); opt out for one night with `--no-shutdown`. Abort within the
+# grace window: `shutdown /a`.
 #
 # Queue: output/tests_nuit/queue.txt (one test id per line, '#' = comment).
 # Empty/exhausted queue → the run is a fast no-op.
 #
 # Report: output/tests_nuit/RAPPORT.md (rewritten at the end of each run).
-# Called nightly by the "Tests de nuit" automation (02:30).
+# NOT automated: launched manually on an explicit user GO only (rule 2026-11-20;
+# the 02:30 "Tests de nuit" automation was removed 10-01). A queue-prep GO
+# (« mets X au run de nuit ») only adds legs to queue.txt — it is NOT a launch
+# order; the launch is a separate explicit GO (lesson 2026-11-27).
 set -u
 REPO=/c/GIT/generator-assets
 OUT="$REPO/output/tests_nuit"
