@@ -31,6 +31,10 @@ models/
 upscalers/
 loras/
 
+# Validated game assets: local-only, never on GitHub (LFS purge 2026-11-27).
+# Root-anchored so docs/exemples/godot_assets/ thumbnails stay tracked.
+/godot_assets/
+
 # Video rendering & heavy outputs
 output/
 scratch/

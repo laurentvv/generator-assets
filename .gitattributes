@@ -1,21 +1,6 @@
-# Git LFS — binary assets of godot_assets/ (audit §2.7, refactor audit plan P1)
-#
-# Generations live in output/ (ignored by git); godot_assets/ only receives
-# VALIDATED reference assets. Their binary versions go through LFS
-# so the git history does not grow indefinitely.
-# The TEXT files of godot_assets/ (.tres, .tscn, .json, .mhmat) stay
-# out of LFS: readable diffs.
-#
-# Prerequisite: git lfs install (once per clone) — otherwise the
-# filter.lfs.required=true filters fail explicitly rather than corrupt.
-# New reference binary type → add its line here.
-
-godot_assets/**/*.png   filter=lfs diff=lfs merge=lfs -text
-godot_assets/**/*.glb   filter=lfs diff=lfs merge=lfs -text
-godot_assets/**/*.ogg   filter=lfs diff=lfs merge=lfs -text
-godot_assets/**/*.wav   filter=lfs diff=lfs merge=lfs -text
-godot_assets/**/*.blend filter=lfs diff=lfs merge=lfs -text
-godot_assets/**/*.thumb filter=lfs diff=lfs merge=lfs -text
+# No Git LFS (removed 2026-11-27): godot_assets/ is local-only (git-ignored)
+# and was purged from history. README/docs showcase images are small WebP
+# thumbnails in docs/exemples/godot_assets/ (plain git).
 
 # Vendored browser libraries: exact bytes required (sha256-pinned) — never eol-convert
 server/static/vendor/** -text

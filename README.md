@@ -86,12 +86,12 @@ Full PBR material channels (Albedo, DeepBump Normal, Roughness, Height, AO) auto
 
 | Albedo Texture | DeepBump Normal Map | Godot ORM Channel Pack | Seamless 3×3 Tile Verification |
 | :---: | :---: | :---: | :---: |
-| <img src="godot_assets/sol_runique_albedo.png" width="160" alt="Runic Albedo" /> | <img src="godot_assets/sol_runique_normal.png" width="160" alt="Normal Map" /> | <img src="godot_assets/sol_runique_orm.png" width="160" alt="ORM Pack" /> | <img src="godot_assets/parchemin_ancien_preview3x3.png" width="160" alt="Seamless Tiling" /> |
+| <img src="docs/exemples/godot_assets/sol_runique_albedo.webp" width="160" alt="Runic Albedo" /> | <img src="docs/exemples/godot_assets/sol_runique_normal.webp" width="160" alt="Normal Map" /> | <img src="docs/exemples/godot_assets/sol_runique_orm.webp" width="160" alt="ORM Pack" /> | <img src="docs/exemples/godot_assets/parchemin_ancien_preview3x3.webp" width="160" alt="Seamless Tiling" /> |
 | *1024×1024 Base Color* | *Relief from 2D via Neural ONNX* | *Red=AO, Green=Roughness, Blue=Metal* | *Zero-seam repeating tile* |
 
 | AI 3D Mesh (TRELLIS.2 / Pixal3D Multi-View) | Parametric Prop (`mesh3d --shape pillar`) | 360° Equirectangular Skybox (`skybox`) |
 | :---: | :---: | :---: |
-| <img src="docs/exemples/workflows_3d/casque_1024_planche.png" width="320" alt="TRELLIS.2 3D Mesh" /> | <img src="godot_assets/pilier_runique_3d_albedo.png" width="160" alt="Runic Pillar" /> | <img src="godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.png" width="280" alt="360 Skybox" /> |
+| <img src="docs/exemples/workflows_3d/casque_1024_planche.png" width="320" alt="TRELLIS.2 3D Mesh" /> | <img src="docs/exemples/godot_assets/pilier_runique_3d_albedo.webp" width="160" alt="Runic Pillar" /> | <img src="docs/exemples/godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.webp" width="280" alt="360 Skybox" /> |
 | *Volumetric closed 3D model (.glb) with PBR atlas* | *Blender quad geometry with embedded PBR* | *2:1 spherical sky + Godot IBL environment* |
 
 | PBR Albedo Delighting (`material3d --delight`) — Raw vs Delighted Albedo, Normal & ORM |
@@ -116,7 +116,7 @@ Isolate game items with zero white halos, quantize to classic retro palettes, an
 
 | Clean Cutout (`generate`) | 4K ESRGAN Super-Resolution (`upscale`) | Retro Pico-8 Pixel Art (`pixelart`) | Expandable 9-Patch Frame (`ui_9slice`) |
 | :---: | :---: | :---: | :---: |
-| <img src="godot_assets/potion_diablo.png" width="150" alt="Diablo Potion" /> | <img src="godot_assets/casque_esrgan_4x.png" width="150" alt="ESRGAN 4x" /> | <img src="godot_assets/casque_pico8.png" width="150" alt="Pico-8 Palette" /> | <img src="docs/exemples/workflows_2d/ui_9slice_demo.png" width="220" alt="9-Patch Stretch" /> |
+| <img src="docs/exemples/godot_assets/potion_diablo.webp" width="150" alt="Diablo Potion" /> | <img src="docs/exemples/godot_assets/casque_esrgan_4x.webp" width="150" alt="ESRGAN 4x" /> | <img src="docs/exemples/godot_assets/casque_pico8.webp" width="150" alt="Pico-8 Palette" /> | <img src="docs/exemples/workflows_2d/ui_9slice_demo.png" width="220" alt="9-Patch Stretch" /> |
 | *Neural background removal* | *Sharp 4096px, intact alpha* | *16-color authentic palette* | *Scales with zero corner distortion* |
 
 | ControlNet++ Union SDXL ProMax (`canny` & `tile` @ 1024×1024) | Qwen-Image 2.1 Multi-Angles Orbit (`--multi-angles`) |

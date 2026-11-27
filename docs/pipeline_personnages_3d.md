@@ -81,7 +81,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ Generated Quad Wardrobe & PBR Materials
 | Tunic Albedo Texture | Shoes Albedo Texture | Dressed Avatar in Blender (Cycles) |
 | :---: | :---: | :---: |
-| <img src="../godot_assets/textures/marc_novice/top_rustic_medieval_beig_albedo.png" width="160" /> | <img src="../godot_assets/textures/marc_novice/shoes_dark_worn_medieval_l_albedo.png" width="160" /> | <img src="../godot_assets/marc_novice_render.png" width="160" /> |
+| <img src="exemples/godot_assets/textures/marc_novice/top_rustic_medieval_beig_albedo.webp" width="160" /> | <img src="exemples/godot_assets/textures/marc_novice/shoes_dark_worn_medieval_l_albedo.webp" width="160" /> | <img src="exemples/godot_assets/marc_novice_render.webp" width="160" /> |
 | *Burlap tunic albedo (PBR)* | *Worn leather shoes (PBR)* | *Avatar wearing robe & shoes (.mhclo)* |
 
 * **Example**:
@@ -103,7 +103,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ PBR Retexturing on Existing UV Patterns
 | Retextured Albedo Pattern | Relief Normal Map | Cycles Studio Check Render |
 | :---: | :---: | :---: |
-| <img src="../godot_assets/textures/marc_novice/marc_peasant_worksuit_diffuse.png" width="160" /> | <img src="../godot_assets/textures/marc_novice/marc_peasant_worksuit_normal.png" width="160" /> | <img src="../godot_assets/marc_novice_beauty_render.png" width="160" /> |
+| <img src="exemples/godot_assets/textures/marc_novice/marc_peasant_worksuit_diffuse.webp" width="160" /> | <img src="exemples/godot_assets/textures/marc_novice/marc_peasant_worksuit_normal.webp" width="160" /> | <img src="exemples/godot_assets/marc_novice_beauty_render.webp" width="160" /> |
 | *UV pattern preserving seams and folds* | *Procedural weave relief* | *Marc Novice studio render with the new outfit* |
 
 * **Example**:
@@ -189,7 +189,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ Canonical Skin Synthesis & Anatomical Detail
 | Studio Face Close-Up | hm08 Diffuse Skin Texture (Marc) | Grey-Wind Skin Texture (Elian Child) |
 | :---: | :---: | :---: |
-| <img src="../godot_assets/marc_novice_face_closeup.png" width="160" /> | <img src="../godot_assets/skins/marc_novice/marc_novice_diffuse.png" width="160" /> | <img src="../godot_assets/skins/elian_enfant/elian_enfant_diffuse.png" width="160" /> |
+| <img src="exemples/godot_assets/marc_novice_face_closeup.webp" width="160" /> | <img src="exemples/godot_assets/skins/marc_novice/marc_novice_diffuse.webp" width="160" /> | <img src="exemples/godot_assets/skins/elian_enfant/elian_enfant_diffuse.webp" width="160" /> |
 | *Cycles render with Subsurface Scattering* | *Marc Novice 2048² hm08 UV texture* | *2048² cold grey-wind complexion texture* |
 * **Deployment**:
   - Installs skin assets automatically into `%APPDATA%/Blender Foundation/Blender/5.2/mpfb/data/skins/<skin_name>/` and syncs them with Godot asset targets.

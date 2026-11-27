@@ -35,9 +35,9 @@
 ##### 🖼️ PBR Illustrations & Variations
 | PBR Channel | Runic Stone Floor (`sol_runique`) | Ancient Worn Leather (`cuir_ancien`) | Weathered Planks (`old_cracked_wood`) | Seamless 3×3 Check |
 | :---: | :---: | :---: | :---: | :---: |
-| **Albedo** | <img src="../godot_assets/sol_runique_albedo.png" width="130" /> | <img src="../godot_assets/cuir_ancien_albedo.png" width="130" /> | <img src="../godot_assets/old_cracked_wood_planks_albedo.png" width="130" /> | <img src="../godot_assets/parchemin_ancien_preview3x3.png" width="130" /> |
-| **Normal Map (DeepBump)** | <img src="../godot_assets/sol_runique_normal.png" width="130" /> | <img src="../godot_assets/cuir_ancien_normal.png" width="130" /> | <img src="../godot_assets/old_cracked_wood_planks_normal.png" width="130" /> | *Repeating Tile Verification* |
-| **Godot ORM** | <img src="../godot_assets/sol_runique_orm.png" width="130" /> | <img src="../godot_assets/cuir_ancien_orm.png" width="130" /> | <img src="../godot_assets/old_cracked_wood_planks_orm.png" width="130" /> | *R=AO, G=Roughness, B=Metal* |
+| **Albedo** | <img src="exemples/godot_assets/sol_runique_albedo.webp" width="130" /> | <img src="exemples/godot_assets/cuir_ancien_albedo.webp" width="130" /> | <img src="exemples/godot_assets/old_cracked_wood_planks_albedo.webp" width="130" /> | <img src="exemples/godot_assets/parchemin_ancien_preview3x3.webp" width="130" /> |
+| **Normal Map (DeepBump)** | <img src="exemples/godot_assets/sol_runique_normal.webp" width="130" /> | <img src="exemples/godot_assets/cuir_ancien_normal.webp" width="130" /> | <img src="exemples/godot_assets/old_cracked_wood_planks_normal.webp" width="130" /> | *Repeating Tile Verification* |
+| **Godot ORM** | <img src="exemples/godot_assets/sol_runique_orm.webp" width="130" /> | <img src="exemples/godot_assets/cuir_ancien_orm.webp" width="130" /> | <img src="exemples/godot_assets/old_cracked_wood_planks_orm.webp" width="130" /> | *R=AO, G=Roughness, B=Metal* |
 
 | PBR Albedo Delighting A/B (`--delight`: Raw vs Delighted Albedo → Normal → ORM) |
 | :---: |
@@ -65,7 +65,7 @@
 ##### 🖼️ Parametric Geometry Variations (`--shape`)
 | `--shape tile` (Beveled Floor Slab) | `--shape pillar` (Octagonal Pillar) | `--shape card` (2.5D Standee) | `--shape cutout` (Extruded Relief) |
 | :---: | :---: | :---: | :---: |
-| <img src="../godot_assets/sol_runique_3d_tile_albedo.png" width="150" /> | <img src="../godot_assets/pilier_runique_3d_albedo.png" width="150" /> | <img src="../godot_assets/potion_3d_card_albedo.png" width="150" /> | <img src="../godot_assets/potion_3d_cutout_albedo.png" width="150" /> |
+| <img src="exemples/godot_assets/sol_runique_3d_tile_albedo.webp" width="150" /> | <img src="exemples/godot_assets/pilier_runique_3d_albedo.webp" width="150" /> | <img src="exemples/godot_assets/potion_3d_card_albedo.webp" width="150" /> | <img src="exemples/godot_assets/potion_3d_cutout_albedo.webp" width="150" /> |
 | *Runic floor (`sol_runique_3d_tile.glb`)* | *Dungeon pillar (`pilier_runique_3d.glb`)* | *Potion standee (`potion_3d_card.glb`)* | *Potion cutout (`potion_3d_cutout.glb`)* |
 
 * **Example**:
@@ -87,7 +87,7 @@
 ##### 🖼️ 2D Sprite to Voxel 3D Model (.GLB with Vertex Colors)
 | 2D Source Sprite (`casque.png`) | Voxel 3D Model (`casque_voxel.glb`) | 2D Source Sprite (`potion_diablo.png`) | Voxel 3D Model (`potion_voxel.glb`) |
 | :---: | :---: | :---: | :---: |
-| <img src="../godot_assets/casque.png" width="130" /> | <img src="../docs/exemples/workflows_3d/casque_voxel_preview.png" width="160" /> | <img src="../godot_assets/potion_diablo.png" width="130" /> | <img src="../docs/exemples/workflows_3d/potion_voxel_preview.png" width="160" /> |
+| <img src="exemples/godot_assets/casque.webp" width="130" /> | <img src="../docs/exemples/workflows_3d/casque_voxel_preview.png" width="160" /> | <img src="exemples/godot_assets/potion_diablo.webp" width="130" /> | <img src="../docs/exemples/workflows_3d/potion_voxel_preview.png" width="160" /> |
 | *Clean alpha cutout* | *1013 active voxels, interior faces culled* | *Dark fantasy potion icon* | *2381 active voxels, sRGB colors* |
 
 * **Example**:
@@ -108,7 +108,7 @@
 ##### 🖼️ 360° Equirectangular Panoramic Texture (2:1 Ratio & Godot 4 IBL)
 | 2048×1024 Equirectangular Spherical Texture (`_sky.png`) |
 | :---: |
-| <img src="../godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.png" width="100%" /> |
+| <img src="exemples/godot_assets/pale_grey_dawn_sky_at_sunrise_cold_desaturated_ton_sky.webp" width="100%" /> |
 | *Cold grey-wind dawn — seamless 360° wrapped horizon, ready for `WorldEnvironment.tres` and ambient IBL* |
 
 * **Example**:
@@ -309,7 +309,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ Generated Quad Wardrobe & PBR Materials
 | Tunic Albedo Texture | Shoes Albedo Texture | Dressed Avatar in Blender (Cycles) |
 | :---: | :---: | :---: |
-| <img src="../godot_assets/textures/marc_novice/top_rustic_medieval_beig_albedo.png" width="160" /> | <img src="../godot_assets/textures/marc_novice/shoes_dark_worn_medieval_l_albedo.png" width="160" /> | <img src="../godot_assets/marc_novice_render.png" width="160" /> |
+| <img src="exemples/godot_assets/textures/marc_novice/top_rustic_medieval_beig_albedo.webp" width="160" /> | <img src="exemples/godot_assets/textures/marc_novice/shoes_dark_worn_medieval_l_albedo.webp" width="160" /> | <img src="exemples/godot_assets/marc_novice_render.webp" width="160" /> |
 | *Burlap tunic albedo (PBR)* | *Worn leather shoes (PBR)* | *Avatar wearing robe & shoes (.mhclo)* |
 
 * **Example**:
@@ -331,7 +331,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ PBR Retexturing on Existing UV Patterns
 | Retextured Albedo Pattern | Relief Normal Map | Cycles Studio Check Render |
 | :---: | :---: | :---: |
-| <img src="../godot_assets/textures/marc_novice/marc_peasant_worksuit_diffuse.png" width="160" /> | <img src="../godot_assets/textures/marc_novice/marc_peasant_worksuit_normal.png" width="160" /> | <img src="../godot_assets/marc_novice_beauty_render.png" width="160" /> |
+| <img src="exemples/godot_assets/textures/marc_novice/marc_peasant_worksuit_diffuse.webp" width="160" /> | <img src="exemples/godot_assets/textures/marc_novice/marc_peasant_worksuit_normal.webp" width="160" /> | <img src="exemples/godot_assets/marc_novice_beauty_render.webp" width="160" /> |
 | *UV pattern preserving seams and folds* | *Procedural weave relief* | *Marc Novice studio render with the new outfit* |
 
 * **Example**:
@@ -417,7 +417,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ Canonical Skin Synthesis & Anatomical Detail
 | Studio Face Close-Up | hm08 Diffuse Skin Texture (Marc) | Grey-Wind Skin Texture (Elian Child) |
 | :---: | :---: | :---: |
-| <img src="../godot_assets/marc_novice_face_closeup.png" width="160" /> | <img src="../godot_assets/skins/marc_novice/marc_novice_diffuse.png" width="160" /> | <img src="../godot_assets/skins/elian_enfant/elian_enfant_diffuse.png" width="160" /> |
+| <img src="exemples/godot_assets/marc_novice_face_closeup.webp" width="160" /> | <img src="exemples/godot_assets/skins/marc_novice/marc_novice_diffuse.webp" width="160" /> | <img src="exemples/godot_assets/skins/elian_enfant/elian_enfant_diffuse.webp" width="160" /> |
 | *Cycles render with Subsurface Scattering* | *Marc Novice 2048² hm08 UV texture* | *2048² cold grey-wind complexion texture* |
 * **Deployment**:
   - Installs skin assets automatically into `%APPDATA%/Blender Foundation/Blender/5.2/mpfb/data/skins/<skin_name>/` and syncs them with Godot asset targets.
@@ -441,7 +441,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ Isolated & Cut-Out 2D Assets (Items, Accessories & UI)
 | Dark Fantasy Potion (`potion_diablo`) | Armor Helmet (`casque`) | Inventory Bag (`ico_sac`) | Stealth Mode (`ico_furtif`) |
 | :---: | :---: | :---: | :---: |
-| <img src="../godot_assets/potion_diablo.png" width="140" /> | <img src="../godot_assets/casque.png" width="140" /> | <img src="../godot_assets/ico_sac.png" width="140" /> | <img src="../godot_assets/ico_furtif.png" width="140" /> |
+| <img src="exemples/godot_assets/potion_diablo.webp" width="140" /> | <img src="exemples/godot_assets/casque.webp" width="140" /> | <img src="exemples/godot_assets/ico_sac.webp" width="140" /> | <img src="exemples/godot_assets/ico_furtif.webp" width="140" /> |
 | *Diablo LoRA + BiRefNet cutout* | *Source PBR equipment sprite* | *128px Godot-centered UI icon* | *Transparent skill icon* |
 
 | ControlNet++ Union SDXL ProMax (`canny` edge guidance & `tile` obsidian retexture @ 1024×1024) |
@@ -512,7 +512,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ Infinite Seamless Textures & 3×3 Verification Grids
 | Ancient Parchment Texture (3×3 check) | Salt & Burlap Cloth Texture (3×3 check) |
 | :---: | :---: |
-| <img src="../godot_assets/parchemin_ancien_preview3x3.png" width="280" /> | <img src="../godot_assets/sel_jute_preview3x3.png" width="280" /> |
+| <img src="exemples/godot_assets/parchemin_ancien_preview3x3.webp" width="280" /> | <img src="exemples/godot_assets/sel_jute_preview3x3.webp" width="280" /> |
 | *Cyclic edges matched seamlessly* | *Repeating cloth texture without border artifacts* |
 
 * **Example**:
@@ -576,7 +576,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ 9-Patch Vector Stretch without Corner Distortion
 | Square UI Frame Source | Stretched NinePatchRect (520×240 Panoramic Ratio) |
 | :---: | :---: |
-| <img src="../godot_assets/cadre_portrait_combat.png" width="170" /> | <img src="../docs/exemples/workflows_2d/ui_9slice_demo.png" width="480" /> |
+| <img src="exemples/godot_assets/cadre_portrait_combat.webp" width="170" /> | <img src="../docs/exemples/workflows_2d/ui_9slice_demo.png" width="480" /> |
 | *512² texture with sculpted borders* | *100% intact corners, stretched center & slices per `StyleBoxTexture.tres`* |
 
 * **Example**:
@@ -777,7 +777,7 @@ This workflow turns a 2D portrait into a complete 3D character for Godot 4 and B
 ##### 🖼️ 4×4 Particle Animation Sheets & Godot Scenes (.tscn)
 | Sword Slash VFX (`vfx_slash`) | Mystic Aura VFX (`vfx_aura`) | Void Well VFX (`vfx_vide`) | Friction VFX (`vfx_friction`) |
 | :---: | :---: | :---: | :---: |
-| <img src="../godot_assets/vfx_slash_flipbook.png" width="150" /> | <img src="../godot_assets/vfx_aura_flipbook.png" width="150" /> | <img src="../godot_assets/vfx_vide_flipbook.png" width="150" /> | <img src="../godot_assets/vfx_friction_flipbook.png" width="150" /> |
+| <img src="exemples/godot_assets/vfx_slash_flipbook.webp" width="150" /> | <img src="exemples/godot_assets/vfx_aura_flipbook.webp" width="150" /> | <img src="exemples/godot_assets/vfx_vide_flipbook.webp" width="150" /> | <img src="exemples/godot_assets/vfx_friction_flipbook.webp" width="150" /> |
 | *4×4 grid + GPUParticles3D* | *Evolving magic aura* | *Animated abyssal vortex* | *Spark & friction particles* |
 
 * **Example**:
