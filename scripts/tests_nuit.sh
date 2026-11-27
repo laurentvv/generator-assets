@@ -20,7 +20,10 @@
 # Empty/exhausted queue → the run is a fast no-op.
 #
 # Report: output/tests_nuit/RAPPORT.md (rewritten at the end of each run).
-# Called nightly by the "Tests de nuit" automation (02:30).
+# NOT automated: launched manually on an explicit user GO only (rule 2026-11-20;
+# the 02:30 "Tests de nuit" automation was removed 10-01). A queue-prep GO
+# (« mets X au run de nuit ») only adds legs to queue.txt — it is NOT a launch
+# order; the launch is a separate explicit GO (lesson 2026-11-27).
 set -u
 REPO=/c/GIT/generator-assets
 OUT="$REPO/output/tests_nuit"
